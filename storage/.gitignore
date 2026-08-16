@@ -1,0 +1,10 @@
+app/*
+!app/public/
+framework/cache/*
+!framework/cache/.gitignore
+framework/sessions/*
+!framework/sessions/.gitignore
+framework/views/*
+!framework/views/.gitignore
+logs/*
+!logs/.gitignore
