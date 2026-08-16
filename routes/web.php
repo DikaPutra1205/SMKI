@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,3 +19,13 @@ Route::get('/', function () {
         'timestamp'   => now()->toIso8601String(),
     ]);
 });
+
+/*
+|--------------------------------------------------------------------------
+| Inertia Frontend Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/welcome', function () {
+    return Inertia::render('welcome');
+})->name('welcome');
