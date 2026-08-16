@@ -43,6 +43,7 @@ Route::middleware('auth')->group(function () {
 
         // ── Master Data Export / Import (unified 2-sheet Excel) ───────────────────────
         Route::get('/master-data/export', [AdminControlController::class, 'exportMasterData'])->name('master-data.export');
+        Route::post('/master-data/import/preview', [AdminControlController::class, 'previewMasterDataImport'])->name('master-data.import.preview');
         Route::post('/master-data/import', [AdminControlController::class, 'importMasterData'])->name('master-data.import');
     });
 });
