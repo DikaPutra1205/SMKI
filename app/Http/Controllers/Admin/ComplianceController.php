@@ -3,7 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreControlRequest;
+use App\Http\Requests\Admin\UpdateControlRequest;
+use App\Models\Control;
 use App\Services\ComplianceService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -36,6 +40,33 @@ class ComplianceController extends Controller
 
         return Inertia::render('admin-kepatuhan/dashboard', [
             'frameworks' => $frameworks,
+        ]);
+    }
+
+    public function store(StoreControlRequest $request): RedirectResponse
+    {
+        Control::create($request->validated());
+
+        return redirect()->back()->with('flash', [
+            'success' => 'Kontrol berhasil ditambahkan.',
+        ]);
+    }
+
+    public function update(UpdateControlRequest $request, Control $control): RedirectResponse
+    {
+        $control->update($request->validated());
+
+        return redirect()->back()->with('flash', [
+            'success' => 'Kontrol berhasil diperbarui.',
+        ]);
+    }
+
+    public function destroy(Control $control): RedirectResponse
+    {
+        $control->delete();
+
+        return redirect()->back()->with('flash', [
+            'success' => 'Kontrol berhasil dihapus.',
         ]);
     }
 }
