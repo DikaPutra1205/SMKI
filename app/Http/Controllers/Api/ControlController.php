@@ -28,17 +28,19 @@ class ControlController extends Controller
         if ($request->filled('search')) {
             $query->where(function ($q) use ($request) {
                 $q->where('kode_klausul', 'ilike', "%{$request->search}%")
-                  ->orWhere('judul', 'ilike', "%{$request->search}%");
+                    ->orWhere('judul', 'ilike', "%{$request->search}%");
             });
         }
 
         $controls = $query->orderBy('kode_klausul')->get();
+
         return $this->success($controls);
     }
 
     public function byFramework(Framework $framework): JsonResponse
     {
         $controls = $framework->controls()->orderBy('kode_klausul')->get();
+
         return $this->success($controls);
     }
 
@@ -47,12 +49,13 @@ class ControlController extends Controller
         $data = $request->validate([
             'framework_id' => 'required|exists:frameworks,id',
             'kode_klausul' => 'required|string|max:20',
-            'judul'        => 'required|string|max:255',
-            'deskripsi'    => 'nullable|string',
-            'kategori'     => 'required|in:annex_a,klausul_4_10',
+            'judul' => 'required|string|max:255',
+            'deskripsi' => 'nullable|string',
+            'kategori' => 'required|in:annex_a,klausul_4_10',
         ]);
 
         $control = Control::create($data);
+
         return $this->created($control->load('framework'));
     }
 
@@ -65,18 +68,20 @@ class ControlController extends Controller
     {
         $data = $request->validate([
             'kode_klausul' => 'sometimes|string|max:20',
-            'judul'        => 'sometimes|string|max:255',
-            'deskripsi'    => 'nullable|string',
-            'kategori'     => 'sometimes|in:annex_a,klausul_4_10',
+            'judul' => 'sometimes|string|max:255',
+            'deskripsi' => 'nullable|string',
+            'kategori' => 'sometimes|in:annex_a,klausul_4_10',
         ]);
 
         $control->update($data);
+
         return $this->success($control, 'Kontrol berhasil diperbarui');
     }
 
     public function destroy(Control $control): JsonResponse
     {
         $control->delete();
+
         return $this->success(null, 'Kontrol berhasil dihapus');
     }
 }

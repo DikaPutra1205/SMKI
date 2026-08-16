@@ -25,20 +25,22 @@ class RiskController extends Controller
         }
 
         $risks = $query->latest()->paginate(20);
+
         return $this->success($risks);
     }
 
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'control_id'       => 'required|exists:controls,id',
-            'level_risiko'     => 'required|in:low,medium,high,critical',
-            'pemilik_risiko'   => 'required|string|max:255',
+            'control_id' => 'required|exists:controls,id',
+            'level_risiko' => 'required|in:low,medium,high,critical',
+            'pemilik_risiko' => 'required|string|max:255',
             'rencana_mitigasi' => 'nullable|string',
-            'status'           => 'sometimes|in:open,mitigated,accepted',
+            'status' => 'sometimes|in:open,mitigated,accepted',
         ]);
 
         $risk = Risk::create($data);
+
         return $this->created($risk->load('control'));
     }
 
@@ -50,19 +52,21 @@ class RiskController extends Controller
     public function update(Request $request, Risk $risk): JsonResponse
     {
         $data = $request->validate([
-            'level_risiko'     => 'sometimes|in:low,medium,high,critical',
-            'pemilik_risiko'   => 'sometimes|string|max:255',
+            'level_risiko' => 'sometimes|in:low,medium,high,critical',
+            'pemilik_risiko' => 'sometimes|string|max:255',
             'rencana_mitigasi' => 'nullable|string',
-            'status'           => 'sometimes|in:open,mitigated,accepted',
+            'status' => 'sometimes|in:open,mitigated,accepted',
         ]);
 
         $risk->update($data);
+
         return $this->success($risk, 'Risiko berhasil diperbarui');
     }
 
     public function destroy(Risk $risk): JsonResponse
     {
         $risk->delete();
+
         return $this->success(null, 'Risiko berhasil dihapus');
     }
 }

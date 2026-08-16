@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\ComplianceController;
+use App\Http\Controllers\Admin\ControlController as AdminControlController;
 use App\Http\Controllers\Auth\AuthController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -14,12 +15,12 @@ use Inertia\Inertia;
 Route::middleware('auth')->group(function () {
     Route::get('/', function () {
         return response()->json([
-            'app'         => 'Sistem Kepatuhan Digital SMKI — Backend API (ISO 27001 & 27701)',
-            'status'      => 'online',
-            'version'     => '1.0.0',
+            'app' => 'Sistem Kepatuhan Digital SMKI — Backend API (ISO 27001 & 27701)',
+            'status' => 'online',
+            'version' => '1.0.0',
             'environment' => config('app.env'),
-            'api_prefix'  => '/api',
-            'timestamp'   => now()->toIso8601String(),
+            'api_prefix' => '/api',
+            'timestamp' => now()->toIso8601String(),
         ]);
     });
 
@@ -34,6 +35,15 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/dashboard', [ComplianceController::class, 'dashboard'])->name('dashboard');
         Route::get('/compliance', [ComplianceController::class, 'index'])->name('compliance');
+
+        // ── Controls CRUD (Inertia-style — mutations only, listing ada di compliance) ──
+        Route::post('/controls', [AdminControlController::class, 'store'])->name('controls.store');
+        Route::put('/controls/{control}', [AdminControlController::class, 'update'])->name('controls.update');
+        Route::delete('/controls/{control}', [AdminControlController::class, 'destroy'])->name('controls.destroy');
+
+        // ── Master Data Export / Import (unified 2-sheet Excel) ───────────────────────
+        Route::get('/master-data/export', [AdminControlController::class, 'exportMasterData'])->name('master-data.export');
+        Route::post('/master-data/import', [AdminControlController::class, 'importMasterData'])->name('master-data.import');
     });
 });
 

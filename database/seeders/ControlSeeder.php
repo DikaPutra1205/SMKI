@@ -18,8 +18,9 @@ class ControlSeeder extends Seeder
     {
         $iso27001 = Framework::where('nama', 'ISO/IEC 27001')->first();
 
-        if (!$iso27001) {
+        if (! $iso27001) {
             $this->command->warn('Framework ISO/IEC 27001 tidak ditemukan.');
+
             return;
         }
 
@@ -35,9 +36,9 @@ class ControlSeeder extends Seeder
             ['kode_klausul' => '5.2',  'judul' => 'Kebijakan Keamanan Informasi',                              'kategori' => 'klausul_4_10', 'deskripsi' => 'Menetapkan kebijakan keamanan informasi yang sesuai.'],
             ['kode_klausul' => '5.3',  'judul' => 'Peran, Tanggung Jawab, dan Wewenang Organisasi',            'kategori' => 'klausul_4_10', 'deskripsi' => 'Menetapkan dan mengkomunikasikan peran dan tanggung jawab keamanan informasi.'],
             ['kode_klausul' => '6.1',  'judul' => 'Tindakan untuk Mengatasi Risiko dan Peluang',               'kategori' => 'klausul_4_10', 'deskripsi' => 'Perencanaan untuk mengatasi risiko dan peluang yang ditentukan.'],
-            ['kode_klausul' => '6.1.2','judul' => 'Penilaian Risiko Keamanan Informasi',                       'kategori' => 'klausul_4_10', 'deskripsi' => 'Mendefinisikan dan menerapkan proses penilaian risiko keamanan informasi.'],
-            ['kode_klausul' => '6.1.3','judul' => 'Perlakuan Risiko Keamanan Informasi',                       'kategori' => 'klausul_4_10', 'deskripsi' => 'Mendefinisikan dan menerapkan proses perlakuan risiko keamanan informasi.'],
-            ['kode_klausul' => '6.2',  'judul' => 'Tujuan Keamanan Informasi dan Perencanaan untuk Mencapainya','kategori' => 'klausul_4_10', 'deskripsi' => 'Menetapkan tujuan keamanan informasi pada fungsi dan tingkatan yang relevan.'],
+            ['kode_klausul' => '6.1.2', 'judul' => 'Penilaian Risiko Keamanan Informasi',                       'kategori' => 'klausul_4_10', 'deskripsi' => 'Mendefinisikan dan menerapkan proses penilaian risiko keamanan informasi.'],
+            ['kode_klausul' => '6.1.3', 'judul' => 'Perlakuan Risiko Keamanan Informasi',                       'kategori' => 'klausul_4_10', 'deskripsi' => 'Mendefinisikan dan menerapkan proses perlakuan risiko keamanan informasi.'],
+            ['kode_klausul' => '6.2',  'judul' => 'Tujuan Keamanan Informasi dan Perencanaan untuk Mencapainya', 'kategori' => 'klausul_4_10', 'deskripsi' => 'Menetapkan tujuan keamanan informasi pada fungsi dan tingkatan yang relevan.'],
             ['kode_klausul' => '6.3',  'judul' => 'Perencanaan Perubahan',                                      'kategori' => 'klausul_4_10', 'deskripsi' => 'Menentukan cara untuk melaksanakan perubahan pada SMKI secara terencana.'],
             ['kode_klausul' => '7.1',  'judul' => 'Sumber Daya',                                               'kategori' => 'klausul_4_10', 'deskripsi' => 'Menentukan dan menyediakan sumber daya yang dibutuhkan untuk SMKI.'],
             ['kode_klausul' => '7.2',  'judul' => 'Kompetensi',                                                 'kategori' => 'klausul_4_10', 'deskripsi' => 'Menentukan kompetensi yang diperlukan dari personel yang bekerja di bawah kendali organisasi.'],
@@ -166,23 +167,24 @@ class ControlSeeder extends Seeder
         $now = now();
         $rows = array_map(fn ($c) => array_merge($c, [
             'framework_id' => $iso27001->id,
-            'created_at'   => $now,
-            'updated_at'   => $now,
+            'created_at' => $now,
+            'updated_at' => $now,
         ]), $controls);
 
         foreach (array_chunk($rows, 50) as $chunk) {
             Control::upsert($chunk, ['framework_id', 'kode_klausul'], ['judul', 'kategori', 'deskripsi', 'updated_at']);
         }
 
-        $this->command->info('Berhasil menyemai ' . count($rows) . ' kontrol ISO/IEC 27001:2022.');
+        $this->command->info('Berhasil menyemai '.count($rows).' kontrol ISO/IEC 27001:2022.');
     }
 
     protected function seedIso27701(): void
     {
         $iso27701 = Framework::where('nama', 'ISO/IEC 27701')->first();
 
-        if (!$iso27701) {
+        if (! $iso27701) {
             $this->command->warn('Framework ISO/IEC 27701 tidak ditemukan.');
+
             return;
         }
 
@@ -195,8 +197,8 @@ class ControlSeeder extends Seeder
             ['kode_klausul' => '5.2.3', 'judul' => 'Menentukan Ruang Lingkup Sistem Manajemen Informasi Privasi (PIMS)', 'kategori' => 'klausul_4_10', 'deskripsi' => 'Menetapkan batas operasional dan sistem pemrosesan data pribadi yang dicakup dalam PIMS.'],
             ['kode_klausul' => '5.3.1', 'judul' => 'Kepemimpinan dan Komitmen terhadap Perlindungan Data Pribadi',      'kategori' => 'klausul_4_10', 'deskripsi' => 'Manajemen puncak memastikan kepatuhan terhadap prinsip pelindungan data pribadi.'],
             ['kode_klausul' => '5.3.2', 'judul' => 'Kebijakan Privasi dan Perlindungan Data Pribadi',                   'kategori' => 'klausul_4_10', 'deskripsi' => 'Menetapkan kebijakan privasi organisasi yang selaras dengan regulasi UU PDP.'],
-            ['kode_klausul' => '5.3.3', 'judul' => 'Penunjukan Petugas Perlindungan Data (Data Protection Officer / DPO)','kategori' => 'klausul_4_10', 'deskripsi' => 'Menetapkan peran dan tanggung jawab DPO/Pejabat Pelindungan Data Pribadi.'],
-            ['kode_klausul' => '5.4.1', 'judul' => 'Penilaian Dampak Perlindungan Data (DPIA / Privacy Impact Assessment)','kategori' => 'klausul_4_10', 'deskripsi' => 'Melakukan penilaian risiko privasi dan dampak pemrosesan data pribadi berisiko tinggi.'],
+            ['kode_klausul' => '5.3.3', 'judul' => 'Penunjukan Petugas Perlindungan Data (Data Protection Officer / DPO)', 'kategori' => 'klausul_4_10', 'deskripsi' => 'Menetapkan peran dan tanggung jawab DPO/Pejabat Pelindungan Data Pribadi.'],
+            ['kode_klausul' => '5.4.1', 'judul' => 'Penilaian Dampak Perlindungan Data (DPIA / Privacy Impact Assessment)', 'kategori' => 'klausul_4_10', 'deskripsi' => 'Melakukan penilaian risiko privasi dan dampak pemrosesan data pribadi berisiko tinggi.'],
             ['kode_klausul' => '5.4.2', 'judul' => 'Rencana Perlakuan Risiko Informasi Privasi',                        'kategori' => 'klausul_4_10', 'deskripsi' => 'Menyusun langkah mitigasi dan perlakuan risiko privasi berdasarkan hasil DPIA.'],
             ['kode_klausul' => '5.5.1', 'judul' => 'Kompetensi dan Pelatihan Kesadaran Privasi Karyawan',               'kategori' => 'klausul_4_10', 'deskripsi' => 'Memastikan personel memahami prinsip tata kelola dan perlindungan data pribadi.'],
             ['kode_klausul' => '5.6.1', 'judul' => 'Pengendalian Operasional Pemrosesan Data Pribadi',                  'kategori' => 'klausul_4_10', 'deskripsi' => 'Mengoperasikan kontrol pemrosesan data pribadi sesuai prosedur yang terdokumentasi.'],
@@ -233,20 +235,20 @@ class ControlSeeder extends Seeder
             ['kode_klausul' => '8.2.1', 'judul' => 'Pemrosesan Data Hanya Berdasarkan Instruksi Pengendali',            'kategori' => 'annex_a', 'deskripsi' => 'Pemroses dilarang menggunakan data pribadi di luar instruksi tertulis yang diberikan Pengendali.'],
             ['kode_klausul' => '8.3.1', 'judul' => 'Kewajiban Membantu Pengendali dalam Pemenuhan Hak Subjek Data',     'kategori' => 'annex_a', 'deskripsi' => 'Menyediakan fitur teknis untuk membantu Pengendali merespons permintaan subjek data.'],
             ['kode_klausul' => '8.4.1', 'judul' => 'Pengembalian atau Pemusnahan Data setelah Layanan Berakhir',         'kategori' => 'annex_a', 'deskripsi' => 'Mengembalikan semua data pribadi kepada Pengendali atau menghapusnya secara aman setelah kontrak selesai.'],
-            ['kode_klausul' => '8.5.1', 'judul' => 'Persetujuan Tertulis Sebelum Melibatkan Sub-Pemroses (Sub-Processor)','kategori' => 'annex_a', 'deskripsi' => 'Mendapatkan persetujuan dari Pengendali Data sebelum menunjuk sub-pemroses pihak ketiga.'],
+            ['kode_klausul' => '8.5.1', 'judul' => 'Persetujuan Tertulis Sebelum Melibatkan Sub-Pemroses (Sub-Processor)', 'kategori' => 'annex_a', 'deskripsi' => 'Mendapatkan persetujuan dari Pengendali Data sebelum menunjuk sub-pemroses pihak ketiga.'],
         ];
 
         $now = now();
         $rows = array_map(fn ($c) => array_merge($c, [
             'framework_id' => $iso27701->id,
-            'created_at'   => $now,
-            'updated_at'   => $now,
+            'created_at' => $now,
+            'updated_at' => $now,
         ]), $controls);
 
         foreach (array_chunk($rows, 50) as $chunk) {
             Control::upsert($chunk, ['framework_id', 'kode_klausul'], ['judul', 'kategori', 'deskripsi', 'updated_at']);
         }
 
-        $this->command->info('Berhasil menyemai ' . count($rows) . ' kontrol ISO/IEC 27701:2019 (PIMS & PDP).');
+        $this->command->info('Berhasil menyemai '.count($rows).' kontrol ISO/IEC 27701:2019 (PIMS & PDP).');
     }
 }

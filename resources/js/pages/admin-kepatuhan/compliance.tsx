@@ -1,6 +1,6 @@
 import AdminKepatuhanLayout from '@/layouts/AdminKepatuhanLayout';
-import { Head, router } from '@inertiajs/react';
-import { ChevronLeft, ChevronRight, Eye, Filter, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { ChevronLeft, ChevronRight, Eye, Filter, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 export interface FrameworkItem {
@@ -30,6 +30,17 @@ interface ComplianceProps {
         kategori?: string;
         framework_id?: string;
     };
+}
+
+type ModalMode = 'create' | 'edit' | null;
+
+interface ControlFormData {
+    framework_id: string;
+    kode_klausul: string;
+    judul: string;
+    kategori: string;
+    deskripsi: string;
+    [key: string]: string;
 }
 
 const initialControlsFallback: ControlItem[] = [
@@ -102,6 +113,75 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
 
     const activeFramework = frameworks.find((f) => f.id === selectedFrameworkId);
     const isFirstRender = useRef(true);
+
+    // ── Flash message ─────────────────────────────────────────────────────────
+    const { flash } = usePage<{ flash?: { type: string; message: string } }>().props;
+    const [flashVisible, setFlashVisible] = useState(false);
+    useEffect(() => {
+        if (flash?.message) {
+            setFlashVisible(true);
+            const t = setTimeout(() => setFlashVisible(false), 4000);
+            return () => clearTimeout(t);
+        }
+    }, [flash]);
+
+    // ── CRUD Modal state ──────────────────────────────────────────────────────
+    const [modalMode, setModalMode] = useState<ModalMode>(null);
+    const [editingId, setEditingId] = useState<string | null>(null);
+
+    const form = useForm<ControlFormData>({
+        framework_id: String(selectedFrameworkId ?? (frameworks[0]?.id ?? '')),
+        kode_klausul: '',
+        judul: '',
+        kategori: 'annex_a',
+        deskripsi: '',
+    });
+
+    function openCreate() {
+        form.reset();
+        form.setData('framework_id', String(selectedFrameworkId ?? (frameworks[0]?.id ?? '')));
+        form.clearErrors();
+        setEditingId(null);
+        setModalMode('create');
+    }
+
+    function openEdit(item: ControlItem) {
+        form.setData({
+            framework_id: String(item.framework_id ?? ''),
+            kode_klausul: item.code,
+            judul: item.title,
+            kategori: item.category === 'Annex A' ? 'annex_a' : 'klausul_4_10',
+            deskripsi: item.description,
+        });
+        form.clearErrors();
+        setEditingId(item.id);
+        setModalMode('edit');
+    }
+
+    function closeModal() {
+        setModalMode(null);
+        setEditingId(null);
+        form.reset();
+        form.clearErrors();
+    }
+
+    function submitForm(e: React.FormEvent) {
+        e.preventDefault();
+        if (modalMode === 'create') {
+            form.post('/admin/kepatuhan/controls', {
+                onSuccess: closeModal,
+            });
+        } else if (modalMode === 'edit' && editingId) {
+            form.put(`/admin/kepatuhan/controls/${editingId}`, {
+                onSuccess: closeModal,
+            });
+        }
+    }
+
+    function handleDelete(item: ControlItem) {
+        if (!confirm(`Hapus kontrol "${item.code} — ${item.title}"?\n\nTindakan ini tidak dapat dibatalkan.`)) return;
+        router.delete(`/admin/kepatuhan/controls/${item.id}`);
+    }
 
     // Reset pagination to page 1 whenever filters change
     useEffect(() => {
@@ -184,6 +264,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                 <div className="flex items-center gap-3">
                     <button
                         type="button"
+                        onClick={openCreate}
                         className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 sm:text-sm"
                     >
                         <Plus className="h-4 w-4" />
@@ -318,6 +399,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                                                 </button>
                                                 <button
                                                     type="button"
+                                                    onClick={() => openEdit(item)}
                                                     className="rounded-lg p-1.5 text-blue-500 transition-colors hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/50 dark:hover:text-blue-300"
                                                     title="Edit Kontrol"
                                                 >
@@ -325,6 +407,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                                                 </button>
                                                 <button
                                                     type="button"
+                                                    onClick={() => handleDelete(item)}
                                                     className="rounded-lg p-1.5 text-red-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/50 dark:hover:text-red-400"
                                                     title="Hapus Kontrol"
                                                 >
@@ -420,6 +503,133 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                     )}
                 </div>
             </div>
+            {/* ── Flash Banner ─────────────────────────────────────────────────────── */}
+            {flashVisible && flash?.message && (
+                <div
+                    className={`fixed right-4 bottom-4 z-50 flex items-center gap-3 rounded-xl border px-5 py-3.5 shadow-xl transition-all duration-300 ${
+                        flash.type === 'success'
+                            ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200'
+                            : 'border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200'
+                    }`}
+                >
+                    <span className="text-sm font-medium">{flash.message}</span>
+                    <button type="button" onClick={() => setFlashVisible(false)}>
+                        <X className="h-4 w-4 opacity-60" />
+                    </button>
+                </div>
+            )}
+
+            {/* ── Control Modal (Create / Edit) ─────────────────────────────────────── */}
+            {modalMode && (
+                <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={closeModal}>
+                    <div
+                        className="mx-4 w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Modal Header */}
+                        <div className="mb-5 flex items-center justify-between">
+                            <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                                {modalMode === 'create' ? 'Tambah Kontrol Baru' : 'Edit Kontrol'}
+                            </h3>
+                            <button type="button" onClick={closeModal} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+                                <X className="h-4 w-4" />
+                            </button>
+                        </div>
+
+                        {/* Modal Form */}
+                        <form onSubmit={submitForm} className="space-y-4">
+                            {/* Framework */}
+                            <div>
+                                <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">Framework</label>
+                                <select
+                                    value={form.data.framework_id}
+                                    onChange={(e) => form.setData('framework_id', e.target.value)}
+                                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                >
+                                    {frameworks.map((fw) => (
+                                        <option key={fw.id} value={String(fw.id)}>
+                                            {fw.nama} ({fw.versi})
+                                        </option>
+                                    ))}
+                                </select>
+                                {form.errors.framework_id && <p className="mt-1 text-xs text-red-500">{form.errors.framework_id}</p>}
+                            </div>
+
+                            {/* Kode Klausul */}
+                            <div>
+                                <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">Kode Klausul</label>
+                                <input
+                                    type="text"
+                                    value={form.data.kode_klausul}
+                                    onChange={(e) => form.setData('kode_klausul', e.target.value)}
+                                    placeholder="Contoh: A.5.1 atau 4.1"
+                                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                />
+                                {form.errors.kode_klausul && <p className="mt-1 text-xs text-red-500">{form.errors.kode_klausul}</p>}
+                            </div>
+
+                            {/* Judul */}
+                            <div>
+                                <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">Judul Kontrol</label>
+                                <input
+                                    type="text"
+                                    value={form.data.judul}
+                                    onChange={(e) => form.setData('judul', e.target.value)}
+                                    placeholder="Masukkan judul kontrol..."
+                                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                />
+                                {form.errors.judul && <p className="mt-1 text-xs text-red-500">{form.errors.judul}</p>}
+                            </div>
+
+                            {/* Kategori */}
+                            <div>
+                                <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">Kategori</label>
+                                <select
+                                    value={form.data.kategori}
+                                    onChange={(e) => form.setData('kategori', e.target.value)}
+                                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                >
+                                    <option value="annex_a">Annex A</option>
+                                    <option value="klausul_4_10">Klausul 4-10</option>
+                                </select>
+                                {form.errors.kategori && <p className="mt-1 text-xs text-red-500">{form.errors.kategori}</p>}
+                            </div>
+
+                            {/* Deskripsi */}
+                            <div>
+                                <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                    Deskripsi <span className="font-normal text-slate-400">(opsional)</span>
+                                </label>
+                                <textarea
+                                    value={form.data.deskripsi}
+                                    onChange={(e) => form.setData('deskripsi', e.target.value)}
+                                    rows={3}
+                                    placeholder="Masukkan deskripsi kontrol..."
+                                    className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                />
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex justify-end gap-3 pt-1">
+                                <button
+                                    type="button"
+                                    onClick={closeModal}
+                                    className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={form.processing}
+                                    className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                                >
+                                    {form.processing ? 'Menyimpan...' : modalMode === 'create' ? 'Tambah' : 'Simpan Perubahan'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </AdminKepatuhanLayout>
     );
 }
