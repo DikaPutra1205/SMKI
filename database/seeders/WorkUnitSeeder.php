@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\WorkUnit;
 use App\Models\User;
+use App\Models\WorkUnit;
 use Illuminate\Database\Seeder;
 
 class WorkUnitSeeder extends Seeder
@@ -11,9 +11,9 @@ class WorkUnitSeeder extends Seeder
     public function run(): void
     {
         // Root units
-        $biroHukum    = WorkUnit::create(['nama' => 'Biro Hukum', 'parent_id' => null]);
-        $biroSDM      = WorkUnit::create(['nama' => 'Biro SDM', 'parent_id' => null]);
-        $biroTI       = WorkUnit::create(['nama' => 'Biro Teknologi Informasi', 'parent_id' => null]);
+        $biroHukum = WorkUnit::create(['nama' => 'Biro Hukum', 'parent_id' => null]);
+        $biroSDM = WorkUnit::create(['nama' => 'Biro SDM', 'parent_id' => null]);
+        $biroTI = WorkUnit::create(['nama' => 'Biro Teknologi Informasi', 'parent_id' => null]);
         $biroKeuangan = WorkUnit::create(['nama' => 'Biro Keuangan', 'parent_id' => null]);
 
         // Sub-units

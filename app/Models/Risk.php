@@ -19,15 +19,20 @@ class Risk extends Model
     ];
 
     // level_risiko: low, medium, high, critical
-    const LEVEL_LOW      = 'low';
-    const LEVEL_MEDIUM   = 'medium';
-    const LEVEL_HIGH     = 'high';
+    const LEVEL_LOW = 'low';
+
+    const LEVEL_MEDIUM = 'medium';
+
+    const LEVEL_HIGH = 'high';
+
     const LEVEL_CRITICAL = 'critical';
 
     // status: open, mitigated, accepted
-    const STATUS_OPEN      = 'open';
+    const STATUS_OPEN = 'open';
+
     const STATUS_MITIGATED = 'mitigated';
-    const STATUS_ACCEPTED  = 'accepted';
+
+    const STATUS_ACCEPTED = 'accepted';
 
     public function control(): BelongsTo
     {
