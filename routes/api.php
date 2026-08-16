@@ -12,10 +12,14 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| SMKI Backend A — API Routes (Open Development Mode)
+| SMKI Backend A — API Routes (temporary auth gate)
 |--------------------------------------------------------------------------
 */
 
+// ponytail: TEMPORARY — wraps all API routes in session auth so anonymous
+// callers can't read PII / mutate data. Replace with token auth when real
+// auth lands.
+Route::middleware('auth')->group(function () {
 // ── Users ───────────────────────────────────────────────────────────────────
 Route::get('users', [UserController::class, 'index']);
 
@@ -53,4 +57,5 @@ Route::post('/test-upload', function (\Illuminate\Http\Request $request) {
         return response()->json(['status' => 'error', 'message' => 'Gagal mengunggah file ke Supabase.'], 500);
     }
     return response()->json(['status' => 'success', 'message' => 'File berhasil diunggah.', 'path' => $path], 200);
+});
 });
