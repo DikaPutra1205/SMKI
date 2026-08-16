@@ -9,6 +9,7 @@ use App\Http\Requests\StoreControlRequest;
 use App\Http\Requests\UpdateControlRequest;
 use App\Imports\SmkiMasterDataImport;
 use App\Models\Control;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -68,26 +69,34 @@ class ControlController extends Controller
     }
 
     /**
-     * Import frameworks and controls from the unified 2-sheet Excel file.
-     * Order: Frameworks sheet first → Controls sheet second.
+     * Dry-run import — analyse the Excel file and return a structured diff
+     * WITHOUT persisting any changes. Used by the frontend confirmation modal.
+     *
+     * Returns JSON so the frontend can render a preview before committing.
      */
-    public function importMasterData(ImportMasterDataRequest $request): RedirectResponse
+    public function previewMasterDataImport(ImportMasterDataRequest $request): JsonResponse
     {
-        $import = new SmkiMasterDataImport;
+        $import = new SmkiMasterDataImport(dryRun: true);
 
         Excel::import($import, $request->file('file'));
 
-        $summary = sprintf(
-            'Import selesai: %d framework baru, %d framework diperbarui, %d kontrol baru, %d kontrol diperbarui.',
-            $import->frameworksCreated,
-            $import->frameworksUpdated,
-            $import->controlsCreated,
-            $import->controlsUpdated,
-        );
+        return response()->json($import->summary());
+    }
+
+    /**
+     * Execute the actual import — upsert and soft-delete records not present
+     * in the Excel file. Returns Inertia-style redirect with detailed flash.
+     */
+    public function importMasterData(ImportMasterDataRequest $request): RedirectResponse
+    {
+        $import = new SmkiMasterDataImport(dryRun: false);
+
+        Excel::import($import, $request->file('file'));
 
         return redirect()->back()->with('flash', [
             'type' => 'success',
-            'message' => $summary,
+            'message' => $import->flashMessage(),
+            'summary' => $import->summary(),
         ]);
     }
 }
