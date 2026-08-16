@@ -11,6 +11,7 @@ use Illuminate\Console\Command;
 class GenerateMonthlyChecklistCommand extends Command
 {
     protected $signature = 'smki:generate-monthly-checklist {--unit= : ID Unit kerja spesifik}';
+
     protected $description = 'Otomatis men-generate checklist penerapan kontrol ISO 27001 untuk seluruh satuan kerja';
 
     public function handle(): int
@@ -20,6 +21,7 @@ class GenerateMonthlyChecklistCommand extends Command
         $controls = Control::all();
         if ($controls->isEmpty()) {
             $this->warn('Belum ada master data kontrol.');
+
             return 1;
         }
 
@@ -36,24 +38,26 @@ class GenerateMonthlyChecklistCommand extends Command
             $pic = User::where('unit_id', $unit->id)->where('role', User::ROLE_PIC)->first()
                 ?? User::where('role', User::ROLE_PIC)->first();
 
-            if (!$pic) continue;
+            if (! $pic) {
+                continue;
+            }
 
             $existingControlIds = ChecklistEntry::where('unit_id', $unit->id)
-                                                ->pluck('control_id')
-                                                ->flip()
-                                                ->toArray();
+                ->pluck('control_id')
+                ->flip()
+                ->toArray();
 
             foreach ($controls as $ctrl) {
-                if (!isset($existingControlIds[$ctrl->id])) {
+                if (! isset($existingControlIds[$ctrl->id])) {
                     $rowsToInsert[] = [
-                        'control_id'    => $ctrl->id,
-                        'unit_id'       => $unit->id,
-                        'pic_id'        => $pic->id,
-                        'status'        => ChecklistEntry::STATUS_NON_COMPLIANT,
-                        'catatan'       => 'Belum diisi oleh PIC.',
+                        'control_id' => $ctrl->id,
+                        'unit_id' => $unit->id,
+                        'pic_id' => $pic->id,
+                        'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+                        'catatan' => 'Belum diisi oleh PIC.',
                         'tanggal_input' => $now,
-                        'created_at'    => $now,
-                        'updated_at'    => $now,
+                        'created_at' => $now,
+                        'updated_at' => $now,
                     ];
                 }
             }
@@ -65,10 +69,11 @@ class GenerateMonthlyChecklistCommand extends Command
         }
 
         if ($totalCreated === 0) {
-            $this->info("Semua lembar checklist untuk seluruh unit kerja sudah lengkap dan tersedia (0 data baru dibuat).");
+            $this->info('Semua lembar checklist untuk seluruh unit kerja sudah lengkap dan tersedia (0 data baru dibuat).');
         } else {
             $this->info("Selesai! {$totalCreated} lembar checklist baru berhasil dibuat secara otomatis.");
         }
+
         return 0;
     }
 }
