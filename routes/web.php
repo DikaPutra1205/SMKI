@@ -14,12 +14,12 @@ use Inertia\Inertia;
 Route::middleware('auth')->group(function () {
     Route::get('/', function () {
         return response()->json([
-            'app'         => 'Sistem Kepatuhan Digital SMKI — Backend API (ISO 27001 & 27701)',
-            'status'      => 'online',
-            'version'     => '1.0.0',
+            'app' => 'Sistem Kepatuhan Digital SMKI — Backend API (ISO 27001 & 27701)',
+            'status' => 'online',
+            'version' => '1.0.0',
             'environment' => config('app.env'),
-            'api_prefix'  => '/api',
-            'timestamp'   => now()->toIso8601String(),
+            'api_prefix' => '/api',
+            'timestamp' => now()->toIso8601String(),
         ]);
     });
 
@@ -34,6 +34,10 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/dashboard', [ComplianceController::class, 'dashboard'])->name('dashboard');
         Route::get('/compliance', [ComplianceController::class, 'index'])->name('compliance');
+
+        Route::post('/controls', [ComplianceController::class, 'store'])->name('controls.store');
+        Route::patch('/controls/{control}', [ComplianceController::class, 'update'])->name('controls.update');
+        Route::delete('/controls/{control}', [ComplianceController::class, 'destroy'])->name('controls.destroy');
     });
 });
 
