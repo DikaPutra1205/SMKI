@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\ComplianceController;
 use App\Http\Controllers\Auth\AuthController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -25,6 +26,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/welcome', function () {
         return Inertia::render('welcome');
     })->name('welcome');
+
+    Route::prefix('admin/kepatuhan')->name('admin.kepatuhan.')->group(function () {
+        Route::get('/', function () {
+            return redirect()->route('admin.kepatuhan.dashboard');
+        });
+
+        Route::get('/dashboard', [ComplianceController::class, 'dashboard'])->name('dashboard');
+        Route::get('/compliance', [ComplianceController::class, 'index'])->name('compliance');
+    });
 });
 
 /*
