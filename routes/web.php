@@ -89,6 +89,14 @@ Route::middleware('auth')->group(function () {
         Route::post('/master-data/import/preview', [AdminControlController::class, 'previewMasterDataImport'])->name('master-data.import.preview');
         Route::post('/master-data/import', [AdminControlController::class, 'importMasterData'])->name('master-data.import');
     });
+
+    Route::prefix('admin/superadmin')->name('admin.superadmin.')->group(function () {
+        Route::get('/dashboard', [FrameworkController::class, 'dashboard'])->name('dashboard');
+        Route::get('/frameworks', [FrameworkController::class, 'index'])->name('frameworks.index');
+        Route::post('/frameworks', [FrameworkController::class, 'store'])->name('frameworks.store');
+        Route::patch('/frameworks/{framework}', [FrameworkController::class, 'update'])->name('frameworks.update');
+        Route::delete('/frameworks/{framework}', [FrameworkController::class, 'destroy'])->name('frameworks.destroy');
+    });
 });
 
 /*

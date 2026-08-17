@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Auth;
+namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
@@ -29,7 +29,11 @@ class AuthController extends Controller
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
 
-            return redirect()->intended('/');
+            $target = Auth::user()->role === 'superadmin'
+                ? '/admin/superadmin/dashboard'
+                : '/admin/kepatuhan/dashboard';
+
+            return redirect()->intended($target);
         }
 
         return back()->withErrors([
