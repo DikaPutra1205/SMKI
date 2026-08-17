@@ -29,18 +29,10 @@ export function Header({ onToggleSidebar, breadcrumbs = [] }: HeaderProps) {
 
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
-    // Default breadcrumbs if none provided
-    const defaultBreadcrumbs: BreadcrumbItem[] = [
-        { label: 'Dashboard', href: '/admin/kepatuhan/dashboard' },
-        { label: 'Compliance', href: '/admin/kepatuhan/compliance' },
-        { label: 'Framework & Controls' },
-    ];
-
-    const activeBreadcrumbs = breadcrumbs.length > 0 ? breadcrumbs : defaultBreadcrumbs;
+    const activeBreadcrumbs = breadcrumbs.length > 0 ? breadcrumbs : [{ label: 'Dashboard', href: '/admin/kepatuhan/dashboard' }];
 
     return (
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-gray-200 bg-white/90 px-4 backdrop-blur-md transition-colors sm:px-6 dark:border-gray-800 dark:bg-gray-900/90">
-            {/* Left: Sidebar Toggle & Breadcrumbs */}
             <div className="flex items-center gap-3">
                 <button
                     type="button"
@@ -51,7 +43,6 @@ export function Header({ onToggleSidebar, breadcrumbs = [] }: HeaderProps) {
                     <Menu className="h-5 w-5" />
                 </button>
 
-                {/* Breadcrumbs */}
                 <nav className="flex items-center gap-1.5 text-xs font-medium sm:text-sm">
                     {activeBreadcrumbs.map((item, index) => {
                         const isLast = index === activeBreadcrumbs.length - 1;
@@ -75,9 +66,7 @@ export function Header({ onToggleSidebar, breadcrumbs = [] }: HeaderProps) {
                 </nav>
             </div>
 
-            {/* Right: Notifications & User Profile */}
             <div className="flex items-center gap-3">
-                {/* Notification Bell */}
                 <button
                     type="button"
                     className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 shadow-xs transition-colors hover:bg-gray-50 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
@@ -89,7 +78,6 @@ export function Header({ onToggleSidebar, breadcrumbs = [] }: HeaderProps) {
                     </span>
                 </button>
 
-                {/* User Dropdown */}
                 <div className="relative">
                     <button
                         type="button"
@@ -106,7 +94,6 @@ export function Header({ onToggleSidebar, breadcrumbs = [] }: HeaderProps) {
                         <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                     </button>
 
-                    {/* Simple User Dropdown menu */}
                     {isUserMenuOpen && (
                         <div className="animate-in fade-in slide-in-from-top-2 absolute right-0 z-50 mt-2 w-48 rounded-xl border border-gray-100 bg-white p-1.5 shadow-xl duration-150 dark:border-gray-700 dark:bg-gray-800">
                             <div className="border-b border-gray-100 px-3 py-2 md:hidden dark:border-gray-700">

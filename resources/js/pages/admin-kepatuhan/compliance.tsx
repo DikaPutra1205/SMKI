@@ -1,5 +1,5 @@
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import AdminKepatuhanLayout from '@/layouts/AdminKepatuhanLayout';
+import AppLayout from '@/layouts/AppLayout';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { ChevronLeft, ChevronRight, Eye, Filter, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -272,7 +272,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
     ];
 
     return (
-        <AdminKepatuhanLayout breadcrumbs={breadcrumbs} currentPath="/admin/kepatuhan/compliance">
+        <AppLayout breadcrumbs={breadcrumbs} currentPath="/admin/kepatuhan/compliance">
             <Head title="Controls Management - Compliance Admin" />
 
             {/* Header Title Section */}
@@ -666,6 +666,6 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                 onCancel={cancelDelete}
                 onConfirm={confirmDelete}
             />
-        </AdminKepatuhanLayout>
+        </AppLayout>
     );
 }
