@@ -3,6 +3,8 @@
 namespace App\Exports;
 
 use App\Models\Control;
+use Illuminate\Support\Enumerable;
+use Maatwebsite\Excel\Concerns\Export;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -13,14 +15,14 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class ControlsSheet implements FromCollection, ShouldAutoSize, WithHeadings, WithMapping, WithStyles, WithTitle
+class ControlsSheet implements Export, FromCollection, ShouldAutoSize, WithHeadings, WithMapping, WithStyles, WithTitle
 {
     public function title(): string
     {
         return 'Controls';
     }
 
-    public function collection()
+    public function collection(): Enumerable
     {
         return Control::with('framework:id,nama,versi')
             ->orderBy('framework_id')
@@ -40,7 +42,7 @@ class ControlsSheet implements FromCollection, ShouldAutoSize, WithHeadings, Wit
         ];
     }
 
-    public function map($control): array
+    public function map(mixed $control): array
     {
         return [
             $control->framework?->nama ?? '',
@@ -54,28 +56,16 @@ class ControlsSheet implements FromCollection, ShouldAutoSize, WithHeadings, Wit
 
     public function styles(Worksheet $sheet): array
     {
-        // Instruksi di atas header
-        $sheet->insertNewRowBefore(1, 2);
-        $sheet->mergeCells('A1:F1');
-        $sheet->setCellValue(
-            'A1',
-            '📋 PANDUAN: Tambah kontrol baru dengan menambahkan baris baru di bawah. '.
-            'Kolom framework_nama & framework_versi harus cocok persis dengan Sheet "Frameworks". '.
-            'Kategori: annex_a atau klausul_4_10.',
-        );
-        $sheet->getStyle('A1')->applyFromArray([
-            'font' => ['italic' => true, 'color' => ['rgb' => '374151']],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FEF9C3']],
-            'alignment' => ['wrapText' => true, 'horizontal' => Alignment::HORIZONTAL_LEFT],
-        ]);
-        $sheet->getRowDimension(1)->setRowHeight(45);
-
-        // Header row (now row 3)
-        $sheet->getStyle('A3:F3')->applyFromArray([
+        // Header row bold + background hijau
+        $sheet->getStyle('A1:F1')->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '047857']],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '047857'],
+            ],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
         ]);
+        $sheet->getRowDimension(1)->setRowHeight(25);
 
         return [];
     }

@@ -3,6 +3,8 @@
 namespace App\Exports;
 
 use App\Models\Framework;
+use Illuminate\Support\Enumerable;
+use Maatwebsite\Excel\Concerns\Export;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -13,14 +15,14 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class FrameworksSheet implements FromCollection, ShouldAutoSize, WithHeadings, WithMapping, WithStyles, WithTitle
+class FrameworksSheet implements Export, FromCollection, ShouldAutoSize, WithHeadings, WithMapping, WithStyles, WithTitle
 {
     public function title(): string
     {
         return 'Frameworks';
     }
 
-    public function collection()
+    public function collection(): Enumerable
     {
         return Framework::orderBy('id')->get();
     }
@@ -34,7 +36,7 @@ class FrameworksSheet implements FromCollection, ShouldAutoSize, WithHeadings, W
         ];
     }
 
-    public function map($framework): array
+    public function map(mixed $framework): array
     {
         return [
             $framework->nama,
@@ -54,24 +56,7 @@ class FrameworksSheet implements FromCollection, ShouldAutoSize, WithHeadings, W
             ],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
         ]);
-
-        // Instruksi di atas header (baris info)
-        $sheet->insertNewRowBefore(1, 2);
-        $sheet->mergeCells('A1:C1');
-        $sheet->setCellValue('A1', '📋 PANDUAN: Tambah framework baru dengan menambahkan baris baru di bawah. Jangan ubah header. Kolom url_file bersifat opsional.');
-        $sheet->getStyle('A1')->applyFromArray([
-            'font' => ['italic' => true, 'color' => ['rgb' => '374151']],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FEF9C3']],
-            'alignment' => ['wrapText' => true, 'horizontal' => Alignment::HORIZONTAL_LEFT],
-        ]);
-        $sheet->getRowDimension(1)->setRowHeight(35);
-
-        // Header row (now row 3 after insert)
-        $sheet->getStyle('A3:C3')->applyFromArray([
-            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1D4ED8']],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
-        ]);
+        $sheet->getRowDimension(1)->setRowHeight(25);
 
         return [];
     }
