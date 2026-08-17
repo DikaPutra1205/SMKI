@@ -1,4 +1,4 @@
-import AdminKepatuhanLayout from '@/layouts/AdminKepatuhanLayout';
+import AppLayout from '@/layouts/AppLayout';
 import { type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { AlertCircle, ArrowUpRight, CheckCircle2, Clock, FileCheck, Layers, ShieldAlert, ShieldCheck, TrendingUp } from 'lucide-react';
@@ -10,7 +10,7 @@ export default function Dashboard() {
     const breadcrumbs = [{ label: 'Dashboard' }];
 
     return (
-        <AdminKepatuhanLayout breadcrumbs={breadcrumbs} currentPath="/admin/kepatuhan/dashboard">
+        <AppLayout breadcrumbs={breadcrumbs} currentPath="/admin/kepatuhan/dashboard">
             <Head title="Dashboard - Admin Kepatuhan" />
 
             {/* Welcome Header */}
@@ -236,6 +236,6 @@ export default function Dashboard() {
                     </div>
                 </div>
             </div>
-        </AdminKepatuhanLayout>
+        </AppLayout>
     );
 }
