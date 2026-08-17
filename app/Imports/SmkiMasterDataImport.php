@@ -176,11 +176,15 @@ class SmkiMasterDataImport implements Import, WithMultipleSheets
                         ];
                     }
 
-                    // Upsert valid rows
+                    // Eager-load all existing controls in ONE single query for instant O(1) in-memory lookup
+                    $existingControls = Control::with('framework:id,nama,versi')
+                        ->get()
+                        ->keyBy(fn (Control $c) => "{$c->framework_id}|{$c->kode_klausul}");
+
+                    // Upsert valid rows in-memory
                     foreach ($validRows as $data) {
-                        $existing = Control::where('framework_id', $data['framework_id'])
-                            ->where('kode_klausul', $data['kode_klausul'])
-                            ->first();
+                        $controlKey = "{$data['framework_id']}|{$data['kode_klausul']}";
+                        $existing = $existingControls->get($controlKey);
 
                         if ($existing) {
                             if (! $this->parent->dryRun) {
@@ -206,17 +210,17 @@ class SmkiMasterDataImport implements Import, WithMultipleSheets
                     }
 
                     // Detect controls in DB (for frameworks seen in Excel) but NOT in Excel → soft delete
-                    $frameworkIdsInExcel = array_values($this->parent->frameworkCache);
-                    // Only check controls belonging to frameworks that appear in the Excel file
                     $seenFwIds = array_unique(array_map(
-                        fn ($k) => explode('|', $k, 2)[0],
+                        fn ($k) => (int) explode('|', $k, 2)[0],
                         $this->parent->seenControlKeys,
                     ));
 
                     if (! empty($seenFwIds)) {
-                        $orphanedControls = Control::whereIn('framework_id', $seenFwIds)->get();
+                        foreach ($existingControls as $ctrl) {
+                            if (! in_array($ctrl->framework_id, $seenFwIds, true)) {
+                                continue;
+                            }
 
-                        foreach ($orphanedControls as $ctrl) {
                             $controlKey = "{$ctrl->framework_id}|{$ctrl->kode_klausul}";
 
                             if (! in_array($controlKey, $this->parent->seenControlKeys, true)) {
