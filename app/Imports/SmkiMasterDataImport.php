@@ -13,18 +13,22 @@ use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 
 class SmkiMasterDataImport implements Import, WithMultipleSheets
 {
-    // ── Counters ──────────────────────────────────────────────────────────────
+    // ── Details Arrays ────────────────────────────────────────────────────────
 
-    public int $frameworksCreated = 0;
+    /** @var array<array{nama: string, versi: string, url_file: ?string}> */
+    public array $frameworksCreatedDetail = [];
 
-    public int $frameworksUpdated = 0;
-
-    public int $controlsCreated = 0;
-
-    public int $controlsUpdated = 0;
+    /** @var array<array{nama: string, versi: string, changes: array<array{field: string, from: mixed, to: mixed}>}> */
+    public array $frameworksUpdatedDetail = [];
 
     /** @var array<array{nama: string, versi: string}> */
     public array $frameworksDeleted = [];
+
+    /** @var array<array{kode_klausul: string, judul: string, kategori: string, deskripsi: ?string, framework_nama: string, framework_versi: string}> */
+    public array $controlsCreatedDetail = [];
+
+    /** @var array<array{kode_klausul: string, judul: string, framework_nama: string, framework_versi: string, changes: array<array{field: string, from: mixed, to: mixed}>}> */
+    public array $controlsUpdatedDetail = [];
 
     /** @var array<array{kode_klausul: string, judul: string, framework_nama: string, framework_versi: string}> */
     public array $controlsDeleted = [];
@@ -37,7 +41,7 @@ class SmkiMasterDataImport implements Import, WithMultipleSheets
      */
     public bool $dryRun;
 
-    /** @var array<string, int> (nama|versi) → framework_id */
+    /** @var array<string, Framework> (nama|versi) → Framework model */
     public array $frameworkCache = [];
 
     /** @var array<string> Keys seen in the Excel file: "nama|versi" */
@@ -62,9 +66,9 @@ class SmkiMasterDataImport implements Import, WithMultipleSheets
 
                 public function collection(Collection $rows): void
                 {
-                    // Pre-load all existing frameworks into cache
+                    // Pre-load all existing frameworks
                     foreach (Framework::all() as $fw) {
-                        $this->parent->frameworkCache["{$fw->nama}|{$fw->versi}"] = $fw->id;
+                        $this->parent->frameworkCache["{$fw->nama}|{$fw->versi}"] = $fw;
                     }
 
                     foreach ($rows as $row) {
@@ -78,42 +82,61 @@ class SmkiMasterDataImport implements Import, WithMultipleSheets
                         $cacheKey = "{$nama}|{$versi}";
                         $this->parent->seenFrameworkKeys[] = $cacheKey;
 
-                        $urlFile = isset($row['url_file']) && $row['url_file'] !== ''
+                        $urlFile = isset($row['url_file']) && trim((string) $row['url_file']) !== ''
                             ? trim((string) $row['url_file'])
                             : null;
 
                         if (isset($this->parent->frameworkCache[$cacheKey])) {
-                            // Existing — update
-                            if (! $this->parent->dryRun) {
-                                Framework::find($this->parent->frameworkCache[$cacheKey])
-                                    ?->update(['url_file' => $urlFile]);
+                            $existing = $this->parent->frameworkCache[$cacheKey];
+                            $changes = [];
+
+                            if (($existing->url_file ?? null) !== $urlFile) {
+                                $changes[] = [
+                                    'field' => 'url_file',
+                                    'from' => $existing->url_file ?? '(kosong)',
+                                    'to' => $urlFile ?? '(kosong)',
+                                ];
                             }
-                            $this->parent->frameworksUpdated++;
+
+                            if (! empty($changes)) {
+                                $this->parent->frameworksUpdatedDetail[] = [
+                                    'nama' => $nama,
+                                    'versi' => $versi,
+                                    'changes' => $changes,
+                                ];
+
+                                if (! $this->parent->dryRun) {
+                                    $existing->update(['url_file' => $urlFile]);
+                                }
+                            }
                         } else {
-                            // New
+                            $this->parent->frameworksCreatedDetail[] = [
+                                'nama' => $nama,
+                                'versi' => $versi,
+                                'url_file' => $urlFile,
+                            ];
+
                             if (! $this->parent->dryRun) {
                                 $fw = Framework::create([
                                     'nama' => $nama,
                                     'versi' => $versi,
                                     'url_file' => $urlFile,
                                 ]);
-                                $this->parent->frameworkCache[$cacheKey] = $fw->id;
+                                $this->parent->frameworkCache[$cacheKey] = $fw;
                             }
-                            $this->parent->frameworksCreated++;
                         }
                     }
 
-                    // Detect frameworks in DB but NOT in Excel → mark for deletion
-                    foreach ($this->parent->frameworkCache as $key => $id) {
+                    // Detect frameworks in DB but NOT in Excel → mark for soft deletion
+                    foreach ($this->parent->frameworkCache as $key => $fw) {
                         if (! in_array($key, $this->parent->seenFrameworkKeys, true)) {
-                            [$nama, $versi] = explode('|', $key, 2);
                             $this->parent->frameworksDeleted[] = [
-                                'nama' => $nama,
-                                'versi' => $versi,
+                                'nama' => $fw->nama,
+                                'versi' => $fw->versi,
                             ];
 
                             if (! $this->parent->dryRun) {
-                                Framework::find($id)?->delete();
+                                $fw->delete();
                             }
                         }
                     }
@@ -129,13 +152,12 @@ class SmkiMasterDataImport implements Import, WithMultipleSheets
                     // Ensure framework cache is populated
                     if (empty($this->parent->frameworkCache)) {
                         foreach (Framework::all() as $fw) {
-                            $this->parent->frameworkCache["{$fw->nama}|{$fw->versi}"] = $fw->id;
+                            $this->parent->frameworkCache["{$fw->nama}|{$fw->versi}"] = $fw;
                         }
                     }
 
-                    // Collect all (framework_id, kode_klausul) pairs seen in Excel
+                    // Collect valid rows from Excel
                     $validRows = [];
-
                     foreach ($rows as $row) {
                         $frameworkNama = trim((string) ($row['framework_nama'] ?? ''));
                         $frameworkVersi = trim((string) ($row['framework_versi'] ?? ''));
@@ -152,21 +174,21 @@ class SmkiMasterDataImport implements Import, WithMultipleSheets
                         }
 
                         $fwCacheKey = "{$frameworkNama}|{$frameworkVersi}";
-                        $frameworkId = $this->parent->frameworkCache[$fwCacheKey] ?? null;
+                        $framework = $this->parent->frameworkCache[$fwCacheKey] ?? null;
 
-                        if ($frameworkId === null) {
+                        if (! $framework) {
                             continue;
                         }
 
-                        $deskripsi = isset($row['deskripsi']) && $row['deskripsi'] !== ''
+                        $deskripsi = isset($row['deskripsi']) && trim((string) $row['deskripsi']) !== ''
                             ? trim((string) $row['deskripsi'])
                             : null;
 
-                        $controlKey = "{$frameworkId}|{$kodeKlausul}";
+                        $controlKey = "{$framework->id}|{$kodeKlausul}";
                         $this->parent->seenControlKeys[] = $controlKey;
 
                         $validRows[] = [
-                            'framework_id' => $frameworkId,
+                            'framework_id' => $framework->id,
                             'framework_nama' => $frameworkNama,
                             'framework_versi' => $frameworkVersi,
                             'kode_klausul' => $kodeKlausul,
@@ -176,26 +198,73 @@ class SmkiMasterDataImport implements Import, WithMultipleSheets
                         ];
                     }
 
-                    // Eager-load all existing controls in ONE single query for instant O(1) in-memory lookup
+                    // Eager-load all existing controls in memory
                     $existingControls = Control::with('framework:id,nama,versi')
                         ->get()
                         ->keyBy(fn (Control $c) => "{$c->framework_id}|{$c->kode_klausul}");
 
-                    // Upsert valid rows in-memory
+                    // Check for creations and updates
                     foreach ($validRows as $data) {
                         $controlKey = "{$data['framework_id']}|{$data['kode_klausul']}";
                         $existing = $existingControls->get($controlKey);
 
                         if ($existing) {
-                            if (! $this->parent->dryRun) {
-                                $existing->update([
-                                    'judul' => $data['judul'],
-                                    'kategori' => $data['kategori'],
-                                    'deskripsi' => $data['deskripsi'],
-                                ]);
+                            $changes = [];
+
+                            if (trim((string) $existing->judul) !== trim((string) $data['judul'])) {
+                                $changes[] = [
+                                    'field' => 'Judul',
+                                    'from' => $existing->judul,
+                                    'to' => $data['judul'],
+                                ];
                             }
-                            $this->parent->controlsUpdated++;
+
+                            if ($existing->kategori !== $data['kategori']) {
+                                $changes[] = [
+                                    'field' => 'Kategori',
+                                    'from' => $existing->kategori === 'annex_a' ? 'Annex A' : 'Klausul 4-10',
+                                    'to' => $data['kategori'] === 'annex_a' ? 'Annex A' : 'Klausul 4-10',
+                                ];
+                            }
+
+                            $existingDesc = trim((string) ($existing->deskripsi ?? ''));
+                            $newDesc = trim((string) ($data['deskripsi'] ?? ''));
+                            if ($existingDesc !== $newDesc) {
+                                $changes[] = [
+                                    'field' => 'Deskripsi',
+                                    'from' => $existingDesc ?: '(kosong)',
+                                    'to' => $newDesc ?: '(kosong)',
+                                ];
+                            }
+
+                            // Only record and execute update if there are actual field changes
+                            if (! empty($changes)) {
+                                $this->parent->controlsUpdatedDetail[] = [
+                                    'kode_klausul' => $data['kode_klausul'],
+                                    'judul' => $data['judul'],
+                                    'framework_nama' => $data['framework_nama'],
+                                    'framework_versi' => $data['framework_versi'],
+                                    'changes' => $changes,
+                                ];
+
+                                if (! $this->parent->dryRun) {
+                                    $existing->update([
+                                        'judul' => $data['judul'],
+                                        'kategori' => $data['kategori'],
+                                        'deskripsi' => $data['deskripsi'],
+                                    ]);
+                                }
+                            }
                         } else {
+                            $this->parent->controlsCreatedDetail[] = [
+                                'kode_klausul' => $data['kode_klausul'],
+                                'judul' => $data['judul'],
+                                'kategori' => $data['kategori'],
+                                'deskripsi' => $data['deskripsi'],
+                                'framework_nama' => $data['framework_nama'],
+                                'framework_versi' => $data['framework_versi'],
+                            ];
+
                             if (! $this->parent->dryRun) {
                                 Control::create([
                                     'framework_id' => $data['framework_id'],
@@ -205,7 +274,6 @@ class SmkiMasterDataImport implements Import, WithMultipleSheets
                                     'deskripsi' => $data['deskripsi'],
                                 ]);
                             }
-                            $this->parent->controlsCreated++;
                         }
                     }
 
@@ -253,14 +321,18 @@ class SmkiMasterDataImport implements Import, WithMultipleSheets
     {
         return [
             'frameworks' => [
-                'created' => $this->frameworksCreated,
-                'updated' => $this->frameworksUpdated,
+                'created' => count($this->frameworksCreatedDetail),
+                'created_detail' => $this->frameworksCreatedDetail,
+                'updated' => count($this->frameworksUpdatedDetail),
+                'updated_detail' => $this->frameworksUpdatedDetail,
                 'deleted' => count($this->frameworksDeleted),
                 'deleted_detail' => $this->frameworksDeleted,
             ],
             'controls' => [
-                'created' => $this->controlsCreated,
-                'updated' => $this->controlsUpdated,
+                'created' => count($this->controlsCreatedDetail),
+                'created_detail' => $this->controlsCreatedDetail,
+                'updated' => count($this->controlsUpdatedDetail),
+                'updated_detail' => $this->controlsUpdatedDetail,
                 'deleted' => count($this->controlsDeleted),
                 'deleted_detail' => $this->controlsDeleted,
             ],
@@ -272,34 +344,38 @@ class SmkiMasterDataImport implements Import, WithMultipleSheets
      */
     public function flashMessage(): string
     {
+        $createdFw = count($this->frameworksCreatedDetail);
+        $updatedFw = count($this->frameworksUpdatedDetail);
+        $deletedFw = count($this->frameworksDeleted);
+
+        $createdCtrl = count($this->controlsCreatedDetail);
+        $updatedCtrl = count($this->controlsUpdatedDetail);
+        $deletedCtrl = count($this->controlsDeleted);
+
         $parts = [];
 
-        if ($this->frameworksCreated > 0) {
-            $parts[] = "{$this->frameworksCreated} framework baru";
+        if ($createdFw > 0) {
+            $parts[] = "{$createdFw} framework baru";
+        }
+        if ($updatedFw > 0) {
+            $parts[] = "{$updatedFw} framework diperbarui";
+        }
+        if ($deletedFw > 0) {
+            $parts[] = "{$deletedFw} framework dihapus";
         }
 
-        if ($this->frameworksUpdated > 0) {
-            $parts[] = "{$this->frameworksUpdated} framework diperbarui";
+        if ($createdCtrl > 0) {
+            $parts[] = "{$createdCtrl} kontrol baru";
         }
-
-        if (! empty($this->frameworksDeleted)) {
-            $parts[] = count($this->frameworksDeleted).' framework dihapus';
+        if ($updatedCtrl > 0) {
+            $parts[] = "{$updatedCtrl} kontrol diperbarui";
         }
-
-        if ($this->controlsCreated > 0) {
-            $parts[] = "{$this->controlsCreated} kontrol baru";
-        }
-
-        if ($this->controlsUpdated > 0) {
-            $parts[] = "{$this->controlsUpdated} kontrol diperbarui";
-        }
-
-        if (! empty($this->controlsDeleted)) {
-            $parts[] = count($this->controlsDeleted).' kontrol dihapus';
+        if ($deletedCtrl > 0) {
+            $parts[] = "{$deletedCtrl} kontrol dihapus";
         }
 
         return empty($parts)
-            ? 'Tidak ada perubahan yang terdeteksi.'
+            ? 'Tidak ada perubahan yang terdeteksi (data di Excel sama dengan database).'
             : 'Import selesai: '.implode(', ', $parts).'.';
     }
 }
