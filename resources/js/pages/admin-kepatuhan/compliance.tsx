@@ -415,13 +415,6 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                                             <div className="flex items-center justify-center gap-1.5">
                                                 <button
                                                     type="button"
-                                                    className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-                                                    title="Lihat Detail"
-                                                >
-                                                    <Eye className="h-4 w-4" />
-                                                </button>
-                                                <button
-                                                    type="button"
                                                     onClick={() => openEdit(item)}
                                                     className="rounded-lg p-1.5 text-blue-500 transition-colors hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/50 dark:hover:text-blue-300"
                                                     title="Edit Kontrol"
