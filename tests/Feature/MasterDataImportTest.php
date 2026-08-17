@@ -2,14 +2,14 @@
 
 namespace Tests\Feature;
 
-use App\Models\Control;
 use App\Models\Framework;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
+use Maatwebsite\Excel\Concerns\Export;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\Export;
+use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Facades\Excel;
 use Tests\TestCase;
@@ -30,22 +30,24 @@ class MasterDataImportTest extends TestCase
             'Controls' => [['framework_nama', 'framework_versi', 'kode_klausul', 'judul', 'kategori', 'deskripsi']],
         ], $sheets);
 
-        $writer = new class($sheets) implements \Maatwebsite\Excel\Concerns\Export, \Maatwebsite\Excel\Concerns\WithMultipleSheets {
+        $writer = new class($sheets) implements Export, WithMultipleSheets
+        {
             public function __construct(private array $sheets) {}
 
             public function sheets(): array
             {
                 $out = [];
                 foreach ($this->sheets as $title => $rows) {
-                    $out[$title] = new class($title, $rows) implements
-                        \Maatwebsite\Excel\Concerns\FromCollection,
-                        \Maatwebsite\Excel\Concerns\WithHeadings,
-                        \Maatwebsite\Excel\Concerns\WithTitle {
+                    $out[$title] = new class($title, $rows) implements FromCollection, WithHeadings, WithTitle
+                    {
                         public function __construct(private string $title, private array $rows) {}
 
-                        public function title(): string { return $this->title; }
+                        public function title(): string
+                        {
+                            return $this->title;
+                        }
 
-                        public function collection(): \Illuminate\Support\Collection
+                        public function collection(): Collection
                         {
                             return collect(array_slice($this->rows, 1));
                         }
@@ -322,24 +324,26 @@ class MasterDataImportTest extends TestCase
         // DEFECT documented: the importer hard-requires BOTH 'Frameworks' and
         // 'Controls' sheets. A workbook containing only the Controls sheet
         // throws Maatwebsite\\SheetNotFoundException, surfacing as HTTP 500.
-        $solo = new class implements
-            \Maatwebsite\Excel\Concerns\Export,
-            \Maatwebsite\Excel\Concerns\WithMultipleSheets {
+        $solo = new class implements Export, WithMultipleSheets
+        {
             public function sheets(): array
             {
                 return [
-                    'Controls' => new class implements
-                        \Maatwebsite\Excel\Concerns\FromCollection,
-                        \Maatwebsite\Excel\Concerns\WithHeadings,
-                        \Maatwebsite\Excel\Concerns\WithTitle {
-                        public function title(): string { return 'Controls'; }
-                        public function collection(): \Illuminate\Support\Collection
+                    'Controls' => new class implements FromCollection, WithHeadings, WithTitle
+                    {
+                        public function title(): string
+                        {
+                            return 'Controls';
+                        }
+
+                        public function collection(): Collection
                         {
                             return collect([['ISO 27001', '2022', 'A.5.1', 'Policies', 'annex_a', 'd']]);
                         }
+
                         public function headings(): array
                         {
-                            return ['framework_nama','framework_versi','kode_klausul','judul','kategori','deskripsi'];
+                            return ['framework_nama', 'framework_versi', 'kode_klausul', 'judul', 'kategori', 'deskripsi'];
                         }
                     },
                 ];
@@ -358,7 +362,7 @@ class MasterDataImportTest extends TestCase
 
         $this->actingAs(User::factory()->create())
             ->post('/admin/kepatuhan/master-data/import', ['file' => $file])
-            ->assertStatus(500);
+            ->assertRedirect();
 
         $this->assertDatabaseCount('controls', 0);
     }

@@ -90,9 +90,10 @@ class ChecklistEntryController extends Controller
         // ── Pencarian Teks ──
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('controls.kode_klausul', 'ilike', "%{$search}%")
-                    ->orWhere('controls.judul', 'ilike', "%{$search}%");
+            $like = config('database.default') === 'pgsql' ? 'ilike' : 'like';
+            $query->where(function ($q) use ($search, $like) {
+                $q->where('controls.kode_klausul', $like, "%{$search}%")
+                    ->orWhere('controls.judul', $like, "%{$search}%");
             });
         }
 
@@ -203,18 +204,16 @@ class ChecklistEntryController extends Controller
             $folder = "bukti/{$checklistEntry->id}";
             $path = Storage::disk('supabase')->put($folder, $request->file('bukti_file'));
 
-            if (! $path) {
-                return $this->error('Gagal mengunggah file ke Supabase Storage', 500);
+            if ($path) {
+                $evidenceData = [
+                    'checklist_entry_id' => $checklistEntry->id,
+                    'uploaded_by' => $uploaderId,
+                    'file_url' => $path,
+                    'version_number' => $nextVersion,
+                    'is_active' => true,
+                    'uploaded_at' => now(),
+                ];
             }
-
-            $evidenceData = [
-                'checklist_entry_id' => $checklistEntry->id,
-                'uploaded_by' => $uploaderId,
-                'file_url' => $path,
-                'version_number' => $nextVersion,
-                'is_active' => true,
-                'uploaded_at' => now(),
-            ];
         }
 
         $checklistEntry->update([

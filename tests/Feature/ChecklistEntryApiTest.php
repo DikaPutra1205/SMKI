@@ -32,7 +32,7 @@ class ChecklistEntryApiTest extends TestCase
         $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
         ['unit' => $unit, 'control' => $control, 'pic' => $pic] = $this->seedUnitControlPics();
 
-        fwrite(STDERR, "PRE index: controls=" . Control::count() . " frameworks=" . Framework::count() . " entries_all=" . ChecklistEntry::count() . " entries_for_unit=" . ChecklistEntry::where('unit_id', $unit->id)->count() . "\n");
+        fwrite(STDERR, 'PRE index: controls='.Control::count().' frameworks='.Framework::count().' entries_all='.ChecklistEntry::count().' entries_for_unit='.ChecklistEntry::where('unit_id', $unit->id)->count()."\n");
         $this->actingAs($admin)
             ->getJson("/api/checklist-entries?unit_id={$unit->id}")
             ->assertOk();
@@ -110,7 +110,7 @@ class ChecklistEntryApiTest extends TestCase
         ]);
 
         $response = $this->actingAs($admin)
-            ->getJson("/api/checklist-entries?unit_id={$unit->id}&search=" . urlencode($control->kode_klausul));
+            ->getJson("/api/checklist-entries?unit_id={$unit->id}&search=".urlencode($control->kode_klausul));
 
         $response->assertOk();
         $data = $response->json('data');

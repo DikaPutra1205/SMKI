@@ -3,13 +3,12 @@
 namespace Tests\Feature;
 
 use App\Models\ChecklistEntry;
-use App\Models\ComplianceEvidence;
-use App\Models\Control;
 use App\Models\Framework;
 use App\Models\User;
 use App\Models\WorkUnit;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class AuthAuthorizationGapTest extends TestCase
@@ -28,6 +27,7 @@ class AuthAuthorizationGapTest extends TestCase
             'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
             'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
         ]);
+
         return ['pic' => $pic, 'entry' => $entry];
     }
 
@@ -68,10 +68,10 @@ class AuthAuthorizationGapTest extends TestCase
     {
         User::factory()->create(['email' => 'pic@smki.test', 'password' => bcrypt('secret12')]);
 
-        \Illuminate\Support\Facades\Mail::fake();
+        Mail::fake();
 
         $this->postJson('/forgot-password', ['email' => 'pic@smki.test'])->assertOk();
-        \Illuminate\Support\Facades\Mail::assertNothingSent();
+        Mail::assertNothingSent();
         $this->assertDatabaseMissing('password_reset_tokens', ['email' => 'pic@smki.test']);
     }
 
