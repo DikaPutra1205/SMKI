@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateFrameworkRequest extends FormRequest
 {
@@ -18,7 +19,7 @@ class UpdateFrameworkRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nama' => 'sometimes|string|max:255',
+            'nama' => ['sometimes', 'string', 'max:255', Rule::unique('frameworks', 'nama')->ignore($this->route('framework'))],
             'versi' => 'sometimes|string|max:50',
             'url_file' => 'nullable|url|max:500',
         ];

@@ -1,20 +1,15 @@
 <?php
 
-use App\Http\Controllers\Admin\ChecklistEntryController;
-use App\Http\Controllers\Admin\ComplianceController;
-use App\Http\Controllers\Admin\ComplianceEvidenceController;
-use App\Http\Controllers\Admin\ControlController as AdminControlController;
-use App\Http\Controllers\Admin\FindingController;
-use App\Http\Controllers\Admin\FrameworkController;
-use App\Http\Controllers\Admin\RiskController;
-use App\Http\Controllers\Admin\WorkUnitController;
-use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Web\AuthController;
+use App\Http\Controllers\Web\ComplianceController;
+use App\Http\Controllers\Web\ControlController as AdminControlController;
+use App\Http\Controllers\Web\FrameworkController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 /*
 |--------------------------------------------------------------------------
-| Web Routes — API Health & Info Endpoint (auth required)
+| Web Routes — Inertia pages & mutations
 |--------------------------------------------------------------------------
 */
 
@@ -51,38 +46,6 @@ Route::middleware('auth')->group(function () {
         Route::post('/controls', [AdminControlController::class, 'store'])->name('controls.store');
         Route::put('/controls/{control}', [AdminControlController::class, 'update'])->name('controls.update');
         Route::delete('/controls/{control}', [AdminControlController::class, 'destroy'])->name('controls.destroy');
-
-        // ── Frameworks CRUD (Inertia-style) ─────────────────────────────────────────
-        Route::post('/frameworks', [FrameworkController::class, 'store'])->name('frameworks.store');
-        Route::put('/frameworks/{framework}', [FrameworkController::class, 'update'])->name('frameworks.update');
-        Route::delete('/frameworks/{framework}', [FrameworkController::class, 'destroy'])->name('frameworks.destroy');
-
-        // ── Work Units CRUD (Inertia-style) ─────────────────────────────────────────
-        Route::post('/work-units', [WorkUnitController::class, 'store'])->name('work-units.store');
-        Route::put('/work-units/{workUnit}', [WorkUnitController::class, 'update'])->name('work-units.update');
-        Route::delete('/work-units/{workUnit}', [WorkUnitController::class, 'destroy'])->name('work-units.destroy');
-
-        // ── Findings (Temuan) (Inertia-style) ───────────────────────────────────────
-        Route::post('/findings', [FindingController::class, 'store'])->name('findings.store');
-        Route::put('/findings/{finding}', [FindingController::class, 'update'])->name('findings.update');
-        Route::patch('/findings/{finding}/status', [FindingController::class, 'updateStatus'])->name('findings.status');
-        Route::delete('/findings/{finding}', [FindingController::class, 'destroy'])->name('findings.destroy');
-
-        // ── Risks (Risiko) (Inertia-style) ──────────────────────────────────────────
-        Route::post('/risks', [RiskController::class, 'store'])->name('risks.store');
-        Route::put('/risks/{risk}', [RiskController::class, 'update'])->name('risks.update');
-        Route::delete('/risks/{risk}', [RiskController::class, 'destroy'])->name('risks.destroy');
-
-        // ── Checklist & Evidences (Inertia-style) ───────────────────────────────────
-        Route::post('/checklist-entries/generate-monthly', [ChecklistEntryController::class, 'generateMonthly'])->name('checklist.generate-monthly');
-        Route::put('/checklist-entries/{checklistEntry}', [ChecklistEntryController::class, 'update'])->name('checklist.update');
-        Route::patch('/checklist-entries/{checklistEntry}/verify', [ChecklistEntryController::class, 'verify'])->name('checklist.verify');
-        Route::post('/checklist-entries/{id}/restore', [ChecklistEntryController::class, 'restore'])->name('checklist.restore');
-
-        // Evidences
-        Route::post('/checklist-entries/{checklistEntry}/evidences', [ComplianceEvidenceController::class, 'store'])->name('evidences.store');
-        Route::delete('/evidences/{complianceEvidence}', [ComplianceEvidenceController::class, 'destroy'])->name('evidences.destroy');
-        Route::post('/evidences/{id}/restore', [ComplianceEvidenceController::class, 'restore'])->name('evidences.restore');
 
         // ── Master Data Export / Import (unified 2-sheet Excel) ───────────────────────
         Route::get('/master-data/export', [AdminControlController::class, 'exportMasterData'])->name('master-data.export');

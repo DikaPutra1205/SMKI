@@ -18,7 +18,7 @@ class StoreFrameworkRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nama' => 'required|string|max:255',
+            'nama' => 'required|string|max:255|unique:frameworks,nama',
             'versi' => 'required|string|max:50',
             'url_file' => 'nullable|url|max:500',
         ];
