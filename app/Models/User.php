@@ -57,6 +57,16 @@ class User extends Authenticatable
         return $this->hasMany(ChecklistEntry::class, 'admin_id');
     }
 
+    public function createdChecklistSessions(): HasMany
+    {
+        return $this->hasMany(ChecklistSession::class, 'created_by');
+    }
+
+    public function auditedChecklistSessions(): HasMany
+    {
+        return $this->hasMany(ChecklistSession::class, 'auditor_id');
+    }
+
     public function uploadedEvidences(): HasMany
     {
         return $this->hasMany(ComplianceEvidence::class, 'uploaded_by');

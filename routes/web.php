@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Web\AuthController;
+use App\Http\Controllers\Web\ChecklistSessionController;
 use App\Http\Controllers\Web\ComplianceController;
 use App\Http\Controllers\Web\ControlController as AdminControlController;
 use App\Http\Controllers\Web\FrameworkController;
@@ -46,6 +47,14 @@ Route::middleware('auth')->group(function () {
         Route::post('/controls', [AdminControlController::class, 'store'])->name('controls.store');
         Route::put('/controls/{control}', [AdminControlController::class, 'update'])->name('controls.update');
         Route::delete('/controls/{control}', [AdminControlController::class, 'destroy'])->name('controls.destroy');
+
+        // ── Checklist Sessions (Inertia-style) ───────────────────────────────────
+        Route::post('/checklist-sessions', [ChecklistSessionController::class, 'store'])->name('checklist-sessions.store');
+        Route::put('/checklist-sessions/{checklistSession}', [ChecklistSessionController::class, 'update'])->name('checklist-sessions.update');
+        Route::post('/checklist-sessions/{checklistSession}/submit', [ChecklistSessionController::class, 'submit'])->name('checklist-sessions.submit');
+        Route::patch('/checklist-sessions/{checklistSession}/verify', [ChecklistSessionController::class, 'verify'])->name('checklist-sessions.verify');
+        Route::delete('/checklist-sessions/{checklistSession}', [ChecklistSessionController::class, 'destroy'])->name('checklist-sessions.destroy');
+        Route::post('/checklist-sessions/{id}/restore', [ChecklistSessionController::class, 'restore'])->name('checklist-sessions.restore');
 
         // ── Master Data Export / Import (unified 2-sheet Excel) ───────────────────────
         Route::get('/master-data/export', [AdminControlController::class, 'exportMasterData'])->name('master-data.export');

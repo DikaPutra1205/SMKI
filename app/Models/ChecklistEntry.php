@@ -12,6 +12,7 @@ class ChecklistEntry extends Model
     use SoftDeletes;
 
     protected $fillable = [
+        'session_id',
         'control_id',
         'unit_id',
         'pic_id',
@@ -36,6 +37,11 @@ class ChecklistEntry extends Model
     const STATUS_NON_COMPLIANT = 'non_compliant';
 
     const STATUS_NA = 'na';
+
+    public function session(): BelongsTo
+    {
+        return $this->belongsTo(ChecklistSession::class, 'session_id');
+    }
 
     public function control(): BelongsTo
     {

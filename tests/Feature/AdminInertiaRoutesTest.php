@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\ChecklistSession;
 use App\Models\Control;
 use App\Models\Framework;
 use App\Models\User;
@@ -146,5 +147,64 @@ class AdminInertiaRoutesTest extends TestCase
         $response->assertRedirect('/admin/kepatuhan/compliance');
         $response->assertSessionHas('flash.type', 'success');
         $this->assertDatabaseHas('risks', ['control_id' => $control->id, 'level_risiko' => 'high']);
+    }
+
+    public function test_checklist_sessions_crud_and_lifecycle_via_inertia_routes(): void
+    {
+        $framework = Framework::create(['nama' => 'ISO 27001', 'versi' => '2022']);
+        $control = Control::create(['framework_id' => $framework->id, 'kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a']);
+        $unit = WorkUnit::create(['nama' => 'IT Dept']);
+        $pic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unit->id]);
+
+        // 1. Create Session
+        $res = $this->actingAs($this->admin)
+            ->from('/admin/kepatuhan/compliance')
+            ->post('/admin/kepatuhan/checklist-sessions', [
+                'nama_sesi' => 'Audit Q1 2026',
+                'unit_id' => $unit->id,
+                'framework_id' => $framework->id,
+                'status' => 'in_progress',
+            ]);
+
+        $res->assertRedirect('/admin/kepatuhan/compliance');
+        $res->assertSessionHas('flash.type', 'success');
+        $this->assertDatabaseHas('checklist_sessions', ['nama_sesi' => 'Audit Q1 2026']);
+
+        $session = ChecklistSession::where('nama_sesi', 'Audit Q1 2026')->first();
+
+        // 2. Submit Session
+        $submitRes = $this->actingAs($pic)
+            ->from('/admin/kepatuhan/compliance')
+            ->post("/admin/kepatuhan/checklist-sessions/{$session->id}/submit");
+
+        $submitRes->assertRedirect('/admin/kepatuhan/compliance');
+        $submitRes->assertSessionHas('flash.type', 'success');
+        $this->assertSame('submitted', $session->fresh()->status);
+
+        // 3. Verify Session
+        $verifyRes = $this->actingAs($this->admin)
+            ->from('/admin/kepatuhan/compliance')
+            ->patch("/admin/kepatuhan/checklist-sessions/{$session->id}/verify", [
+                'status' => 'closed',
+                'catatan' => 'Selesai dan valid',
+            ]);
+
+        $verifyRes->assertRedirect('/admin/kepatuhan/compliance');
+        $this->assertSame('closed', $session->fresh()->status);
+
+        // 4. Delete & Restore Session
+        $delRes = $this->actingAs($this->admin)
+            ->from('/admin/kepatuhan/compliance')
+            ->delete("/admin/kepatuhan/checklist-sessions/{$session->id}");
+
+        $delRes->assertRedirect('/admin/kepatuhan/compliance');
+        $this->assertSoftDeleted('checklist_sessions', ['id' => $session->id]);
+
+        $restoreRes = $this->actingAs($this->admin)
+            ->from('/admin/kepatuhan/compliance')
+            ->post("/admin/kepatuhan/checklist-sessions/{$session->id}/restore");
+
+        $restoreRes->assertRedirect('/admin/kepatuhan/compliance');
+        $this->assertNotSoftDeleted('checklist_sessions', ['id' => $session->id]);
     }
 }

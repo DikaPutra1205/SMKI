@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\ChecklistEntryController;
+use App\Http\Controllers\Api\ChecklistSessionController;
 use App\Http\Controllers\Api\ComplianceEvidenceController;
 use App\Http\Controllers\Api\ControlController;
 use App\Http\Controllers\Api\FindingController;
@@ -33,6 +34,11 @@ Route::middleware('auth')->group(function () {
     Route::get('work-units-tree', [WorkUnitController::class, 'tree']);
 
     // ── Checklist & Evidences ───────────────────────────────────────────────────
+    Route::post('checklist-sessions/{id}/restore', [ChecklistSessionController::class, 'restore']);
+    Route::post('checklist-sessions/{checklistSession}/submit', [ChecklistSessionController::class, 'submit']);
+    Route::patch('checklist-sessions/{checklistSession}/verify', [ChecklistSessionController::class, 'verify']);
+    Route::apiResource('checklist-sessions', ChecklistSessionController::class);
+
     Route::post('checklist-entries/generate-monthly', [ChecklistEntryController::class, 'generateMonthly']);
     Route::post('checklist-entries/{id}/restore', [ChecklistEntryController::class, 'restore']);
     Route::apiResource('checklist-entries', ChecklistEntryController::class);

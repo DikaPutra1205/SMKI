@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\ChecklistEntry;
+use App\Models\ChecklistSession;
 use App\Models\Control;
 use App\Models\Framework;
 use App\Models\WorkUnit;
@@ -44,6 +45,47 @@ class ComplianceService
         return WorkUnit::select('id', 'nama')
             ->orderBy('nama')
             ->get()
+            ->toArray();
+    }
+
+    /**
+     * Get checklist sessions list with progress statistics.
+     */
+    public function getChecklistSessions(array $filters = []): array
+    {
+        $query = ChecklistSession::with(['unit:id,nama', 'framework:id,nama,versi', 'creator:id,name', 'auditor:id,name']);
+
+        if (! empty($filters['unit_id'])) {
+            $query->where('unit_id', $filters['unit_id']);
+        }
+
+        if (! empty($filters['framework_id'])) {
+            $query->where('framework_id', $filters['framework_id']);
+        }
+
+        if (! empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        return $query->orderByDesc('id')
+            ->get()
+            ->map(function (ChecklistSession $session) {
+                return [
+                    'id' => $session->id,
+                    'nama_sesi' => $session->nama_sesi,
+                    'unit_id' => $session->unit_id,
+                    'unit_nama' => $session->unit?->nama ?? '',
+                    'framework_id' => $session->framework_id,
+                    'framework_nama' => $session->framework ? "{$session->framework->nama}:{$session->framework->versi}" : '',
+                    'auditor_id' => $session->auditor_id,
+                    'auditor_name' => $session->auditor?->name ?? '',
+                    'start_date' => $session->start_date?->format('Y-m-d'),
+                    'end_date' => $session->end_date?->format('Y-m-d'),
+                    'status' => $session->status,
+                    'catatan' => $session->catatan ?? '',
+                    'summary' => $session->summary,
+                ];
+            })
             ->toArray();
     }
 

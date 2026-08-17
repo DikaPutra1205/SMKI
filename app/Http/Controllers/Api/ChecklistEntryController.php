@@ -45,6 +45,11 @@ class ChecklistEntryController extends Controller
             }
         }
 
+        // ── Filter Session ──
+        if ($request->filled('session_id')) {
+            $query->where('checklist_entries.session_id', $request->session_id);
+        }
+
         // ── Filter Unit Kerja ──
         if ($request->filled('unit_id')) {
             $query->where('checklist_entries.unit_id', $request->unit_id);
@@ -157,6 +162,7 @@ class ChecklistEntryController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
+            'session_id' => 'nullable|exists:checklist_sessions,id',
             'control_id' => 'required|exists:controls,id',
             'unit_id' => 'required|exists:work_units,id',
             'pic_id' => 'required|exists:users,id',
@@ -169,12 +175,13 @@ class ChecklistEntryController extends Controller
 
         $entry = ChecklistEntry::create($data);
 
-        return $this->created($entry->load(['control', 'unit', 'pic:id,name']));
+        return $this->created($entry->load(['control', 'unit', 'pic:id,name', 'session']));
     }
 
     public function show(ChecklistEntry $checklistEntry): JsonResponse
     {
         $checklistEntry->load([
+            'session',
             'control.framework',
             'unit:id,nama',
             'pic:id,name,email',
@@ -189,6 +196,10 @@ class ChecklistEntryController extends Controller
 
     public function update(Request $request, ChecklistEntry $checklistEntry): JsonResponse
     {
+        if ($checklistEntry->session && $checklistEntry->session->isClosed()) {
+            return $this->error('Sesi checklist audit sudah ditutup (closed) dan dikunci.', 422);
+        }
+
         $data = $request->validate([
             'status' => 'sometimes|in:compliant,partial,non_compliant,na',
             'catatan' => 'nullable|string',
@@ -228,6 +239,7 @@ class ChecklistEntryController extends Controller
         }
 
         $fresh = $checklistEntry->fresh([
+            'session',
             'control.framework',
             'unit:id,nama',
             'pic:id,name',
@@ -240,6 +252,10 @@ class ChecklistEntryController extends Controller
 
     public function verify(Request $request, ChecklistEntry $checklistEntry): JsonResponse
     {
+        if ($checklistEntry->session && $checklistEntry->session->isClosed()) {
+            return $this->error('Sesi checklist audit sudah ditutup (closed) dan dikunci.', 422);
+        }
+
         $data = $request->validate([
             'admin_id' => 'required|exists:users,id',
             'catatan_admin' => 'nullable|string',
@@ -253,7 +269,7 @@ class ChecklistEntryController extends Controller
             'tanggal_verifikasi' => now(),
         ]);
 
-        return $this->success($checklistEntry->fresh(['control', 'unit', 'pic', 'admin']), 'Checklist berhasil diverifikasi oleh Admin');
+        return $this->success($checklistEntry->fresh(['session', 'control', 'unit', 'pic', 'admin']), 'Checklist berhasil diverifikasi oleh Admin');
     }
 
     public function destroy(ChecklistEntry $checklistEntry): JsonResponse
