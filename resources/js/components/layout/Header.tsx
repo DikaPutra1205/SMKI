@@ -29,7 +29,8 @@ export function Header({ onToggleSidebar, breadcrumbs = [] }: HeaderProps) {
 
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
-    const activeBreadcrumbs = breadcrumbs.length > 0 ? breadcrumbs : [{ label: 'Dashboard', href: '/admin/kepatuhan/dashboard' }];
+    const defaultHref = userRole === 'superadmin' ? '/admin/superadmin/dashboard' : '/admin/kepatuhan/dashboard';
+    const activeBreadcrumbs = breadcrumbs.length > 0 ? breadcrumbs : [{ label: 'Dashboard', href: defaultHref }];
 
     return (
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-gray-200 bg-white/90 px-4 backdrop-blur-md transition-colors sm:px-6 dark:border-gray-800 dark:bg-gray-900/90">

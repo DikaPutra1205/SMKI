@@ -1,8 +1,8 @@
 import { cn } from '@/lib/utils';
-import { SharedData } from '@/types';
+import { NavEntry, SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { ChevronDown, ChevronRight, Database, LayoutGrid, LogOut, Shield, ShieldCheck, X } from 'lucide-react';
-import { useState } from 'react';
+import { type ComponentType, useState } from 'react';
 
 interface SidebarProps {
     isOpen: boolean;
@@ -10,70 +10,19 @@ interface SidebarProps {
     currentPath?: string;
 }
 
-const ROLES = {
-    SUPERADMIN: 'superadmin',
-    ADMIN_KEPATUHAN: 'admin_kepatuhan',
-    KOORDINATOR_SMKI: 'koordinator_smki',
-    AUDITOR: 'auditor',
-    PIC: 'pic',
-} as const;
-
-type Role = (typeof ROLES)[keyof typeof ROLES];
-
-interface NavItem {
-    type: 'item';
-    label: string;
-    url: string;
-    icon: React.ComponentType<{ className?: string }>;
-    roles: Role[];
-}
-
-interface NavGroup {
-    type: 'group';
-    label: string;
-    icon: React.ComponentType<{ className?: string }>;
-    roles: Role[];
-    children: { label: string; url: string; roles: Role[] }[];
-}
-
-type NavEntry = NavItem | NavGroup;
-
-const NAV_CONFIG: NavEntry[] = [
-    {
-        type: 'item',
-        label: 'Dashboard',
-        url: '/admin/kepatuhan/dashboard',
-        icon: LayoutGrid,
-        roles: [ROLES.SUPERADMIN, ROLES.ADMIN_KEPATUHAN, ROLES.KOORDINATOR_SMKI, ROLES.AUDITOR, ROLES.PIC],
-    },
-    {
-        type: 'group',
-        label: 'Compliance',
-        icon: ShieldCheck,
-        roles: [ROLES.SUPERADMIN, ROLES.ADMIN_KEPATUHAN],
-        children: [
-            {
-                label: 'Controls Management',
-                url: '/admin/kepatuhan/compliance',
-                roles: [ROLES.SUPERADMIN, ROLES.ADMIN_KEPATUHAN],
-            },
-        ],
-    },
-    {
-        type: 'item',
-        label: 'Framework',
-        url: '/admin/superadmin/frameworks',
-        icon: Database,
-        roles: [ROLES.SUPERADMIN],
-    },
-];
+const ICON_MAP: Record<string, ComponentType<{ className?: string }>> = {
+    LayoutGrid,
+    Database,
+    ShieldCheck,
+};
 
 export function Sidebar({ isOpen, onClose, currentPath }: SidebarProps) {
     const page = usePage<SharedData>();
     const authUser = page.props.auth?.user;
+    const navigation: NavEntry[] = page.props.navigation || [];
 
     const pathname = currentPath || page.url;
-    const userRole = ((authUser as { role?: string })?.role || 'admin_kepatuhan') as Role;
+    const userRole = (authUser as { role?: string })?.role || 'admin_kepatuhan';
 
     const userName = authUser?.name || 'Siti Aisyah';
 
@@ -92,7 +41,7 @@ export function Sidebar({ isOpen, onClose, currentPath }: SidebarProps) {
 
     const isUrlActive = (url: string) => pathname === url || pathname.startsWith(url + '/');
 
-    const visibleNav = NAV_CONFIG.filter((entry) => entry.roles.includes(userRole));
+    const resolveIcon = (iconName?: string) => iconName ? ICON_MAP[iconName] || LayoutGrid : LayoutGrid;
 
     return (
         <>
@@ -128,10 +77,64 @@ export function Sidebar({ isOpen, onClose, currentPath }: SidebarProps) {
                         <div className="mb-2 px-3 text-[11px] font-semibold tracking-wider text-slate-400 uppercase">MENU UTAMA</div>
 
                         <nav className="space-y-1">
-                            {visibleNav.map((entry) => {
-                                if (entry.type === 'item') {
+                            {navigation.map((entry) => {
+                                if (entry.children && entry.children.length > 0) {
+                                    const groupActive = entry.children.some((child) => isUrlActive(child.url));
+                                    const isGroupOpen = openGroups[entry.label] ?? groupActive;
+                                    const Icon = resolveIcon(entry.icon);
+
+                                    return (
+                                        <div key={entry.label}>
+                                            <button
+                                                type="button"
+                                                onClick={() => toggleGroup(entry.label)}
+                                                className={cn(
+                                                    'flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150',
+                                                    groupActive
+                                                        ? 'bg-blue-600/15 font-semibold text-blue-400'
+                                                        : 'text-slate-300 hover:bg-slate-800/60 hover:text-white',
+                                                )}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <Icon className={cn('h-4 w-4', groupActive ? 'text-blue-400' : 'text-slate-400')} />
+                                                    <span>{entry.label}</span>
+                                                </div>
+                                                {isGroupOpen ? (
+                                                    <ChevronDown className="h-4 w-4 text-slate-400" />
+                                                ) : (
+                                                    <ChevronRight className="h-4 w-4 text-slate-400" />
+                                                )}
+                                            </button>
+
+                                            {isGroupOpen && (
+                                                <div className="mt-1 ml-4 space-y-1 border-l border-slate-700/60 pl-3">
+                                                    {entry.children.map((child) => {
+                                                        const childActive = isUrlActive(child.url);
+
+                                                        return (
+                                                            <Link
+                                                                key={child.url}
+                                                                href={child.url}
+                                                                className={cn(
+                                                                    'block rounded-md px-3 py-2 text-xs font-medium transition-colors',
+                                                                    childActive
+                                                                        ? 'bg-blue-600 font-semibold text-white shadow-sm'
+                                                                        : 'text-slate-400 hover:bg-slate-800/50 hover:text-white',
+                                                                )}
+                                                            >
+                                                                {child.label}
+                                                            </Link>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                }
+
+                                if (entry.url) {
                                     const active = isUrlActive(entry.url);
-                                    const Icon = entry.icon;
+                                    const Icon = resolveIcon(entry.icon);
 
                                     return (
                                         <Link
@@ -150,59 +153,7 @@ export function Sidebar({ isOpen, onClose, currentPath }: SidebarProps) {
                                     );
                                 }
 
-                                const groupActive = entry.children.some((child) => isUrlActive(child.url));
-                                const isGroupOpen = openGroups[entry.label] ?? groupActive;
-                                const Icon = entry.icon;
-
-                                return (
-                                    <div key={entry.label}>
-                                        <button
-                                            type="button"
-                                            onClick={() => toggleGroup(entry.label)}
-                                            className={cn(
-                                                'flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150',
-                                                groupActive
-                                                    ? 'bg-blue-600/15 font-semibold text-blue-400'
-                                                    : 'text-slate-300 hover:bg-slate-800/60 hover:text-white',
-                                            )}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <Icon className={cn('h-4 w-4', groupActive ? 'text-blue-400' : 'text-slate-400')} />
-                                                <span>{entry.label}</span>
-                                            </div>
-                                            {isGroupOpen ? (
-                                                <ChevronDown className="h-4 w-4 text-slate-400" />
-                                            ) : (
-                                                <ChevronRight className="h-4 w-4 text-slate-400" />
-                                            )}
-                                        </button>
-
-                                        {isGroupOpen && (
-                                            <div className="mt-1 ml-4 space-y-1 border-l border-slate-700/60 pl-3">
-                                                {entry.children
-                                                    .filter((child) => child.roles.includes(userRole))
-                                                    .map((child) => {
-                                                        const childActive = isUrlActive(child.url);
-
-                                                        return (
-                                                            <Link
-                                                                key={child.url}
-                                                                href={child.url}
-                                                                className={cn(
-                                                                    'block rounded-md px-3 py-2 text-xs font-medium transition-colors',
-                                                                    childActive
-                                                                        ? 'bg-blue-600 font-semibold text-white shadow-sm'
-                                                                        : 'text-slate-400 hover:bg-slate-800/50 hover:text-white',
-                                                                )}
-                                                            >
-                                                                {child.label}
-                                                            </Link>
-                                                        );
-                                                    })}
-                                            </div>
-                                        )}
-                                    </div>
-                                );
+                                return null;
                             })}
                         </nav>
                     </div>

@@ -21,10 +21,25 @@ export interface NavItem {
     isActive?: boolean;
 }
 
+export interface NavChild {
+    label: string;
+    url: string;
+    roles?: string[];
+}
+
+export interface NavEntry {
+    label: string;
+    url?: string;
+    icon?: string;
+    roles?: string[];
+    children?: NavChild[];
+}
+
 export interface SharedData {
     name: string;
     quote: { message: string; author: string };
     auth: Auth;
+    navigation: NavEntry[];
     [key: string]: unknown;
 }
 
@@ -33,8 +48,9 @@ export interface User {
     name: string;
     email: string;
     avatar?: string;
+    role?: string;
     email_verified_at: string | null;
     created_at: string;
     updated_at: string;
-    [key: string]: unknown; // This allows for additional properties...
+    [key: string]: unknown;
 }
