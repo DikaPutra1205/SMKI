@@ -48,7 +48,7 @@ class EvidenceUploadTest extends TestCase
 
         // Test in ChecklistEntryController::update
         $response2 = $this->actingAs($user)
-            ->postJson("/api/checklist-entries/{$entry->id}", [
+            ->patchJson("/api/checklist-entries/{$entry->id}", [
                 'bukti_file' => $exeFile,
             ]);
 

@@ -28,9 +28,10 @@ class ControlController extends Controller
         }
 
         if ($request->filled('search')) {
-            $query->where(function ($q) use ($request) {
-                $q->where('kode_klausul', 'ilike', "%{$request->search}%")
-                    ->orWhere('judul', 'ilike', "%{$request->search}%");
+            $like = config('database.default') === 'pgsql' ? 'ilike' : 'like';
+            $query->where(function ($q) use ($request, $like) {
+                $q->where('kode_klausul', $like, "%{$request->search}%")
+                    ->orWhere('judul', $like, "%{$request->search}%");
             });
         }
 
