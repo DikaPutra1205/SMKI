@@ -1,8 +1,8 @@
 import { ConfirmDialog } from '@/components/admin-kepatuhan/ConfirmDialog';
 import { ControlFormModal } from '@/components/admin-kepatuhan/ControlFormModal';
 import AdminKepatuhanLayout from '@/layouts/AdminKepatuhanLayout';
-import { Head, router } from '@inertiajs/react';
-import { ChevronLeft, ChevronRight, Filter, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { ChevronLeft, ChevronRight, Eye, Filter, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 export interface FrameworkItem {
@@ -32,6 +32,17 @@ interface ComplianceProps {
         kategori?: string;
         framework_id?: string;
     };
+}
+
+type ModalMode = 'create' | 'edit' | null;
+
+interface ControlFormData {
+    framework_id: string;
+    kode_klausul: string;
+    judul: string;
+    kategori: string;
+    deskripsi: string;
+    [key: string]: string;
 }
 
 const initialControlsFallback: ControlItem[] = [
@@ -104,33 +115,6 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
 
     const activeFramework = frameworks.find((f) => f.id === selectedFrameworkId);
     const isFirstRender = useRef(true);
-
-    // CRUD modal state
-    const [formOpen, setFormOpen] = useState(false);
-    const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
-    const [selectedControl, setSelectedControl] = useState<ControlItem | null>(null);
-    const [deleteTarget, setDeleteTarget] = useState<ControlItem | null>(null);
-    const [isDeleting, setIsDeleting] = useState(false);
-
-    const openForm = (mode: 'create' | 'edit', control?: ControlItem) => {
-        setFormMode(mode);
-        setSelectedControl(control ?? null);
-        setFormOpen(true);
-    };
-
-    const handleDelete = () => {
-        if (!deleteTarget) {
-            return;
-        }
-
-        setIsDeleting(true);
-        router.delete(route('admin.kepatuhan.controls.destroy', deleteTarget.id), {
-            onFinish: () => {
-                setIsDeleting(false);
-                setDeleteTarget(null);
-            },
-        });
-    };
 
     // Reset pagination to page 1 whenever filters change
     useEffect(() => {
@@ -213,7 +197,6 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                 <div className="flex items-center gap-3">
                     <button
                         type="button"
-                        onClick={() => openForm('create')}
                         className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 sm:text-sm"
                     >
                         <Plus className="h-4 w-4" />
@@ -341,7 +324,13 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                                             <div className="flex items-center justify-center gap-1.5">
                                                 <button
                                                     type="button"
-                                                    onClick={() => openForm('edit', item)}
+                                                    className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                                                    title="Lihat Detail"
+                                                >
+                                                    <Eye className="h-4 w-4" />
+                                                </button>
+                                                <button
+                                                    type="button"
                                                     className="rounded-lg p-1.5 text-blue-500 transition-colors hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/50 dark:hover:text-blue-300"
                                                     title="Edit Kontrol"
                                                 >
@@ -349,7 +338,6 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                                                 </button>
                                                 <button
                                                     type="button"
-                                                    onClick={() => setDeleteTarget(item)}
                                                     className="rounded-lg p-1.5 text-red-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/50 dark:hover:text-red-400"
                                                     title="Hapus Kontrol"
                                                 >
@@ -445,19 +433,6 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                     )}
                 </div>
             </div>
-
-            <ControlFormModal open={formOpen} mode={formMode} control={selectedControl} frameworks={frameworks} onClose={() => setFormOpen(false)} />
-
-            <ConfirmDialog
-                open={deleteTarget !== null}
-                title="Hapus Kontrol"
-                description={
-                    deleteTarget ? `Kontrol "${deleteTarget.code} - ${deleteTarget.title}" akan dihapus. Tindakan ini tidak dapat dibatalkan.` : ''
-                }
-                busy={isDeleting}
-                onCancel={() => setDeleteTarget(null)}
-                onConfirm={handleDelete}
-            />
         </AdminKepatuhanLayout>
     );
 }

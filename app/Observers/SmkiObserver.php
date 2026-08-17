@@ -12,15 +12,14 @@ class SmkiObserver
      * Dipakai untuk semua model SMKI agar tidak perlu buat observer terpisah.
      * Cukup register sekali per model.
      */
-
     public function created(Model $model): void
     {
         AuditLog::catat(
             entityType: class_basename($model),
-            entityId:   $model->getKey(),
-            aksi:       'create',
-            actorId:    Auth::id(),
-            detail:     ['data' => $model->toArray()],
+            entityId: $model->getKey(),
+            aksi: 'create',
+            actorId: Auth::id(),
+            detail: ['data' => $model->toArray()],
         );
     }
 
@@ -35,12 +34,12 @@ class SmkiObserver
 
         AuditLog::catat(
             entityType: class_basename($model),
-            entityId:   $model->getKey(),
-            aksi:       'update',
-            actorId:    Auth::id(),
-            detail:     [
+            entityId: $model->getKey(),
+            aksi: 'update',
+            actorId: Auth::id(),
+            detail: [
                 'before' => array_intersect_key($model->getOriginal(), $changes),
-                'after'  => $changes,
+                'after' => $changes,
             ],
         );
     }
@@ -49,9 +48,9 @@ class SmkiObserver
     {
         AuditLog::catat(
             entityType: class_basename($model),
-            entityId:   $model->getKey(),
-            aksi:       'delete',
-            actorId:    Auth::id(),
+            entityId: $model->getKey(),
+            aksi: 'delete',
+            actorId: Auth::id(),
         );
     }
 }

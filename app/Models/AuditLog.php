@@ -20,7 +20,7 @@ class AuditLog extends Model
 
     protected $casts = [
         'detail_perubahan' => 'array',
-        'created_at'       => 'datetime',
+        'created_at' => 'datetime',
     ];
 
     public function actor(): BelongsTo
@@ -39,10 +39,10 @@ class AuditLog extends Model
         ?array $detail = null
     ): self {
         return static::create([
-            'entity_type'      => $entityType,
-            'entity_id'        => $entityId,
-            'actor_id'         => $actorId,
-            'aksi'             => $aksi,
+            'entity_type' => $entityType,
+            'entity_id' => $entityId,
+            'actor_id' => $actorId,
+            'aksi' => $aksi,
             'detail_perubahan' => $detail,
         ]);
     }

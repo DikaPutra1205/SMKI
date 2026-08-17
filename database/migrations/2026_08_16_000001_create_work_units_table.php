@@ -12,9 +12,9 @@ return new class extends Migration
             $table->id();
             $table->string('nama');
             $table->foreignId('parent_id')
-                  ->nullable()
-                  ->constrained('work_units')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('work_units')
+                ->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();
         });
