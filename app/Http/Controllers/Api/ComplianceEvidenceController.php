@@ -31,6 +31,7 @@ class ComplianceEvidenceController extends Controller
         }
 
         $evidences = $query->orderByDesc('version_number')->get();
+
         return $this->success($evidences);
     }
 
@@ -38,7 +39,7 @@ class ComplianceEvidenceController extends Controller
     public function store(Request $request, ChecklistEntry $checklistEntry): JsonResponse
     {
         $request->validate([
-            'bukti_file'  => 'required|file|max:10240', // maks 10MB
+            'bukti_file' => 'required|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240', // maks 10MB
             'uploaded_by' => 'required|exists:users,id',
         ]);
 
@@ -48,25 +49,25 @@ class ComplianceEvidenceController extends Controller
 
         // Upload ke Supabase Storage (S3)
         $folder = "bukti/{$checklistEntry->id}";
-        $path   = Storage::disk('supabase')->put($folder, $request->file('bukti_file'));
+        $path = Storage::disk('supabase')->put($folder, $request->file('bukti_file'));
 
-        if (!$path) {
+        if (! $path) {
             return $this->error('Gagal mengunggah file ke Supabase Storage', 500);
         }
 
         // Simpan record bukti baru
         $evidence = ComplianceEvidence::create([
             'checklist_entry_id' => $checklistEntry->id,
-            'uploaded_by'        => $request->uploaded_by,
-            'file_url'           => $path,
-            'version_number'     => $nextVersion,
-            'is_active'          => true,
-            'uploaded_at'        => now(),
+            'uploaded_by' => $request->uploaded_by,
+            'file_url' => $path,
+            'version_number' => $nextVersion,
+            'is_active' => true,
+            'uploaded_at' => now(),
         ]);
 
         // Reset status verifikasi checklist agar diverifikasi ulang oleh Admin
         $checklistEntry->update([
-            'tanggal_input'      => now(),
+            'tanggal_input' => now(),
             'tanggal_verifikasi' => null,
         ]);
 
@@ -80,6 +81,7 @@ class ComplianceEvidenceController extends Controller
     public function destroy(ComplianceEvidence $complianceEvidence): JsonResponse
     {
         $complianceEvidence->delete();
+
         return $this->success(null, 'Bukti berhasil dihapus (soft delete)');
     }
 
@@ -88,6 +90,7 @@ class ComplianceEvidenceController extends Controller
     {
         $evidence = ComplianceEvidence::withTrashed()->findOrFail($id);
         $evidence->restore();
+
         return $this->success($evidence->load('uploader:id,name'), 'Bukti berhasil dipulihkan');
     }
 }

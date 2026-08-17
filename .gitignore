@@ -7,6 +7,10 @@ TEAM_CREDENTIALS.env
 TEAM_CREDENTIALS.*
 credentials.txt
 *.secret
+
+# Halaman test lokal — tidak untuk dipush
+resources/js/pages/admin-kepatuhan/master-data-test.tsx
+
 .phpactor.json
 .phpunit.result.cache
 /.codex

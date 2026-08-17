@@ -19,11 +19,15 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     // Konstanta role agar tidak typo di controller
-    const ROLE_SUPERADMIN        = 'superadmin';
-    const ROLE_ADMIN_KEPATUHAN   = 'admin_kepatuhan';
-    const ROLE_KOORDINATOR_SMKI  = 'koordinator_smki';
-    const ROLE_AUDITOR           = 'auditor';
-    const ROLE_PIC               = 'pic';
+    const ROLE_SUPERADMIN = 'superadmin';
+
+    const ROLE_ADMIN_KEPATUHAN = 'admin_kepatuhan';
+
+    const ROLE_KOORDINATOR_SMKI = 'koordinator_smki';
+
+    const ROLE_AUDITOR = 'auditor';
+
+    const ROLE_PIC = 'pic';
 
     /**
      * Get the attributes that should be cast.
@@ -34,7 +38,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
+            'password' => 'hashed',
         ];
     }
 

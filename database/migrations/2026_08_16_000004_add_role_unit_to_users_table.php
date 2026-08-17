@@ -12,10 +12,10 @@ return new class extends Migration
             $table->string('role')->default('pic')->after('email');
             // role: superadmin, admin_kepatuhan, koordinator_smki, auditor, pic
             $table->foreignId('unit_id')
-                  ->nullable()
-                  ->after('role')
-                  ->constrained('work_units')
-                  ->nullOnDelete();
+                ->nullable()
+                ->after('role')
+                ->constrained('work_units')
+                ->nullOnDelete();
         });
     }
 
