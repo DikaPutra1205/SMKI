@@ -3,14 +3,13 @@
 namespace Tests\Feature;
 
 use App\Models\ChecklistEntry;
-use App\Models\ComplianceEvidence;
-use App\Models\Control;
 use App\Models\Framework;
 use App\Models\User;
 use App\Models\WorkUnit;
+use Illuminate\Contracts\Filesystem\Filesystem;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ComplianceEvidenceApiTest extends TestCase
@@ -45,7 +44,7 @@ class ComplianceEvidenceApiTest extends TestCase
     {
         // Bucket pollution guard: delete any objects we uploaded to the real bucket.
         // Only hits the network when a real SUPABASE_ENDPOINT is configured.
-        if ($this->isRealBucket() && !empty($this->uploaded)) {
+        if ($this->isRealBucket() && ! empty($this->uploaded)) {
             $disk = Storage::disk('supabase');
             foreach ($this->uploaded as $path) {
                 try {
@@ -104,7 +103,7 @@ class ComplianceEvidenceApiTest extends TestCase
      */
     public function test_store_uploads_to_supabase_real_bucket(): void
     {
-        if (!env('SUPABASE_ENDPOINT')) {
+        if (! env('SUPABASE_ENDPOINT')) {
             $this->markTestSkipped('SUPABASE_ENDPOINT not set — skipping real-bucket E2E.');
         }
         $pic = User::factory()->create(['role' => User::ROLE_PIC]);
@@ -129,7 +128,7 @@ class ComplianceEvidenceApiTest extends TestCase
      */
     public function test_store_exact_10mb_boundary_accepted_on_real_bucket(): void
     {
-        if (!env('SUPABASE_ENDPOINT')) {
+        if (! env('SUPABASE_ENDPOINT')) {
             $this->markTestSkipped('SUPABASE_ENDPOINT not set — skipping real-bucket E2E.');
         }
         $pic = User::factory()->create(['role' => User::ROLE_PIC]);
@@ -171,8 +170,8 @@ class ComplianceEvidenceApiTest extends TestCase
             ->assertStatus(422);
     }
 
-    // D2 — no MIME restriction: executable accepted.
-    public function test_store_accepts_non_document_mime(): void
+    // D2 — mime restriction: non-document rejected.
+    public function test_store_rejects_non_document_mime(): void
     {
         Storage::fake('supabase');
         $pic = User::factory()->create(['role' => User::ROLE_PIC]);
@@ -183,7 +182,7 @@ class ComplianceEvidenceApiTest extends TestCase
         $this->actingAs($pic)
             ->postJson("/api/checklist-entries/{$entry->id}/evidences",
                 ['bukti_file' => $file, 'uploaded_by' => $pic->id])
-            ->assertCreated();
+            ->assertStatus(422);
     }
 
     public function test_version_increment_and_prior_deactivated(): void
@@ -207,7 +206,7 @@ class ComplianceEvidenceApiTest extends TestCase
     // store returns 500 when the S3 put yields no path.
     public function test_store_returns_500_on_upload_failure(): void
     {
-        $disk = \Mockery::mock(\Illuminate\Contracts\Filesystem\Filesystem::class);
+        $disk = \Mockery::mock(Filesystem::class);
         $disk->shouldReceive('put')->andReturn(false);
         Storage::shouldReceive('disk')->with('supabase')->andReturn($disk);
 
@@ -222,7 +221,7 @@ class ComplianceEvidenceApiTest extends TestCase
     // D3 — update() silently skips evidence creation on S3 failure (200, no row).
     public function test_update_silent_skip_on_upload_failure(): void
     {
-        $disk = \Mockery::mock(\Illuminate\Contracts\Filesystem\Filesystem::class);
+        $disk = \Mockery::mock(Filesystem::class);
         $disk->shouldReceive('put')->andReturn(false);
         Storage::shouldReceive('disk')->with('supabase')->andReturn($disk);
 
@@ -304,6 +303,7 @@ class ComplianceEvidenceApiTest extends TestCase
 
         $this->assertDatabaseHas('compliance_evidences', ['checklist_entry_id' => $entry->id, 'uploaded_by' => $other->id]);
     }
+
     public function test_no_download_endpoint_exists(): void
     {
         Storage::fake('supabase');

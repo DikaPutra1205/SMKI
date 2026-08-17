@@ -7,12 +7,17 @@ use App\Models\Framework;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\Import;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
+use Maatwebsite\Excel\Concerns\SkipsUnknownSheets;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 
-class SmkiMasterDataImport implements Import, WithMultipleSheets
+class SmkiMasterDataImport implements Import, SkipsUnknownSheets, WithMultipleSheets
 {
+    public function onUnknownSheet(string|int $sheetName): void
+    {
+        // Ignore absent or extra sheet names gracefully
+    }
     // ── Details Arrays ────────────────────────────────────────────────────────
 
     /** @var array<array{nama: string, versi: string, url_file: ?string}> */
