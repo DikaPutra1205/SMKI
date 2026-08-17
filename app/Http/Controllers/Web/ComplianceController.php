@@ -21,11 +21,13 @@ class ComplianceController extends Controller
         $frameworks = $this->complianceService->getFrameworkSummaries();
         $workUnits = $this->complianceService->getWorkUnits();
         $controls = $this->complianceService->getControls($filters);
+        $sessions = $this->complianceService->getChecklistSessions($filters);
 
         return Inertia::render('admin-kepatuhan/compliance', [
             'frameworks' => $frameworks,
             'controls' => $controls,
             'workUnits' => $workUnits,
+            'sessions' => $sessions,
             'filters' => $filters,
         ]);
     }

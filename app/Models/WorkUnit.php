@@ -34,6 +34,11 @@ class WorkUnit extends Model
         return $this->hasMany(ChecklistEntry::class, 'unit_id');
     }
 
+    public function checklistSessions(): HasMany
+    {
+        return $this->hasMany(ChecklistSession::class, 'unit_id');
+    }
+
     public function findings(): HasMany
     {
         return $this->hasMany(Finding::class, 'unit_id');

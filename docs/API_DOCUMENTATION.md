@@ -65,12 +65,74 @@ Gunakan `id` atau `email` user berikut untuk simulasi pengujian hak akses peran:
 
 ---
 
-### 1. Checklist Kepatuhan (`/checklist-entries`)
+### 1. Sesi Audit & Asesmen Checklist (`/checklist-sessions`)
+
+#### A. Mengambil Daftar Sesi Audit
+`GET /api/checklist-sessions`
+
+**Query Parameters (Opsional):**
+- `unit_id` (integer) — Filter berdasarkan Satker
+- `framework_id` (integer) — Filter framework standar
+- `status` (string: `draft` | `in_progress` | `submitted` | `verified` | `closed`)
+- `auditor_id` (integer) — Filter auditor penanggung jawab
+- `search` (string) — Cari nama sesi
+- `trashed` (string: `only` | `with`)
+- `all` (boolean) — Tanpa pagination
+- `per_page` (integer, default 15)
+
+#### B. Membuat Sesi Audit Baru (Auto-Provisioning Klausul Kontrol)
+`POST /api/checklist-sessions`
+
+**Request Body (JSON):**
+```json
+{
+  "nama_sesi": "Audit Internal SMKI Semester 1 2026 - Biro TI",
+  "unit_id": 3,
+  "framework_id": 1,
+  "auditor_id": 4,
+  "start_date": "2026-03-01",
+  "end_date": "2026-03-31",
+  "status": "in_progress",
+  "catatan": "Sesi audit berkala semester 1."
+}
+```
+*Catatan: Sistem secara otomatis membuat (auto-provision) seluruh entri klausul checklist kontrol untuk unit dan sesi tersebut.*
+
+#### C. Detail Sesi Audit (Termasuk Klausul & Summary Statistik)
+`GET /api/checklist-sessions/{id}`
+
+#### D. Update Sesi Audit
+`PUT /api/checklist-sessions/{id}`
+
+#### E. Submit Sesi Audit oleh PIC Unit
+`POST /api/checklist-sessions/{id}/submit`
+*Mengubah status sesi menjadi `submitted` agar siap diverifikasi auditor.*
+
+#### F. Verifikasi & Tutup Sesi Audit (Lock / Freeze Snapshot)
+`PATCH /api/checklist-sessions/{id}/verify`
+
+**Request Body (JSON):**
+```json
+{
+  "status": "closed",
+  "catatan": "Semua klausul selesai diverifikasi. Hasil audit ditutup dan dikunci.",
+  "auditor_id": 4
+}
+```
+
+#### G. Soft Delete & Restore Sesi
+- `DELETE /api/checklist-sessions/{id}`
+- `POST /api/checklist-sessions/{id}/restore`
+
+---
+
+### 2. Checklist Kepatuhan (`/checklist-entries`)
 
 #### A. Mengambil Daftar Checklist (dengan Filter Dinamis & Server-Side Pagination)
 `GET /api/checklist-entries`
 
 **Query Parameters (Opsional):**
+- `session_id` (integer) — Filter berdasarkan Sesi Audit tertentu
 - `unit_id` (integer) — Filter berdasarkan Satker (contoh: `?unit_id=3`)
 - `status` (string: `compliant` | `partial` | `non_compliant` | `na`)
 - `bulan` (integer 1-12) — Filter periode bulan (contoh: `?bulan=8`)
@@ -153,7 +215,7 @@ Gunakan `id` atau `email` user berikut untuk simulasi pengujian hak akses peran:
 
 ---
 
-### 2. Dokumen Bukti Kepatuhan (`/checklist-entries/{id}/evidences` & `/evidences`)
+### 3. Dokumen Bukti Kepatuhan (`/checklist-entries/{id}/evidences` & `/evidences`)
 
 #### A. Riwayat Versi Bukti Kontrol
 `GET /api/checklist-entries/{checklistEntryId}/evidences`
@@ -173,7 +235,7 @@ Gunakan `id` atau `email` user berikut untuk simulasi pengujian hak akses peran:
 
 ---
 
-### 3. Temuan Ketidaksesuaian (`/findings`)
+### 4. Temuan Ketidaksesuaian (`/findings`)
 
 - `GET /api/findings` — Daftar temuan (filter: `?status=open|in_progress|closed`, `?unit_id=`, `?kategori=major|minor|observasi`).
 - `POST /api/findings` — Menerbitkan temuan baru:
@@ -194,7 +256,7 @@ Gunakan `id` atau `email` user berikut untuk simulasi pengujian hak akses peran:
 
 ---
 
-### 4. Register Risiko (`/risks`)
+### 5. Register Risiko (`/risks`)
 
 - `GET /api/risks` — Daftar risiko (filter: `?tingkat_risiko=rendah|sedang|tinggi|kritis`, `?unit_id=`).
 - `POST /api/risks` — Tambah identifikasi risiko baru:
@@ -216,7 +278,7 @@ Gunakan `id` atau `email` user berikut untuk simulasi pengujian hak akses peran:
 
 ---
 
-### 5. Master Data Framework & Kontrol
+### 6. Master Data Framework & Kontrol
 
 - `GET /api/frameworks` — Daftar standar ISO (ISO 27001:2022 & ISO 27701:2019).
 - `POST /api/frameworks` — Tambah framework baru.
@@ -226,7 +288,7 @@ Gunakan `id` atau `email` user berikut untuk simulasi pengujian hak akses peran:
 
 ---
 
-### 6. Master Data Satuan Kerja / Unit (`/work-units`)
+### 7. Master Data Satuan Kerja / Unit (`/work-units`)
 
 - `GET /api/work-units` — Daftar semua unit kerja / biro.
 - `GET /api/work-units-tree` — Struktur hirarki organisasi induk & sub-unit kerja.

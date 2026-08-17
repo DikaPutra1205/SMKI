@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\ChecklistEntry;
+use App\Models\ChecklistSession;
 use App\Models\ComplianceEvidence;
 use App\Models\Finding;
 use App\Models\Risk;
@@ -25,6 +26,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // Daftarkan SmkiObserver ke semua model transaksi
+        ChecklistSession::observe(SmkiObserver::class);
         ChecklistEntry::observe(SmkiObserver::class);
         ComplianceEvidence::observe(SmkiObserver::class);
         Finding::observe(SmkiObserver::class);
