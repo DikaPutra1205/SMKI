@@ -36,6 +36,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/dashboard', [ComplianceController::class, 'dashboard'])->name('dashboard');
         Route::get('/compliance', [ComplianceController::class, 'index'])->name('compliance');
 
+        // ── [DEV ONLY] Test halaman import/export — hapus sebelum production ──────────
+        Route::get('/master-data', function () {
+            return Inertia::render('admin-kepatuhan/master-data-test');
+        })->name('master-data.test');
+
         // ── Controls CRUD (Inertia-style — mutations only, listing ada di compliance) ──
         Route::post('/controls', [AdminControlController::class, 'store'])->name('controls.store');
         Route::put('/controls/{control}', [AdminControlController::class, 'update'])->name('controls.update');
