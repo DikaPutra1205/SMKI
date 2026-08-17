@@ -5,12 +5,13 @@ namespace App\Imports;
 use App\Models\Control;
 use App\Models\Framework;
 use Illuminate\Support\Collection;
+use Maatwebsite\Excel\Concerns\Import;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 
-class SmkiMasterDataImport implements WithMultipleSheets
+class SmkiMasterDataImport implements Import, WithMultipleSheets
 {
     // ── Counters ──────────────────────────────────────────────────────────────
 
@@ -34,16 +35,16 @@ class SmkiMasterDataImport implements WithMultipleSheets
      * If true, reads data but does NOT persist any changes.
      * Used by the preview/dry-run endpoint.
      */
-    private bool $dryRun;
+    public bool $dryRun;
 
-    /** @var array<string, int>  (nama|versi) → framework_id */
-    private array $frameworkCache = [];
+    /** @var array<string, int> (nama|versi) → framework_id */
+    public array $frameworkCache = [];
 
     /** @var array<string> Keys seen in the Excel file: "nama|versi" */
-    private array $seenFrameworkKeys = [];
+    public array $seenFrameworkKeys = [];
 
     /** @var array<string> Keys seen in Controls sheet: "framework_id|kode_klausul" */
-    private array $seenControlKeys = [];
+    public array $seenControlKeys = [];
 
     public function __construct(bool $dryRun = false)
     {
@@ -55,7 +56,7 @@ class SmkiMasterDataImport implements WithMultipleSheets
     public function sheets(): array
     {
         return [
-            'Frameworks' => new class($this) implements SkipsEmptyRows, ToCollection, WithHeadingRow
+            'Frameworks' => new class($this) implements Import, SkipsEmptyRows, ToCollection, WithHeadingRow
             {
                 public function __construct(private SmkiMasterDataImport $parent) {}
 
@@ -119,7 +120,7 @@ class SmkiMasterDataImport implements WithMultipleSheets
                 }
             },
 
-            'Controls' => new class($this) implements SkipsEmptyRows, ToCollection, WithHeadingRow
+            'Controls' => new class($this) implements Import, SkipsEmptyRows, ToCollection, WithHeadingRow
             {
                 public function __construct(private SmkiMasterDataImport $parent) {}
 
