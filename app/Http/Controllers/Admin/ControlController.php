@@ -11,6 +11,8 @@ use App\Imports\SmkiMasterDataImport;
 use App\Models\Control;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Exceptions\SheetNotFoundException;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -80,7 +82,13 @@ class ControlController extends Controller
 
         $import = new SmkiMasterDataImport(dryRun: true);
 
-        Excel::import($import, $request->file('file'));
+        try {
+            Excel::import($import, $request->file('file'));
+        } catch (SheetNotFoundException $e) {
+            return response()->json([
+                'message' => 'Format file tidak sesuai: Sheet Frameworks dan Controls wajib ada.',
+            ], 422);
+        }
 
         return response()->json($import->summary());
     }
@@ -95,7 +103,21 @@ class ControlController extends Controller
 
         $import = new SmkiMasterDataImport(dryRun: false);
 
-        Excel::import($import, $request->file('file'));
+        try {
+            DB::transaction(function () use ($import, $request) {
+                Excel::import($import, $request->file('file'));
+            });
+        } catch (SheetNotFoundException $e) {
+            return redirect()->back()->with('flash', [
+                'type' => 'error',
+                'message' => 'Format file tidak sesuai: Sheet Frameworks dan Controls wajib ada.',
+            ]);
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('flash', [
+                'type' => 'error',
+                'message' => 'Gagal mengimpor master data: '.$e->getMessage(),
+            ]);
+        }
 
         return redirect()->back()->with('flash', [
             'type' => 'success',
