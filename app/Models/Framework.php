@@ -18,6 +18,11 @@ class Framework extends Model
         return $this->hasMany(Control::class, 'framework_id');
     }
 
+    public function checklistSessions(): HasMany
+    {
+        return $this->hasMany(ChecklistSession::class, 'framework_id');
+    }
+
     protected static function booted(): void
     {
         static::deleting(function (Framework $framework) {

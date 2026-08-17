@@ -1,6 +1,6 @@
 # 🗄️ Skema Basis Data (Database Schema) — SMKI Backend
 
-Sistem Kepatuhan Digital SMKI menggunakan basis data relasional **PostgreSQL (Supabase)** dengan 9 tabel inti.
+Sistem Kepatuhan Digital SMKI menggunakan basis data relasional **PostgreSQL (Supabase)** dengan 10 tabel inti.
 
 ---
 
@@ -9,8 +9,12 @@ Sistem Kepatuhan Digital SMKI menggunakan basis data relasional **PostgreSQL (Su
 ```mermaid
 erDiagram
     frameworks ||--o{ controls : "memiliki klausul"
+    frameworks ||--o{ checklist_sessions : "acuan standar sesi"
     work_units ||--o{ work_units : "parent-child"
     work_units ||--o{ users : "tempat penugasan"
+    work_units ||--o{ checklist_sessions : "unit sasaran audit"
+    users ||--o{ checklist_sessions : "dibuat oleh / auditor"
+    checklist_sessions ||--o{ checklist_entries : "memiliki item evaluasi"
     controls ||--o{ checklist_entries : "dievaluasi"
     work_units ||--o{ checklist_entries : "satker pemilik"
     users ||--o{ checklist_entries : "pic input"
@@ -26,7 +30,7 @@ erDiagram
 
 ---
 
-## 📋 Rincian 9 Tabel Inti
+## 📋 Rincian 10 Tabel Inti
 
 ### 1. `frameworks` (Standar SMKI)
 - `id` (PK, BigInt)
@@ -58,8 +62,23 @@ erDiagram
 - `role` (Enum: `superadmin`, `admin_kepatuhan`, `koordinator_smki`, `auditor`, `pic`)
 - `unit_id` (FK -> `work_units.id`, nullable)
 
-### 5. `checklist_entries` (Lembar Evaluasi Kepatuhan Bulanan)
+### 5. `checklist_sessions` (Sesi Audit & Self-Assessment Formal)
 - `id` (PK, BigInt)
+- `nama_sesi` (String, e.g. `Audit Internal SMKI Semester 1 2026`)
+- `unit_id` (FK -> `work_units.id`)
+- `framework_id` (FK -> `frameworks.id`, nullable)
+- `created_by` (FK -> `users.id`, nullable)
+- `auditor_id` (FK -> `users.id`, nullable)
+- `start_date` (Date, nullable)
+- `end_date` (Date, nullable)
+- `status` (Enum: `draft`, `in_progress`, `submitted`, `verified`, `closed`)
+- `catatan` (Text, nullable)
+- `created_at`, `updated_at`, `deleted_at`
+- **Index Performa:** `(unit_id, status)`, `(framework_id)`, `(start_date, end_date)`
+
+### 6. `checklist_entries` (Lembar Evaluasi Kepatuhan Klausul)
+- `id` (PK, BigInt)
+- `session_id` (FK -> `checklist_sessions.id`, nullable untuk backward compatibility)
 - `control_id` (FK -> `controls.id`)
 - `unit_id` (FK -> `work_units.id`)
 - `pic_id` (FK -> `users.id`)
@@ -69,9 +88,9 @@ erDiagram
 - `catatan_admin` (Text, catatan verifikator Admin)
 - `tanggal_input` (Timestamp)
 - `tanggal_verifikasi` (Timestamp, nullable)
-- **Index Performa:** `(unit_id, status)`, `(unit_id, control_id)`, `(tanggal_input)`
+- **Index Performa:** `(session_id, control_id)`, `(session_id, status)`, `(unit_id, status)`, `(unit_id, control_id)`, `(tanggal_input)`
 
-### 6. `compliance_evidences` (Berkas Dokumen Bukti & Multi-Versi)
+### 7. `compliance_evidences` (Berkas Dokumen Bukti & Multi-Versi)
 - `id` (PK, BigInt)
 - `checklist_entry_id` (FK -> `checklist_entries.id`)
 - `uploaded_by` (FK -> `users.id`)
@@ -81,7 +100,7 @@ erDiagram
 - `uploaded_at` (Timestamp)
 - `deleted_at` (Timestamp, soft delete)
 
-### 7. `findings` (Temuan Audit / Ketidaksesuaian)
+### 8. `findings` (Temuan Audit / Ketidaksesuaian)
 - `id` (PK, BigInt)
 - `control_id` (FK -> `controls.id`)
 - `unit_id` (FK -> `work_units.id`)
@@ -93,7 +112,7 @@ erDiagram
 - `catatan_admin` (Text, nullable)
 - `tanggal_verifikasi` (Timestamp, nullable)
 
-### 8. `risks` (Register Risiko Keamanan Informasi)
+### 9. `risks` (Register Risiko Keamanan Informasi)
 - `id` (PK, BigInt)
 - `control_id` (FK -> `controls.id`)
 - `unit_id` (FK -> `work_units.id`)
@@ -104,7 +123,7 @@ erDiagram
 - `tingkat_risiko` (Enum: `rendah`, `sedang`, `tinggi`, `kritis`)
 - `rencana_mitigasi` (Text, nullable)
 
-### 9. `audit_logs` (Jejak Rekam Digital Sistem - Anti Tamper)
+### 10. `audit_logs` (Jejak Rekam Digital Sistem - Anti Tamper)
 - `id` (PK, BigInt)
 - `user_id` (FK -> `users.id`, nullable)
 - `action` (String: `created`, `updated`, `deleted`, `restored`)
