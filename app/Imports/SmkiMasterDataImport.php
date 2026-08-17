@@ -163,7 +163,12 @@ class SmkiMasterDataImport implements Import, WithMultipleSheets
                         $frameworkVersi = trim((string) ($row['framework_versi'] ?? ''));
                         $kodeKlausul = trim((string) ($row['kode_klausul'] ?? ''));
                         $judul = trim((string) ($row['judul'] ?? ''));
-                        $kategori = trim((string) ($row['kategori'] ?? ''));
+                        $rawKategori = strtolower(trim((string) ($row['kategori'] ?? '')));
+                        $kategori = match ($rawKategori) {
+                            'annex a', 'annex_a', 'annex-a' => 'annex_a',
+                            'klausul 4-10', 'klausul_4_10', 'klausul-4-10', 'klausul 4 10' => 'klausul_4_10',
+                            default => $rawKategori,
+                        };
 
                         if ($kodeKlausul === '' || $judul === '') {
                             continue;
@@ -211,7 +216,10 @@ class SmkiMasterDataImport implements Import, WithMultipleSheets
                         if ($existing) {
                             $changes = [];
 
-                            if (trim((string) $existing->judul) !== trim((string) $data['judul'])) {
+                            $cleanExistingJudul = str_replace(["\r\n", "\r"], "\n", trim((string) $existing->judul));
+                            $cleanNewJudul = str_replace(["\r\n", "\r"], "\n", trim((string) $data['judul']));
+
+                            if ($cleanExistingJudul !== $cleanNewJudul) {
                                 $changes[] = [
                                     'field' => 'Judul',
                                     'from' => $existing->judul,
@@ -227,13 +235,14 @@ class SmkiMasterDataImport implements Import, WithMultipleSheets
                                 ];
                             }
 
-                            $existingDesc = trim((string) ($existing->deskripsi ?? ''));
-                            $newDesc = trim((string) ($data['deskripsi'] ?? ''));
-                            if ($existingDesc !== $newDesc) {
+                            $cleanExistingDesc = str_replace(["\r\n", "\r"], "\n", trim((string) ($existing->deskripsi ?? '')));
+                            $cleanNewDesc = str_replace(["\r\n", "\r"], "\n", trim((string) ($data['deskripsi'] ?? '')));
+
+                            if ($cleanExistingDesc !== $cleanNewDesc) {
                                 $changes[] = [
                                     'field' => 'Deskripsi',
-                                    'from' => $existingDesc ?: '(kosong)',
-                                    'to' => $newDesc ?: '(kosong)',
+                                    'from' => $cleanExistingDesc ?: '(kosong)',
+                                    'to' => $cleanNewDesc ?: '(kosong)',
                                 ];
                             }
 
