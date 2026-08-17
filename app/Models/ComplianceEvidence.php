@@ -22,7 +22,7 @@ class ComplianceEvidence extends Model
     ];
 
     protected $casts = [
-        'is_active'   => 'boolean',
+        'is_active' => 'boolean',
         'uploaded_at' => 'datetime',
     ];
 
@@ -43,6 +43,7 @@ class ComplianceEvidence extends Model
         if ($this->version_number === 1) {
             return 'Dokumen Awal (Revisi ke-1)';
         }
+
         return "Dokumen Pembaruan (Revisi ke-{$this->version_number})";
     }
 
@@ -55,8 +56,8 @@ class ComplianceEvidence extends Model
         static::creating(function (ComplianceEvidence $evidence) {
             if ($evidence->is_active) {
                 static::where('checklist_entry_id', $evidence->checklist_entry_id)
-                      ->where('is_active', true)
-                      ->update(['is_active' => false]);
+                    ->where('is_active', true)
+                    ->update(['is_active' => false]);
             }
         });
     }

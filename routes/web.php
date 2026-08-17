@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\ComplianceController;
+use App\Http\Controllers\Admin\ControlController as AdminControlController;
 use App\Http\Controllers\Auth\AuthController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -35,9 +36,20 @@ Route::middleware('auth')->group(function () {
         Route::get('/dashboard', [ComplianceController::class, 'dashboard'])->name('dashboard');
         Route::get('/compliance', [ComplianceController::class, 'index'])->name('compliance');
 
-        Route::post('/controls', [ComplianceController::class, 'store'])->name('controls.store');
-        Route::patch('/controls/{control}', [ComplianceController::class, 'update'])->name('controls.update');
-        Route::delete('/controls/{control}', [ComplianceController::class, 'destroy'])->name('controls.destroy');
+        // ── [DEV ONLY] Test halaman import/export — hapus sebelum production ──────────
+        Route::get('/master-data', function () {
+            return Inertia::render('admin-kepatuhan/master-data-test');
+        })->name('master-data.test');
+
+        // ── Controls CRUD (Inertia-style — mutations only, listing ada di compliance) ──
+        Route::post('/controls', [AdminControlController::class, 'store'])->name('controls.store');
+        Route::put('/controls/{control}', [AdminControlController::class, 'update'])->name('controls.update');
+        Route::delete('/controls/{control}', [AdminControlController::class, 'destroy'])->name('controls.destroy');
+
+        // ── Master Data Export / Import (unified 2-sheet Excel) ───────────────────────
+        Route::get('/master-data/export', [AdminControlController::class, 'exportMasterData'])->name('master-data.export');
+        Route::post('/master-data/import/preview', [AdminControlController::class, 'previewMasterDataImport'])->name('master-data.import.preview');
+        Route::post('/master-data/import', [AdminControlController::class, 'importMasterData'])->name('master-data.import');
     });
 });
 

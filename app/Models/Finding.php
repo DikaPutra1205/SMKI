@@ -23,19 +23,23 @@ class Finding extends Model
     ];
 
     protected $casts = [
-        'deadline'            => 'date',
-        'tanggal_verifikasi'  => 'datetime',
+        'deadline' => 'date',
+        'tanggal_verifikasi' => 'datetime',
     ];
 
     // kategori: major, minor, observasi
-    const KATEGORI_MAJOR      = 'major';
-    const KATEGORI_MINOR      = 'minor';
-    const KATEGORI_OBSERVASI  = 'observasi';
+    const KATEGORI_MAJOR = 'major';
+
+    const KATEGORI_MINOR = 'minor';
+
+    const KATEGORI_OBSERVASI = 'observasi';
 
     // status: open, in_progress, closed
-    const STATUS_OPEN        = 'open';
+    const STATUS_OPEN = 'open';
+
     const STATUS_IN_PROGRESS = 'in_progress';
-    const STATUS_CLOSED      = 'closed';
+
+    const STATUS_CLOSED = 'closed';
 
     public function control(): BelongsTo
     {

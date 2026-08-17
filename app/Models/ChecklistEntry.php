@@ -24,15 +24,18 @@ class ChecklistEntry extends Model
     ];
 
     protected $casts = [
-        'tanggal_input'       => 'datetime',
-        'tanggal_verifikasi'  => 'datetime',
+        'tanggal_input' => 'datetime',
+        'tanggal_verifikasi' => 'datetime',
     ];
 
     // status: compliant, partial, non_compliant, na
-    const STATUS_COMPLIANT     = 'compliant';
-    const STATUS_PARTIAL       = 'partial';
+    const STATUS_COMPLIANT = 'compliant';
+
+    const STATUS_PARTIAL = 'partial';
+
     const STATUS_NON_COMPLIANT = 'non_compliant';
-    const STATUS_NA            = 'na';
+
+    const STATUS_NA = 'na';
 
     public function control(): BelongsTo
     {
@@ -62,7 +65,7 @@ class ChecklistEntry extends Model
     public function activeEvidence()
     {
         return $this->hasOne(ComplianceEvidence::class, 'checklist_entry_id')
-                    ->where('is_active', true)
-                    ->latest('version_number');
+            ->where('is_active', true)
+            ->latest('version_number');
     }
 }

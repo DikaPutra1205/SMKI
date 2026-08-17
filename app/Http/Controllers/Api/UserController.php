@@ -15,9 +15,10 @@ class UserController extends Controller
     public function index(): JsonResponse
     {
         $users = User::select('id', 'name', 'email', 'role', 'unit_id')
-                     ->with('unit:id,nama')
-                     ->orderBy('role')
-                     ->get();
+            ->with('unit:id,nama')
+            ->orderBy('role')
+            ->get();
+
         return $this->success($users);
     }
 }

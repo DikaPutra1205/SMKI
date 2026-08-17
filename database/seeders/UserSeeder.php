@@ -12,39 +12,39 @@ class UserSeeder extends Seeder
     {
         $users = [
             [
-                'name'     => 'Super Admin',
-                'email'    => 'superadmin@smki.test',
+                'name' => 'Super Admin',
+                'email' => 'superadmin@smki.test',
                 'password' => Hash::make('password'),
-                'role'     => 'superadmin',
-                'unit_id'  => null,
+                'role' => 'superadmin',
+                'unit_id' => null,
             ],
             [
-                'name'     => 'Admin Kepatuhan',
-                'email'    => 'admin@smki.test',
+                'name' => 'Admin Kepatuhan',
+                'email' => 'admin@smki.test',
                 'password' => Hash::make('password'),
-                'role'     => 'admin_kepatuhan',
-                'unit_id'  => null,
+                'role' => 'admin_kepatuhan',
+                'unit_id' => null,
             ],
             [
-                'name'     => 'Koordinator SMKI',
-                'email'    => 'koordinator@smki.test',
+                'name' => 'Koordinator SMKI',
+                'email' => 'koordinator@smki.test',
                 'password' => Hash::make('password'),
-                'role'     => 'koordinator_smki',
-                'unit_id'  => null,
+                'role' => 'koordinator_smki',
+                'unit_id' => null,
             ],
             [
-                'name'     => 'Auditor',
-                'email'    => 'auditor@smki.test',
+                'name' => 'Auditor',
+                'email' => 'auditor@smki.test',
                 'password' => Hash::make('password'),
-                'role'     => 'auditor',
-                'unit_id'  => null,
+                'role' => 'auditor',
+                'unit_id' => null,
             ],
             [
-                'name'     => 'PIC Biro Hukum',
-                'email'    => 'pic@smki.test',
+                'name' => 'PIC Biro Hukum',
+                'email' => 'pic@smki.test',
                 'password' => Hash::make('password'),
-                'role'     => 'pic',
-                'unit_id'  => null, // akan di-update setelah unit kerja dibuat
+                'role' => 'pic',
+                'unit_id' => null, // akan di-update setelah unit kerja dibuat
             ],
         ];
 
@@ -55,6 +55,6 @@ class UserSeeder extends Seeder
             );
         }
 
-        $this->command->info('Berhasil menyemai ' . count($users) . ' user test.');
+        $this->command->info('Berhasil menyemai '.count($users).' user test.');
     }
 }
