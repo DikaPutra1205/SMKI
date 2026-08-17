@@ -76,6 +76,8 @@ class ControlController extends Controller
      */
     public function previewMasterDataImport(ImportMasterDataRequest $request): JsonResponse
     {
+        set_time_limit(180);
+
         $import = new SmkiMasterDataImport(dryRun: true);
 
         Excel::import($import, $request->file('file'));
@@ -89,6 +91,8 @@ class ControlController extends Controller
      */
     public function importMasterData(ImportMasterDataRequest $request): RedirectResponse
     {
+        set_time_limit(180);
+
         $import = new SmkiMasterDataImport(dryRun: false);
 
         Excel::import($import, $request->file('file'));
