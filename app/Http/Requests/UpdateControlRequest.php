@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Control;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -14,22 +15,26 @@ class UpdateControlRequest extends FormRequest
 
     public function rules(): array
     {
-        $controlId = $this->route('control')?->id ?? $this->route('control');
+        $control = $this->route('control');
+        $controlId = $control instanceof Control ? $control->id : $control;
+        $existingControl = $control instanceof Control ? $control : ($controlId ? Control::find($controlId) : null);
+        $frameworkId = $this->input('framework_id') ?? $existingControl?->framework_id;
 
         return [
-            'framework_id' => ['required', 'integer', 'exists:frameworks,id'],
+            'framework_id' => ['sometimes', 'required', 'integer', 'exists:frameworks,id'],
             'kode_klausul' => [
+                'sometimes',
                 'required',
                 'string',
                 'max:20',
                 Rule::unique('controls', 'kode_klausul')
-                    ->where('framework_id', $this->input('framework_id'))
+                    ->where(fn ($query) => $frameworkId ? $query->where('framework_id', $frameworkId) : $query)
                     ->whereNull('deleted_at')
                     ->ignore($controlId),
             ],
-            'judul' => ['required', 'string', 'max:255'],
+            'judul' => ['sometimes', 'required', 'string', 'max:255'],
             'deskripsi' => ['nullable', 'string'],
-            'kategori' => ['required', Rule::in(['annex_a', 'klausul_4_10'])],
+            'kategori' => ['sometimes', 'required', Rule::in(['annex_a', 'klausul_4_10'])],
         ];
     }
 

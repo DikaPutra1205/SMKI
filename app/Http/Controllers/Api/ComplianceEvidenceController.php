@@ -39,7 +39,7 @@ class ComplianceEvidenceController extends Controller
     public function store(Request $request, ChecklistEntry $checklistEntry): JsonResponse
     {
         $request->validate([
-            'bukti_file' => 'required|file|max:10240', // maks 10MB
+            'bukti_file' => 'required|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240', // maks 10MB
             'uploaded_by' => 'required|exists:users,id',
         ]);
 

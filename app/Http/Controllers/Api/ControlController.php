@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreControlRequest;
+use App\Http\Requests\UpdateControlRequest;
 use App\Models\Control;
 use App\Models\Framework;
 use App\Traits\ApiResponse;
@@ -44,17 +46,9 @@ class ControlController extends Controller
         return $this->success($controls);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreControlRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'framework_id' => 'required|exists:frameworks,id',
-            'kode_klausul' => 'required|string|max:20',
-            'judul' => 'required|string|max:255',
-            'deskripsi' => 'nullable|string',
-            'kategori' => 'required|in:annex_a,klausul_4_10',
-        ]);
-
-        $control = Control::create($data);
+        $control = Control::create($request->validated());
 
         return $this->created($control->load('framework'));
     }
@@ -64,16 +58,9 @@ class ControlController extends Controller
         return $this->success($control->load('framework'));
     }
 
-    public function update(Request $request, Control $control): JsonResponse
+    public function update(UpdateControlRequest $request, Control $control): JsonResponse
     {
-        $data = $request->validate([
-            'kode_klausul' => 'sometimes|string|max:20',
-            'judul' => 'sometimes|string|max:255',
-            'deskripsi' => 'nullable|string',
-            'kategori' => 'sometimes|in:annex_a,klausul_4_10',
-        ]);
-
-        $control->update($data);
+        $control->update($request->validated());
 
         return $this->success($control, 'Kontrol berhasil diperbarui');
     }

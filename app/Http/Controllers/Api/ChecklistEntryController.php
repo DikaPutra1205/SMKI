@@ -191,9 +191,31 @@ class ChecklistEntryController extends Controller
         $data = $request->validate([
             'status' => 'sometimes|in:compliant,partial,non_compliant,na',
             'catatan' => 'nullable|string',
-            'bukti_file' => 'nullable|file|max:10240',
+            'bukti_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240',
             'uploaded_by' => 'nullable|exists:users,id',
         ]);
+
+        $evidenceData = null;
+        if ($request->hasFile('bukti_file')) {
+            $uploaderId = $request->uploaded_by ?? $checklistEntry->pic_id;
+            $nextVersion = ($checklistEntry->evidences()->withTrashed()->max('version_number') ?? 0) + 1;
+
+            $folder = "bukti/{$checklistEntry->id}";
+            $path = Storage::disk('supabase')->put($folder, $request->file('bukti_file'));
+
+            if (! $path) {
+                return $this->error('Gagal mengunggah file ke Supabase Storage', 500);
+            }
+
+            $evidenceData = [
+                'checklist_entry_id' => $checklistEntry->id,
+                'uploaded_by' => $uploaderId,
+                'file_url' => $path,
+                'version_number' => $nextVersion,
+                'is_active' => true,
+                'uploaded_at' => now(),
+            ];
+        }
 
         $checklistEntry->update([
             'status' => $data['status'] ?? $checklistEntry->status,
@@ -202,23 +224,8 @@ class ChecklistEntryController extends Controller
             'tanggal_verifikasi' => null,
         ]);
 
-        if ($request->hasFile('bukti_file')) {
-            $uploaderId = $request->uploaded_by ?? $checklistEntry->pic_id;
-            $nextVersion = ($checklistEntry->evidences()->withTrashed()->max('version_number') ?? 0) + 1;
-
-            $folder = "bukti/{$checklistEntry->id}";
-            $path = Storage::disk('supabase')->put($folder, $request->file('bukti_file'));
-
-            if ($path) {
-                ComplianceEvidence::create([
-                    'checklist_entry_id' => $checklistEntry->id,
-                    'uploaded_by' => $uploaderId,
-                    'file_url' => $path,
-                    'version_number' => $nextVersion,
-                    'is_active' => true,
-                    'uploaded_at' => now(),
-                ]);
-            }
+        if ($evidenceData) {
+            ComplianceEvidence::create($evidenceData);
         }
 
         $fresh = $checklistEntry->fresh([
