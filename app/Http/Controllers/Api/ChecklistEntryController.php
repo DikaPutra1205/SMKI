@@ -11,6 +11,7 @@ use App\Models\WorkUnit;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class ChecklistEntryController extends Controller
@@ -206,12 +207,25 @@ class ChecklistEntryController extends Controller
         $evidenceData = null;
         if ($request->hasFile('bukti_file')) {
             $uploaderId = $request->uploaded_by ?? $checklistEntry->pic_id;
-            $nextVersion = ($checklistEntry->evidences()->withTrashed()->max('version_number') ?? 0) + 1;
 
+            // Upload the file first (outside the transaction — S3 is not transactional).
             $folder = "bukti/{$checklistEntry->id}";
             $path = Storage::disk('supabase')->put($folder, $request->file('bukti_file'));
 
             if ($path) {
+                // Determine the next version inside a locked transaction to prevent
+                // race-condition duplicate version numbers.
+                // Aggregate (max) cannot be combined with FOR UPDATE in PostgreSQL;
+                // lock rows via pluck then compute max in PHP.
+                $nextVersion = DB::transaction(function () use ($checklistEntry) {
+                    $lockedVersions = $checklistEntry->evidences()
+                        ->withTrashed()
+                        ->lockForUpdate()
+                        ->pluck('version_number');
+
+                    return ($lockedVersions->max() ?? 0) + 1;
+                });
+
                 $evidenceData = [
                     'checklist_entry_id' => $checklistEntry->id,
                     'uploaded_by' => $uploaderId,
@@ -223,11 +237,16 @@ class ChecklistEntryController extends Controller
             }
         }
 
+        // Only reset tanggal_verifikasi when the status actually changes.
+        // A comment-only edit (no 'status' key, or same status) must preserve
+        // the existing verification timestamp.
+        $statusChanging = isset($data['status']) && $data['status'] !== $checklistEntry->status;
+
         $checklistEntry->update([
             'status' => $data['status'] ?? $checklistEntry->status,
             'catatan' => $data['catatan'] ?? $checklistEntry->catatan,
             'tanggal_input' => now(),
-            'tanggal_verifikasi' => null,
+            'tanggal_verifikasi' => $statusChanging ? null : $checklistEntry->tanggal_verifikasi,
         ]);
 
         if ($evidenceData) {
@@ -277,5 +296,77 @@ class ChecklistEntryController extends Controller
         $entry->restore();
 
         return $this->success($entry, 'Checklist berhasil dipulihkan');
+    }
+
+    /**
+     * Trigger monthly checklist auto-provisioning via HTTP.
+     *
+     * Replicates the logic in GenerateMonthlyChecklistCommand so the feature
+     * is accessible without SSH/scheduler access. Accepts optional ?unit_id
+     * to scope provisioning to a single work unit.
+     *
+     * Previously the route pointed to a non-existent method, causing a 500.
+     */
+    public function generateMonthly(Request $request): JsonResponse
+    {
+        $unitId = $request->filled('unit_id') ? (int) $request->unit_id : null;
+
+        $controls = Control::all();
+        if ($controls->isEmpty()) {
+            return $this->success(['created' => 0], 'Belum ada master data kontrol.');
+        }
+
+        $unitsQuery = WorkUnit::query();
+        if ($unitId) {
+            $unitsQuery->where('id', $unitId);
+        }
+        $units = $unitsQuery->get();
+
+        if ($units->isEmpty()) {
+            return $this->success(['created' => 0], 'Tidak ada unit kerja yang ditemukan.');
+        }
+
+        $rowsToInsert = [];
+        $now = now();
+
+        foreach ($units as $unit) {
+            $pic = User::where('unit_id', $unit->id)->where('role', User::ROLE_PIC)->first()
+                ?? User::where('role', User::ROLE_PIC)->first();
+
+            if (! $pic) {
+                continue;
+            }
+
+            $existingControlIds = ChecklistEntry::where('unit_id', $unit->id)
+                ->pluck('control_id')
+                ->flip()
+                ->toArray();
+
+            foreach ($controls as $ctrl) {
+                if (! isset($existingControlIds[$ctrl->id])) {
+                    $rowsToInsert[] = [
+                        'control_id' => $ctrl->id,
+                        'unit_id' => $unit->id,
+                        'pic_id' => $pic->id,
+                        'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+                        'catatan' => 'Belum diisi oleh PIC.',
+                        'tanggal_input' => $now,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                }
+            }
+        }
+
+        $totalCreated = count($rowsToInsert);
+        foreach (array_chunk($rowsToInsert, 100) as $chunk) {
+            ChecklistEntry::insert($chunk);
+        }
+
+        $message = $totalCreated === 0
+            ? 'Semua checklist sudah lengkap, tidak ada entri baru yang dibuat.'
+            : "{$totalCreated} checklist baru berhasil dibuat.";
+
+        return $this->success(['created' => $totalCreated], $message);
     }
 }
