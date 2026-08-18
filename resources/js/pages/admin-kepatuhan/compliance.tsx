@@ -1,7 +1,7 @@
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import AppLayout from '@/layouts/AppLayout';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { ChevronLeft, ChevronRight, Eye, Filter, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Filter, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 export interface FrameworkItem {
