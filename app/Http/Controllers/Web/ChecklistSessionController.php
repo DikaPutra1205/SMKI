@@ -108,13 +108,77 @@ class ChecklistSessionController extends Controller
             'entries.control.framework:id,nama,versi',
         ]);
 
+        return Inertia::render('pic/checklist-detail', [
+            'session' => $checklistSession,
+            'entries' => $checklistSession->entries,
+        ]);
+    }
+
+    public function summary(ChecklistSession $checklistSession): Response
+    {
+        $user = request()->user();
+
+        if ($checklistSession->unit_id !== $user->unit_id) {
+            abort(403);
+        }
+
+        $checklistSession->load([
+            'unit:id,nama',
+            'framework:id,nama,versi',
+            'entries' => function ($q) {
+                $q->with([
+                    'control.framework:id,nama,versi',
+                    'activeEvidence:id,checklist_entry_id,version_number,file_url,is_active',
+                ])
+                    ->join('controls', 'controls.id', '=', 'checklist_entries.control_id')
+                    ->orderBy('controls.kategori', 'desc')
+                    ->orderBy('controls.kode_klausul', 'asc')
+                    ->select('checklist_entries.*');
+            },
+            'entries.control:id,framework_id,kode_klausul,judul,deskripsi,kategori',
+            'entries.control.framework:id,nama,versi',
+        ]);
+
         $summary = $checklistSession->summary;
 
-        return Inertia::render('pic/checklist-detail', [
+        return Inertia::render('pic/assessment-summary', [
             'session' => $checklistSession,
             'entries' => $checklistSession->entries,
             'summary' => $summary,
         ]);
+    }
+
+    public function submitAssessment(Request $request, ChecklistSession $checklistSession): RedirectResponse
+    {
+        $user = $request->user();
+
+        if ($checklistSession->unit_id !== $user->unit_id) {
+            abort(403);
+        }
+
+        $incomplete = $checklistSession->entries()
+            ->whereIn('status', [ChecklistEntry::STATUS_NON_COMPLIANT, ChecklistEntry::STATUS_NA])
+            ->where(fn ($q) => $q->whereNull('catatan')->orWhere('catatan', ''))
+            ->count();
+
+        if ($incomplete > 0) {
+            return redirect()->back()
+                ->with('flash', ['type' => 'error', 'message' => "{$incomplete} kontrol belum diisi catatan untuk status Ketidaksesuaian/Tidak Berlaku."]);
+        }
+
+        // Mark all entries with tanggal_input
+        $checklistSession->entries()
+            ->whereNull('tanggal_input')
+            ->update([
+                'tanggal_input' => now(),
+            ]);
+
+        $checklistSession->update([
+            'updated_by' => $user->id,
+        ]);
+
+        return redirect()->route('admin.pic.assessments')
+            ->with('flash', ['type' => 'success', 'message' => 'Assessment berhasil dikirim untuk verifikasi.']);
     }
 
     public function update(Request $request, ChecklistSession $checklistSession): RedirectResponse
