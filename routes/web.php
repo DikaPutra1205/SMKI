@@ -3,6 +3,7 @@
 use App\Http\Controllers\Web\AuthController;
 use App\Http\Controllers\Web\ChecklistSessionController;
 use App\Http\Controllers\Web\ComplianceController;
+use App\Http\Controllers\Web\ComplianceOfficerController;
 use App\Http\Controllers\Web\ControlController as AdminControlController;
 use App\Http\Controllers\Web\FrameworkController;
 use Illuminate\Support\Facades\Route;
@@ -58,6 +59,13 @@ Route::middleware('auth')->group(function () {
         Route::get('/master-data/export', [AdminControlController::class, 'exportMasterData'])->name('master-data.export');
         Route::post('/master-data/import/preview', [AdminControlController::class, 'previewMasterDataImport'])->name('master-data.import.preview');
         Route::post('/master-data/import', [AdminControlController::class, 'importMasterData'])->name('master-data.import');
+
+        // ── Compliance Officer Governance (Pair B) ──────────────────────────────────
+        Route::get('/findings', [ComplianceOfficerController::class, 'findings'])->name('findings.index');
+        Route::put('/findings/{finding}', [ComplianceOfficerController::class, 'updateFinding'])->name('findings.update');
+        Route::get('/risks', [ComplianceOfficerController::class, 'risks'])->name('risks.index');
+        Route::put('/risks/{risk}', [ComplianceOfficerController::class, 'updateRisk'])->name('risks.update');
+        Route::post('/bulk-verify', [ComplianceOfficerController::class, 'bulkVerify'])->name('bulk-verify');
     });
 
     Route::prefix('admin/superadmin')->name('admin.superadmin.')->group(function () {

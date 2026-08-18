@@ -18,14 +18,12 @@ class ChecklistSessionFactory extends Factory
     public function definition(): array
     {
         return [
-            'nama_sesi' => 'Audit Kepatuhan SMKI '.fake()->monthName().' '.fake()->year(),
+            'konteks_penilaian' => 'Evaluasi Kepatuhan SMKI '.fake()->monthName().' '.fake()->year(),
+            'periode' => now()->format('Y-m'),
             'unit_id' => WorkUnit::factory(),
             'framework_id' => Framework::factory(),
             'created_by' => User::factory(),
-            'auditor_id' => User::factory(),
-            'start_date' => now()->startOfMonth(),
-            'end_date' => now()->endOfMonth(),
-            'status' => fake()->randomElement(['draft', 'in_progress', 'submitted', 'verified']),
+            'updated_by' => User::factory(),
             'catatan' => fake()->optional()->sentence(),
         ];
     }
