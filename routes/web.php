@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Web\AuditLogController;
 use App\Http\Controllers\Web\AuthController;
+use App\Http\Controllers\Web\ChecklistEntryController;
 use App\Http\Controllers\Web\ChecklistSessionController;
 use App\Http\Controllers\Web\ComplianceController;
 use App\Http\Controllers\Web\ComplianceOfficerController;
@@ -82,6 +83,16 @@ Route::middleware('auth')->group(function () {
         Route::post('/frameworks', [FrameworkController::class, 'store'])->name('frameworks.store');
         Route::patch('/frameworks/{framework}', [FrameworkController::class, 'update'])->name('frameworks.update');
         Route::delete('/frameworks/{framework}', [FrameworkController::class, 'destroy'])->name('frameworks.destroy');
+    });
+
+    Route::prefix('admin/pic')->name('admin.pic.')->group(function () {
+        Route::get('/assessments', [ChecklistSessionController::class, 'index'])->name('assessments');
+        Route::post('/assessments', [ChecklistSessionController::class, 'store'])->name('assessments.store');
+        Route::get('/assessments/{checklistSession}', [ChecklistSessionController::class, 'show'])->name('assessments.show');
+        Route::patch('/assessments/{checklistSession}', [ChecklistSessionController::class, 'update'])->name('assessments.update');
+
+        Route::patch('/checklist-entries/{id}', [ChecklistEntryController::class, 'update'])->name('entries.update');
+        Route::post('/checklist-entries/{id}/evidence', [ChecklistEntryController::class, 'uploadEvidence'])->name('entries.evidence');
     });
 });
 
