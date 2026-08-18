@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\AuditLog;
+use App\Models\Control;
+use App\Models\Finding;
 use App\Models\User;
 use App\Models\WorkUnit;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -11,6 +13,8 @@ use Tests\TestCase;
 class AuditTrailTest extends TestCase
 {
     use RefreshDatabase;
+
+    private WorkUnit $unit;
 
     private User $superadmin;
 
@@ -26,13 +30,13 @@ class AuditTrailTest extends TestCase
     {
         parent::setUp();
 
-        $unit = WorkUnit::factory()->create();
+        $this->unit = WorkUnit::factory()->create();
 
-        $this->superadmin = User::factory()->create(['role' => 'superadmin', 'unit_id' => $unit->id]);
-        $this->admin = User::factory()->create(['role' => 'admin_kepatuhan', 'unit_id' => $unit->id]);
-        $this->koordinator = User::factory()->create(['role' => 'koordinator_smki', 'unit_id' => $unit->id]);
-        $this->auditor = User::factory()->create(['role' => 'auditor', 'unit_id' => $unit->id]);
-        $this->pic = User::factory()->create(['role' => 'pic', 'unit_id' => $unit->id]);
+        $this->superadmin = User::factory()->create(['role' => 'superadmin', 'unit_id' => $this->unit->id]);
+        $this->admin = User::factory()->create(['role' => 'admin_kepatuhan', 'unit_id' => $this->unit->id]);
+        $this->koordinator = User::factory()->create(['role' => 'koordinator_smki', 'unit_id' => $this->unit->id]);
+        $this->auditor = User::factory()->create(['role' => 'auditor', 'unit_id' => $this->unit->id]);
+        $this->pic = User::factory()->create(['role' => 'pic', 'unit_id' => $this->unit->id]);
     }
 
     public function test_superadmin_admin_and_coordinator_can_view_audit_logs(): void
@@ -122,12 +126,212 @@ class AuditTrailTest extends TestCase
         $this->assertEquals(3, $response->json('data.total_logs'));
     }
 
-    public function test_audit_logs_web_inertia_page_renders_with_props(): void
+    public function test_observer_records_audit_log_on_model_create_with_snapshot(): void
+    {
+        $this->actingAs($this->admin);
+
+        $finding = Finding::factory()->create(['unit_id' => $this->unit->id]);
+
+        $log = AuditLog::where('entity_type', 'Finding')
+            ->where('entity_id', $finding->id)
+            ->where('aksi', 'create')
+            ->first();
+
+        $this->assertNotNull($log, 'Observer harus mencatat audit log saat model di-create.');
+        $this->assertEquals($this->admin->id, $log->actor_id);
+        $this->assertArrayHasKey('data', $log->detail_perubahan);
+        $this->assertEquals($finding->id, $log->detail_perubahan['data']['id']);
+    }
+
+    public function test_observer_records_audit_log_on_update_with_before_after_diff(): void
+    {
+        $this->actingAs($this->admin);
+
+        $finding = Finding::factory()->create([
+            'unit_id' => $this->unit->id,
+            'status' => Finding::STATUS_OPEN,
+        ]);
+
+        $finding->update(['status' => Finding::STATUS_CLOSED]);
+
+        $log = AuditLog::where('entity_type', 'Finding')
+            ->where('entity_id', $finding->id)
+            ->where('aksi', 'update')
+            ->first();
+
+        $this->assertNotNull($log);
+        $this->assertEquals(['status' => Finding::STATUS_OPEN], $log->detail_perubahan['before']);
+        $this->assertEquals(['status' => Finding::STATUS_CLOSED], $log->detail_perubahan['after']);
+    }
+
+    public function test_observer_skips_timestamp_only_updates(): void
+    {
+        $this->actingAs($this->admin);
+
+        $finding = Finding::factory()->create(['unit_id' => $this->unit->id]);
+        $finding->touch();
+
+        $this->assertDatabaseMissing('audit_logs', [
+            'entity_type' => 'Finding',
+            'entity_id' => $finding->id,
+            'aksi' => 'update',
+        ]);
+    }
+
+    public function test_observer_records_audit_log_on_model_delete(): void
+    {
+        $this->actingAs($this->admin);
+
+        $finding = Finding::factory()->create(['unit_id' => $this->unit->id]);
+
+        $finding->delete();
+
+        $this->assertDatabaseHas('audit_logs', [
+            'entity_type' => 'Finding',
+            'entity_id' => $finding->id,
+            'aksi' => 'delete',
+            'actor_id' => $this->admin->id,
+        ]);
+    }
+
+    public function test_master_data_models_are_not_audited(): void
+    {
+        $this->actingAs($this->admin);
+
+        Control::factory()->create();
+        WorkUnit::factory()->create();
+
+        $this->assertDatabaseCount('audit_logs', 0);
+    }
+
+    public function test_audit_logs_can_be_filtered_by_entity_type(): void
+    {
+        AuditLog::factory()->create(['aksi' => 'create', 'entity_type' => 'Risk']);
+        AuditLog::factory()->create(['aksi' => 'create', 'entity_type' => 'ChecklistEntry']);
+
+        $response = $this->actingAs($this->admin)->getJson('/api/v1/audit-logs?entity_type=Risk');
+
+        $response->assertOk()->assertJsonCount(1, 'data.data');
+        $this->assertEquals('Risk', $response->json('data.data.0.entity_type'));
+    }
+
+    public function test_audit_logs_can_be_filtered_by_actor_id(): void
+    {
+        AuditLog::factory()->create(['actor_id' => $this->admin->id]);
+        AuditLog::factory()->create(['actor_id' => $this->koordinator->id]);
+
+        $response = $this->actingAs($this->admin)->getJson('/api/v1/audit-logs?actor_id='.$this->koordinator->id);
+
+        $response->assertOk()->assertJsonCount(1, 'data.data');
+        $this->assertEquals($this->koordinator->id, $response->json('data.data.0.actor.id'));
+    }
+
+    public function test_audit_logs_can_be_filtered_by_search_on_actor_and_action(): void
+    {
+        $budi = User::factory()->create(['name' => 'Budi Santoso', 'unit_id' => $this->unit->id]);
+        AuditLog::factory()->create(['actor_id' => $budi->id, 'aksi' => 'export', 'entity_type' => 'Report']);
+        AuditLog::factory()->create(['actor_id' => $this->koordinator->id, 'aksi' => 'create', 'entity_type' => 'Risk']);
+
+        $byActor = $this->actingAs($this->admin)->getJson('/api/v1/audit-logs?search=Budi');
+        $byActor->assertOk()->assertJsonCount(1, 'data.data');
+        $this->assertEquals('export', $byActor->json('data.data.0.action'));
+
+        $byAction = $this->actingAs($this->admin)->getJson('/api/v1/audit-logs?search=export');
+        $byAction->assertOk()->assertJsonCount(1, 'data.data');
+    }
+
+    public function test_audit_logs_can_be_filtered_by_date_range(): void
+    {
+        AuditLog::factory()->create(['aksi' => 'create', 'created_at' => now()]);
+        AuditLog::factory()->create(['aksi' => 'update', 'created_at' => now()->subDays(30)]);
+
+        $today = $this->actingAs($this->admin)->getJson('/api/v1/audit-logs?start_date='.now()->toDateString());
+        $today->assertOk()->assertJsonCount(1, 'data.data');
+        $this->assertEquals('create', $today->json('data.data.0.action'));
+
+        $old = $this->actingAs($this->admin)->getJson('/api/v1/audit-logs?end_date='.now()->subDays(1)->toDateString());
+        $old->assertOk()->assertJsonCount(1, 'data.data');
+        $this->assertEquals('update', $old->json('data.data.0.action'));
+    }
+
+    public function test_audit_logs_index_is_paginated_and_respects_per_page(): void
     {
         AuditLog::factory()->count(3)->create(['actor_id' => $this->admin->id]);
 
-        $response = $this->actingAs($this->admin)->get('/admin/kepatuhan/audit-logs');
+        $response = $this->actingAs($this->admin)->getJson('/api/v1/audit-logs?per_page=2');
 
         $response->assertOk();
+        $this->assertCount(2, $response->json('data.data'));
+        $this->assertEquals(3, $response->json('data.total'));
+        $this->assertEquals(2, $response->json('data.last_page'));
+        $this->assertEquals(2, $response->json('data.per_page'));
+    }
+
+    public function test_system_actor_logs_render_with_system_fallback(): void
+    {
+        AuditLog::factory()->create([
+            'actor_id' => null,
+            'aksi' => 'export',
+            'entity_type' => 'Report',
+            'entity_id' => 99,
+        ]);
+
+        $response = $this->actingAs($this->admin)->getJson('/api/v1/audit-logs');
+
+        $response->assertOk();
+        $log = $response->json('data.data.0');
+        $this->assertEquals('Sistem SMKI', $log['actor']['name']);
+        $this->assertEquals('system', $log['actor']['role']);
+        $this->assertNull($log['actor']['email']);
+        $this->assertEquals('Report #99', $log['entity_label']);
+    }
+
+    public function test_audit_stats_reports_accurate_aggregations(): void
+    {
+        AuditLog::factory()->create(['aksi' => 'create', 'entity_type' => 'Finding', 'created_at' => now()]);
+        AuditLog::factory()->create(['aksi' => 'export', 'entity_type' => 'Report', 'created_at' => now()]);
+        AuditLog::factory()->create(['aksi' => 'create', 'entity_type' => 'Risk', 'created_at' => now()->subDays(3)]);
+
+        $response = $this->actingAs($this->admin)->getJson('/api/v1/audit-logs/stats');
+
+        $response->assertOk();
+        $stats = $response->json('data');
+        $this->assertEquals(3, $stats['total_logs']);
+        $this->assertEquals(2, $stats['last_24_hours']);
+        $this->assertEquals(2, $stats['by_action']['create']);
+        $this->assertEquals(1, $stats['by_action']['export']);
+        $this->assertEquals(0, $stats['by_action']['verify']);
+        $this->assertEquals(1, $stats['by_entity']['Finding']);
+        $this->assertEquals(1, $stats['by_entity']['Report']);
+        $this->assertEquals(1, $stats['by_entity']['Risk']);
+    }
+
+    public function test_audit_logs_web_inertia_page_renders_with_props(): void
+    {
+        AuditLog::factory()->count(2)->create([
+            'actor_id' => $this->admin->id,
+            'aksi' => 'verify',
+            'entity_type' => 'ChecklistEntry',
+        ]);
+
+        $version = hash_file('xxh128', public_path('build/manifest.json'));
+
+        $response = $this->actingAs($this->admin)
+            ->withHeader('X-Inertia', 'true')
+            ->withHeader('X-Inertia-Version', $version)
+            ->get('/admin/kepatuhan/audit-logs');
+
+        $response->assertOk();
+        $props = $response->json('props');
+        $this->assertCount(2, $props['logs']['data']);
+        $this->assertEquals(2, $props['stats']['total_logs']);
+        $this->assertEquals([], $props['filters']);
+        $this->assertCount(5, $props['actors']);
+        $this->assertEquals('admin-kepatuhan/audit-logs', $response->json('component'));
+    }
+
+    public function test_pic_cannot_access_audit_logs_web_page(): void
+    {
+        $this->actingAs($this->pic)->get('/admin/kepatuhan/audit-logs')->assertForbidden();
     }
 }

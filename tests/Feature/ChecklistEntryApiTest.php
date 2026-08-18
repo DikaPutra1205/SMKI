@@ -3,11 +3,14 @@
 namespace Tests\Feature;
 
 use App\Models\ChecklistEntry;
+use App\Models\ChecklistSession;
 use App\Models\Control;
 use App\Models\Framework;
 use App\Models\User;
 use App\Models\WorkUnit;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ChecklistEntryApiTest extends TestCase
@@ -307,5 +310,287 @@ class ChecklistEntryApiTest extends TestCase
         $this->actingAs($admin)
             ->postJson('/api/checklist-entries/generate-monthly')
             ->assertStatus(500);
+    }
+
+    public function test_index_filters_by_session_control_framework_kategori(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        $unit = WorkUnit::create(['nama' => 'Unit QA 2']);
+        $fw1 = Framework::create(['nama' => 'ISO 27001', 'versi' => '2022']);
+        $fw2 = Framework::create(['nama' => 'NIST CSF', 'versi' => '2.0']);
+        $ctrl1 = $fw1->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a']);
+        $ctrl2 = $fw1->controls()->create(['kode_klausul' => '4.1', 'judul' => 'Context', 'kategori' => 'clauses']);
+        $ctrl3 = $fw2->controls()->create(['kode_klausul' => 'PR.AC-1', 'judul' => 'Identities', 'kategori' => 'annex_a']);
+        $pic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unit->id]);
+
+        $session = ChecklistSession::create(['konteks_penilaian' => 'Sesi filter', 'unit_id' => $unit->id, 'framework_id' => $fw1->id]);
+        foreach ([$ctrl1, $ctrl2, $ctrl3] as $ctrl) {
+            ChecklistEntry::create(['session_id' => $session->id, 'control_id' => $ctrl->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id]);
+        }
+        $otherSession = ChecklistSession::create(['konteks_penilaian' => 'Sesi kedua', 'unit_id' => $unit->id, 'framework_id' => $fw2->id]);
+        ChecklistEntry::create(['session_id' => $otherSession->id, 'control_id' => $ctrl3->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id]);
+
+        // pre-seeded entries for the unit suppress auto-provisioning
+        $this->actingAs($admin)->getJson("/api/checklist-entries?unit_id={$unit->id}")->assertOk();
+
+        $resSession = $this->actingAs($admin)->getJson("/api/checklist-entries?unit_id={$unit->id}&session_id={$session->id}");
+        $this->assertSame(3, $resSession->json('data.total'));
+
+        $resControl = $this->actingAs($admin)->getJson("/api/checklist-entries?unit_id={$unit->id}&control_id={$ctrl1->id}");
+        $this->assertSame(1, $resControl->json('data.total'));
+
+        $resFw = $this->actingAs($admin)->getJson("/api/checklist-entries?unit_id={$unit->id}&framework_id={$fw1->id}");
+        $this->assertSame(2, $resFw->json('data.total'));
+
+        $resKategori = $this->actingAs($admin)->getJson("/api/checklist-entries?unit_id={$unit->id}&kategori=clauses");
+        $this->assertSame(1, $resKategori->json('data.total'));
+    }
+
+    public function test_index_filters_by_bulan_tahun(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        ['unit' => $unit, 'control' => $control, 'pic' => $pic] = $this->seedUnitControlPics();
+
+        ChecklistEntry::create([
+            'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
+            'status' => ChecklistEntry::STATUS_NON_COMPLIANT, 'tanggal_input' => '2026-03-10 09:00:00',
+        ]);
+        ChecklistEntry::create([
+            'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
+            'status' => ChecklistEntry::STATUS_NON_COMPLIANT, 'tanggal_input' => '2026-08-10 09:00:00',
+        ]);
+
+        $res = $this->actingAs($admin)->getJson("/api/checklist-entries?unit_id={$unit->id}&bulan=3&tahun=2026");
+        $res->assertOk();
+        $this->assertSame(1, $res->json('data.total'));
+
+        $resAll = $this->actingAs($admin)->getJson("/api/checklist-entries?unit_id={$unit->id}");
+        $this->assertSame(2, $resAll->json('data.total'));
+    }
+
+    public function test_index_trashed_filter(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        ['unit' => $unit, 'control' => $control, 'pic' => $pic] = $this->seedUnitControlPics();
+
+        $entry = ChecklistEntry::create([
+            'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
+            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+        ]);
+        $entry->delete();
+
+        // default scope excludes trashed; index() auto-provisions a fresh entry for the unit
+        $default = $this->actingAs($admin)->getJson("/api/checklist-entries?unit_id={$unit->id}");
+        $default->assertOk();
+        $this->assertSame(1, $default->json('data.total'));
+        $this->assertNotSame($entry->id, $default->json('data.data.0.id'));
+
+        $trashed = $this->actingAs($admin)->getJson("/api/checklist-entries?unit_id={$unit->id}&trashed=only");
+        $trashed->assertOk();
+        $this->assertSame(1, $trashed->json('data.total'));
+        $this->assertSame($entry->id, $trashed->json('data.data.0.id'));
+
+        $with = $this->actingAs($admin)->getJson("/api/checklist-entries?unit_id={$unit->id}&trashed=with");
+        $this->assertSame(2, $with->json('data.total'));
+    }
+
+    public function test_show_returns_404_for_soft_deleted_entry(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        ['unit' => $unit, 'control' => $control, 'pic' => $pic] = $this->seedUnitControlPics();
+        $entry = ChecklistEntry::create([
+            'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
+        ]);
+        $entry->delete();
+
+        $this->actingAs($admin)->getJson("/api/checklist-entries/{$entry->id}")->assertStatus(404);
+    }
+
+    public function test_store_rejects_missing_required_fields(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        ['unit' => $unit, 'control' => $control, 'pic' => $pic] = $this->seedUnitControlPics();
+
+        $this->actingAs($admin)->postJson('/api/checklist-entries', [
+            'unit_id' => $unit->id, 'pic_id' => $pic->id,
+        ])->assertStatus(422)->assertJsonValidationErrors(['control_id']);
+
+        $this->actingAs($admin)->postJson('/api/checklist-entries', [
+            'control_id' => $control->id, 'pic_id' => $pic->id,
+        ])->assertStatus(422)->assertJsonValidationErrors(['unit_id']);
+
+        $this->actingAs($admin)->postJson('/api/checklist-entries', [
+            'control_id' => $control->id, 'unit_id' => $unit->id,
+        ])->assertStatus(422)->assertJsonValidationErrors(['pic_id']);
+
+        $this->actingAs($admin)->postJson('/api/checklist-entries', [
+            'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
+            'status' => 'compliant', 'session_id' => 999999,
+        ])->assertStatus(422)->assertJsonValidationErrors(['session_id']);
+
+        $this->assertSame(0, ChecklistEntry::count());
+    }
+
+    // API update() nulls tanggal_verifikasi unconditionally — even a catatan-only
+    // edit silently un-verifies an entry (web controller only clears on status change).
+    public function test_update_catatan_only_clears_verification(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        ['unit' => $unit, 'control' => $control, 'pic' => $pic] = $this->seedUnitControlPics();
+        $entry = ChecklistEntry::create([
+            'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
+            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'admin_id' => $admin->id, 'tanggal_verifikasi' => now(),
+        ]);
+
+        $this->actingAs($pic)
+            ->patchJson("/api/checklist-entries/{$entry->id}", ['catatan' => 'Klarifikasi teks saja'])
+            ->assertOk();
+
+        $this->assertDatabaseHas('checklist_entries', [
+            'id' => $entry->id, 'catatan' => 'Klarifikasi teks saja', 'tanggal_verifikasi' => null,
+        ]);
+    }
+
+    public function test_update_rejects_invalid_status(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        ['unit' => $unit, 'control' => $control, 'pic' => $pic] = $this->seedUnitControlPics();
+        $entry = ChecklistEntry::create([
+            'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
+        ]);
+
+        $this->actingAs($admin)
+            ->patchJson("/api/checklist-entries/{$entry->id}", ['status' => 'not_a_status'])
+            ->assertStatus(422);
+    }
+
+    public function test_verify_rejects_unknown_admin(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN_KEPATUHAN]);
+        ['unit' => $unit, 'control' => $control, 'pic' => $pic] = $this->seedUnitControlPics();
+        $entry = ChecklistEntry::create([
+            'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
+            'status' => ChecklistEntry::STATUS_PARTIAL,
+        ]);
+
+        $this->actingAs($admin)
+            ->patchJson("/api/checklist-entries/{$entry->id}/verify", [
+                'admin_id' => 999999, 'status' => 'compliant',
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['admin_id']);
+    }
+
+    // D-gap — verify() trusts the caller's admin_id and never checks unit or role:
+    // a PIC of another unit can verify a foreign unit's entry.
+    public function test_verify_cross_unit_not_scoped(): void
+    {
+        $unitA = WorkUnit::create(['nama' => 'Unit A']);
+        $unitB = WorkUnit::create(['nama' => 'Unit B']);
+        $fw = Framework::create(['nama' => 'ISO 27001', 'versi' => '2022']);
+        $control = $fw->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a']);
+        $picA = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unitA->id]);
+        $picB = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unitB->id]);
+
+        $entry = ChecklistEntry::create([
+            'control_id' => $control->id, 'unit_id' => $unitA->id, 'pic_id' => $picA->id,
+            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+        ]);
+
+        $this->actingAs($picB)
+            ->patchJson("/api/checklist-entries/{$entry->id}/verify", [
+                'admin_id' => $picB->id, 'status' => 'compliant',
+            ])
+            ->assertOk();
+
+        $this->assertNotNull(ChecklistEntry::find($entry->id)->tanggal_verifikasi);
+    }
+
+    public function test_generate_monthly_command_is_idempotent_and_assigns_pic(): void
+    {
+        $unit = WorkUnit::create(['nama' => 'Unit Bulanan']);
+        $fw = Framework::create(['nama' => 'ISO 27001', 'versi' => '2022']);
+        $ctrl = $fw->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a']);
+        $pic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unit->id]);
+
+        $this->artisan('smki:generate-monthly-checklist')->assertSuccessful();
+
+        $this->assertDatabaseHas('checklist_entries', [
+            'unit_id' => $unit->id, 'control_id' => $ctrl->id, 'pic_id' => $pic->id,
+            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+        ]);
+
+        $countAfterFirstRun = ChecklistEntry::count();
+
+        $this->artisan('smki:generate-monthly-checklist')->assertSuccessful();
+        $this->assertSame($countAfterFirstRun, ChecklistEntry::count(), 'Duplicate prevention: second run must not re-insert.');
+    }
+
+    public function test_web_pic_entry_update_scoped_to_own_pic_and_requires_catatan(): void
+    {
+        $unit = WorkUnit::create(['nama' => 'Unit PIC Web']);
+        $fw = Framework::create(['nama' => 'ISO 27001', 'versi' => '2022']);
+        $control = $fw->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a']);
+        $pic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unit->id]);
+        $otherPic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unit->id]);
+        $entry = ChecklistEntry::create([
+            'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
+            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+        ]);
+
+        // non_compliant/na statuses require catatan
+        $this->actingAs($pic)
+            ->from('/admin/pic/assessments')
+            ->patch("/admin/pic/checklist-entries/{$entry->id}", ['status' => 'non_compliant'])
+            ->assertSessionHasErrors('catatan');
+
+        $this->actingAs($pic)
+            ->from('/admin/pic/assessments')
+            ->patch("/admin/pic/checklist-entries/{$entry->id}", [
+                'status' => 'compliant', 'catatan' => 'Dokumen SOP tersedia',
+            ])
+            ->assertOk()
+            ->assertJson(['ok' => true]);
+
+        $this->assertDatabaseHas('checklist_entries', [
+            'id' => $entry->id, 'status' => 'compliant', 'catatan' => 'Dokumen SOP tersedia',
+        ]);
+
+        // another PIC cannot touch the entry (scoped via pic_id)
+        $this->actingAs($otherPic)
+            ->from('/admin/pic/assessments')
+            ->patch("/admin/pic/checklist-entries/{$entry->id}", ['status' => 'partial', 'catatan' => 'x'])
+            ->assertStatus(404);
+    }
+
+    public function test_web_pic_entry_evidence_upload_clears_verification(): void
+    {
+        Storage::fake('supabase');
+
+        $unit = WorkUnit::create(['nama' => 'Unit Bukti Web']);
+        $fw = Framework::create(['nama' => 'ISO 27001', 'versi' => '2022']);
+        $control = $fw->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a']);
+        $pic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unit->id]);
+        $session = ChecklistSession::create(['konteks_penilaian' => 'Sesi bukti', 'unit_id' => $unit->id, 'framework_id' => $fw->id]);
+        $entry = ChecklistEntry::create([
+            'session_id' => $session->id, 'control_id' => $control->id, 'unit_id' => $unit->id,
+            'pic_id' => $pic->id, 'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'admin_id' => $pic->id, 'tanggal_verifikasi' => now(), 'catatan' => 'ok',
+        ]);
+
+        $this->actingAs($pic)
+            ->from('/admin/pic/assessments')
+            ->post("/admin/pic/checklist-entries/{$entry->id}/evidence", [
+                'bukti_file' => UploadedFile::fake()->create('sop.pdf', 100, 'application/pdf'),
+            ])
+            ->assertRedirect('/admin/pic/assessments');
+
+        $this->assertDatabaseHas('compliance_evidences', [
+            'checklist_entry_id' => $entry->id, 'uploaded_by' => $pic->id, 'version_number' => 1,
+        ]);
+        $this->assertDatabaseHas('checklist_entries', [
+            'id' => $entry->id, 'tanggal_verifikasi' => null,
+        ]);
     }
 }
