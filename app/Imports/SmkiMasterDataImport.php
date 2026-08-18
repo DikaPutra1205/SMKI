@@ -208,8 +208,16 @@ class SmkiMasterDataImport implements Import, SkipsUnknownSheets, WithMultipleSh
                         ];
                     }
 
-                    // Eager-load all existing controls in memory
-                    $existingControls = Control::with('framework:id,nama,versi')
+                    // Eager-load only non-trashed existing controls.
+                    // Using the default (non-trashed) scope is essential: the
+                    // Frameworks sheet may have just soft-deleted a framework
+                    // (and cascade-soft-deleted its controls via Framework::booted()).
+                    // If we included trashed rows here, the create path below
+                    // would trigger uniq_ctrl_fw_kode even though the row is
+                    // logically gone — now fixed to a partial index, but being
+                    // explicit here is still the correct approach.
+                    $existingControls = Control::withoutTrashed()
+                        ->with('framework:id,nama,versi')
                         ->get()
                         ->keyBy(fn (Control $c) => "{$c->framework_id}|{$c->kode_klausul}");
 

@@ -53,14 +53,10 @@ class ChecklistSessionApiTest extends TestCase
         extract($this->setupData());
 
         $payload = [
-            'nama_sesi' => 'Audit Internal Semester 1 2026',
+            'konteks_penilaian' => 'Audit Internal Semester 1 2026 - Layanan Cloud',
             'periode' => 'Semester 1 2026',
-            'konteks_penilaian' => 'Penilaian mandiri lingkup layanan cloud dan sistem informasi kepegawaian.',
             'unit_id' => $unit->id,
             'framework_id' => $fw->id,
-            'auditor_id' => $auditor->id,
-            'start_date' => '2026-03-01',
-            'end_date' => '2026-03-31',
             'catatan' => 'Sesi audit berkala internal.',
         ];
 
@@ -71,16 +67,16 @@ class ChecklistSessionApiTest extends TestCase
             'status',
             'message',
             'data' => [
-                'session' => ['id', 'nama_sesi', 'periode', 'konteks_penilaian', 'status', 'unit_id', 'framework_id'],
+                'session' => ['id', 'konteks_penilaian', 'periode', 'unit_id', 'framework_id', 'created_by', 'updated_by'],
                 'summary' => ['total_entries', 'compliant', 'compliance_percentage'],
             ],
         ]);
 
-        $session = ChecklistSession::where('nama_sesi', 'Audit Internal Semester 1 2026')->first();
+        $session = ChecklistSession::where('konteks_penilaian', 'Audit Internal Semester 1 2026 - Layanan Cloud')->first();
         $this->assertNotNull($session);
         $this->assertSame('Semester 1 2026', $session->periode);
-        $this->assertSame('Penilaian mandiri lingkup layanan cloud dan sistem informasi kepegawaian.', $session->konteks_penilaian);
-        $this->assertSame(ChecklistSession::STATUS_IN_PROGRESS, $session->status);
+        $this->assertSame($admin->id, $session->created_by);
+        $this->assertSame($admin->id, $session->updated_by);
 
         // Checklist entries should be auto-provisioned for all controls in framework
         $this->assertDatabaseHas('checklist_entries', [
@@ -106,27 +102,18 @@ class ChecklistSessionApiTest extends TestCase
         extract($this->setupData());
 
         $session1 = ChecklistSession::create([
-            'nama_sesi' => 'Audit Internal Q1',
+            'konteks_penilaian' => 'Audit Internal Q1 Surabaya',
             'periode' => 'Q1 2026',
-            'konteks_penilaian' => 'Konteks Unit Surabaya',
             'unit_id' => $unit->id,
             'framework_id' => $fw->id,
-            'status' => ChecklistSession::STATUS_IN_PROGRESS,
         ]);
 
         $session2 = ChecklistSession::create([
-            'nama_sesi' => 'Audit Eksternal Q2',
+            'konteks_penilaian' => 'Audit Eksternal Q2 Jakarta',
             'periode' => 'Q2 2026',
-            'konteks_penilaian' => 'Konteks Unit Jakarta',
             'unit_id' => $unit->id,
             'framework_id' => $fw->id,
-            'status' => ChecklistSession::STATUS_CLOSED,
         ]);
-
-        $res = $this->actingAs($admin)->getJson('/api/checklist-sessions?status=in_progress');
-        $res->assertOk();
-        $res->assertJsonFragment(['nama_sesi' => 'Audit Internal Q1']);
-        $res->assertJsonMissing(['nama_sesi' => 'Audit Eksternal Q2']);
 
         $resPeriode = $this->actingAs($admin)->getJson('/api/checklist-sessions?periode=Q1 2026');
         $resPeriode->assertOk();
@@ -135,8 +122,8 @@ class ChecklistSessionApiTest extends TestCase
 
         $resSearch = $this->actingAs($admin)->getJson('/api/checklist-sessions?search=Surabaya');
         $resSearch->assertOk();
-        $resSearch->assertJsonFragment(['konteks_penilaian' => 'Konteks Unit Surabaya']);
-        $resSearch->assertJsonMissing(['konteks_penilaian' => 'Konteks Unit Jakarta']);
+        $resSearch->assertJsonFragment(['konteks_penilaian' => 'Audit Internal Q1 Surabaya']);
+        $resSearch->assertJsonMissing(['konteks_penilaian' => 'Audit Eksternal Q2 Jakarta']);
     }
 
     public function test_show_session_returns_entries_and_summary(): void
@@ -144,10 +131,9 @@ class ChecklistSessionApiTest extends TestCase
         extract($this->setupData());
 
         $session = ChecklistSession::create([
-            'nama_sesi' => 'Audit Q1',
+            'konteks_penilaian' => 'Audit Q1',
             'unit_id' => $unit->id,
             'framework_id' => $fw->id,
-            'status' => ChecklistSession::STATUS_IN_PROGRESS,
         ]);
 
         $entry = ChecklistEntry::create([
@@ -166,64 +152,29 @@ class ChecklistSessionApiTest extends TestCase
         $res->assertJsonPath('data.summary.compliance_percentage', 100);
     }
 
-    public function test_submit_and_verify_session_flow(): void
+    public function test_update_session(): void
     {
         extract($this->setupData());
 
         $session = ChecklistSession::create([
-            'nama_sesi' => 'Self Assessment 2026',
+            'konteks_penilaian' => 'Audit Draft',
             'unit_id' => $unit->id,
             'framework_id' => $fw->id,
-            'status' => ChecklistSession::STATUS_IN_PROGRESS,
+            'created_by' => $admin->id,
         ]);
 
-        // PIC submits session
-        $submitRes = $this->actingAs($pic)->postJson("/api/checklist-sessions/{$session->id}/submit");
-        $submitRes->assertOk();
-        $this->assertSame(ChecklistSession::STATUS_SUBMITTED, $session->fresh()->status);
-
-        // Auditor verifies session and closes it
-        $verifyRes = $this->actingAs($auditor)->patchJson("/api/checklist-sessions/{$session->id}/verify", [
-            'status' => 'closed',
-            'catatan' => 'Semua klausul terverifikasi memuaskan.',
-        ]);
-        $verifyRes->assertOk();
-        $this->assertSame(ChecklistSession::STATUS_CLOSED, $session->fresh()->status);
-        $this->assertSame('Semua klausul terverifikasi memuaskan.', $session->fresh()->catatan);
-    }
-
-    public function test_closed_session_locks_checklist_entries_from_updates(): void
-    {
-        extract($this->setupData());
-
-        $session = ChecklistSession::create([
-            'nama_sesi' => 'Locked Audit Sesi',
-            'unit_id' => $unit->id,
-            'framework_id' => $fw->id,
-            'status' => ChecklistSession::STATUS_CLOSED,
+        $res = $this->actingAs($admin)->putJson("/api/checklist-sessions/{$session->id}", [
+            'konteks_penilaian' => 'Audit Finalized',
+            'periode' => 'Semester 2 2026',
+            'catatan' => 'Catatan revisi',
         ]);
 
-        $entry = ChecklistEntry::create([
-            'session_id' => $session->id,
-            'control_id' => $control1->id,
-            'unit_id' => $unit->id,
-            'pic_id' => $pic->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
-        ]);
-
-        // Attempt to update entry inside a closed session
-        $res = $this->actingAs($pic)->putJson("/api/checklist-entries/{$entry->id}", [
-            'status' => 'compliant',
-            'catatan' => 'Percobaan update di sesi closed',
-        ]);
-
-        $res->assertStatus(422);
-        $res->assertJsonFragment([
-            'status' => 'error',
-            'message' => 'Sesi checklist audit sudah ditutup (closed) dan dikunci.',
-        ]);
-
-        $this->assertSame(ChecklistEntry::STATUS_NON_COMPLIANT, $entry->fresh()->status);
+        $res->assertOk();
+        $fresh = $session->fresh();
+        $this->assertSame('Audit Finalized', $fresh->konteks_penilaian);
+        $this->assertSame('Semester 2 2026', $fresh->periode);
+        $this->assertSame('Catatan revisi', $fresh->catatan);
+        $this->assertSame($admin->id, $fresh->updated_by);
     }
 
     public function test_soft_delete_and_restore_session(): void
@@ -231,10 +182,9 @@ class ChecklistSessionApiTest extends TestCase
         extract($this->setupData());
 
         $session = ChecklistSession::create([
-            'nama_sesi' => 'Audit To Delete',
+            'konteks_penilaian' => 'Audit To Delete',
             'unit_id' => $unit->id,
             'framework_id' => $fw->id,
-            'status' => ChecklistSession::STATUS_IN_PROGRESS,
         ]);
 
         $entry = ChecklistEntry::create([
@@ -255,5 +205,63 @@ class ChecklistSessionApiTest extends TestCase
 
         $this->assertNotSoftDeleted('checklist_sessions', ['id' => $session->id]);
         $this->assertNotSoftDeleted('checklist_entries', ['id' => $entry->id]);
+    }
+
+    // Validation: store without konteks_penilaian should fail with 422.
+    // This previously surfaced as "test_checklist_sessions_crud Error: konteks_penilaian required"
+    // because the test payload was missing the required field.
+    public function test_store_rejects_missing_konteks_penilaian(): void
+    {
+        extract($this->setupData());
+
+        $response = $this->actingAs($admin)->postJson('/api/checklist-sessions', [
+            'periode' => 'Q1 2026',
+            'unit_id' => $unit->id,
+            'framework_id' => $fw->id,
+            // konteks_penilaian intentionally omitted
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['konteks_penilaian']);
+    }
+
+    // Validation: store with a non-existent unit_id should fail with 422.
+    public function test_store_rejects_invalid_unit_id(): void
+    {
+        extract($this->setupData());
+
+        $response = $this->actingAs($admin)->postJson('/api/checklist-sessions', [
+            'konteks_penilaian' => 'Audit Q1',
+            'unit_id' => 99999, // does not exist
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['unit_id']);
+    }
+
+    // Validation: update without any fields should still succeed (no-op).
+    public function test_update_empty_payload_returns_ok(): void
+    {
+        extract($this->setupData());
+
+        $session = ChecklistSession::create([
+            'konteks_penilaian' => 'Audit To Update',
+            'unit_id' => $unit->id,
+            'framework_id' => $fw->id,
+        ]);
+
+        $this->actingAs($admin)
+            ->putJson("/api/checklist-sessions/{$session->id}", [])
+            ->assertOk();
+    }
+
+    // Edge: show non-existent session should 404, not 500.
+    public function test_show_nonexistent_session_returns_404(): void
+    {
+        extract($this->setupData());
+
+        $this->actingAs($admin)
+            ->getJson('/api/checklist-sessions/99999')
+            ->assertNotFound();
     }
 }

@@ -171,8 +171,15 @@ class ControlSeeder extends Seeder
             'updated_at' => $now,
         ]), $controls);
 
-        foreach (array_chunk($rows, 50) as $chunk) {
-            Control::upsert($chunk, ['framework_id', 'kode_klausul'], ['judul', 'kategori', 'deskripsi', 'updated_at']);
+        // Using updateOrCreate() instead of upsert() because the unique index on
+        // (framework_id, kode_klausul) is now a partial index (WHERE deleted_at IS NULL).
+        // SQLite does not support ON CONFLICT clauses that target partial indexes,
+        // causing upsert() to throw a QueryException in test environments.
+        foreach ($rows as $row) {
+            Control::updateOrCreate(
+                ['framework_id' => $row['framework_id'], 'kode_klausul' => $row['kode_klausul']],
+                ['judul' => $row['judul'], 'kategori' => $row['kategori'], 'deskripsi' => $row['deskripsi'] ?? null, 'updated_at' => $row['updated_at']]
+            );
         }
 
         $this->command->info('Berhasil menyemai '.count($rows).' kontrol ISO/IEC 27001:2022.');
@@ -245,8 +252,13 @@ class ControlSeeder extends Seeder
             'updated_at' => $now,
         ]), $controls);
 
-        foreach (array_chunk($rows, 50) as $chunk) {
-            Control::upsert($chunk, ['framework_id', 'kode_klausul'], ['judul', 'kategori', 'deskripsi', 'updated_at']);
+        // Using updateOrCreate() instead of upsert() for partial-index compatibility.
+        // See comment in seedIso27001() for explanation.
+        foreach ($rows as $row) {
+            Control::updateOrCreate(
+                ['framework_id' => $row['framework_id'], 'kode_klausul' => $row['kode_klausul']],
+                ['judul' => $row['judul'], 'kategori' => $row['kategori'], 'deskripsi' => $row['deskripsi'] ?? null, 'updated_at' => $row['updated_at']]
+            );
         }
 
         $this->command->info('Berhasil menyemai '.count($rows).' kontrol ISO/IEC 27701:2019 (PIMS & PDP).');
