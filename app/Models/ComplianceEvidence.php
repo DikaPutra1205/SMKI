@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 class ComplianceEvidence extends Model
 {
@@ -36,7 +37,7 @@ class ComplianceEvidence extends Model
         return $this->belongsTo(User::class, 'uploaded_by');
     }
 
-    protected $appends = ['label_revisi'];
+    protected $appends = ['label_revisi', 'file_url', 'nama_file'];
 
     public function getLabelRevisiAttribute(): string
     {
@@ -45,6 +46,36 @@ class ComplianceEvidence extends Model
         }
 
         return "Dokumen Pembaruan (Revisi ke-{$this->version_number})";
+    }
+
+    public function getNamaFileAttribute(): string
+    {
+        return rawurldecode(basename($this->attributes['file_url'] ?? ''));
+    }
+
+    public function getFileUrlAttribute(): string
+    {
+        $raw = $this->attributes['file_url'] ?? '';
+
+        if (filter_var($raw, FILTER_VALIDATE_URL)) {
+            $bucket = config('filesystems.disks.supabase.bucket');
+            $prefix = "/storage/v1/s3/{$bucket}/";
+            $pos = strpos($raw, $prefix);
+            $key = $pos !== false ? substr($raw, $pos + strlen($prefix)) : parse_url($raw, PHP_URL_PATH);
+            $key = rawurldecode($key);
+        } else {
+            $key = $raw;
+        }
+
+        if (! $key) {
+            return $raw;
+        }
+
+        try {
+            return Storage::disk('supabase')->temporaryUrl($key, now()->addMinutes(30));
+        } catch (\Throwable) {
+            return $raw;
+        }
     }
 
     /**

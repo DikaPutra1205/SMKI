@@ -20,6 +20,8 @@ class Control extends Model
         'kategori',
     ];
 
+    protected $appends = ['framework_name', 'framework_versi'];
+
     public function framework(): BelongsTo
     {
         return $this->belongsTo(Framework::class);
@@ -38,5 +40,15 @@ class Control extends Model
     public function risks(): HasMany
     {
         return $this->hasMany(Risk::class, 'control_id');
+    }
+
+    public function getFrameworkNameAttribute(): string
+    {
+        return $this->framework->nama;
+    }
+
+    public function getFrameworkVersiAttribute(): string
+    {
+        return $this->framework->versi;
     }
 }

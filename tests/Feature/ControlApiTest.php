@@ -126,4 +126,69 @@ class ControlApiTest extends TestCase
 
         $this->assertDatabaseHas('controls', ['kode_klausul' => 'A.5.9']);
     }
+
+    public function test_index_search_matches_kode_klausul(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        $fw = $this->framework();
+        $fw->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a']);
+        $fw->controls()->create(['kode_klausul' => 'A.7.2', 'judul' => 'Other', 'kategori' => 'annex_a']);
+
+        $this->actingAs($admin)
+            ->getJson('/api/controls?search=A.5.1')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.kode_klausul', 'A.5.1');
+    }
+
+    public function test_by_framework_returns_404_for_soft_deleted_framework(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        $fw = $this->framework();
+        $fw->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a']);
+        $fw->delete();
+
+        $this->actingAs($admin)
+            ->getJson("/api/frameworks/{$fw->id}/controls")
+            ->assertStatus(404);
+    }
+
+    public function test_store_accepts_klausul_4_10_kategori(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        $fw = $this->framework();
+
+        $this->actingAs($admin)
+            ->postJson('/api/controls', [
+                'framework_id' => $fw->id,
+                'kode_klausul' => '4.2.2',
+                'judul' => 'Stakeholder communication',
+                'kategori' => 'klausul_4_10',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.kategori', 'klausul_4_10');
+
+        $this->assertDatabaseHas('controls', ['kode_klausul' => '4.2.2', 'kategori' => 'klausul_4_10']);
+    }
+
+    public function test_update_moves_control_to_another_framework(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        $fw1 = $this->framework();
+        $fw2 = Framework::create(['nama' => 'ISO 27701:2019', 'versi' => '2019']);
+        $control = $fw1->controls()->create([
+            'kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a',
+        ]);
+
+        $this->actingAs($admin)
+            ->patchJson("/api/controls/{$control->id}", [
+                'framework_id' => $fw2->id,
+                'kode_klausul' => 'A.5.1',
+                'judul' => 'Policies',
+                'kategori' => 'annex_a',
+            ])
+            ->assertOk();
+
+        $this->assertDatabaseHas('controls', ['id' => $control->id, 'framework_id' => $fw2->id]);
+    }
 }

@@ -49,23 +49,33 @@ class ChecklistSession extends Model
 
     public function getSummaryAttribute(): array
     {
-        $total = $this->entries()->count();
-        $compliant = $this->entries()->where('status', ChecklistEntry::STATUS_COMPLIANT)->count();
-        $partial = $this->entries()->where('status', ChecklistEntry::STATUS_PARTIAL)->count();
-        $nonCompliant = $this->entries()->where('status', ChecklistEntry::STATUS_NON_COMPLIANT)->count();
-        $na = $this->entries()->where('status', ChecklistEntry::STATUS_NA)->count();
-        $verified = $this->entries()->whereNotNull('tanggal_verifikasi')->count();
+        $stats = $this->entries()
+            ->selectRaw('
+                COUNT(*) as total_entries,
+                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as compliant,
+                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as partial,
+                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as non_compliant,
+                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as na,
+                SUM(CASE WHEN tanggal_verifikasi IS NOT NULL THEN 1 ELSE 0 END) as verified_entries
+            ', [
+                ChecklistEntry::STATUS_COMPLIANT,
+                ChecklistEntry::STATUS_PARTIAL,
+                ChecklistEntry::STATUS_NON_COMPLIANT,
+                ChecklistEntry::STATUS_NA,
+            ])
+            ->first();
 
-        $percentage = $total > 0 ? (int) round(($compliant / $total) * 100) : 0;
+        $total = (int) $stats->total_entries;
+        $compliant = (int) $stats->compliant;
 
         return [
             'total_entries' => $total,
             'compliant' => $compliant,
-            'partial' => $partial,
-            'non_compliant' => $nonCompliant,
-            'na' => $na,
-            'verified_entries' => $verified,
-            'compliance_percentage' => $percentage,
+            'partial' => (int) $stats->partial,
+            'non_compliant' => (int) $stats->non_compliant,
+            'na' => (int) $stats->na,
+            'verified_entries' => (int) $stats->verified_entries,
+            'compliance_percentage' => $total > 0 ? (int) round(($compliant / $total) * 100) : 0,
         ];
     }
 }

@@ -1,7 +1,14 @@
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Modal } from '@/components/ui/Modal';
+import { Pagination } from '@/components/ui/Pagination';
+import { Select } from '@/components/ui/Select';
+import { StatusBadge, statusTone } from '@/components/ui/StatusBadge';
+import { Toast } from '@/components/ui/Toast';
 import AppLayout from '@/layouts/AppLayout';
+import { t } from '@/lib/i18n';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { ChevronLeft, ChevronRight, Eye, Filter, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
+import { Eye, Plus, Search } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 export interface FrameworkItem {
@@ -21,15 +28,26 @@ export interface ControlItem {
     title: string;
     description: string;
     category: string;
+    status: string | null;
+    unit_nama: string;
+    pic_name: string;
+}
+
+export interface WorkUnitItem {
+    id: number;
+    nama: string;
 }
 
 interface ComplianceProps {
     frameworks?: FrameworkItem[];
     controls?: ControlItem[];
+    workUnits?: WorkUnitItem[];
     filters?: {
         search?: string;
-        kategori?: string;
+        status?: string;
+        unit_id?: string;
         framework_id?: string;
+        kategori?: string;
     };
 }
 
@@ -44,99 +62,42 @@ interface ControlFormData {
     [key: string]: string;
 }
 
-const initialControlsFallback: ControlItem[] = [
-    {
-        id: '1',
-        framework_id: 1,
-        framework_nama: 'ISO/IEC 27001:2022',
-        code: 'A.5.1',
-        title: 'Kebijakan Keamanan Informasi',
-        description: 'Dokumen kebijakan disetujui manajemen dan direview',
-        category: 'Annex A',
-    },
-    {
-        id: '2',
-        framework_id: 1,
-        framework_nama: 'ISO/IEC 27001:2022',
-        code: 'A.6.1.2',
-        title: 'Pemisahan Tugas',
-        description: 'Pemisahan tugas dan area tanggung jawab',
-        category: 'Annex A',
-    },
-    {
-        id: '3',
-        framework_id: 1,
-        framework_nama: 'ISO/IEC 27001:2022',
-        code: 'A.8.1.1',
-        title: 'Inventarisasi Aset',
-        description: 'Daftar aset informasi yang teridentifikasi',
-        category: 'Annex A',
-    },
-    {
-        id: '4',
-        framework_id: 1,
-        framework_nama: 'ISO/IEC 27001:2022',
-        code: 'A.9.4.1',
-        title: 'Informasi Pembatasan Akses',
-        description: 'Pembatasan akses atas informasi dan aset pendukung',
-        category: 'Annex A',
-    },
-    {
-        id: '5',
-        framework_id: 1,
-        framework_nama: 'ISO/IEC 27001:2022',
-        code: 'A.10.1.1',
-        title: 'Penggunaan Utilitas Kriptografi',
-        description: 'Kebijakan penggunaan proteksi kriptografi',
-        category: 'Annex A',
-    },
-    {
-        id: '6',
-        framework_id: 1,
-        framework_nama: 'ISO/IEC 27001:2022',
-        code: 'A.12.3.1',
-        title: 'Cadangan Informasi',
-        description: 'Cadangan dan pemulihan dilakukan dan diuji',
-        category: 'Annex A',
-    },
-];
+const STATUS_OPTIONS = ['compliant', 'partial', 'non_compliant', 'na'] as const;
 
-export default function Compliance({ frameworks = [], controls, filters = {} }: ComplianceProps) {
-    const activeControlsList = controls && controls.length > 0 ? controls : initialControlsFallback;
-
+export default function Compliance({ frameworks = [], controls = [], workUnits = [], filters = {} }: ComplianceProps) {
     const [searchQuery, setSearchQuery] = useState(filters.search || '');
-    const [selectedCategory, setSelectedCategory] = useState(filters.kategori || 'Semua Kategori');
-    const [selectedFrameworkId, setSelectedFrameworkId] = useState<number | null>(filters.framework_id ? Number(filters.framework_id) : null);
+    const [selectedStatus, setSelectedStatus] = useState(filters.status || 'Semua Status');
+    const [selectedUnit, setSelectedUnit] = useState<string>(filters.unit_id || 'Semua Unit');
+    const [selectedFrameworkId, setSelectedFrameworkId] = useState<number | null>(
+        filters.framework_id ? Number(filters.framework_id) : (frameworks[0]?.id ?? null),
+    );
 
-    // Pagination state
     const [perPage, setPerPage] = useState<number | 'all'>(20);
     const [currentPage, setCurrentPage] = useState(1);
 
-    const activeFramework = frameworks.find((f) => f.id === selectedFrameworkId);
+    const activeFramework = frameworks.find((f) => f.id === selectedFrameworkId) ?? null;
     const isFirstRender = useRef(true);
 
-    // ── Flash message ─────────────────────────────────────────────────────────
     const { flash } = usePage<{ flash?: { type: string; message: string } }>().props;
     const [flashVisible, setFlashVisible] = useState(false);
     useEffect(() => {
         if (flash?.message) {
             setFlashVisible(true);
-            const t = setTimeout(() => setFlashVisible(false), 4000);
-            return () => clearTimeout(t);
+            const timer = setTimeout(() => setFlashVisible(false), 4000);
+            return () => clearTimeout(timer);
         }
     }, [flash]);
 
-    // ── CRUD Modal state ──────────────────────────────────────────────────────
     const [modalMode, setModalMode] = useState<ModalMode>(null);
     const [editingId, setEditingId] = useState<string | null>(null);
+    const [detailTarget, setDetailTarget] = useState<ControlItem | null>(null);
 
-    // ── Delete confirmation state ───────────────────────────────────────────
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<ControlItem | null>(null);
     const [deleteBusy, setDeleteBusy] = useState(false);
 
     const form = useForm<ControlFormData>({
-        framework_id: String(selectedFrameworkId ?? (frameworks[0]?.id ?? '')),
+        framework_id: String(selectedFrameworkId ?? frameworks[0]?.id ?? ''),
         kode_klausul: '',
         judul: '',
         kategori: 'annex_a',
@@ -145,7 +106,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
 
     function openCreate() {
         form.reset();
-        form.setData('framework_id', String(selectedFrameworkId ?? (frameworks[0]?.id ?? '')));
+        form.setData('framework_id', String(selectedFrameworkId ?? frameworks[0]?.id ?? ''));
         form.clearErrors();
         setEditingId(null);
         setModalMode('create');
@@ -174,13 +135,9 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
     function submitForm(e: React.FormEvent) {
         e.preventDefault();
         if (modalMode === 'create') {
-            form.post('/admin/kepatuhan/controls', {
-                onSuccess: closeModal,
-            });
+            form.post('/admin/kepatuhan/controls', { onSuccess: closeModal });
         } else if (modalMode === 'edit' && editingId) {
-            form.put(`/admin/kepatuhan/controls/${editingId}`, {
-                onSuccess: closeModal,
-            });
+            form.put(`/admin/kepatuhan/controls/${editingId}`, { onSuccess: closeModal });
         }
     }
 
@@ -206,12 +163,10 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
         setDeleteTarget(null);
     }
 
-    // Reset pagination to page 1 whenever filters change
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchQuery, selectedCategory, selectedFrameworkId, perPage]);
+    }, [searchQuery, selectedStatus, selectedUnit, selectedFrameworkId, perPage]);
 
-    // Debounced search & filter trigger
     useEffect(() => {
         if (isFirstRender.current) {
             isFirstRender.current = false;
@@ -223,7 +178,8 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                 '/admin/kepatuhan/compliance',
                 {
                     search: searchQuery || undefined,
-                    kategori: selectedCategory !== 'Semua Kategori' ? selectedCategory : undefined,
+                    status: selectedStatus !== 'Semua Status' ? selectedStatus : undefined,
+                    unit_id: selectedUnit !== 'Semua Unit' ? selectedUnit : undefined,
                     framework_id: selectedFrameworkId ? String(selectedFrameworkId) : undefined,
                 },
                 { preserveState: true, replace: true },
@@ -231,31 +187,9 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
         }, 350);
 
         return () => clearTimeout(timer);
-    }, [searchQuery, selectedCategory, selectedFrameworkId]);
+    }, [searchQuery, selectedStatus, selectedUnit, selectedFrameworkId]);
 
-    // Client-side filtering as fallback/immediate feedback sorted by ID ascending
-    const filteredControls = activeControlsList
-        .filter((item) => {
-            if (selectedFrameworkId && item.framework_id && item.framework_id !== selectedFrameworkId) {
-                return false;
-            }
-
-            const q = searchQuery.toLowerCase();
-            const matchesSearch =
-                !q || item.code.toLowerCase().includes(q) || item.title.toLowerCase().includes(q) || item.description.toLowerCase().includes(q);
-
-            const matchesCategory =
-                selectedCategory === 'Semua Kategori' ||
-                item.category === selectedCategory ||
-                (selectedCategory === 'Annex A' && item.category.toLowerCase().includes('annex')) ||
-                (selectedCategory === 'Klausul 4-10' && item.category.toLowerCase().includes('klausul'));
-
-            return matchesSearch && matchesCategory;
-        })
-        .sort((a, b) => Number(a.id) - Number(b.id));
-
-    // Pagination logic
-    const totalItems = filteredControls.length;
+    const totalItems = controls.length;
     const effectivePerPage = perPage === 'all' ? totalItems || 1 : perPage;
     const totalPages = perPage === 'all' || totalItems === 0 ? 1 : Math.ceil(totalItems / effectivePerPage);
     const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
@@ -263,171 +197,242 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
     const startIndex = totalItems === 0 ? 0 : (safeCurrentPage - 1) * effectivePerPage;
     const endIndex = perPage === 'all' ? totalItems : Math.min(startIndex + effectivePerPage, totalItems);
 
-    const paginatedControls = perPage === 'all' ? filteredControls : filteredControls.slice(startIndex, endIndex);
+    const paginatedControls = perPage === 'all' ? controls : controls.slice(startIndex, endIndex);
 
-    const breadcrumbs = [
-        { label: 'Dashboard', href: '/admin/kepatuhan/dashboard' },
-        { label: 'Compliance', href: '/admin/kepatuhan/compliance' },
-        { label: 'Controls Management' },
-    ];
+    const breadcrumbs = [{ label: t('common.dashboard'), href: '/admin/kepatuhan/dashboard' }, { label: t('compliance.title') }];
 
     return (
         <AppLayout breadcrumbs={breadcrumbs} currentPath="/admin/kepatuhan/compliance">
-            <Head title="Controls Management - Compliance Admin" />
+            <Head title={`${t('compliance.title')} - Admin Kepatuhan`} />
 
-            {/* Header Title Section */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="page-head flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Controls Management</h1>
-                    <p className="mt-1 text-xs text-slate-500 sm:text-sm dark:text-slate-400">
-                        Kelola seluruh kontrol dan klausul kepatuhan standar keamanan informasi.
-                    </p>
+                    <h1 className="text-2xl font-bold tracking-tight">{t('compliance.title')}</h1>
+                    <p className="text-muted mt-1 text-xs sm:text-sm">{t('compliance.subtitle')}</p>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <button
-                        type="button"
-                        onClick={openCreate}
-                        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 sm:text-sm"
-                    >
-                        <Plus className="h-4 w-4" />
-                        <span>Tambah Kontrol</span>
-                    </button>
-                </div>
+                <button
+                    type="button"
+                    onClick={openCreate}
+                    className="bg-primary shadow-blue hover:bg-primary-700 inline-flex items-center gap-2 rounded-[10px] px-4 py-2 text-xs font-semibold text-white transition-colors sm:text-sm"
+                >
+                    <Plus className="h-4 w-4" />
+                    <span>{t('compliance.addControl')}</span>
+                </button>
             </div>
 
-            {/* Controls Management Container */}
-            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                {/* Active Framework Information Header */}
-                <div className="flex flex-col gap-3 border-b border-slate-100 p-5 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800">
+            {/* Framework cards grid */}
+            <div className="mb-5 grid grid-cols-1 gap-[18px] md:grid-cols-2 xl:grid-cols-3">
+                {frameworks.map((fw) => {
+                    const isActive = fw.id === selectedFrameworkId;
+                    const is27001 = fw.nama.toLowerCase().includes('27001');
+                    return (
+                        <button
+                            key={fw.id}
+                            type="button"
+                            onClick={() => setSelectedFrameworkId(fw.id)}
+                            className={`font-body hover:border-primary-300 flex cursor-pointer flex-col items-start gap-[7px] rounded-[14px] border bg-white p-[18px_20px] text-left shadow-sm transition-all hover:shadow-md ${
+                                isActive ? 'border-primary shadow-[0_0_0_3px_#eaf3fb]' : 'border-border'
+                            }`}
+                        >
+                            <span className="flex w-full items-center justify-between">
+                                <span
+                                    className={`grid h-[38px] w-[38px] place-items-center rounded-[10px] ${
+                                        is27001 ? 'bg-primary-50 text-primary' : 'bg-violet-bg text-violet'
+                                    }`}
+                                >
+                                    <svg
+                                        width="18"
+                                        height="18"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    >
+                                        <path d="M12 2 2 7l10 5 10-5-10-5z" />
+                                        <path d="M2 17l10 5 10-5" />
+                                        <path d="M2 12l10 5 10-5" />
+                                    </svg>
+                                </span>
+                                {isActive ? (
+                                    <span className="border-success-border bg-success-bg text-success inline-flex items-center gap-1.5 rounded-[6px] border px-2.5 py-1 text-xs font-semibold">
+                                        <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                                        {t('common.active')}
+                                    </span>
+                                ) : (
+                                    <span className="border-border-strong bg-surface-2 text-navy inline-flex items-center rounded-[6px] border px-2.5 py-1 text-xs font-semibold">
+                                        v{fw.versi}
+                                    </span>
+                                )}
+                            </span>
+                            <strong className="text-navy text-[14.5px] font-bold">{fw.nama}</strong>
+                            <span className="text-muted text-xs">
+                                {is27001 ? t('compliance.controlsManagement') : t('compliance.privacyManagement')} · {fw.controls_count}{' '}
+                                {t('compliance.controlsUnit')} · {fw.compliance_percentage}% {t('compliance.compliantPct')}
+                            </span>
+                            <span className="bg-surface-2 h-[6px] w-full overflow-hidden rounded-full">
+                                <span
+                                    className={`block h-full rounded-full ${is27001 ? 'bg-primary' : 'bg-violet'}`}
+                                    style={{ width: `${Math.min(100, fw.compliance_percentage)}%` }}
+                                />
+                            </span>
+                        </button>
+                    );
+                })}
+            </div>
+
+            {/* Controls panel */}
+            <section className="border-border overflow-hidden rounded-[14px] border bg-white shadow-sm">
+                <div className="border-border flex flex-col gap-2 border-b p-[16px_18px] sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h2 className="text-base font-bold text-slate-900 sm:text-lg dark:text-white">
-                            {activeFramework ? `${activeFramework.nama}:${activeFramework.versi}` : 'Semua Framework'}
-                        </h2>
+                        <h3 className="text-[15px] font-bold">{activeFramework ? activeFramework.nama : t('compliance.title')}</h3>
+                        <p className="text-faint mt-0.5 text-xs">
+                            {activeFramework ? `${activeFramework.controls_count} ${t('compliance.controlsUnit')}` : ''} ·{' '}
+                            {activeFramework?.compliance_percentage ?? 0}% {t('compliance.compliantPct')}
+                        </p>
                     </div>
                 </div>
 
-                {/* Filter and Search Bar */}
-                <div className="border-b border-slate-100 bg-slate-50/50 p-4 sm:p-5 dark:border-slate-800 dark:bg-slate-900/50">
-                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                        {/* Search Input with Debounce */}
-                        <div className="relative min-w-[280px] flex-1">
-                            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                            <input
-                                type="text"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Cari berdasarkan kode, judul, atau deskripsi..."
-                                className="w-full rounded-lg border border-slate-200 bg-white py-2 pr-4 pl-9 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none sm:text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
-                            />
-                        </div>
-
-                        {/* Filters Group */}
-                        <div className="flex flex-wrap items-center gap-3">
-                            {/* Framework Filter */}
-                            <div className="flex items-center gap-2">
-                                <Filter className="h-4 w-4 text-slate-400" />
-                                <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Framework:</span>
-                            </div>
-                            <select
-                                value={selectedFrameworkId ? String(selectedFrameworkId) : 'Semua Framework'}
-                                onChange={(e) => {
-                                    const val = e.target.value;
-                                    setSelectedFrameworkId(val === 'Semua Framework' ? null : Number(val));
-                                }}
-                                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 focus:border-blue-500 focus:outline-none sm:text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                            >
-                                <option value="Semua Framework">Semua Framework</option>
-                                {frameworks.map((fw) => (
-                                    <option key={fw.id} value={String(fw.id)}>
-                                        {fw.nama}:{fw.versi}
-                                    </option>
-                                ))}
-                            </select>
-
-                            {/* Category Filter */}
-                            <div className="flex items-center gap-2">
-                                <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Kategori:</span>
-                            </div>
-                            <select
-                                value={selectedCategory}
-                                onChange={(e) => setSelectedCategory(e.target.value)}
-                                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 focus:border-blue-500 focus:outline-none sm:text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                            >
-                                <option value="Semua Kategori">Semua Kategori</option>
-                                <option value="Annex A">Annex A</option>
-                                <option value="Klausul 4-10">Klausul 4-10</option>
-                            </select>
-                        </div>
+                <div className="border-border flex flex-col gap-3 border-b bg-white p-[12px_16px] md:flex-row md:items-center">
+                    <div className="relative min-w-[220px] flex-1">
+                        <Search className="text-faint absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder={t('compliance.searchPlaceholder')}
+                            className="border-border-strong text-ink placeholder:text-faint focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white py-2 pr-4 pl-9 text-xs focus:ring-2 focus:outline-none sm:text-sm"
+                        />
                     </div>
+
+                    <Select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className="min-w-[150px]">
+                        <option value="Semua Status">{t('compliance.allStatus')}</option>
+                        {STATUS_OPTIONS.map((s) => (
+                            <option key={s} value={s}>
+                                {t(`status.${s}`)}
+                            </option>
+                        ))}
+                    </Select>
+
+                    <Select value={selectedUnit} onChange={(e) => setSelectedUnit(e.target.value)} className="min-w-[170px]">
+                        <option value="Semua Unit">{t('compliance.allUnits')}</option>
+                        {workUnits.map((u) => (
+                            <option key={u.id} value={String(u.id)}>
+                                {u.nama}
+                            </option>
+                        ))}
+                    </Select>
                 </div>
 
-                {/* Controls Data Table */}
                 <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs sm:text-sm">
-                        <thead className="border-b border-slate-100 bg-slate-50/80 text-[11px] font-bold tracking-wider text-slate-500 uppercase dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-400">
+                        <thead className="border-border bg-surface/60 text-muted border-b text-[11px] font-bold tracking-wider uppercase">
                             <tr>
-                                <th scope="col" className="px-4 py-3 text-center font-semibold">
-                                    ID
+                                <th scope="col" className="px-5 py-3 text-left font-semibold">
+                                    {t('compliance.code')}
                                 </th>
-                                <th scope="col" className="px-4 py-3 text-center font-semibold">
-                                    KODE KLAUSUL
+                                <th scope="col" className="px-5 py-3 text-left font-semibold">
+                                    {t('compliance.controlClause')}
                                 </th>
-                                <th scope="col" className="px-4 py-3 text-center font-semibold">
-                                    FRAMEWORK
+                                <th scope="col" className="px-5 py-3 text-left font-semibold">
+                                    {t('compliance.category')}
                                 </th>
-                                <th scope="col" className="px-4 py-3 text-left font-semibold">
-                                    JUDUL & DESKRIPSI
+                                <th scope="col" className="px-5 py-3 text-left font-semibold">
+                                    {t('compliance.workUnit')}
                                 </th>
-                                <th scope="col" className="px-4 py-3 text-center font-semibold">
-                                    KATEGORI
+                                <th scope="col" className="px-5 py-3 text-left font-semibold">
+                                    {t('compliance.status')}
                                 </th>
-                                <th scope="col" className="px-4 py-3 text-center font-semibold">
-                                    AKSI
+                                <th scope="col" className="px-5 py-3 text-right font-semibold">
+                                    {t('compliance.actions')}
                                 </th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
+                        <tbody className="divide-border divide-y">
                             {paginatedControls.length > 0 ? (
                                 paginatedControls.map((item) => (
-                                    <tr key={item.id} className="transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
-                                        <td className="px-4 py-4 text-center font-mono text-xs font-semibold whitespace-nowrap text-slate-500 dark:text-slate-400">
-                                            #{item.id}
+                                    <tr key={item.id} className="hover:bg-surface/50 transition-colors">
+                                        <td className="text-primary px-5 py-4 font-bold whitespace-nowrap">{item.code}</td>
+                                        <td className="px-5 py-4 text-left">
+                                            <div className="text-navy font-semibold">{item.title}</div>
+                                            <div className="text-faint mt-0.5 text-xs">{item.description}</div>
                                         </td>
-                                        <td className="px-4 py-4 text-center font-bold whitespace-nowrap text-blue-600 dark:text-blue-400">
-                                            {item.code}
-                                        </td>
-                                        <td className="px-4 py-4 text-center whitespace-nowrap">
-                                            <span className="inline-flex items-center rounded-md bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 ring-1 ring-blue-600/20 ring-inset dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-500/30">
-                                                {item.framework_nama || 'ISO/IEC 27001:2022'}
+                                        <td className="px-5 py-4 text-left whitespace-nowrap">
+                                            <span className="border-border text-body inline-flex items-center rounded-[6px] border bg-white px-2.5 py-1 text-xs font-semibold">
+                                                {item.category === 'Annex A' ? 'Annex A' : 'Klausul 4-10'}
                                             </span>
                                         </td>
-                                        <td className="px-4 py-4 text-left">
-                                            <div className="font-semibold text-slate-900 dark:text-white">{item.title}</div>
-                                            <div className="mt-0.5 line-clamp-2 text-xs text-slate-500 dark:text-slate-400">{item.description}</div>
+                                        <td className="px-5 py-4 text-left whitespace-nowrap">
+                                            {item.unit_nama ? (
+                                                <>
+                                                    <div className="text-navy font-medium">{item.unit_nama}</div>
+                                                    <div className="text-faint text-xs">{item.pic_name}</div>
+                                                </>
+                                            ) : (
+                                                <span className="text-faint text-xs">{t('compliance.noEntryYet')}</span>
+                                            )}
                                         </td>
-                                        <td className="px-4 py-4 text-center whitespace-nowrap">
-                                            <span className="inline-flex items-center rounded-md bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                                                {item.category}
-                                            </span>
+                                        <td className="px-5 py-4 text-left whitespace-nowrap">
+                                            {item.status ? (
+                                                <StatusBadge tone={statusTone(item.status)}>
+                                                    {t(`status.${item.status as 'compliant' | 'partial' | 'non_compliant' | 'na'}`)}
+                                                </StatusBadge>
+                                            ) : (
+                                                <StatusBadge tone="gray">{t('status.na')}</StatusBadge>
+                                            )}
                                         </td>
-                                        <td className="px-4 py-4 text-center whitespace-nowrap">
-                                            <div className="flex items-center justify-center gap-1.5">
+                                        <td className="px-5 py-4 text-right whitespace-nowrap">
+                                            <div className="flex items-center justify-end gap-1.5">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setDetailTarget(item)}
+                                                    className="text-body hover:bg-surface-2 rounded-lg p-1.5 transition-colors"
+                                                    title={t('compliance.detailRef')}
+                                                >
+                                                    <Eye className="h-4 w-4" />
+                                                </button>
                                                 <button
                                                     type="button"
                                                     onClick={() => openEdit(item)}
-                                                    className="rounded-lg p-1.5 text-blue-500 transition-colors hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/50 dark:hover:text-blue-300"
-                                                    title="Edit Kontrol"
+                                                    className="text-muted hover:bg-surface-2 rounded-lg p-1.5 transition-colors"
+                                                    title={t('compliance.editControl')}
                                                 >
-                                                    <Pencil className="h-4 w-4" />
+                                                    <svg
+                                                        width="16"
+                                                        height="16"
+                                                        viewBox="0 0 24 24"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        strokeWidth="2"
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                    >
+                                                        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                                                    </svg>
                                                 </button>
                                                 <button
                                                     type="button"
                                                     onClick={() => handleDelete(item)}
-                                                    className="rounded-lg p-1.5 text-red-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/50 dark:hover:text-red-400"
-                                                    title="Hapus Kontrol"
+                                                    className="text-danger hover:bg-danger-bg rounded-lg p-1.5 transition-colors"
+                                                    title={t('compliance.deleteControl')}
                                                 >
-                                                    <Trash2 className="h-4 w-4" />
+                                                    <svg
+                                                        width="16"
+                                                        height="16"
+                                                        viewBox="0 0 24 24"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        strokeWidth="2"
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                    >
+                                                        <path d="M3 6h18" />
+                                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                                        <line x1="10" x2="10" y1="11" y2="17" />
+                                                        <line x1="14" x2="14" y1="11" y2="17" />
+                                                    </svg>
                                                 </button>
                                             </div>
                                         </td>
@@ -435,8 +440,8 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={6} className="py-8 text-center text-sm text-slate-400">
-                                        Tidak ada kontrol yang cocok dengan kriteria pencarian.
+                                    <td colSpan={6}>
+                                        <EmptyState message={t('compliance.noResults')} />
                                     </td>
                                 </tr>
                             )}
@@ -444,216 +449,209 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                     </table>
                 </div>
 
-                {/* Pagination Controls & Showing info */}
-                <div className="flex flex-col gap-4 border-t border-slate-100 bg-slate-50/50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800 dark:bg-slate-900/50">
-                    {/* Items Per Page Selector & Info */}
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 sm:text-sm dark:text-slate-400">
-                        <div className="flex items-center gap-2">
-                            <span>Tampilkan</span>
-                            <select
-                                value={perPage}
-                                onChange={(e) => {
-                                    const val = e.target.value;
-                                    setPerPage(val === 'all' ? 'all' : Number(val));
-                                }}
-                                className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                <Pagination
+                    currentPage={safeCurrentPage}
+                    totalPages={totalPages}
+                    perPage={perPage}
+                    totalItems={totalItems}
+                    startIndex={startIndex}
+                    endIndex={endIndex}
+                    onPageChange={setCurrentPage}
+                    onPerPageChange={setPerPage}
+                />
+            </section>
+
+            {/* Control detail modal */}
+            <Modal
+                open={detailTarget !== null}
+                title={detailTarget ? `${detailTarget.code} · ${detailTarget.title}` : ''}
+                description={detailTarget?.framework_nama ? t('compliance.detailRef') : undefined}
+                onClose={() => setDetailTarget(null)}
+                maxWidth="lg"
+                footer={
+                    <>
+                        <button
+                            type="button"
+                            onClick={() => setDetailTarget(null)}
+                            className="border-border-strong text-body hover:bg-surface rounded-[10px] border bg-white px-4 py-2 text-sm font-medium transition-colors"
+                        >
+                            {t('compliance.close')}
+                        </button>
+                    </>
+                }
+            >
+                {detailTarget && (
+                    <div className="space-y-4">
+                        <div className="border-info/20 bg-info-bg flex gap-3 rounded-[10px] border p-3.5">
+                            <svg
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="text-info mt-0.5 shrink-0"
                             >
-                                <option value={20}>20</option>
-                                <option value={50}>50</option>
-                                <option value={100}>100</option>
-                                <option value="all">Semua</option>
-                            </select>
-                            <span>per halaman</span>
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="12" x2="12" y1="16" y2="12" />
+                                <line x1="12" x2="12.01" y1="8" y2="8" />
+                            </svg>
+                            <div>
+                                <strong className="text-ink block text-[13px]">{t('compliance.detailDescriptionLabel')}</strong>
+                                <span className="text-body mt-0.5 block text-[13px] leading-relaxed">{detailTarget.description}</span>
+                            </div>
                         </div>
-                        <span className="hidden text-slate-300 sm:inline dark:text-slate-700">•</span>
-                        <span>
-                            Showing <strong className="font-semibold text-slate-900 dark:text-white">{endIndex}</strong> of{' '}
-                            <strong className="font-semibold text-slate-900 dark:text-white">{totalItems}</strong> total entries
-                        </span>
+
+                        <div className="border-border overflow-hidden rounded-[10px] border">
+                            <div className="border-border flex items-center justify-between border-b px-4 py-2.5">
+                                <span className="text-body text-[13px] font-medium">{t('compliance.frameworkLabel')}</span>
+                                <span className="text-navy text-[13px] font-semibold">{detailTarget.framework_nama}</span>
+                            </div>
+                            <div className="flex items-center justify-between px-4 py-2.5">
+                                <span className="text-body text-[13px] font-medium">{t('compliance.categoryLabel')}</span>
+                                <span className="text-navy text-[13px] font-semibold">
+                                    {detailTarget.category === 'Annex A' ? 'Annex A' : 'Klausul 4-10'}
+                                </span>
+                            </div>
+                        </div>
+
+                        <h4 className="text-navy text-sm font-bold">{t('compliance.unitsAssessed')}</h4>
+                        {detailTarget.unit_nama ? (
+                            <div className="border-border overflow-hidden rounded-[10px] border">
+                                <table className="w-full text-left text-[13px]">
+                                    <thead className="border-border bg-surface/60 text-muted border-b text-[11px] font-bold tracking-wider uppercase">
+                                        <tr>
+                                            <th className="px-4 py-2.5 font-semibold">{t('compliance.unitWork')}</th>
+                                            <th className="px-4 py-2.5 font-semibold">{t('compliance.pic')}</th>
+                                            <th className="px-4 py-2.5 font-semibold">{t('compliance.cycleStatus')}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr className="border-border border-t">
+                                            <td className="text-navy px-4 py-3 font-semibold">{detailTarget.unit_nama}</td>
+                                            <td className="px-4 py-3">{detailTarget.pic_name}</td>
+                                            <td className="px-4 py-3">
+                                                {detailTarget.status ? (
+                                                    <StatusBadge tone={statusTone(detailTarget.status)}>
+                                                        {t(`status.${detailTarget.status as 'compliant' | 'partial' | 'non_compliant' | 'na'}`)}
+                                                    </StatusBadge>
+                                                ) : (
+                                                    <StatusBadge tone="gray">{t('status.na')}</StatusBadge>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <p className="text-faint text-[13px]">{t('compliance.noEntryYet')}</p>
+                        )}
+                    </div>
+                )}
+            </Modal>
+
+            {/* Add/edit control modal */}
+            <Modal
+                open={modalMode !== null}
+                title={modalMode === 'create' ? t('compliance.createTitle') : t('compliance.editTitle')}
+                description={modalMode === 'create' ? t('compliance.createSubtitle') : undefined}
+                onClose={closeModal}
+                maxWidth="lg"
+                footer={
+                    <>
+                        <button
+                            type="button"
+                            onClick={closeModal}
+                            className="border-border-strong text-body hover:bg-surface rounded-[10px] border bg-white px-4 py-2 text-sm font-medium transition-colors"
+                        >
+                            {t('common.cancel')}
+                        </button>
+                        <button
+                            type="submit"
+                            form="control-form"
+                            disabled={form.processing}
+                            className="bg-primary hover:bg-primary-700 inline-flex items-center gap-2 rounded-[10px] px-5 py-2 text-sm font-semibold text-white transition-colors disabled:opacity-50"
+                        >
+                            {form.processing ? t('common.saving') : t('compliance.addControlBtn')}
+                        </button>
+                    </>
+                }
+            >
+                <form id="control-form" onSubmit={submitForm} className="space-y-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <Select
+                            label={t('compliance.frameworkLabel')}
+                            value={form.data.framework_id}
+                            onChange={(e) => form.setData('framework_id', e.target.value)}
+                            error={form.errors.framework_id}
+                        >
+                            {frameworks.map((fw) => (
+                                <option key={fw.id} value={String(fw.id)}>
+                                    {fw.nama} ({fw.versi})
+                                </option>
+                            ))}
+                        </Select>
+
+                        <Select
+                            label={t('compliance.categoryLabel')}
+                            value={form.data.kategori}
+                            onChange={(e) => form.setData('kategori', e.target.value)}
+                            error={form.errors.kategori}
+                        >
+                            <option value="annex_a">Annex A</option>
+                            <option value="klausul_4_10">Klausul 4-10</option>
+                        </Select>
                     </div>
 
-                    {/* Page Navigation Buttons */}
-                    {totalPages > 1 && (
-                        <div className="flex items-center gap-1.5">
-                            <button
-                                type="button"
-                                disabled={safeCurrentPage === 1}
-                                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-xs transition-colors hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700/60"
-                            >
-                                <ChevronLeft className="h-3.5 w-3.5" />
-                                <span>Sebelumnya</span>
-                            </button>
-
-                            <div className="flex items-center gap-1">
-                                {Array.from({ length: totalPages }, (_, i) => i + 1)
-                                    .filter((p) => p === 1 || p === totalPages || Math.abs(p - safeCurrentPage) <= 1)
-                                    .map((p, idx, arr) => (
-                                        <div key={p} className="flex items-center">
-                                            {idx > 0 && arr[idx - 1] !== p - 1 && <span className="px-1 text-xs text-slate-400">...</span>}
-                                            <button
-                                                type="button"
-                                                onClick={() => setCurrentPage(p)}
-                                                className={`min-w-[32px] rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors ${
-                                                    safeCurrentPage === p
-                                                        ? 'bg-blue-600 text-white shadow-xs'
-                                                        : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700/60'
-                                                }`}
-                                            >
-                                                {p}
-                                            </button>
-                                        </div>
-                                    ))}
-                            </div>
-
-                            <button
-                                type="button"
-                                disabled={safeCurrentPage === totalPages}
-                                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-xs transition-colors hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700/60"
-                            >
-                                <span>Selanjutnya</span>
-                                <ChevronRight className="h-3.5 w-3.5" />
-                            </button>
-                        </div>
-                    )}
-                </div>
-            </div>
-            {/* ── Flash Banner ─────────────────────────────────────────────────────── */}
-            {flashVisible && flash?.message && (
-                <div
-                    className={`fixed right-4 bottom-4 z-50 flex items-center gap-3 rounded-xl border px-5 py-3.5 shadow-xl transition-all duration-300 ${
-                        flash.type === 'success'
-                            ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200'
-                            : 'border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200'
-                    }`}
-                >
-                    <span className="text-sm font-medium">{flash.message}</span>
-                    <button type="button" onClick={() => setFlashVisible(false)}>
-                        <X className="h-4 w-4 opacity-60" />
-                    </button>
-                </div>
-            )}
-
-            {/* ── Control Modal (Create / Edit) ─────────────────────────────────────── */}
-            {modalMode && (
-                <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={closeModal}>
-                    <div
-                        className="mx-4 w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        {/* Modal Header */}
-                        <div className="mb-5 flex items-center justify-between">
-                            <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                                {modalMode === 'create' ? 'Tambah Kontrol Baru' : 'Edit Kontrol'}
-                            </h3>
-                            <button type="button" onClick={closeModal} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
-                                <X className="h-4 w-4" />
-                            </button>
-                        </div>
-
-                        {/* Modal Form */}
-                        <form onSubmit={submitForm} className="space-y-4">
-                            {/* Framework */}
-                            <div>
-                                <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">Framework</label>
-                                <select
-                                    value={form.data.framework_id}
-                                    onChange={(e) => form.setData('framework_id', e.target.value)}
-                                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                                >
-                                    {frameworks.map((fw) => (
-                                        <option key={fw.id} value={String(fw.id)}>
-                                            {fw.nama} ({fw.versi})
-                                        </option>
-                                    ))}
-                                </select>
-                                {form.errors.framework_id && <p className="mt-1 text-xs text-red-500">{form.errors.framework_id}</p>}
-                            </div>
-
-                            {/* Kode Klausul */}
-                            <div>
-                                <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">Kode Klausul</label>
-                                <input
-                                    type="text"
-                                    value={form.data.kode_klausul}
-                                    onChange={(e) => form.setData('kode_klausul', e.target.value)}
-                                    placeholder="Contoh: A.5.1 atau 4.1"
-                                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                                />
-                                {form.errors.kode_klausul && <p className="mt-1 text-xs text-red-500">{form.errors.kode_klausul}</p>}
-                            </div>
-
-                            {/* Judul */}
-                            <div>
-                                <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">Judul Kontrol</label>
-                                <input
-                                    type="text"
-                                    value={form.data.judul}
-                                    onChange={(e) => form.setData('judul', e.target.value)}
-                                    placeholder="Masukkan judul kontrol..."
-                                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                                />
-                                {form.errors.judul && <p className="mt-1 text-xs text-red-500">{form.errors.judul}</p>}
-                            </div>
-
-                            {/* Kategori */}
-                            <div>
-                                <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">Kategori</label>
-                                <select
-                                    value={form.data.kategori}
-                                    onChange={(e) => form.setData('kategori', e.target.value)}
-                                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                                >
-                                    <option value="annex_a">Annex A</option>
-                                    <option value="klausul_4_10">Klausul 4-10</option>
-                                </select>
-                                {form.errors.kategori && <p className="mt-1 text-xs text-red-500">{form.errors.kategori}</p>}
-                            </div>
-
-                            {/* Deskripsi */}
-                            <div>
-                                <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                                    Deskripsi <span className="font-normal text-slate-400">(opsional)</span>
-                                </label>
-                                <textarea
-                                    value={form.data.deskripsi}
-                                    onChange={(e) => form.setData('deskripsi', e.target.value)}
-                                    rows={3}
-                                    placeholder="Masukkan deskripsi kontrol..."
-                                    className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                                />
-                            </div>
-
-                            {/* Actions */}
-                            <div className="flex justify-end gap-3 pt-1">
-                                <button
-                                    type="button"
-                                    onClick={closeModal}
-                                    className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
-                                >
-                                    Batal
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={form.processing}
-                                    className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
-                                >
-                                    {form.processing ? 'Menyimpan...' : modalMode === 'create' ? 'Tambah' : 'Simpan Perubahan'}
-                                </button>
-                            </div>
-                        </form>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <input
+                            type="text"
+                            value={form.data.kode_klausul}
+                            onChange={(e) => form.setData('kode_klausul', e.target.value)}
+                            placeholder={t('compliance.codePlaceholder')}
+                            aria-label={t('compliance.code')}
+                            className="border-border-strong text-ink placeholder:text-faint focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white px-3 text-sm focus:ring-2 focus:outline-none"
+                        />
+                        {form.errors.kode_klausul && <p className="text-danger text-[11px] font-medium">{form.errors.kode_klausul}</p>}
                     </div>
-                </div>
-            )}
 
-            {/* ── Delete Confirmation Dialog ──────────────────────────────────────── */}
+                    <input
+                        type="text"
+                        value={form.data.judul}
+                        onChange={(e) => form.setData('judul', e.target.value)}
+                        placeholder={t('compliance.titlePlaceholder')}
+                        className="border-border-strong text-ink placeholder:text-faint focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white px-3 text-sm focus:ring-2 focus:outline-none"
+                        aria-label={t('compliance.controlTitle')}
+                    />
+                    {form.errors.judul && <p className="text-danger text-[11px] font-medium">{form.errors.judul}</p>}
+
+                    <textarea
+                        value={form.data.deskripsi}
+                        onChange={(e) => form.setData('deskripsi', e.target.value)}
+                        rows={3}
+                        placeholder={t('compliance.descriptionPlaceholder')}
+                        className="border-border-strong text-ink placeholder:text-faint focus:border-primary focus:ring-primary/20 w-full resize-none rounded-[10px] border bg-white px-3 py-2 text-sm focus:ring-2 focus:outline-none"
+                        aria-label={t('compliance.description')}
+                    />
+                    {form.errors.deskripsi && <p className="text-danger text-[11px] font-medium">{form.errors.deskripsi}</p>}
+                </form>
+            </Modal>
+
+            <Toast
+                visible={flashVisible}
+                tone={flash?.type === 'success' ? 'success' : 'error'}
+                message={flash?.message}
+                onDismiss={() => setFlashVisible(false)}
+            />
+
             <ConfirmDialog
                 open={deleteDialogOpen}
-                title="Hapus Kontrol"
-                description={`Hapus kontrol "${deleteTarget?.code} — ${deleteTarget?.title}"? Tindakan ini tidak dapat dibatalkan.`}
-                confirmLabel="Hapus"
-                cancelLabel="Batal"
+                title={t('compliance.deleteControl')}
+                description={deleteTarget ? t('compliance.deleteConfirm', deleteTarget.code, deleteTarget.title) : ''}
+                confirmLabel={t('common.delete')}
+                cancelLabel={t('common.cancel')}
                 variant="danger"
                 busy={deleteBusy}
                 onCancel={cancelDelete}
