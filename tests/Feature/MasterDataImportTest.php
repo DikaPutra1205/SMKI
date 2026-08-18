@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Control;
 use App\Models\Framework;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
@@ -12,6 +13,8 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Facades\Excel;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use Tests\TestCase;
 
 class MasterDataImportTest extends TestCase
@@ -377,5 +380,364 @@ class MasterDataImportTest extends TestCase
             ]);
 
         $this->assertDatabaseCount('frameworks', 0);
+    }
+
+    // ── Export coverage ───────────────────────────────────────────────────────
+
+    public function test_anonymous_export_redirects_to_login(): void
+    {
+        $this->get('/admin/kepatuhan/master-data/export')
+            ->assertRedirect('/login');
+    }
+
+    public function test_any_authenticated_role_can_export_no_role_gate(): void
+    {
+        $user = User::factory()->create(['role' => User::ROLE_PIC]);
+
+        $this->actingAs($user)
+            ->get('/admin/kepatuhan/master-data/export')
+            ->assertOk();
+    }
+
+    public function test_export_returns_two_sheets_with_headers_and_data(): void
+    {
+        Framework::create(['nama' => 'ISO 27001', 'versi' => '2022', 'url_file' => 'https://x.test/a.pdf']);
+        $fw = Framework::where('nama', 'ISO 27001')->first();
+        Control::create([
+            'framework_id' => $fw->id,
+            'kode_klausul' => 'A.5.1',
+            'judul' => 'Policies',
+            'kategori' => 'annex_a',
+            'deskripsi' => 'desc',
+        ]);
+
+        $response = $this->actingAs(User::factory()->create())
+            ->get('/admin/kepatuhan/master-data/export')
+            ->assertOk();
+
+        $disp = $response->headers->get('content-disposition') ?? '';
+        $this->assertStringContainsString('attachment', $disp);
+        $this->assertStringContainsString('smki-master-data-', $disp);
+
+        $spreadsheet = $this->readExport($response);
+        $this->assertSame(['Frameworks', 'Controls'], $spreadsheet->getSheetNames());
+
+        $fwRows = $spreadsheet->getSheetByName('Frameworks')->toArray();
+        $this->assertSame(['nama', 'versi', 'url_file'], $fwRows[0]);
+        $this->assertSame(['ISO 27001', '2022', 'https://x.test/a.pdf'], $fwRows[1]);
+
+        $ctrlRows = $spreadsheet->getSheetByName('Controls')->toArray();
+        $this->assertSame(
+            ['framework_nama', 'framework_versi', 'kode_klausul', 'judul', 'kategori', 'deskripsi'],
+            $ctrlRows[0]
+        );
+        $this->assertSame(['ISO 27001', '2022', 'A.5.1', 'Policies', 'annex_a', 'desc'], $ctrlRows[1]);
+    }
+
+    public function test_export_with_empty_database_has_headers_only(): void
+    {
+        $response = $this->actingAs(User::factory()->create())
+            ->get('/admin/kepatuhan/master-data/export')
+            ->assertOk();
+
+        $spreadsheet = $this->readExport($response);
+        $this->assertSame(['nama', 'versi', 'url_file'], $spreadsheet->getSheetByName('Frameworks')->toArray()[0]);
+        $this->assertSame(
+            ['framework_nama', 'framework_versi', 'kode_klausul', 'judul', 'kategori', 'deskripsi'],
+            $spreadsheet->getSheetByName('Controls')->toArray()[0]
+        );
+        $this->assertCount(1, $spreadsheet->getSheetByName('Frameworks')->toArray());
+        $this->assertCount(1, $spreadsheet->getSheetByName('Controls')->toArray());
+    }
+
+    private function readExport($response): Spreadsheet
+    {
+        $path = $response->baseResponse->getFile()->getPathname();
+        $reader = IOFactory::createReaderForFile($path);
+        $reader->setReadDataOnly(true);
+
+        return $reader->load($path);
+    }
+
+    // ── Import apply — updater & deletion sweep coverage ──────────────────────
+
+    public function test_import_updates_existing_control_fields(): void
+    {
+        $fw = Framework::create(['nama' => 'ISO 27001', 'versi' => '2022']);
+        Control::create([
+            'framework_id' => $fw->id,
+            'kode_klausul' => 'A.5.1',
+            'judul' => 'Policies',
+            'kategori' => 'annex_a',
+            'deskripsi' => 'old',
+        ]);
+
+        $this->actingAs(User::factory()->create())
+            ->post('/admin/kepatuhan/master-data/import', [
+                'file' => $this->uploadXlsx([
+                    'Frameworks' => [['nama', 'versi', 'url_file'], ['ISO 27001', '2022', null]],
+                    'Controls' => [
+                        ['framework_nama', 'framework_versi', 'kode_klausul', 'judul', 'kategori', 'deskripsi'],
+                        ['ISO 27001', '2022', 'A.5.1', 'Policies v2', 'Klausul 4-10', 'new'],
+                    ],
+                ]),
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('flash.type', 'success');
+
+        $this->assertDatabaseHas('controls', [
+            'kode_klausul' => 'A.5.1',
+            'judul' => 'Policies v2',
+            'kategori' => 'klausul_4_10',
+            'deskripsi' => 'new',
+        ]);
+        $this->assertDatabaseCount('controls', 1);
+    }
+
+    public function test_import_control_rows_are_idempotent(): void
+    {
+        $fw = Framework::create(['nama' => 'ISO 27001', 'versi' => '2022']);
+        Control::create([
+            'framework_id' => $fw->id,
+            'kode_klausul' => 'A.5.1',
+            'judul' => 'Policies',
+            'kategori' => 'annex_a',
+        ]);
+
+        $this->actingAs(User::factory()->create())
+            ->post('/admin/kepatuhan/master-data/import', [
+                'file' => $this->uploadXlsx([
+                    'Frameworks' => [['nama', 'versi', 'url_file'], ['ISO 27001', '2022', null]],
+                    'Controls' => [
+                        ['framework_nama', 'framework_versi', 'kode_klausul', 'judul', 'kategori', 'deskripsi'],
+                        ['ISO 27001', '2022', 'A.5.1', 'Policies', 'annex_a', ''],
+                    ],
+                ]),
+            ])
+            ->assertSessionHas('flash.type', 'success');
+
+        $this->assertDatabaseCount('controls', 1);
+        $this->assertDatabaseHas('controls', ['kode_klausul' => 'A.5.1', 'judul' => 'Policies']);
+    }
+
+    public function test_import_fails_when_controls_reference_framework_omitted_from_excel(): void
+    {
+        // DEFECT: the Frameworks sheet soft-deletes DB frameworks absent from
+        // Excel BEFORE the Controls sheet runs. A Controls row that still
+        // references that framework then takes the "create" branch (its rows
+        // were just cascade-deleted, so the existing lookup misses), and the
+        // insert violates uniq_ctrl_fw_kode → the whole import fails and is
+        // rolled back. Expected behavior would be to skip such rows.
+        $fw = Framework::create(['nama' => 'ISO 27001', 'versi' => '2022']);
+        Control::create(['framework_id' => $fw->id, 'kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a']);
+
+        $this->actingAs(User::factory()->create())
+            ->post('/admin/kepatuhan/master-data/import', [
+                'file' => $this->uploadXlsx([
+                    'Controls' => [
+                        ['framework_nama', 'framework_versi', 'kode_klausul', 'judul', 'kategori', 'deskripsi'],
+                        ['ISO 27001', '2022', 'A.5.1', 'Policies', 'annex_a', ''],
+                    ],
+                ]),
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('flash.type', 'error');
+
+        $this->assertDatabaseCount('frameworks', 1);
+        $this->assertDatabaseCount('controls', 1);
+        $this->assertDatabaseHas('frameworks', ['nama' => 'ISO 27001', 'versi' => '2022', 'deleted_at' => null]);
+    }
+
+    public function test_import_duplicate_kode_klausul_in_file_rolls_back_entire_import(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->post('/admin/kepatuhan/master-data/import', [
+                'file' => $this->uploadXlsx([
+                    'Frameworks' => [['nama', 'versi', 'url_file'], ['ISO 27001', '2022', null]],
+                    'Controls' => [
+                        ['framework_nama', 'framework_versi', 'kode_klausul', 'judul', 'kategori', 'deskripsi'],
+                        ['ISO 27001', '2022', 'A.5.1', 'First', 'annex_a', ''],
+                        ['ISO 27001', '2022', 'A.5.1', 'Duplicate', 'annex_a', ''],
+                    ],
+                ]),
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('flash.type', 'error');
+
+        // The second row violates uniq_ctrl_fw_kode; the transaction must roll
+        // back the frameworks that the Frameworks sheet had already inserted.
+        $this->assertDatabaseCount('frameworks', 0);
+        $this->assertDatabaseCount('controls', 0);
+    }
+
+    public function test_import_soft_deletes_controls_missing_for_present_framework(): void
+    {
+        $fw = Framework::create(['nama' => 'ISO 27001', 'versi' => '2022']);
+        Control::create(['framework_id' => $fw->id, 'kode_klausul' => 'A.5.1', 'judul' => 'Kept', 'kategori' => 'annex_a']);
+        Control::create(['framework_id' => $fw->id, 'kode_klausul' => 'A.5.2', 'judul' => 'Absent', 'kategori' => 'annex_a']);
+
+        $this->actingAs(User::factory()->create())
+            ->post('/admin/kepatuhan/master-data/import', [
+                'file' => $this->uploadXlsx([
+                    'Frameworks' => [['nama', 'versi', 'url_file'], ['ISO 27001', '2022', null]],
+                    'Controls' => [
+                        ['framework_nama', 'framework_versi', 'kode_klausul', 'judul', 'kategori', 'deskripsi'],
+                        ['ISO 27001', '2022', 'A.5.1', 'Kept', 'annex_a', ''],
+                    ],
+                ]),
+            ]);
+
+        $this->assertDatabaseHas('controls', ['kode_klausul' => 'A.5.1', 'deleted_at' => null]);
+        $deleted = Control::withTrashed()->where('kode_klausul', 'A.5.2')->first();
+        $this->assertNotNull($deleted);
+        $this->assertNotNull($deleted->deleted_at);
+    }
+
+    public function test_import_soft_deletes_controls_of_absent_frameworks_via_cascade(): void
+    {
+        $legacy = Framework::create(['nama' => 'Legacy', 'versi' => '2005']);
+        Control::create(['framework_id' => $legacy->id, 'kode_klausul' => 'L.1', 'judul' => 'Old', 'kategori' => 'annex_a']);
+
+        $this->actingAs(User::factory()->create())
+            ->post('/admin/kepatuhan/master-data/import', [
+                'file' => $this->uploadXlsx([
+                    'Frameworks' => [['nama', 'versi', 'url_file'], ['ISO 27001', '2022', null]],
+                ]),
+            ]);
+
+        $fw = Framework::withTrashed()->where('nama', 'Legacy')->first();
+        $this->assertNotNull($fw->deleted_at);
+
+        $ctrl = Control::withTrashed()->where('kode_klausul', 'L.1')->first();
+        $this->assertNotNull($ctrl);
+        $this->assertNotNull($ctrl->deleted_at);
+    }
+
+    // ── Validation & error responses ─────────────────────────────────────────
+
+    public function test_import_file_missing_required_sheets_rejected(): void
+    {
+        $solo = $this->soloControlsFile();
+
+        $this->actingAs(User::factory()->create())
+            ->post('/admin/kepatuhan/master-data/import', ['file' => $solo])
+            ->assertRedirect()
+            ->assertSessionHasErrors('file');
+
+        $this->assertDatabaseCount('frameworks', 0);
+        $this->assertDatabaseCount('controls', 0);
+    }
+
+    public function test_preview_file_missing_required_sheets_rejected_and_persists_nothing(): void
+    {
+        $solo = $this->soloControlsFile();
+
+        $this->actingAs(User::factory()->create())
+            ->post('/admin/kepatuhan/master-data/import/preview', ['file' => $solo])
+            ->assertRedirect()
+            ->assertSessionHasErrors('file');
+
+        $this->assertDatabaseCount('frameworks', 0);
+        $this->assertDatabaseCount('controls', 0);
+    }
+
+    public function test_import_corrupt_xlsx_rejected(): void
+    {
+        $garbage = UploadedFile::fake()->create(
+            'corrupt.xlsx',
+            20,
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        );
+
+        $this->actingAs(User::factory()->create())
+            ->post('/admin/kepatuhan/master-data/import', ['file' => $garbage])
+            ->assertSessionHasErrors('file');
+
+        $this->assertDatabaseCount('frameworks', 0);
+    }
+
+    public function test_preview_rejects_non_excel_mime(): void
+    {
+        $csv = UploadedFile::fake()->create('data.csv', 10, 'text/csv');
+
+        $this->actingAs(User::factory()->create())
+            ->post('/admin/kepatuhan/master-data/import/preview', ['file' => $csv])
+            ->assertSessionHasErrors('file');
+    }
+
+    // ── Preview accuracy ──────────────────────────────────────────────────────
+
+    public function test_preview_reports_accurate_counts(): void
+    {
+        $fw = Framework::create(['nama' => 'ISO 27001', 'versi' => '2022']);
+        Control::create([
+            'framework_id' => $fw->id,
+            'kode_klausul' => 'A.5.1',
+            'judul' => 'Policies',
+            'kategori' => 'annex_a',
+            'deskripsi' => 'old',
+        ]);
+
+        $this->actingAs(User::factory()->create())
+            ->post('/admin/kepatuhan/master-data/import/preview', [
+                'file' => $this->uploadXlsx([
+                    'Frameworks' => [['nama', 'versi', 'url_file'], ['ISO 27001', '2022', 'https://new.test/a.pdf']],
+                    'Controls' => [
+                        ['framework_nama', 'framework_versi', 'kode_klausul', 'judul', 'kategori', 'deskripsi'],
+                        ['ISO 27001', '2022', 'A.5.1', 'Policies v2', 'klausul_4_10', 'new'],
+                    ],
+                ]),
+            ])
+            ->assertOk()
+            ->assertJsonPath('frameworks.created', 0)
+            ->assertJsonPath('frameworks.updated', 1)
+            ->assertJsonPath('frameworks.deleted', 0)
+            ->assertJsonPath('controls.created', 0)
+            ->assertJsonPath('controls.updated', 1)
+            ->assertJsonPath('controls.deleted', 0);
+
+        // Dry-run: no side effects
+        $this->assertDatabaseHas('frameworks', ['nama' => 'ISO 27001', 'versi' => '2022', 'url_file' => null]);
+        $this->assertDatabaseHas('controls', ['kode_klausul' => 'A.5.1', 'judul' => 'Policies']);
+    }
+
+    private function soloControlsFile(): UploadedFile
+    {
+        $solo = new class implements Export, WithMultipleSheets
+        {
+            public function sheets(): array
+            {
+                return [
+                    'Controls' => new class implements FromCollection, WithHeadings, WithTitle
+                    {
+                        public function title(): string
+                        {
+                            return 'Controls';
+                        }
+
+                        public function collection(): Collection
+                        {
+                            return collect([['ISO 27001', '2022', 'A.5.1', 'Policies', 'annex_a', 'd']]);
+                        }
+
+                        public function headings(): array
+                        {
+                            return ['framework_nama', 'framework_versi', 'kode_klausul', 'judul', 'kategori', 'deskripsi'];
+                        }
+                    },
+                ];
+            }
+        };
+
+        $rel = 'solo-controls/'.uniqid().'.xlsx';
+        Excel::store($solo, $rel, 'local');
+
+        return new UploadedFile(
+            storage_path('app/private/'.$rel),
+            'solo.xlsx',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            null,
+            true
+        );
     }
 }
