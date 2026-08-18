@@ -67,12 +67,18 @@ class ComplianceService
             $query->where('status', $filters['status']);
         }
 
+        if (! empty($filters['periode'])) {
+            $query->where('periode', $filters['periode']);
+        }
+
         return $query->orderByDesc('id')
             ->get()
             ->map(function (ChecklistSession $session) {
                 return [
                     'id' => $session->id,
                     'nama_sesi' => $session->nama_sesi,
+                    'periode' => $session->periode ?? '',
+                    'konteks_penilaian' => $session->konteks_penilaian ?? '',
                     'unit_id' => $session->unit_id,
                     'unit_nama' => $session->unit?->nama ?? '',
                     'framework_id' => $session->framework_id,
