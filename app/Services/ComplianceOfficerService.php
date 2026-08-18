@@ -10,6 +10,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 
 class ComplianceOfficerService
 {
@@ -34,7 +35,7 @@ class ComplianceOfficerService
         $scopedUnitId = $this->resolveScopedUnitId($user, $filters['unit_id'] ?? null);
 
         $query = Finding::with(['control.framework', 'unit:id,nama', 'pic:id,name', 'admin:id,name'])
-            ->orderByRaw('CASE WHEN status = "closed" THEN 1 ELSE 0 END')
+            ->orderByRaw("CASE WHEN status = 'closed' THEN 1 ELSE 0 END")
             ->orderBy('deadline', 'asc');
 
         if ($scopedUnitId) {
@@ -68,10 +69,10 @@ class ComplianceOfficerService
         }
 
         if (! empty($filters['search'])) {
-            $search = trim($filters['search']);
+            $search = mb_strtolower(trim($filters['search']));
             $query->where(function ($q) use ($search) {
-                $q->where('catatan_admin', 'like', "%{$search}%")
-                    ->orWhereHas('control', fn ($cq) => $cq->where('kode_klausul', 'like', "%{$search}%")->orWhere('judul', 'like', "%{$search}%"));
+                $q->whereRaw('LOWER(catatan_admin) LIKE ?', ["%{$search}%"])
+                    ->orWhereHas('control', fn ($cq) => $cq->whereRaw('LOWER(kode_klausul) LIKE ?', ["%{$search}%"])->orWhereRaw('LOWER(judul) LIKE ?', ["%{$search}%"]));
             });
         }
 
@@ -138,18 +139,6 @@ class ComplianceOfficerService
         $finding->update($updateData);
         $freshFinding = $finding->fresh(['control.framework', 'unit', 'pic', 'admin']);
 
-        // Record audit trail
-        AuditLog::catat(
-            'Finding',
-            $finding->id,
-            'update',
-            $user->id,
-            [
-                'before' => $oldValues,
-                'after' => $updateData,
-            ]
-        );
-
         return $this->formatFindingResource($freshFinding, Carbon::today());
     }
 
@@ -176,11 +165,11 @@ class ComplianceOfficerService
         }
 
         if (! empty($filters['search'])) {
-            $search = trim($filters['search']);
+            $search = mb_strtolower(trim($filters['search']));
             $query->where(function ($q) use ($search) {
-                $q->where('pemilik_risiko', 'like', "%{$search}%")
-                    ->orWhere('rencana_mitigasi', 'like', "%{$search}%")
-                    ->orWhereHas('control', fn ($cq) => $cq->where('kode_klausul', 'like', "%{$search}%")->orWhere('judul', 'like', "%{$search}%"));
+                $q->whereRaw('LOWER(pemilik_risiko) LIKE ?', ["%{$search}%"])
+                    ->orWhereRaw('LOWER(rencana_mitigasi) LIKE ?', ["%{$search}%"])
+                    ->orWhereHas('control', fn ($cq) => $cq->whereRaw('LOWER(kode_klausul) LIKE ?', ["%{$search}%"])->orWhereRaw('LOWER(judul) LIKE ?', ["%{$search}%"]));
             });
         }
 
@@ -271,17 +260,6 @@ class ComplianceOfficerService
         $risk->update($updateData);
         $freshRisk = $risk->fresh(['control.framework']);
 
-        AuditLog::catat(
-            'Risk',
-            $risk->id,
-            'update',
-            $user->id,
-            [
-                'before' => $oldValues,
-                'after' => $updateData,
-            ]
-        );
-
         return $this->formatRiskResource($freshRisk);
     }
 
@@ -294,27 +272,34 @@ class ComplianceOfficerService
             throw new AuthorizationException('Hanya Admin Kepatuhan dan Superadmin yang memiliki wewenang verifikasi massal.');
         }
 
-        $updatedCount = ChecklistEntry::whereIn('id', $entryIds)->update([
-            'status' => $status,
-            'catatan_admin' => $adminNotes,
-            'tanggal_verifikasi' => now(),
-            'admin_id' => $user->id,
-        ]);
-
-        AuditLog::catat(
-            'ChecklistEntry',
-            0,
-            'bulk_verify',
-            $user->id,
-            [
-                'count' => $updatedCount,
+        return DB::transaction(function () use ($user, $entryIds, $status, $adminNotes) {
+            $updatePayload = [
                 'status' => $status,
-                'admin_notes' => $adminNotes,
-                'entry_ids' => $entryIds,
-            ]
-        );
+                'tanggal_verifikasi' => now(),
+                'admin_id' => $user->id,
+            ];
 
-        return $updatedCount;
+            if ($adminNotes !== null) {
+                $updatePayload['catatan_admin'] = $adminNotes;
+            }
+
+            $updatedCount = ChecklistEntry::whereIn('id', $entryIds)->update($updatePayload);
+
+            AuditLog::catat(
+                'ChecklistEntry',
+                0,
+                'bulk_verify',
+                $user->id,
+                [
+                    'count' => $updatedCount,
+                    'status' => $status,
+                    'admin_notes' => $adminNotes,
+                    'entry_ids' => $entryIds,
+                ]
+            );
+
+            return $updatedCount;
+        });
     }
 
     /**
