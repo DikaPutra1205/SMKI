@@ -125,13 +125,15 @@ class ComplianceOfficerTest extends TestCase
         $this->assertEquals($this->unitA->id, $findings[0]['unit_id']);
     }
 
-    public function test_admin_can_update_finding_and_it_records_audit_log(): void
+    public function test_admin_can_update_finding_and_it_records_single_audit_log_without_duplicates(): void
     {
         $finding = Finding::factory()->create([
             'control_id' => $this->control->id,
             'unit_id' => $this->unitA->id,
             'status' => Finding::STATUS_OPEN,
         ]);
+
+        $initialLogsCount = AuditLog::where('entity_type', 'Finding')->where('entity_id', $finding->id)->count();
 
         $response = $this->actingAs($this->admin)->putJson("/api/v1/compliance-officer/findings/{$finding->id}", [
             'status' => Finding::STATUS_CLOSED,
@@ -151,12 +153,12 @@ class ComplianceOfficerTest extends TestCase
             'catatan_admin' => 'Telah ditutup oleh Admin Kepatuhan setelah audit',
         ]);
 
-        $this->assertDatabaseHas('audit_logs', [
-            'entity_type' => 'Finding',
-            'entity_id' => $finding->id,
-            'aksi' => 'update',
-            'actor_id' => $this->admin->id,
-        ]);
+        // Assert exactly 1 update log created (no duplicate writes)
+        $newLogsCount = AuditLog::where('entity_type', 'Finding')
+            ->where('entity_id', $finding->id)
+            ->where('aksi', 'update')
+            ->count();
+        $this->assertEquals(1, $newLogsCount);
     }
 
     public function test_pic_cannot_update_finding_belonging_to_another_unit(): void
@@ -204,7 +206,7 @@ class ComplianceOfficerTest extends TestCase
             ]);
     }
 
-    public function test_admin_can_update_risk_mitigation_and_it_records_audit_log(): void
+    public function test_admin_can_update_risk_mitigation_and_it_records_single_audit_log(): void
     {
         $risk = Risk::factory()->create([
             'level_risiko' => Risk::LEVEL_HIGH,
@@ -228,23 +230,28 @@ class ComplianceOfficerTest extends TestCase
             'rencana_mitigasi' => 'Implementasi WAF dan 2FA',
         ]);
 
-        $this->assertDatabaseHas('audit_logs', [
-            'entity_type' => 'Risk',
-            'entity_id' => $risk->id,
-            'aksi' => 'update',
-            'actor_id' => $this->admin->id,
-        ]);
+        $updateLogsCount = AuditLog::where('entity_type', 'Risk')
+            ->where('entity_id', $risk->id)
+            ->where('aksi', 'update')
+            ->count();
+        $this->assertEquals(1, $updateLogsCount);
     }
 
-    public function test_admin_can_bulk_verify_checklist_entries(): void
+    public function test_admin_can_bulk_verify_checklist_entries_preserving_existing_notes(): void
     {
-        $entry1 = ChecklistEntry::factory()->create(['status' => ChecklistEntry::STATUS_NON_COMPLIANT]);
-        $entry2 = ChecklistEntry::factory()->create(['status' => ChecklistEntry::STATUS_PARTIAL]);
+        $entry1 = ChecklistEntry::factory()->create([
+            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'catatan_admin' => 'Catatan terdahulu unit 1',
+        ]);
+        $entry2 = ChecklistEntry::factory()->create([
+            'status' => ChecklistEntry::STATUS_PARTIAL,
+            'catatan_admin' => 'Catatan terdahulu unit 2',
+        ]);
 
+        // Bulk verify without admin_notes should preserve existing notes
         $response = $this->actingAs($this->admin)->postJson('/api/v1/compliance-officer/bulk-verify', [
             'entry_ids' => [$entry1->id, $entry2->id],
             'status' => ChecklistEntry::STATUS_COMPLIANT,
-            'admin_notes' => 'Diverifikasi massal oleh Admin Kepatuhan',
         ]);
 
         $response->assertOk()
@@ -256,7 +263,9 @@ class ComplianceOfficerTest extends TestCase
             ]);
 
         $this->assertEquals(ChecklistEntry::STATUS_COMPLIANT, $entry1->fresh()->status);
+        $this->assertEquals('Catatan terdahulu unit 1', $entry1->fresh()->catatan_admin);
         $this->assertEquals(ChecklistEntry::STATUS_COMPLIANT, $entry2->fresh()->status);
+        $this->assertEquals('Catatan terdahulu unit 2', $entry2->fresh()->catatan_admin);
         $this->assertNotNull($entry1->fresh()->tanggal_verifikasi);
         $this->assertEquals($this->admin->id, $entry1->fresh()->admin_id);
 
@@ -1041,7 +1050,7 @@ class ComplianceOfficerTest extends TestCase
         $this->assertNotNull($entry->fresh()->tanggal_verifikasi);
     }
 
-    public function test_web_guest_is_redirected_to_login_for_governance_pages(): void
+    public function test_web_guest_is_redirected_to_login_for_compliance_officer_pages(): void
     {
         $this->get('/admin/kepatuhan/findings')->assertRedirect(route('login'));
         $this->get('/admin/kepatuhan/risks')->assertRedirect(route('login'));
