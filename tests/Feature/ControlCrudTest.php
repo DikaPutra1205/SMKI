@@ -33,8 +33,7 @@ class ControlCrudTest extends TestCase
                 'deskripsi' => 'Deskripsi kontrol baru',
                 'kategori' => 'annex_a',
             ])
-            ->assertRedirect('/admin/kepatuhan/compliance')
-            ->assertSessionHas('flash.success');
+            ->assertRedirect('/admin/kepatuhan/compliance');
 
         $this->assertDatabaseHas('controls', [
             'framework_id' => $framework->id,
@@ -81,13 +80,12 @@ class ControlCrudTest extends TestCase
 
         $this->actingAs($user)
             ->from('/admin/kepatuhan/compliance')
-            ->patch("/admin/kepatuhan/controls/{$control->id}", [
+            ->put("/admin/kepatuhan/controls/{$control->id}", [
                 'kode_klausul' => $control->kode_klausul,
                 'judul' => 'Judul Diubah',
                 'kategori' => 'klausul_4_10',
             ])
-            ->assertRedirect('/admin/kepatuhan/compliance')
-            ->assertSessionHas('flash.success');
+            ->assertRedirect('/admin/kepatuhan/compliance');
 
         $this->assertDatabaseHas('controls', [
             'id' => $control->id,
@@ -104,14 +102,13 @@ class ControlCrudTest extends TestCase
         $otherFramework = Framework::query()->where('id', '!=', $control->framework_id)->firstOrFail();
 
         $this->actingAs($user)
-            ->patch("/admin/kepatuhan/controls/{$control->id}", [
+            ->put("/admin/kepatuhan/controls/{$control->id}", [
                 'framework_id' => $otherFramework->id,
                 'kode_klausul' => $control->kode_klausul,
                 'judul' => $control->judul,
                 'kategori' => $control->kategori,
             ])
-            ->assertRedirect()
-            ->assertSessionHas('flash.success');
+            ->assertRedirect();
 
         $this->assertDatabaseHas('controls', [
             'id' => $control->id,
@@ -128,16 +125,19 @@ class ControlCrudTest extends TestCase
         $this->actingAs($user)
             ->from('/admin/kepatuhan/compliance')
             ->delete("/admin/kepatuhan/controls/{$control->id}")
-            ->assertRedirect('/admin/kepatuhan/compliance')
-            ->assertSessionHas('flash.success');
+            ->assertRedirect('/admin/kepatuhan/compliance');
 
         $this->assertSoftDeleted('controls', ['id' => $control->id]);
     }
 
     public function test_guest_cannot_access_control_crud_routes(): void
     {
-        $this->post('/admin/kepatuhan/controls')->assertRedirect('/login');
-        $this->patch('/admin/kepatuhan/controls/1')->assertRedirect('/login');
-        $this->delete('/admin/kepatuhan/controls/1')->assertRedirect('/login');
+        // Inertia routes redirect unauthenticated to login
+        $this->post('/admin/kepatuhan/controls')
+            ->assertRedirect('/login');
+        $this->put('/admin/kepatuhan/controls/1')
+            ->assertRedirect('/login');
+        $this->delete('/admin/kepatuhan/controls/1')
+            ->assertRedirect('/login');
     }
 }

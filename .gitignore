@@ -39,6 +39,7 @@ Homestead.yaml
 Thumbs.db
 
 graphify-out/
+.opencode/
 
 CLAUDE.md
 .claude/
