@@ -1,11 +1,14 @@
 <?php
 
+use App\Http\Controllers\Web\AuditLogController;
 use App\Http\Controllers\Web\AuthController;
+use App\Http\Controllers\Web\ChecklistEntryController;
 use App\Http\Controllers\Web\ChecklistSessionController;
 use App\Http\Controllers\Web\ComplianceController;
 use App\Http\Controllers\Web\ComplianceOfficerController;
 use App\Http\Controllers\Web\ControlController as AdminControlController;
 use App\Http\Controllers\Web\FrameworkController;
+use App\Http\Controllers\Web\ReportExportController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -66,6 +69,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/risks', [ComplianceOfficerController::class, 'risks'])->name('risks.index');
         Route::put('/risks/{risk}', [ComplianceOfficerController::class, 'updateRisk'])->name('risks.update');
         Route::post('/bulk-verify', [ComplianceOfficerController::class, 'bulkVerify'])->name('bulk-verify');
+
+        // ── Audit Trail (Pair B) ───────────────────────────────────────────────────
+        Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+
+        // ── Report Generator (Pair B) ──────────────────────────────────────────────
+        Route::get('/reports/export', [ReportExportController::class, 'exportCsv'])->name('reports.export');
     });
 
     Route::prefix('admin/superadmin')->name('admin.superadmin.')->group(function () {
@@ -74,6 +83,16 @@ Route::middleware('auth')->group(function () {
         Route::post('/frameworks', [FrameworkController::class, 'store'])->name('frameworks.store');
         Route::patch('/frameworks/{framework}', [FrameworkController::class, 'update'])->name('frameworks.update');
         Route::delete('/frameworks/{framework}', [FrameworkController::class, 'destroy'])->name('frameworks.destroy');
+    });
+
+    Route::prefix('admin/pic')->name('admin.pic.')->group(function () {
+        Route::get('/assessments', [ChecklistSessionController::class, 'index'])->name('assessments');
+        Route::post('/assessments', [ChecklistSessionController::class, 'store'])->name('assessments.store');
+        Route::get('/assessments/{checklistSession}', [ChecklistSessionController::class, 'show'])->name('assessments.show');
+        Route::patch('/assessments/{checklistSession}', [ChecklistSessionController::class, 'update'])->name('assessments.update');
+
+        Route::patch('/checklist-entries/{id}', [ChecklistEntryController::class, 'update'])->name('entries.update');
+        Route::post('/checklist-entries/{id}/evidence', [ChecklistEntryController::class, 'uploadEvidence'])->name('entries.evidence');
     });
 });
 

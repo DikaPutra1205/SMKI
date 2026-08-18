@@ -29,9 +29,11 @@ class AuthController extends Controller
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
 
-            $target = Auth::user()->role === 'superadmin'
-                ? '/admin/superadmin/dashboard'
-                : '/admin/kepatuhan/dashboard';
+            $target = match (Auth::user()->role) {
+                'superadmin' => '/admin/superadmin/dashboard',
+                'pic' => '/admin/pic/assessments',
+                default => '/admin/kepatuhan/dashboard',
+            };
 
             return redirect()->intended($target);
         }
