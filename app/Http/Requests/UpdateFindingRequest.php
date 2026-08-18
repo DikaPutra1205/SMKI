@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateFindingRequest extends FormRequest
@@ -12,16 +11,13 @@ class UpdateFindingRequest extends FormRequest
         return true;
     }
 
-    /**
-     * @return array<string, ValidationRule|array<mixed>|string>
-     */
     public function rules(): array
     {
         return [
-            'kategori' => 'sometimes|in:major,minor,observasi',
+            'status' => 'sometimes|in:open,in_progress,closed',
+            'category' => 'sometimes|in:major,minor,observasi',
             'deadline' => 'nullable|date',
-            'catatan_admin' => 'nullable|string',
-            'pic_id' => 'sometimes|exists:users,id',
+            'admin_notes' => 'nullable|string|max:2000',
         ];
     }
 }

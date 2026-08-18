@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\ChecklistEntryController;
 use App\Http\Controllers\Api\ChecklistSessionController;
 use App\Http\Controllers\Api\ComplianceEvidenceController;
+use App\Http\Controllers\Api\ComplianceOfficerApiController;
 use App\Http\Controllers\Api\ControlController;
 use App\Http\Controllers\Api\DashboardApiController;
 use App\Http\Controllers\Api\FindingController;
@@ -98,12 +99,24 @@ Route::middleware('auth')->group(function () {
     // ── Risiko (Risks) ──────────────────────────────────────────────────────────
     Route::apiResource('risks', RiskController::class);
 
-    // ── Dashboard Analytics (Pair B) ───────────────────────────────────────────
+    // ── Dashboard Analytics (All Roles) ───────────────────────────────────────────
     Route::prefix('v1/dashboard')->group(function () {
         Route::get('summary', [DashboardApiController::class, 'summary']);
         Route::get('trends', [DashboardApiController::class, 'trends']);
         Route::get('unit-comparison', [DashboardApiController::class, 'unitComparison']);
         Route::get('recent-activities', [DashboardApiController::class, 'recentActivities']);
+    });
+
+    // ── Compliance Officer Governance (Risks, Findings & Verify) ──────────────────────────────────
+    Route::prefix('v1/compliance-officer')->group(function () {
+        Route::get('findings', [ComplianceOfficerApiController::class, 'indexFindings']);
+        Route::get('findings/{id}', [ComplianceOfficerApiController::class, 'showFinding']);
+        Route::put('findings/{id}', [ComplianceOfficerApiController::class, 'updateFinding']);
+        Route::get('risks', [ComplianceOfficerApiController::class, 'indexRisks']);
+        Route::get('risks/matrix', [ComplianceOfficerApiController::class, 'riskMatrix']);
+        Route::get('risks/{id}', [ComplianceOfficerApiController::class, 'showRisk']);
+        Route::put('risks/{id}', [ComplianceOfficerApiController::class, 'updateRisk']);
+        Route::post('bulk-verify', [ComplianceOfficerApiController::class, 'bulkVerify']);
     });
 
     // ── Test Upload ─────────────────────────────────────────────────────────────
