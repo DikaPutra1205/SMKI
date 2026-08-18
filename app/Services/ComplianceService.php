@@ -90,6 +90,95 @@ class ComplianceService
     }
 
     /**
+     * Semua session assessment dari seluruh unit (untuk admin kepatuhan), lengkap
+     * dengan progres per session. Status session tidak disediakan karena memang
+     * tidak ada kolom status — hanya progres + jumlah terverifikasi.
+     */
+    public function getAdminSessions(array $filters = []): array
+    {
+        $query = ChecklistSession::with([
+            'unit:id,nama',
+            'framework:id,nama,versi',
+            'creator:id,name',
+            'updater:id,name',
+        ])->withCount([
+            'entries as total_entries',
+            'entries as compliant_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_COMPLIANT),
+            'entries as non_compliant_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_NON_COMPLIANT),
+            'entries as na_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_NA),
+            'entries as verified_entries' => fn ($q) => $q->whereNotNull('tanggal_verifikasi'),
+        ]);
+
+        if (! empty($filters['unit_id'])) {
+            $query->where('unit_id', $filters['unit_id']);
+        }
+
+        if (! empty($filters['framework_id'])) {
+            $query->where('framework_id', $filters['framework_id']);
+        }
+
+        if (! empty($filters['periode'])) {
+            $query->where('periode', $filters['periode']);
+        }
+
+        if (! empty($filters['search'])) {
+            $search = trim($filters['search']);
+            $driver = \DB::connection()->getDriverName();
+            $likeOperator = $driver === 'pgsql' ? 'ilike' : 'like';
+
+            $query->where(function ($q) use ($search, $likeOperator) {
+                $q->where('konteks_penilaian', $likeOperator, "%{$search}%")
+                    ->orWhere('periode', $likeOperator, "%{$search}%")
+                    ->orWhereHas('unit', fn ($uq) => $uq->where('nama', $likeOperator, "%{$search}%"))
+                    ->orWhereHas('creator', fn ($cq) => $cq->where('name', $likeOperator, "%{$search}%"));
+            });
+        }
+
+        $sessions = $query->orderByDesc('id')->get();
+
+        return $sessions->map(function (ChecklistSession $session) {
+            $total = (int) $session->total_entries;
+            $verified = (int) $session->verified_entries;
+            $compliant = (int) $session->compliant_entries;
+
+            return [
+                'id' => $session->id,
+                'konteks_penilaian' => $session->konteks_penilaian,
+                'periode' => $session->periode ?? '',
+                'unit_id' => $session->unit_id,
+                'unit_nama' => $session->unit?->nama ?? '',
+                'framework_id' => $session->framework_id,
+                'framework_nama' => $session->framework ? "{$session->framework->nama}:{$session->framework->versi}" : '',
+                'creator_id' => $session->created_by,
+                'creator_name' => $session->creator?->name ?? '',
+                'total_entries' => $total,
+                'compliant_entries' => $compliant,
+                'non_compliant_entries' => (int) $session->non_compliant_entries,
+                'na_entries' => (int) $session->na_entries,
+                'verified_entries' => $verified,
+                'compliance_percentage' => $total > 0 ? (int) round(($compliant / $total) * 100) : 0,
+                'created_at' => $session->created_at,
+                'updated_at' => $session->updated_at,
+            ];
+        })->toArray();
+    }
+
+    /**
+     * Daftar periode unik (desc) dari seluruh session, untuk pilihan filter.
+     */
+    public function getSessionPeriodeOptions(): array
+    {
+        return ChecklistSession::query()
+            ->whereNotNull('periode')
+            ->where('periode', '<>', '')
+            ->distinct()
+            ->orderByDesc('periode')
+            ->pluck('periode')
+            ->values()
+            ->toArray();
+    }
+
+    /**
      * Fetch controls ordered by id asc with framework and search/category filtering.
      */
     public function getControls(array $filters = []): array

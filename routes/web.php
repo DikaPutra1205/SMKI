@@ -1,10 +1,14 @@
 <?php
 
+use App\Http\Controllers\Web\AuditLogController;
 use App\Http\Controllers\Web\AuthController;
+use App\Http\Controllers\Web\ChecklistEntryController;
 use App\Http\Controllers\Web\ChecklistSessionController;
 use App\Http\Controllers\Web\ComplianceController;
+use App\Http\Controllers\Web\ComplianceOfficerController;
 use App\Http\Controllers\Web\ControlController as AdminControlController;
 use App\Http\Controllers\Web\FrameworkController;
+use App\Http\Controllers\Web\ReportExportController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -37,6 +41,7 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/dashboard', [ComplianceController::class, 'dashboard'])->name('dashboard');
         Route::get('/compliance', [ComplianceController::class, 'index'])->name('compliance');
+        Route::get('/sessions', [ComplianceController::class, 'sessions'])->name('sessions');
 
         // ── [DEV ONLY] Test halaman import/export — hapus sebelum production ──────────
         Route::get('/master-data', function () {
@@ -58,6 +63,20 @@ Route::middleware('auth')->group(function () {
         Route::get('/master-data/export', [AdminControlController::class, 'exportMasterData'])->name('master-data.export');
         Route::post('/master-data/import/preview', [AdminControlController::class, 'previewMasterDataImport'])->name('master-data.import.preview');
         Route::post('/master-data/import', [AdminControlController::class, 'importMasterData'])->name('master-data.import');
+
+        // ── Compliance Officer (Findings, Risks & Verification) ────────────────────
+        Route::get('/findings', [ComplianceOfficerController::class, 'findings'])->name('findings.index');
+        Route::put('/findings/{finding}', [ComplianceOfficerController::class, 'updateFinding'])->name('findings.update');
+        Route::get('/risks', [ComplianceOfficerController::class, 'risks'])->name('risks.index');
+        Route::put('/risks/{risk}', [ComplianceOfficerController::class, 'updateRisk'])->name('risks.update');
+        Route::post('/bulk-verify', [ComplianceOfficerController::class, 'bulkVerify'])->name('bulk-verify');
+
+        // ── Audit Trail (Pair B) ───────────────────────────────────────────────────
+        Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+
+        // ── Report Generator (Audit Reports) ──────────────────────────────────────────
+        Route::get('/reports/export', [ReportExportController::class, 'exportPdf'])->name('reports.export');
+        Route::get('/reports/export-pdf', [ReportExportController::class, 'exportPdf'])->name('reports.export-pdf');
     });
 
     Route::prefix('admin/superadmin')->name('admin.superadmin.')->group(function () {
@@ -66,6 +85,18 @@ Route::middleware('auth')->group(function () {
         Route::post('/frameworks', [FrameworkController::class, 'store'])->name('frameworks.store');
         Route::patch('/frameworks/{framework}', [FrameworkController::class, 'update'])->name('frameworks.update');
         Route::delete('/frameworks/{framework}', [FrameworkController::class, 'destroy'])->name('frameworks.destroy');
+    });
+
+    Route::prefix('admin/pic')->name('admin.pic.')->group(function () {
+        Route::get('/assessments', [ChecklistSessionController::class, 'index'])->name('assessments');
+        Route::post('/assessments', [ChecklistSessionController::class, 'store'])->name('assessments.store');
+        Route::get('/assessments/{checklistSession}', [ChecklistSessionController::class, 'show'])->name('assessments.show');
+        Route::patch('/assessments/{checklistSession}', [ChecklistSessionController::class, 'update'])->name('assessments.update');
+        Route::get('/assessments/{checklistSession}/summary', [ChecklistSessionController::class, 'summary'])->name('assessments.summary');
+        Route::post('/assessments/{checklistSession}/submit', [ChecklistSessionController::class, 'submitAssessment'])->name('assessments.submit');
+
+        Route::patch('/checklist-entries/{id}', [ChecklistEntryController::class, 'update'])->name('entries.update');
+        Route::post('/checklist-entries/{id}/evidence', [ChecklistEntryController::class, 'uploadEvidence'])->name('entries.evidence');
     });
 });
 
@@ -83,4 +114,4 @@ Route::middleware('guest')->group(function () {
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 });
 
-Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth');
+Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout'])->name('logout');

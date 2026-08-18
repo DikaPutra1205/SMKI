@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Framework;
 use App\Models\User;
+use App\Models\WorkUnit;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -244,5 +245,189 @@ class FrameworkApiTest extends TestCase
             ->assertOk();
 
         $this->assertSoftDeleted('frameworks', ['id' => $created]);
+    }
+
+    // API store validates inline (no unique:nama) — duplicates are allowed here,
+    // unlike the web StoreFrameworkRequest which enforces unique:frameworks,nama.
+    public function test_store_allows_duplicate_nama_via_api(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+
+        $this->actingAs($admin)
+            ->postJson('/api/frameworks', ['nama' => 'ISO 27001:2022', 'versi' => '2022'])
+            ->assertCreated();
+
+        $this->actingAs($admin)
+            ->postJson('/api/frameworks', ['nama' => 'ISO 27001:2022', 'versi' => '2022'])
+            ->assertCreated();
+
+        $this->assertDatabaseCount('frameworks', 2);
+    }
+
+    // ── Work Units API (no dedicated file in the feature's legal test set) ───
+    public function test_work_units_index_lists_flat_with_parent(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        $root = WorkUnit::factory()->create(['nama' => 'Root Unit']);
+        $child = WorkUnit::factory()->create(['nama' => 'Child Unit', 'parent_id' => $root->id]);
+
+        $this->actingAs($admin)
+            ->getJson('/api/work-units')
+            ->assertOk()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('data.0.id', $child->id)
+            ->assertJsonPath('data.0.parent.id', $root->id)
+            ->assertJsonPath('data.1.id', $root->id)
+            ->assertJsonPath('data.1.parent', null);
+    }
+
+    public function test_work_units_tree_returns_nested_roots(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        $root = WorkUnit::factory()->create(['nama' => 'Akar']);
+        $child = WorkUnit::factory()->create(['nama' => 'Anak', 'parent_id' => $root->id]);
+        $grandchild = WorkUnit::factory()->create(['nama' => 'Cucu', 'parent_id' => $child->id]);
+
+        $this->actingAs($admin)
+            ->getJson('/api/work-units-tree')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $root->id)
+            ->assertJsonPath('data.0.children.0.id', $child->id)
+            ->assertJsonPath('data.0.children.0.children.0.id', $grandchild->id);
+    }
+
+    public function test_work_units_tree_excludes_soft_deleted_children(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        $root = WorkUnit::factory()->create(['nama' => 'Akar']);
+        $gone = WorkUnit::factory()->create(['nama' => 'Hilang', 'parent_id' => $root->id]);
+        $gone->delete();
+
+        $this->actingAs($admin)
+            ->getJson('/api/work-units-tree')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonCount(0, 'data.0.children');
+    }
+
+    public function test_work_units_store_validates_nama_and_parent(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+
+        $this->actingAs($admin)
+            ->postJson('/api/work-units', [])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['nama']);
+
+        $this->actingAs($admin)
+            ->postJson('/api/work-units', ['nama' => 'Unit', 'parent_id' => 99999])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['parent_id']);
+    }
+
+    public function test_work_units_store_creates_with_parent(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        $parent = WorkUnit::factory()->create(['nama' => 'Root']);
+
+        $this->actingAs($admin)
+            ->postJson('/api/work-units', ['nama' => 'Sub Unit', 'parent_id' => $parent->id])
+            ->assertCreated()
+            ->assertJsonPath('data.parent.id', $parent->id);
+
+        $this->assertDatabaseHas('work_units', ['nama' => 'Sub Unit', 'parent_id' => $parent->id]);
+    }
+
+    public function test_work_units_show_returns_parent_and_children(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        $root = WorkUnit::factory()->create(['nama' => 'Root']);
+        $child = WorkUnit::factory()->create(['nama' => 'Child', 'parent_id' => $root->id]);
+
+        $this->actingAs($admin)
+            ->getJson("/api/work-units/{$child->id}")
+            ->assertOk()
+            ->assertJsonPath('data.parent.id', $root->id)
+            ->assertJsonCount(0, 'data.children');
+    }
+
+    public function test_work_units_show_returns_404_for_soft_deleted(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        $unit = WorkUnit::factory()->create();
+        $unit->delete();
+
+        $this->actingAs($admin)->getJson("/api/work-units/{$unit->id}")->assertStatus(404);
+    }
+
+    public function test_work_units_update_partial_and_parent_validation(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        $unit = WorkUnit::factory()->create(['nama' => 'Unit A']);
+
+        $this->actingAs($admin)
+            ->patchJson("/api/work-units/{$unit->id}", ['nama' => 'Unit A Renamed'])
+            ->assertOk();
+
+        $this->assertDatabaseHas('work_units', ['id' => $unit->id, 'nama' => 'Unit A Renamed']);
+
+        $this->actingAs($admin)
+            ->patchJson("/api/work-units/{$unit->id}", ['parent_id' => 99999])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['parent_id']);
+    }
+
+    public function test_work_units_destroy_soft_deletes(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        $unit = WorkUnit::factory()->create();
+
+        $this->actingAs($admin)->deleteJson("/api/work-units/{$unit->id}")->assertOk();
+
+        $this->assertSoftDeleted('work_units', ['id' => $unit->id]);
+    }
+
+    // Documents a gap: parent_id may point at the unit itself, creating a cycle.
+    public function test_work_units_update_allows_self_parent_cycle(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        $unit = WorkUnit::factory()->create();
+
+        $this->actingAs($admin)
+            ->patchJson("/api/work-units/{$unit->id}", ['parent_id' => $unit->id])
+            ->assertOk();
+
+        $this->assertDatabaseHas('work_units', ['id' => $unit->id, 'parent_id' => $unit->id]);
+    }
+
+    public function test_work_units_anonymous_cannot_access(): void
+    {
+        $this->getJson('/api/work-units')->assertStatus(401);
+        $this->getJson('/api/work-units-tree')->assertStatus(401);
+        $this->postJson('/api/work-units', ['nama' => 'X'])->assertStatus(401);
+    }
+
+    // ── Users API (dev panel switcher) ───────────────────────────────────────
+    public function test_users_index_returns_safe_attributes_with_unit(): void
+    {
+        $unit = WorkUnit::factory()->create(['nama' => 'Unit A']);
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN_KEPATUHAN]);
+        $pic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unit->id]);
+
+        $this->actingAs($admin)
+            ->getJson('/api/users')
+            ->assertOk()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('data.0.role', 'admin_kepatuhan')
+            ->assertJsonPath('data.1.role', 'pic')
+            ->assertJsonPath('data.1.unit.id', $unit->id)
+            ->assertJsonMissingPath('data.0.password')
+            ->assertJsonMissingPath('data.0.remember_token');
+    }
+
+    public function test_users_index_anonymous_cannot_access(): void
+    {
+        $this->getJson('/api/users')->assertStatus(401);
     }
 }

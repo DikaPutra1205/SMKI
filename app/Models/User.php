@@ -47,6 +47,11 @@ class User extends Authenticatable
         return $this->belongsTo(WorkUnit::class, 'unit_id');
     }
 
+    public function workUnit(): BelongsTo
+    {
+        return $this->belongsTo(WorkUnit::class, 'unit_id');
+    }
+
     public function checklistEntriesAsPic(): HasMany
     {
         return $this->hasMany(ChecklistEntry::class, 'pic_id');

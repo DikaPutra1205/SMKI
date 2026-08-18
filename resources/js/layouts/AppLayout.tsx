@@ -16,7 +16,7 @@ export default function AppLayout({ children, breadcrumbs, currentPath }: AppLay
     };
 
     return (
-        <div className="flex min-h-screen flex-col bg-slate-50 font-sans text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+        <div className="bg-surface text-body flex min-h-screen flex-col font-sans">
             <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} currentPath={currentPath} />
 
             <div className="flex flex-1 flex-col transition-all duration-300 lg:pl-64">
