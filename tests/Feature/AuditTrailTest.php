@@ -104,6 +104,34 @@ class AuditTrailTest extends TestCase
         $this->assertEquals('bulk_verify', $logs[0]['action']);
     }
 
+    public function test_audit_logs_handles_boundary_parameters_and_invalid_dates_safely(): void
+    {
+        AuditLog::factory()->create([
+            'actor_id' => $this->admin->id,
+            'aksi' => 'verify',
+            'entity_type' => 'ChecklistEntry',
+        ]);
+
+        // Test with per_page=0 and invalid date string
+        $response = $this->actingAs($this->admin)->getJson('/api/v1/audit-logs?per_page=0&start_date=invalid_date_xyz&end_date=999-99-99');
+        $response->assertOk();
+        $this->assertNotEmpty($response->json('data.data'));
+    }
+
+    public function test_audit_logs_case_insensitive_search(): void
+    {
+        AuditLog::factory()->create([
+            'actor_id' => $this->admin->id,
+            'aksi' => 'bulk_verify',
+            'entity_type' => 'ChecklistEntry',
+        ]);
+
+        // Search in uppercase should match lowercase DB record
+        $response = $this->actingAs($this->admin)->getJson('/api/v1/audit-logs?search=BULK_VERIFY');
+        $response->assertOk();
+        $this->assertCount(1, $response->json('data.data'));
+    }
+
     public function test_audit_stats_endpoint_returns_valid_aggregations(): void
     {
         AuditLog::factory()->create(['aksi' => 'create', 'entity_type' => 'Finding']);

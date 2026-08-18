@@ -139,17 +139,18 @@ class DashboardAnalyticsService
     public function getTrends(User $user, ?int $unitId = null, int $months = 6): array
     {
         $scopedUnitId = $this->resolveScopedUnitId($user, $unitId);
+        $safeMonths = max(1, min($months, 24));
         $trends = [];
 
-        for ($i = $months - 1; $i >= 0; $i--) {
+        for ($i = $safeMonths - 1; $i >= 0; $i--) {
             $date = Carbon::now()->subMonths($i);
             $yearMonth = $date->format('Y-m');
             $label = $date->translatedFormat('F Y');
+            $endOfPeriod = $date->copy()->endOfMonth();
 
-            // Query entries up to this period
+            // Query entries up to the end of this month/period
             $entryQuery = ChecklistEntry::with('control')
-                ->whereYear('tanggal_input', '<=', $date->year)
-                ->whereMonth('tanggal_input', '<=', $date->month);
+                ->where('tanggal_input', '<=', $endOfPeriod);
 
             if ($scopedUnitId) {
                 $entryQuery->where('unit_id', $scopedUnitId);
@@ -189,9 +190,22 @@ class DashboardAnalyticsService
         }
 
         $units = $unitsQuery->get();
+        $unitIds = $units->pluck('id');
 
-        return $units->map(function (WorkUnit $unit) {
-            $entries = ChecklistEntry::where('unit_id', $unit->id)->get();
+        // Batch query all entries and findings to prevent N+1 queries
+        $entriesByUnit = ChecklistEntry::whereIn('unit_id', $unitIds)
+            ->select('id', 'unit_id', 'status')
+            ->get()
+            ->groupBy('unit_id');
+
+        $findingsByUnit = Finding::whereIn('unit_id', $unitIds)
+            ->whereIn('status', [Finding::STATUS_OPEN, Finding::STATUS_IN_PROGRESS])
+            ->select('id', 'unit_id')
+            ->get()
+            ->groupBy('unit_id');
+
+        return $units->map(function (WorkUnit $unit) use ($entriesByUnit, $findingsByUnit) {
+            $entries = $entriesByUnit->get($unit->id, collect());
             $compliantCount = $entries->where('status', ChecklistEntry::STATUS_COMPLIANT)->count();
             $applicableCount = $entries->whereIn('status', [
                 ChecklistEntry::STATUS_COMPLIANT,
@@ -200,10 +214,7 @@ class DashboardAnalyticsService
             ])->count();
 
             $rate = $applicableCount > 0 ? (int) round(($compliantCount / $applicableCount) * 100) : 0;
-
-            $openFindings = Finding::where('unit_id', $unit->id)
-                ->whereIn('status', [Finding::STATUS_OPEN, Finding::STATUS_IN_PROGRESS])
-                ->count();
+            $openFindings = $findingsByUnit->get($unit->id, collect())->count();
 
             return [
                 'unit_id' => $unit->id,
@@ -217,7 +228,7 @@ class DashboardAnalyticsService
     }
 
     /**
-     * Get recent audit & governance activity logs.
+     * Get recent audit activity logs.
      * Accessible only by superadmin, admin_kepatuhan, koordinator_smki, and auditor.
      */
     public function getRecentActivities(User $user, int $limit = 6): array
@@ -226,9 +237,11 @@ class DashboardAnalyticsService
             return [];
         }
 
+        $safeLimit = max(1, min((int) ($limit ?: 6), 100));
+
         return AuditLog::with('actor.workUnit')
             ->orderByDesc('id')
-            ->limit($limit)
+            ->limit($safeLimit)
             ->get()
             ->map(function (AuditLog $log) {
                 return [
@@ -270,10 +283,9 @@ class DashboardAnalyticsService
      */
     protected function calculateGrowthRate(?int $unitId, int $currentRate): float
     {
-        $lastMonth = Carbon::now()->subMonth();
+        $endOfLastMonth = Carbon::now()->subMonth()->endOfMonth();
 
-        $query = ChecklistEntry::whereYear('tanggal_input', '<=', $lastMonth->year)
-            ->whereMonth('tanggal_input', '<=', $lastMonth->month);
+        $query = ChecklistEntry::where('tanggal_input', '<=', $endOfLastMonth);
 
         if ($unitId) {
             $query->where('unit_id', $unitId);
