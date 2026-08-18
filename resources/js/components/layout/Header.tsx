@@ -1,5 +1,5 @@
 import { SharedData } from '@/types';
-import { usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { Bell, ChevronDown, ChevronRight, Menu } from 'lucide-react';
 import { useState } from 'react';
 
@@ -107,12 +107,14 @@ export function Header({ onToggleSidebar, breadcrumbs = [] }: HeaderProps) {
                             >
                                 Profile Settings
                             </button>
-                            <a
+                            <Link
                                 href="/logout"
+                                method="post"
+                                as="button"
                                 className="block w-full rounded-lg px-3 py-2 text-left text-xs font-medium text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40"
                             >
                                 Log out
-                            </a>
+                            </Link>
                         </div>
                     )}
                 </div>
