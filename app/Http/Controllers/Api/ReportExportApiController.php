@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\ReportGeneratorService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportExportApiController extends Controller
@@ -28,6 +29,17 @@ class ReportExportApiController extends Controller
             'status' => 'success',
             'data' => $reportData,
         ]);
+    }
+
+    /**
+     * GET /api/v1/reports/export-pdf
+     */
+    public function exportPdf(Request $request): Response
+    {
+        $user = $request->user();
+        $unitId = $request->filled('unit_id') ? (int) $request->input('unit_id') : null;
+
+        return $this->reportService->exportComplianceSummaryPdf($user, $unitId);
     }
 
     /**

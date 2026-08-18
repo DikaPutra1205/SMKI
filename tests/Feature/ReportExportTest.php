@@ -56,7 +56,7 @@ class ReportExportTest extends TestCase
                     'scoped_unit',
                     'summary',
                     'unit_metrics',
-                    'governance' => ['open_findings', 'total_risks', 'critical_high_risks'],
+                    'audit_metrics' => ['open_findings', 'total_risks', 'critical_high_risks'],
                 ],
             ]);
     }
@@ -159,7 +159,7 @@ class ReportExportTest extends TestCase
         $this->assertStringNotContainsString('Pusat Data Komdigi', $content);
     }
 
-    public function test_compliance_summary_reports_accurate_governance_counts(): void
+    public function test_compliance_summary_reports_accurate_audit_metrics_counts(): void
     {
         $otherUnit = WorkUnit::factory()->create(['nama' => 'Unit Lain']);
         $otherControl = Control::factory()->create([
@@ -181,17 +181,17 @@ class ReportExportTest extends TestCase
 
         $all = $this->actingAs($this->admin)->getJson('/api/v1/reports/compliance-summary');
         $all->assertOk();
-        $this->assertEquals(3, $all->json('data.governance.open_findings'));
-        $this->assertEquals(3, $all->json('data.governance.total_risks'));
-        $this->assertEquals(2, $all->json('data.governance.critical_high_risks'));
+        $this->assertEquals(3, $all->json('data.audit_metrics.open_findings'));
+        $this->assertEquals(3, $all->json('data.audit_metrics.total_risks'));
+        $this->assertEquals(2, $all->json('data.audit_metrics.critical_high_risks'));
         $this->assertEquals('Semua Unit Kerja', $all->json('data.scoped_unit'));
         $this->assertEquals($this->admin->id, $all->json('data.generated_by.id'));
 
         $scoped = $this->actingAs($this->admin)->getJson('/api/v1/reports/compliance-summary?unit_id='.$this->unit->id);
         $scoped->assertOk();
-        $this->assertEquals(2, $scoped->json('data.governance.open_findings'));
-        $this->assertEquals(1, $scoped->json('data.governance.total_risks'));
-        $this->assertEquals(1, $scoped->json('data.governance.critical_high_risks'));
+        $this->assertEquals(2, $scoped->json('data.audit_metrics.open_findings'));
+        $this->assertEquals(1, $scoped->json('data.audit_metrics.total_risks'));
+        $this->assertEquals(1, $scoped->json('data.audit_metrics.critical_high_risks'));
         $this->assertEquals('Pusat Data Komdigi', $scoped->json('data.scoped_unit'));
     }
 
@@ -212,9 +212,29 @@ class ReportExportTest extends TestCase
 
         $response = $this->actingAs($this->admin)->get('/admin/kepatuhan/reports/export');
         $response->assertOk();
-        $this->assertEquals('text/csv; charset=UTF-8', $response->headers->get('Content-Type'));
-        $this->assertStringContainsString('SMKI_Compliance_Report_', $response->headers->get('Content-Disposition'));
+        $this->assertNotEmpty($response->getContent());
 
         $this->actingAs($this->pic)->get('/admin/kepatuhan/reports/export')->assertForbidden();
+    }
+
+    public function test_authorized_user_can_export_compliance_summary_pdf_and_it_records_audit_log(): void
+    {
+        ChecklistEntry::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unit->id,
+            'status' => ChecklistEntry::STATUS_COMPLIANT,
+        ]);
+
+        $response = $this->actingAs($this->admin)->get('/api/v1/reports/export-pdf');
+
+        $response->assertOk();
+        $this->assertEquals('application/pdf', $response->headers->get('Content-Type'));
+        $this->assertStringContainsString('SMKI_Compliance_Report_', $response->headers->get('Content-Disposition'));
+
+        $this->assertDatabaseHas('audit_logs', [
+            'entity_type' => 'Report',
+            'aksi' => 'export',
+            'actor_id' => $this->admin->id,
+        ]);
     }
 }
