@@ -9,7 +9,6 @@ use App\Models\ComplianceEvidence;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
 
 class ChecklistEntryController extends Controller
 {
@@ -21,13 +20,7 @@ class ChecklistEntryController extends Controller
 
         $validated = $request->validate([
             'status' => 'sometimes|nullable|string|in:compliant,partial,non_compliant,na',
-            'catatan' => [
-                'nullable', 'string', 'max:2000',
-                Rule::when(
-                    in_array($request->input('status'), ['non_compliant', 'na']),
-                    ['required'],
-                ),
-            ],
+            'catatan' => 'nullable|string|max:2000',
         ]);
 
         $updateData = array_merge(
@@ -55,18 +48,17 @@ class ChecklistEntryController extends Controller
             ->firstOrFail();
 
         $validated = $request->validate([
-            'bukti_file' => 'required|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240',
+            'bukti_file' => 'required|file|image|mimes:jpg,jpeg,png,webp,gif|max:10240',
         ]);
 
         $file = $validated['bukti_file'];
-        $filename = time().'_'.$user->id.'_'.$file->getClientOriginalName();
-        $path = $file->storeAs('bukti/'.$entry->id, $filename, 'supabase');
+        $path = $file->storeAs('bukti/'.$entry->id, $file->getClientOriginalName(), 'supabase');
 
         $lastVersion = ComplianceEvidence::withTrashed()
             ->where('checklist_entry_id', $entry->id)
             ->max('version_number') ?? 0;
 
-        ComplianceEvidence::create([
+        $evidence = ComplianceEvidence::create([
             'checklist_entry_id' => $entry->id,
             'uploaded_by' => $user->id,
             'file_url' => Storage::disk('supabase')->url($path),
@@ -80,7 +72,16 @@ class ChecklistEntryController extends Controller
             'tanggal_verifikasi' => null,
         ]);
 
-        return redirect()->back()
-            ->with('flash', ['type' => 'success', 'message' => 'Bukti berhasil diunggah.']);
+        return response()->json([
+            'ok' => true,
+            'evidence' => [
+                'id' => $evidence->id,
+                'checklist_entry_id' => $evidence->checklist_entry_id,
+                'version_number' => $evidence->version_number,
+                'file_url' => $evidence->file_url,
+                'nama_file' => $evidence->nama_file,
+                'is_active' => $evidence->is_active,
+            ],
+        ]);
     }
 }

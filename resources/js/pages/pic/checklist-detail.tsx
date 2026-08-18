@@ -1,6 +1,6 @@
 import AppLayout from '@/layouts/AppLayout';
 import { Head, router, usePage } from '@inertiajs/react';
-import { AlertTriangle, Check, CheckCircle2, FileText, Search, Send, Shield, ShieldAlert, ShieldCheck, Upload, XCircle } from 'lucide-react';
+import { AlertTriangle, ArrowDownToLine, ArrowUpToLine, Check, CheckCircle2, FileText, Search, Send, Shield, ShieldAlert, ShieldCheck, Upload, XCircle } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 interface ControlData {
@@ -19,6 +19,7 @@ interface EvidenceData {
     checklist_entry_id: number;
     version_number: number;
     file_url: string;
+    nama_file: string;
     is_active: boolean;
 }
 
@@ -49,15 +50,6 @@ interface SessionData {
 interface ChecklistDetailProps {
     session: SessionData;
     entries: EntryItem[];
-    summary: {
-        total_entries: number;
-        compliant: number;
-        partial: number;
-        non_compliant: number;
-        na: number;
-        verified_entries: number;
-        compliance_percentage: number;
-    };
 }
 
 const STATUS_OPTIONS = [
@@ -84,6 +76,7 @@ function EntryItemRow({ entry, onEntryUpdate }: {
     const [localStatus, setLocalStatus] = useState(entry.status);
     const [localCatatan, setLocalCatatan] = useState(entry.catatan || '');
     const [saveState, setSaveState] = useState<'idle' | 'saved'>('idle');
+    const [uploading, setUploading] = useState(false);
 
     const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
     const abortRef = useRef<AbortController | null>(null);
@@ -213,27 +206,51 @@ function EntryItemRow({ entry, onEntryUpdate }: {
                                 : 'border-slate-200 focus:border-blue-400 focus:ring-blue-400 dark:border-slate-700'
                         }`}
                     />
-                    <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-100">
-                        <Upload className="h-3.5 w-3.5" />
-                        {entry.active_evidence ? 'Unggah Ulang' : 'Unggah Bukti'}
-                        <input
-                            type="file"
-                            className="hidden"
-                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                            onChange={(e) => {
+                    <label className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
+                        uploading
+                            ? 'cursor-wait border-blue-200 bg-blue-50 text-blue-400 dark:border-blue-800 dark:bg-blue-950'
+                            : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-400'
+                    }`}>
+                        {uploading ? (
+                            <>
+                                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-blue-400 border-t-transparent" />
+                                Mengunggah...
+                            </>
+                        ) : (
+                            <>
+                                <Upload className="h-3.5 w-3.5" />
+                                {entry.active_evidence ? 'Unggah Ulang' : 'Unggah Bukti'}
+                            </>
+                        )}
+                    <input
+                        type="file"
+                        className="hidden"
+                        accept=".jpg,.jpeg,.png,.webp,.gif"
+                        disabled={uploading}
+                        onChange={(e) => {
                                 const file = e.target.files?.[0];
-                                if (!file) return;
+                                if (!file || uploading) return;
+                                setUploading(true);
                                 const fd = new FormData();
                                 fd.append('bukti_file', file);
                                 fetch(`/admin/pic/checklist-entries/${entry.id}/evidence`, {
                                     method: 'POST',
                                     headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': getCsrfToken() },
                                     body: fd,
-                                }).then(() => {
-                                    setSaveState('saved');
-                                    if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
-                                    savedTimeoutRef.current = setTimeout(() => setSaveState('idle'), 2000);
-                                });
+                                })
+                                    .then((r) => r.json())
+                                    .then((data) => {
+                                        if (data?.evidence) {
+                                            onEntryUpdate(entry.id, { active_evidence: data.evidence });
+                                        }
+                                        setSaveState('saved');
+                                        if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
+                                        savedTimeoutRef.current = setTimeout(() => setSaveState('idle'), 2000);
+                                    })
+                                    .catch(() => {
+                                        /* silent */
+                                    })
+                                    .finally(() => setUploading(false));
                             }}
                         />
                     </label>
@@ -249,7 +266,14 @@ function EntryItemRow({ entry, onEntryUpdate }: {
             {entry.active_evidence && (
                 <div className="mt-2 flex items-center gap-1.5 text-xs text-slate-500">
                     <FileText className="h-3.5 w-3.5" />
-                    <span className="truncate max-w-[200px]">Bukti v{entry.active_evidence.version_number}</span>
+                    <a
+                        href={entry.active_evidence.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="truncate max-w-[240px] font-medium text-blue-600 underline-offset-2 hover:underline dark:text-blue-400"
+                    >
+                        {entry.active_evidence.nama_file}
+                    </a>
                 </div>
             )}
         </div>
@@ -263,6 +287,27 @@ export default function ChecklistDetail({ session, entries: initialEntries }: Ch
     const [search, setSearch] = useState('');
     const [frameworkFilter, setFrameworkFilter] = useState('');
     const [kategoriFilter, setKategoriFilter] = useState('');
+    const [atBottom, setAtBottom] = useState(false);
+
+    useEffect(() => {
+        const onScroll = () => {
+            const threshold = 80;
+            const nearBottom =
+                window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - threshold;
+            setAtBottom(nearBottom);
+        };
+        onScroll();
+        window.addEventListener('scroll', onScroll, { passive: true });
+        return () => window.removeEventListener('scroll', onScroll);
+    }, []);
+
+    const scrollToBottom = () => {
+        window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+    };
+
+    const scrollToTop = () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
 
     useEffect(() => {
         if (flash?.message) {
@@ -361,7 +406,7 @@ export default function ChecklistDetail({ session, entries: initialEntries }: Ch
                 </button>
             </div>
 
-            <div className="mb-6 rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50 to-blue-100/50 p-5 dark:border-blue-900 dark:from-blue-950/50 dark:to-blue-900/30">
+            <div className="sticky top-[76px] z-30 mb-6 rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50 to-blue-100/50 p-5 shadow-sm backdrop-blur-sm dark:border-blue-900 dark:from-blue-950/50 dark:to-blue-900/30">
                 <div className="mb-2 flex items-center justify-between">
                     <span className="text-[11px] font-bold tracking-wider text-blue-600 uppercase">Progress Pengecekan</span>
                     <div className="flex items-baseline gap-1.5">
@@ -413,13 +458,16 @@ export default function ChecklistDetail({ session, entries: initialEntries }: Ch
             <div className="space-y-6">
                 {grouped.map(([groupKey, items]) => (
                     <div key={groupKey}>
-                        <div className="mb-2 flex items-center gap-2">
-                            <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-[11px] font-bold text-blue-600">
+                        <div className="mb-3 flex items-center gap-3 rounded-xl border border-blue-100 bg-white px-4 py-3 shadow-sm dark:border-blue-900 dark:bg-slate-900">
+                            <span className="inline-flex items-center rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-bold text-white shadow-sm">
                                 {items[0].control.framework_name}
                             </span>
-                            <span className="text-xs text-slate-400">&bull;</span>
+                            <span className="text-slate-300 dark:text-slate-600">|</span>
                             <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                                 {formatKategori(items[0].control.kategori)}
+                            </span>
+                            <span className="ml-auto rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                                {items.length} Kontrol
                             </span>
                         </div>
                         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
@@ -444,7 +492,7 @@ export default function ChecklistDetail({ session, entries: initialEntries }: Ch
                 <button
                     type="button"
                     disabled={invalidCount > 0}
-                    onClick={() => router.post('/admin/pic/assessments', { session_id: session.id })}
+                    onClick={() => router.get(`/admin/pic/assessments/${session.id}/summary`)}
                     className={`inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold shadow-sm transition-all ${
                         invalidCount === 0
                             ? 'bg-blue-600 text-white hover:bg-blue-700'
@@ -455,6 +503,15 @@ export default function ChecklistDetail({ session, entries: initialEntries }: Ch
                     Kirim Pengecekan
                 </button>
             </div>
+
+            <button
+                type="button"
+                onClick={atBottom ? scrollToTop : scrollToBottom}
+                aria-label={atBottom ? 'Ke atas' : 'Ke bawah'}
+                className="fixed right-5 bottom-5 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg shadow-blue-600/30 transition-all hover:bg-blue-700 hover:shadow-blue-600/40"
+            >
+                {atBottom ? <ArrowUpToLine className="h-5 w-5" /> : <ArrowDownToLine className="h-5 w-5" />}
+            </button>
         </AppLayout>
     );
 }
