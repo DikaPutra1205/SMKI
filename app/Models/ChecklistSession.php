@@ -13,31 +13,14 @@ class ChecklistSession extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'nama_sesi',
+        'konteks_penilaian',
+        'periode',
         'unit_id',
         'framework_id',
         'created_by',
-        'auditor_id',
-        'start_date',
-        'end_date',
-        'status',
+        'updated_by',
         'catatan',
     ];
-
-    protected $casts = [
-        'start_date' => 'date',
-        'end_date' => 'date',
-    ];
-
-    const STATUS_DRAFT = 'draft';
-
-    const STATUS_IN_PROGRESS = 'in_progress';
-
-    const STATUS_SUBMITTED = 'submitted';
-
-    const STATUS_VERIFIED = 'verified';
-
-    const STATUS_CLOSED = 'closed';
 
     public function unit(): BelongsTo
     {
@@ -54,24 +37,14 @@ class ChecklistSession extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function auditor(): BelongsTo
+    public function updater(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'auditor_id');
+        return $this->belongsTo(User::class, 'updated_by');
     }
 
     public function entries(): HasMany
     {
         return $this->hasMany(ChecklistEntry::class, 'session_id');
-    }
-
-    public function isClosed(): bool
-    {
-        return $this->status === self::STATUS_CLOSED;
-    }
-
-    public function isLocked(): bool
-    {
-        return in_array($this->status, [self::STATUS_SUBMITTED, self::STATUS_VERIFIED, self::STATUS_CLOSED]);
     }
 
     public function getSummaryAttribute(): array
