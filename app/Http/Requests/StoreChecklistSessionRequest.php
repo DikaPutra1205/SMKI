@@ -19,6 +19,8 @@ class StoreChecklistSessionRequest extends FormRequest
     {
         return [
             'nama_sesi' => 'required|string|max:255',
+            'periode' => 'nullable|string|max:100',
+            'konteks_penilaian' => 'nullable|string',
             'unit_id' => 'required|exists:work_units,id',
             'framework_id' => 'nullable|exists:frameworks,id',
             'created_by' => 'nullable|exists:users,id',

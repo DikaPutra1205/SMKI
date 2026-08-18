@@ -50,6 +50,10 @@ class ChecklistSessionController extends Controller
             $query->where('status', $request->status);
         }
 
+        if ($request->filled('periode')) {
+            $query->where('periode', $request->periode);
+        }
+
         if ($request->filled('auditor_id')) {
             $query->where('auditor_id', $request->auditor_id);
         }
@@ -57,7 +61,11 @@ class ChecklistSessionController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $like = config('database.default') === 'pgsql' ? 'ilike' : 'like';
-            $query->where('nama_sesi', $like, "%{$search}%");
+            $query->where(function ($q) use ($search, $like) {
+                $q->where('nama_sesi', $like, "%{$search}%")
+                    ->orWhere('periode', $like, "%{$search}%")
+                    ->orWhere('konteks_penilaian', $like, "%{$search}%");
+            });
         }
 
         $query->orderByDesc('id');

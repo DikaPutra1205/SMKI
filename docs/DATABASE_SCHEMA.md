@@ -65,6 +65,8 @@ erDiagram
 ### 5. `checklist_sessions` (Sesi Audit & Self-Assessment Formal)
 - `id` (PK, BigInt)
 - `nama_sesi` (String, e.g. `Audit Internal SMKI Semester 1 2026`)
+- `periode` (String, e.g. `Q1 2025`, `Semester 1 2026`, `2025`)
+- `konteks_penilaian` (Text, nullable, e.g. `Penilaian mandiri unit kerja dan lingkup layanan cloud`)
 - `unit_id` (FK -> `work_units.id`)
 - `framework_id` (FK -> `frameworks.id`, nullable)
 - `created_by` (FK -> `users.id`, nullable)
@@ -74,7 +76,7 @@ erDiagram
 - `status` (Enum: `draft`, `in_progress`, `submitted`, `verified`, `closed`)
 - `catatan` (Text, nullable)
 - `created_at`, `updated_at`, `deleted_at`
-- **Index Performa:** `(unit_id, status)`, `(framework_id)`, `(start_date, end_date)`
+- **Index Performa:** `(unit_id, status)`, `(unit_id, periode)`, `(framework_id)`, `(start_date, end_date)`
 
 ### 6. `checklist_entries` (Lembar Evaluasi Kepatuhan Klausul)
 - `id` (PK, BigInt)
