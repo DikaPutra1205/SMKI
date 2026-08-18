@@ -29,7 +29,7 @@ export function Header({ onToggleSidebar, breadcrumbs = [] }: HeaderProps) {
 
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
-    const defaultHref = userRole === 'superadmin' ? '/admin/superadmin/dashboard' : '/admin/kepatuhan/dashboard';
+    const defaultHref = userRole === 'superadmin' ? '/admin/superadmin/dashboard' : userRole === 'pic' ? '/admin/pic/assessments' : '/admin/kepatuhan/dashboard';
     const activeBreadcrumbs = breadcrumbs.length > 0 ? breadcrumbs : [{ label: 'Dashboard', href: defaultHref }];
 
     return (
