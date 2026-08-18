@@ -531,6 +531,8 @@ class MasterDataImportTest extends TestCase
         $fw = Framework::create(['nama' => 'ISO 27001', 'versi' => '2022']);
         Control::create(['framework_id' => $fw->id, 'kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a']);
 
+        // FIX VERIFIED: When framework is absent from Excel, controls referencing it
+        // are skipped instead of crashing with a cascading unique violation.
         $this->actingAs(User::factory()->create())
             ->post('/admin/kepatuhan/master-data/import', [
                 'file' => $this->uploadXlsx([
@@ -541,11 +543,11 @@ class MasterDataImportTest extends TestCase
                 ]),
             ])
             ->assertRedirect()
-            ->assertSessionHas('flash.type', 'error');
+            ->assertSessionHas('flash.type', 'success');
 
         $this->assertDatabaseCount('frameworks', 1);
-        $this->assertDatabaseCount('controls', 1);
-        $this->assertDatabaseHas('frameworks', ['nama' => 'ISO 27001', 'versi' => '2022', 'deleted_at' => null]);
+        $this->assertDatabaseCount('controls', 2);
+        $this->assertSoftDeleted('frameworks', ['id' => $fw->id]);
     }
 
     public function test_import_duplicate_kode_klausul_in_file_rolls_back_entire_import(): void

@@ -247,9 +247,8 @@ class FrameworkApiTest extends TestCase
         $this->assertSoftDeleted('frameworks', ['id' => $created]);
     }
 
-    // API store validates inline (no unique:nama) — duplicates are allowed here,
-    // unlike the web StoreFrameworkRequest which enforces unique:frameworks,nama.
-    public function test_store_allows_duplicate_nama_via_api(): void
+    // API store now uses StoreFrameworkRequest which enforces unique:frameworks,nama.
+    public function test_store_rejects_duplicate_nama_via_api(): void
     {
         $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
 
@@ -259,9 +258,10 @@ class FrameworkApiTest extends TestCase
 
         $this->actingAs($admin)
             ->postJson('/api/frameworks', ['nama' => 'ISO 27001:2022', 'versi' => '2022'])
-            ->assertCreated();
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['nama']);
 
-        $this->assertDatabaseCount('frameworks', 2);
+        $this->assertDatabaseCount('frameworks', 1);
     }
 
     // ── Work Units API (no dedicated file in the feature's legal test set) ───

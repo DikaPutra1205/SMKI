@@ -16,6 +16,12 @@ class ComplianceSessionsPageTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->withoutVite();
+    }
+
     public function test_admin_can_view_sessions_page_with_props(): void
     {
         $unit = WorkUnit::factory()->create(['nama' => 'Biro Teknologi']);

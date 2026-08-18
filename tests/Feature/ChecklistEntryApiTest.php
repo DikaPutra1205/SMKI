@@ -529,25 +529,25 @@ class ChecklistEntryApiTest extends TestCase
         $this->assertSame(0, ChecklistEntry::count());
     }
 
-    // API update() nulls tanggal_verifikasi unconditionally — even a catatan-only
-    // edit silently un-verifies an entry (web controller only clears on status change).
-    public function test_update_catatan_only_clears_verification(): void
+    // API update() preserves tanggal_verifikasi on catatan-only edit (our verified fix)
+    public function test_update_catatan_only_preserves_verification(): void
     {
         $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
         ['unit' => $unit, 'control' => $control, 'pic' => $pic] = $this->seedUnitControlPics();
+        $verifiedAt = now()->subHour();
         $entry = ChecklistEntry::create([
             'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
             'status' => ChecklistEntry::STATUS_COMPLIANT,
-            'admin_id' => $admin->id, 'tanggal_verifikasi' => now(),
+            'admin_id' => $admin->id, 'tanggal_verifikasi' => $verifiedAt,
         ]);
 
         $this->actingAs($pic)
             ->patchJson("/api/checklist-entries/{$entry->id}", ['catatan' => 'Klarifikasi teks saja'])
             ->assertOk();
 
-        $this->assertDatabaseHas('checklist_entries', [
-            'id' => $entry->id, 'catatan' => 'Klarifikasi teks saja', 'tanggal_verifikasi' => null,
-        ]);
+        $fresh = $entry->fresh();
+        $this->assertSame('Klarifikasi teks saja', $fresh->catatan);
+        $this->assertNotNull($fresh->tanggal_verifikasi);
     }
 
     public function test_update_rejects_invalid_status(): void
