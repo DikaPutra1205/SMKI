@@ -73,10 +73,8 @@ Gunakan `id` atau `email` user berikut untuk simulasi pengujian hak akses peran:
 **Query Parameters (Opsional):**
 - `unit_id` (integer) — Filter berdasarkan Satker
 - `framework_id` (integer) — Filter framework standar
-- `periode` (string) — Filter berdasarkan periode (contoh: `?periode=Q1 2025` atau `?periode=Semester 1 2026`)
-- `status` (string: `draft` | `in_progress` | `submitted` | `verified` | `closed`)
-- `auditor_id` (integer) — Filter auditor penanggung jawab
-- `search` (string) — Cari nama sesi, periode, atau konteks penilaian
+- `periode` (string) — Filter berdasarkan periode (contoh: `?periode=Q1 2026` atau `?periode=Semester 1 2026`)
+- `search` (string) — Cari konteks penilaian, periode, atau catatan
 - `trashed` (string: `only` | `with`)
 - `all` (boolean) — Tanpa pagination
 - `per_page` (integer, default 15)
@@ -87,15 +85,10 @@ Gunakan `id` atau `email` user berikut untuk simulasi pengujian hak akses peran:
 **Request Body (JSON):**
 ```json
 {
-  "nama_sesi": "Audit Internal SMKI Semester 1 2026",
+  "konteks_penilaian": "Audit Internal SMKI Semester 1 2026 - Layanan Cloud Publik",
   "periode": "Semester 1 2026",
-  "konteks_penilaian": "Penilaian mandiri unit kerja Biro TI dan layanan cloud publik",
   "unit_id": 3,
   "framework_id": 1,
-  "auditor_id": 4,
-  "start_date": "2026-03-01",
-  "end_date": "2026-03-31",
-  "status": "in_progress",
   "catatan": "Sesi audit berkala semester 1."
 }
 ```
@@ -107,23 +100,16 @@ Gunakan `id` atau `email` user berikut untuk simulasi pengujian hak akses peran:
 #### D. Update Sesi Audit
 `PUT /api/checklist-sessions/{id}`
 
-#### E. Submit Sesi Audit oleh PIC Unit
-`POST /api/checklist-sessions/{id}/submit`
-*Mengubah status sesi menjadi `submitted` agar siap diverifikasi auditor.*
-
-#### F. Verifikasi & Tutup Sesi Audit (Lock / Freeze Snapshot)
-`PATCH /api/checklist-sessions/{id}/verify`
-
 **Request Body (JSON):**
 ```json
 {
-  "status": "closed",
-  "catatan": "Semua klausul selesai diverifikasi. Hasil audit ditutup dan dikunci.",
-  "auditor_id": 4
+  "konteks_penilaian": "Audit Internal SMKI Semester 1 2026 - Revisi Lingkup",
+  "periode": "Semester 1 2026",
+  "catatan": "Update ruang lingkup audit."
 }
 ```
 
-#### G. Soft Delete & Restore Sesi
+#### E. Soft Delete & Restore Sesi
 - `DELETE /api/checklist-sessions/{id}`
 - `POST /api/checklist-sessions/{id}/restore`
 

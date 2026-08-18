@@ -10,7 +10,6 @@ use App\Models\ChecklistSession;
 use App\Models\Control;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 
 class ChecklistSessionController extends Controller
 {
@@ -18,7 +17,7 @@ class ChecklistSessionController extends Controller
     {
         $data = $request->validated();
         $data['created_by'] = $data['created_by'] ?? auth()->id();
-        $data['status'] = $data['status'] ?? ChecklistSession::STATUS_IN_PROGRESS;
+        $data['updated_by'] = $data['updated_by'] ?? auth()->id();
 
         $session = ChecklistSession::create($data);
 
@@ -62,53 +61,14 @@ class ChecklistSessionController extends Controller
 
     public function update(UpdateChecklistSessionRequest $request, ChecklistSession $checklistSession): RedirectResponse
     {
-        $checklistSession->update($request->validated());
+        $data = $request->validated();
+        $data['updated_by'] = auth()->id();
+
+        $checklistSession->update($data);
 
         return redirect()->back()->with('flash', [
             'type' => 'success',
             'message' => 'Sesi checklist berhasil diperbarui.',
-        ]);
-    }
-
-    public function submit(Request $request, ChecklistSession $checklistSession): RedirectResponse
-    {
-        $checklistSession->update([
-            'status' => ChecklistSession::STATUS_SUBMITTED,
-        ]);
-
-        return redirect()->back()->with('flash', [
-            'type' => 'success',
-            'message' => 'Sesi checklist berhasil disubmit ke Auditor / Admin.',
-        ]);
-    }
-
-    public function verify(Request $request, ChecklistSession $checklistSession): RedirectResponse
-    {
-        $data = $request->validate([
-            'status' => 'nullable|in:verified,closed,in_progress',
-            'catatan' => 'nullable|string',
-            'auditor_id' => 'nullable|exists:users,id',
-        ]);
-
-        $updateData = [
-            'status' => $data['status'] ?? ChecklistSession::STATUS_VERIFIED,
-        ];
-
-        if (isset($data['catatan'])) {
-            $updateData['catatan'] = $data['catatan'];
-        }
-
-        if (isset($data['auditor_id'])) {
-            $updateData['auditor_id'] = $data['auditor_id'];
-        } elseif (! $checklistSession->auditor_id && auth()->id()) {
-            $updateData['auditor_id'] = auth()->id();
-        }
-
-        $checklistSession->update($updateData);
-
-        return redirect()->back()->with('flash', [
-            'type' => 'success',
-            'message' => "Status sesi checklist berhasil diubah menjadi {$updateData['status']}.",
         ]);
     }
 
