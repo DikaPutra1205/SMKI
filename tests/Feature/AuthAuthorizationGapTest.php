@@ -80,7 +80,7 @@ class AuthAuthorizationGapTest extends TestCase
         User::factory()->create(['email' => 'pic@smki.test', 'password' => bcrypt('secret12')]);
 
         $this->post('/login', ['email' => 'pic@smki.test', 'password' => 'secret12'])
-            ->assertRedirect('/');
+            ->assertRedirect('/admin/pic/assessments');
         $this->assertAuthenticated();
     }
 
@@ -91,5 +91,11 @@ class AuthAuthorizationGapTest extends TestCase
         $this->post('/login', ['email' => 'pic@smki.test', 'password' => 'wrong'])
             ->assertSessionHasErrors('email');
         $this->assertGuest();
+    }
+
+    public function test_forgot_password_rejects_malformed_email(): void
+    {
+        $this->post('/forgot-password', ['email' => 'not-an-email'])
+            ->assertSessionHasErrors('email');
     }
 }

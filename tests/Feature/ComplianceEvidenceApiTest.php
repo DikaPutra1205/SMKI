@@ -317,4 +317,204 @@ class ComplianceEvidenceApiTest extends TestCase
         $this->actingAs($pic)->getJson("/api/checklist-entries/{$entry->id}/evidences/{$evidence->id}/download")
             ->assertStatus(404);
     }
+
+    // ── Store contract: uploaded_by validation ─────────────────────────────────
+    public function test_store_requires_uploaded_by_field(): void
+    {
+        Storage::fake('supabase');
+        $pic = User::factory()->create(['role' => User::ROLE_PIC]);
+        ['entry' => $entry] = $this->seedEntry();
+
+        $this->actingAs($pic)->postJson("/api/checklist-entries/{$entry->id}/evidences",
+            ['bukti_file' => UploadedFile::fake()->create('a.pdf', 100, 'application/pdf')])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['uploaded_by']);
+    }
+
+    public function test_store_rejects_unknown_uploaded_by(): void
+    {
+        Storage::fake('supabase');
+        $pic = User::factory()->create(['role' => User::ROLE_PIC]);
+        ['entry' => $entry] = $this->seedEntry();
+
+        $this->actingAs($pic)->postJson("/api/checklist-entries/{$entry->id}/evidences",
+            ['bukti_file' => UploadedFile::fake()->create('a.pdf', 100, 'application/pdf'), 'uploaded_by' => 999999])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['uploaded_by']);
+    }
+
+    // ── Store contract: exact 10MB boundary (offline, fake disk) ───────────────
+    public function test_store_accepts_exact_10mb_boundary_offline(): void
+    {
+        Storage::fake('supabase');
+        $pic = User::factory()->create(['role' => User::ROLE_PIC]);
+        ['entry' => $entry] = $this->seedEntry();
+
+        $this->actingAs($pic)->postJson("/api/checklist-entries/{$entry->id}/evidences",
+            ['bukti_file' => UploadedFile::fake()->create('bukti.pdf', 10240, 'application/pdf'), 'uploaded_by' => $pic->id])
+            ->assertCreated();
+    }
+
+    // ── Store contract: storage path recorded, version 1, verification reset ────
+    public function test_store_records_path_and_resets_verification_status(): void
+    {
+        Storage::fake('supabase');
+        $pic = User::factory()->create(['role' => User::ROLE_PIC]);
+        ['entry' => $entry] = $this->seedEntry();
+        $entry->update(['tanggal_verifikasi' => now()]);
+
+        $response = $this->actingAs($pic)->postJson("/api/checklist-entries/{$entry->id}/evidences",
+            ['bukti_file' => UploadedFile::fake()->create('bukti.pdf', 500, 'application/pdf'), 'uploaded_by' => $pic->id])
+            ->assertCreated();
+
+        $path = $response->json('data.file_url');
+        $this->assertIsString($path);
+        $this->assertStringStartsWith("bukti/{$entry->id}/", $path);
+        $this->assertTrue(Storage::disk('supabase')->exists($path));
+        $this->assertDatabaseHas('compliance_evidences', [
+            'checklist_entry_id' => $entry->id,
+            'file_url' => $path,
+            'version_number' => 1,
+            'is_active' => true,
+            'uploaded_by' => $pic->id,
+        ]);
+        $this->assertSame($pic->id, $response->json('data.uploader.id'));
+        $this->assertNotNull($response->json('data.uploader.name'));
+        $fresh = $entry->fresh();
+        $this->assertNotNull($fresh->tanggal_input);
+        $this->assertNull($fresh->tanggal_verifikasi);
+    }
+
+    // ── Store contract: version counter counts soft-deleted history too ────────
+    public function test_store_version_continues_past_soft_deleted_versions(): void
+    {
+        Storage::fake('supabase');
+        $pic = User::factory()->create(['role' => User::ROLE_PIC]);
+        ['entry' => $entry] = $this->seedEntry();
+        $v1 = $entry->evidences()->create([
+            'uploaded_by' => $pic->id, 'file_url' => 'bukti/1/a.pdf',
+            'version_number' => 1, 'is_active' => true, 'uploaded_at' => now(),
+        ]);
+        $v1->delete();
+
+        $this->actingAs($pic)->postJson("/api/checklist-entries/{$entry->id}/evidences",
+            ['bukti_file' => UploadedFile::fake()->create('b.pdf', 100, 'application/pdf'), 'uploaded_by' => $pic->id])
+            ->assertCreated()
+            ->assertJsonPath('data.version_number', 2);
+
+        $this->assertDatabaseHas('compliance_evidences', ['checklist_entry_id' => $entry->id, 'version_number' => 2, 'is_active' => true]);
+    }
+
+    // ── Index contract: 404 + alternate trashed param ──────────────────────────
+    public function test_index_404_for_missing_entry(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+
+        $this->actingAs($admin)
+            ->getJson('/api/checklist-entries/999999/evidences')
+            ->assertStatus(404);
+    }
+
+    public function test_index_only_trashed_boolean_filter(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        ['entry' => $entry, 'pic' => $pic] = $this->seedEntry();
+        $entry->evidences()->create([
+            'uploaded_by' => $pic->id, 'file_url' => 'bukti/1/a.pdf',
+            'version_number' => 1, 'is_active' => true, 'uploaded_at' => now(),
+        ]);
+        $e2 = $entry->evidences()->create([
+            'uploaded_by' => $pic->id, 'file_url' => 'bukti/1/b.pdf',
+            'version_number' => 2, 'is_active' => false, 'uploaded_at' => now(),
+        ]);
+        $e2->delete();
+
+        $this->actingAs($admin)
+            ->getJson("/api/checklist-entries/{$entry->id}/evidences?only_trashed=1")
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.version_number', 2);
+    }
+
+    // ── Destroy / restore contract: 404s + idempotent restore ──────────────────
+    public function test_destroy_404_for_missing_evidence(): void
+    {
+        Storage::fake('supabase');
+        $pic = User::factory()->create(['role' => User::ROLE_PIC]);
+
+        $this->actingAs($pic)->deleteJson('/api/evidences/999999')->assertStatus(404);
+    }
+
+    public function test_restore_404_for_missing_evidence(): void
+    {
+        Storage::fake('supabase');
+        $pic = User::factory()->create(['role' => User::ROLE_PIC]);
+
+        $this->actingAs($pic)->postJson('/api/evidences/999999/restore')->assertStatus(404);
+    }
+
+    public function test_restore_already_active_evidence_keeps_row(): void
+    {
+        Storage::fake('supabase');
+        $pic = User::factory()->create(['role' => User::ROLE_PIC]);
+        ['entry' => $entry] = $this->seedEntry();
+        $evidence = $entry->evidences()->create([
+            'uploaded_by' => $pic->id, 'file_url' => 'bukti/1/a.pdf',
+            'version_number' => 1, 'is_active' => true, 'uploaded_at' => now(),
+        ]);
+
+        $this->actingAs($pic)->postJson("/api/evidences/{$evidence->id}/restore")->assertOk();
+        $this->assertDatabaseHas('compliance_evidences', ['id' => $evidence->id, 'deleted_at' => null]);
+    }
+
+    // ── Authorization gaps (documenting current behavior, not enforcing) ────────
+    // Coverage gap: store() never verifies the authenticated user may upload for
+    // this entry; any authenticated caller can target any entry, even another
+    // unit's.
+    public function test_store_cross_entry_upload_is_not_scoped(): void
+    {
+        Storage::fake('supabase');
+        $viewer = User::factory()->create(['role' => User::ROLE_PIC]);
+        ['entry' => $entry, 'pic' => $pic] = $this->seedEntry();
+
+        $this->actingAs($viewer)->postJson("/api/checklist-entries/{$entry->id}/evidences",
+            ['bukti_file' => UploadedFile::fake()->create('a.pdf', 100, 'application/pdf'), 'uploaded_by' => $pic->id])
+            ->assertCreated();
+    }
+
+    // Coverage gap: destroy() has no authorization — any authenticated user can
+    // soft-delete any evidence, even another unit's.
+    public function test_destroy_cross_entry_is_not_scoped(): void
+    {
+        Storage::fake('supabase');
+        $viewer = User::factory()->create(['role' => User::ROLE_PIC]);
+        ['entry' => $entry, 'pic' => $pic] = $this->seedEntry();
+        $evidence = $entry->evidences()->create([
+            'uploaded_by' => $pic->id, 'file_url' => 'bukti/1/a.pdf',
+            'version_number' => 1, 'is_active' => true, 'uploaded_at' => now(),
+        ]);
+
+        $this->actingAs($viewer)->deleteJson("/api/evidences/{$evidence->id}")->assertOk();
+        $this->assertSoftDeleted('compliance_evidences', ['id' => $evidence->id]);
+    }
+
+    // ── API update (PATCH) companion for D3: success actually creates evidence ──
+    public function test_api_update_creates_evidence_on_success(): void
+    {
+        Storage::fake('supabase');
+        $pic = User::factory()->create(['role' => User::ROLE_PIC]);
+        ['entry' => $entry] = $this->seedEntry();
+
+        $this->actingAs($pic)->patchJson("/api/checklist-entries/{$entry->id}",
+            ['status' => ChecklistEntry::STATUS_COMPLIANT, 'bukti_file' => UploadedFile::fake()->create('a.pdf', 100, 'application/pdf'), 'uploaded_by' => $pic->id])
+            ->assertOk();
+
+        $this->assertDatabaseHas('compliance_evidences', [
+            'checklist_entry_id' => $entry->id,
+            'uploaded_by' => $pic->id,
+            'version_number' => 1,
+            'is_active' => true,
+        ]);
+        $this->assertNull($entry->fresh()->tanggal_verifikasi);
+    }
 }
