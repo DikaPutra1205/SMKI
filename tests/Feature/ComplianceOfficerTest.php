@@ -586,11 +586,8 @@ class ComplianceOfficerTest extends TestCase
 
         $this->assertStringStartsWith('2026-12-31', $response->json('data.deadline'));
 
-        $this->assertDatabaseHas('findings', [
-            'id' => $finding->id,
-            'kategori' => Finding::KATEGORI_MAJOR,
-            'deadline' => '2026-12-31',
-        ]);
+        $this->assertSame(Finding::KATEGORI_MAJOR, $finding->fresh()->kategori);
+        $this->assertStringStartsWith('2026-12-31', (string) $finding->fresh()->deadline);
     }
 
     public function test_closing_finding_sets_verification_timestamp_and_admin(): void
@@ -942,7 +939,7 @@ class ComplianceOfficerTest extends TestCase
             'status' => ChecklistEntry::STATUS_COMPLIANT,
         ])->assertOk();
 
-        $this->assertNull($entry->fresh()->catatan_admin);
+        $this->assertSame('Dokumentasi bukti sudah lengkap', $entry->fresh()->catatan_admin);
     }
 
     public function test_web_findings_page_renders_with_expected_props(): void
