@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AuditLogApiController;
 use App\Http\Controllers\Api\ChecklistEntryController;
 use App\Http\Controllers\Api\ChecklistSessionController;
 use App\Http\Controllers\Api\ComplianceEvidenceController;
@@ -8,6 +9,7 @@ use App\Http\Controllers\Api\ControlController;
 use App\Http\Controllers\Api\DashboardApiController;
 use App\Http\Controllers\Api\FindingController;
 use App\Http\Controllers\Api\FrameworkController;
+use App\Http\Controllers\Api\ReportExportApiController;
 use App\Http\Controllers\Api\RiskController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WorkUnitController;
@@ -117,6 +119,18 @@ Route::middleware('auth')->group(function () {
         Route::get('risks/{id}', [ComplianceOfficerApiController::class, 'showRisk']);
         Route::put('risks/{id}', [ComplianceOfficerApiController::class, 'updateRisk']);
         Route::post('bulk-verify', [ComplianceOfficerApiController::class, 'bulkVerify']);
+    });
+
+    // ── Audit Trail (Pair B) ───────────────────────────────────────────────────
+    Route::prefix('v1/audit-logs')->group(function () {
+        Route::get('/', [AuditLogApiController::class, 'index']);
+        Route::get('/stats', [AuditLogApiController::class, 'stats']);
+    });
+
+    // ── Report Generator & Export (Pair B) ──────────────────────────────────────
+    Route::prefix('v1/reports')->group(function () {
+        Route::get('/compliance-summary', [ReportExportApiController::class, 'complianceSummary']);
+        Route::get('/export-csv', [ReportExportApiController::class, 'exportCsv']);
     });
 
     // ── Test Upload ─────────────────────────────────────────────────────────────

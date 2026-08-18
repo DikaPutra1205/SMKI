@@ -2,12 +2,11 @@ import AppLayout from '@/layouts/AppLayout';
 import { t } from '@/lib/i18n';
 import { type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { CheckCircle2, ClipboardList, ShieldAlert, ShieldCheck, TrendingUp } from 'lucide-react';
+import { CheckCircle2, TrendingUp, ShieldCheck, ClipboardList, ShieldAlert } from 'lucide-react';
 
 interface FrameworkBreakdown {
     id: number;
     nama: string;
-    versi: string;
     compliance_rate: number;
     compliant_count: number;
     partial_count: number;
@@ -16,40 +15,29 @@ interface FrameworkBreakdown {
     total_controls: number;
 }
 
-interface TrendPoint {
-    period: string;
-    label: string;
-    iso27001_rate: number;
-    iso27701_rate: number;
-    overall_rate: number;
-}
-
-interface RecentActivity {
+interface RecentSession {
     id: number;
-    actor_name: string;
-    actor_role: string;
-    action: string;
-    entity_name: string;
-    time_ago: string;
+    konteks_penilaian: string;
+    periode: string;
+    framework: string;
+    total_entries: number;
+    compliant_entries: number;
     created_at: string | null;
 }
 
-interface AdminDashboardProps {
+interface PicDashboardProps {
     summary?: {
         overall_compliance_rate: number;
         growth_from_last_period: number;
         total_controls_active: number;
         frameworks_breakdown: FrameworkBreakdown[];
         findings_summary: { total_active: number; major: number; minor: number; observasi: number; overdue: number };
-        risks_summary: { total_active: number; critical: number; high: number; medium: number; low: number };
+        risks_summary: { total_active: number; critical: number; high: number; medium: number; low: number; major?: number; minor?: number; observasi?: number };
     };
-    trends?: TrendPoint[];
-    recent_activities?: RecentActivity[];
+    recent_sessions?: RecentSession[];
 }
 
-const FALLBACK_TREND_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul'];
-
-export default function Dashboard({ summary, trends = [], recent_activities = [] }: AdminDashboardProps) {
+export default function PicDashboard({ summary, recent_sessions = [] }: PicDashboardProps) {
     const { auth } = usePage<SharedData>().props;
     const userName = auth.user?.name || '';
 
@@ -59,46 +47,18 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
     const growth = summary?.growth_from_last_period ?? 0;
     const frameworks = summary?.frameworks_breakdown ?? [];
     const findings = summary?.findings_summary ?? { total_active: 0, major: 0, minor: 0, observasi: 0, overdue: 0 };
-    const risks = summary?.risks_summary ?? { total_active: 0, critical: 0, high: 0, medium: 0, low: 0 };
+    const risks = summary?.risks_summary ?? { total_active: 0, critical: 0, high: 0, medium: 0, low: 0, major: 0, minor: 0, observasi: 0 };
 
     const iso27001 = frameworks.find((f) => f.id === 1);
     const iso27701 = frameworks.find((f) => f.id === 2);
 
-    // ── Trend chart geometry ──────────────────────────────────────────────────
-    const chartW = 640;
-    const chartH = 240;
-    const chartPadL = 40;
-    const chartPadR = 20;
-    const chartPadT = 20;
-    const chartPadB = 28;
-    const chartInnerW = chartW - chartPadL - chartPadR;
-    const chartInnerH = chartH - chartPadT - chartPadB;
-
-    const trendPoints = trends.length > 0 ? trends : [];
-    const trendLabels = trendPoints.length > 0 ? trendPoints.map((p) => p.label) : FALLBACK_TREND_LABELS;
-    const trendValues = trendPoints.length > 0 ? trendPoints.map((p) => p.overall_rate) : [];
-
-    const chartX = (i: number) => {
-        const n = trendLabels.length;
-        return n <= 1 ? chartPadL + chartInnerW / 2 : chartPadL + (chartInnerW * i) / (n - 1);
-    };
-    const chartY = (v: number) => chartPadT + chartInnerH - (chartInnerH * Math.min(100, Math.max(0, v))) / 100;
-
-    const linePoints = trendValues.length > 0 ? trendValues.map((v, i) => `${chartX(i)},${chartY(v)}`).join(' ') : '';
-    const areaPath =
-        trendValues.length > 0
-            ? `M ${chartX(0)} ${chartY(trendValues[0])} ` +
-              trendValues.map((v, i) => `L ${chartX(i)} ${chartY(v)}`).join(' ') +
-              ` L ${chartX(trendValues.length - 1)} ${chartPadT + chartInnerH} L ${chartX(0)} ${chartPadT + chartInnerH} Z`
-            : '';
-
     return (
-        <AppLayout breadcrumbs={breadcrumbs} currentPath="/admin/kepatuhan/dashboard">
-            <Head title="Dashboard - Admin Kepatuhan" />
+        <AppLayout breadcrumbs={breadcrumbs} currentPath="/admin/pic/dashboard">
+            <Head title="Dashboard PIC" />
 
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Dashboard Admin</h1>
+                    <h1 className="text-2xl font-bold tracking-tight">{t('dashboard.title')}</h1>
                     <p className="text-muted text-sm">
                         {t('dashboard.welcomeBack')}, <span className="text-navy font-semibold">{userName}</span>. {t('dashboard.subtitle')}.
                     </p>
@@ -106,7 +66,7 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
 
                 <div className="flex items-center gap-3">
                     <Link
-                        href="/admin/kepatuhan/compliance"
+                        href="/admin/pic/assessments"
                         className="bg-primary shadow-blue hover:bg-primary-700 inline-flex items-center gap-2 rounded-[10px] px-4 py-2 text-sm font-semibold text-white transition-colors"
                     >
                         <ClipboardList className="h-4 w-4" />
@@ -115,7 +75,6 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                 </div>
             </div>
 
-            {/* Row 1: KPI */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="border-border rounded-[14px] border bg-white p-5 shadow-sm">
                     <div className="flex items-center justify-between">
@@ -147,7 +106,7 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                     </div>
                     <div className="mt-3 flex items-baseline gap-2">
                         <span className="text-navy text-3xl font-bold">{frameworks.length}</span>
-                        <span className="border-success-border bg-success-bg text-success rounded-[6px] border px-2 py-0.5 text-[11px] font-semibold">
+                        <span className="border-success-border bg-success-border text-success rounded-[6px] border px-2 py-0.5 text-[11px] font-semibold">
                             {t('common.active')}
                         </span>
                     </div>
@@ -162,35 +121,20 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                         </div>
                     </div>
                     <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-navy text-3xl font-bold">{findings.total_active + risks.total_active}</span>
+                        <span className="text-navy text-3xl font-bold">
+                            {findings.total_active + risks.total_active}
+                        </span>
                         <span className="text-warning text-xs font-medium">{t('dashboard.needsAction')}</span>
                     </div>
-                    <p className="text-muted mt-3 text-xs">{findings.overdue} overdue</p>
-                </div>
-
-                <div className="border-border rounded-[14px] border bg-white p-5 shadow-sm">
-                    <div className="flex items-center justify-between">
-                        <span className="text-muted text-xs font-semibold tracking-wider uppercase">{t('dashboard.nonCompliances')}</span>
-                        <div className="bg-danger-bg text-danger flex h-9 w-9 items-center justify-center rounded-[10px]">
-                            <ShieldAlert className="h-5 w-5" />
-                        </div>
-                    </div>
-                    <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-navy text-3xl font-bold">{findings.total_active}</span>
-                        <span className="text-danger text-xs font-medium">{t('status.open')}</span>
-                    </div>
-                    <p className="text-muted mt-3 text-xs">
-                        {findings.major} {t('status.major')} · {findings.minor} {t('status.minor')} · {findings.observasi} {t('status.observation')}
-                    </p>
+                    <p className="text-muted mt-3 text-xs">{recent_sessions.length} sesi</p>
                 </div>
             </div>
 
-            {/* Row 2: Standar Kepatuhan */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="border-border rounded-[14px] border bg-white p-5 shadow-sm">
                     <div className="border-border flex items-center justify-between border-b pb-3">
                         <h3 className="text-[15px] font-bold">{iso27001?.nama ?? 'ISO/IEC 27001:2022'}</h3>
-                        <span className="border-success-border bg-success-bg text-success rounded-[6px] border px-2 py-0.5 text-xs font-semibold">
+                        <span className="border-success-border bg-success-border text-success rounded-[6px] border px-2 py-0.5 text-xs font-semibold">
                             {t('common.active')}
                         </span>
                     </div>
@@ -210,7 +154,7 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                     <div className="border-border flex items-center justify-between border-b pb-3">
                         <h3 className="text-[15px] font-bold">{iso27701?.nama ?? 'ISO/IEC 27701:2019'}</h3>
                         <span className="border-navy/15 bg-navy/5 text-navy rounded-[6px] border px-2 py-0.5 text-xs font-semibold">
-                            v{iso27701?.versi ?? '2019'}
+                            v2019
                         </span>
                     </div>
                     <div className="flex items-center justify-between pt-4">
@@ -226,7 +170,6 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                 </div>
             </div>
 
-            {/* Row 3: Tren + Asesmen Risiko */}
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-7">
                 <div className="border-border rounded-[14px] border bg-white shadow-sm lg:col-span-4">
                     <div className="border-border flex items-center justify-between border-b px-5 py-4">
@@ -238,59 +181,9 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                         </div>
                     </div>
                     <div className="px-5 py-4">
-                        {trendValues.length > 0 ? (
-                            <svg
-                                className="h-[230px] w-full"
-                                viewBox={`0 0 ${chartW} ${chartH}`}
-                                preserveAspectRatio="none"
-                                role="img"
-                                aria-label={t('dashboard.trend')}
-                            >
-                                <defs>
-                                    <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#196ECD" stopOpacity="0.22" />
-                                        <stop offset="100%" stopColor="#196ECD" stopOpacity="0" />
-                                    </linearGradient>
-                                </defs>
-                                {[0, 1, 2, 3].map((g) => {
-                                    const y = chartPadT + (chartInnerH * g) / 4;
-                                    return <line key={g} x1={chartPadL} y1={y} x2={chartW - chartPadR} y2={y} stroke="#E3E9F0" strokeWidth="1" />;
-                                })}
-                                <line x1={chartPadL} y1={chartPadT} x2={chartPadL} y2={chartPadT + chartInnerH} stroke="#E3E9F0" strokeWidth="1" />
-                                {areaPath && <path d={areaPath} fill="url(#areaFill)" />}
-                                {linePoints && (
-                                    <polyline
-                                        points={linePoints}
-                                        fill="none"
-                                        stroke="#196ECD"
-                                        strokeWidth="3"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                    />
-                                )}
-                                {trendValues.map((v, i) => (
-                                    <g key={i} fill="#fff" stroke="#196ECD" strokeWidth="2.5">
-                                        <circle cx={chartX(i)} cy={chartY(v)} r="4" />
-                                    </g>
-                                ))}
-                                <g fill="#8798AB" fontFamily="Inter, sans-serif" fontSize="10.5" textAnchor="middle">
-                                    {trendLabels.map((label, i) => (
-                                        <text key={label + i} x={chartX(i)} y={chartH - 8}>
-                                            {label}
-                                        </text>
-                                    ))}
-                                </g>
-                                <g fill="#8798AB" fontFamily="Inter, sans-serif" fontSize="10" textAnchor="end">
-                                    {[100, 80, 60, 40, 20, 0].map((p) => (
-                                        <text key={p} x={chartPadL - 8} y={chartY(p) + 3}>
-                                            {p}%
-                                        </text>
-                                    ))}
-                                </g>
-                            </svg>
-                        ) : (
-                            <div className="text-muted flex h-[230px] items-center justify-center text-sm">{t('common.noData')}</div>
-                        )}
+                        <div className="text-muted flex h-[230px] items-center justify-center text-sm">
+                            {t('common.noData')}
+                        </div>
                     </div>
                 </div>
 
@@ -330,10 +223,9 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                 </div>
             </div>
 
-            {/* Row 4: Audit Terbaru */}
             <div className="border-border overflow-hidden rounded-[14px] border bg-white shadow-sm">
                 <div className="border-border flex items-center justify-between border-b px-5 py-4">
-                    <h3>{t('dashboard.recentAudit')}</h3>
+                    <h3>{t('dashboard.recentActivity')}</h3>
                     <a href="#" className="text-primary hover:text-primary-700 text-xs font-semibold">
                         {t('common.viewAll')}
                     </a>
@@ -346,34 +238,43 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                                     {t('dashboard.time')}
                                 </th>
                                 <th scope="col" className="px-5 py-3 font-semibold">
-                                    {t('dashboard.user')}
+                                    {t('dashboard.session')}
                                 </th>
                                 <th scope="col" className="px-5 py-3 font-semibold">
-                                    {t('dashboard.action')}
+                                    {t('dashboard.framework')}
                                 </th>
                                 <th scope="col" className="px-5 py-3 font-semibold">
-                                    {t('dashboard.module')}
+                                    {t('dashboard.compliance')}
                                 </th>
                                 <th scope="col" className="px-5 py-3 font-semibold">
-                                    {t('dashboard.status')}
+                                    {t('dashboard.progress')}
                                 </th>
                             </tr>
                         </thead>
                         <tbody className="divide-border divide-y">
-                            {recent_activities.length > 0 ? (
-                                recent_activities.map((act) => (
-                                    <tr key={act.id} className="hover:bg-surface/50 transition-colors">
-                                        <td className="text-muted px-5 py-3.5 text-xs whitespace-nowrap">{act.time_ago}</td>
-                                        <td className="text-navy px-5 py-3.5 text-sm font-medium whitespace-nowrap">{act.actor_name}</td>
-                                        <td className="px-5 py-3.5">
-                                            <span className="text-navy block text-sm font-semibold">{act.action}</span>
-                                            <span className="text-muted block text-xs">{act.entity_name}</span>
+                            {recent_sessions.length > 0 ? (
+                                recent_sessions.map((session) => (
+                                    <tr key={session.id} className="hover:bg-surface/50 transition-colors">
+                                        <td className="text-muted px-5 py-3.5 text-xs whitespace-nowrap">
+                                            {session.created_at ? new Date(session.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) + ' · ' + new Date(session.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '—'}
                                         </td>
-                                        <td className="text-body px-5 py-3.5 text-sm whitespace-nowrap">{act.actor_role}</td>
+                                        <td className="text-navy px-5 py-3.5 text-sm font-medium whitespace-nowrap">
+                                            {session.konteks_penilaian}
+                                        </td>
+                                        <td className="px-5 py-3.5 text-sm whitespace-nowrap">
+                                            {session.framework}
+                                        </td>
+                                        <td className="text-body px-5 py-3.5 text-sm whitespace-nowrap">
+                                            {session.total_entries} {t('common.active')}
+                                        </td>
                                         <td className="px-5 py-3.5">
-                                            <span className="border-info/20 bg-info-bg text-info inline-flex items-center rounded-[6px] border px-2 py-0.5 text-xs font-semibold">
-                                                {t('dashboard.pending')}
-                                            </span>
+                                            <div className="inline-flex items-center gap-1 rounded-[6px] border px-2 py-0.5 text-xs font-semibold">
+                                                <span
+                                                    className={`bg-surface-2 text-body inline-flex items-center gap-0.5 rounded-[3px] px-1.5 py-0.5 text-[10px] font-semibold ${session.compliant_entries > 0 ? 'text-success' : 'text-muted'}`}
+                                                >
+                                                    {session.compliant_entries}/{session.total_entries}
+                                                </span>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))
@@ -389,7 +290,6 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                 </div>
             </div>
 
-            {/* Row 5: Tindakan yang Harus Dilakukan */}
             <div className="border-border rounded-[14px] border bg-white shadow-sm">
                 <div className="border-border flex items-center justify-between border-b px-5 py-4">
                     <h3>{t('dashboard.todo')}</h3>
