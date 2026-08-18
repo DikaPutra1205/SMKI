@@ -41,6 +41,7 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/dashboard', [ComplianceController::class, 'dashboard'])->name('dashboard');
         Route::get('/compliance', [ComplianceController::class, 'index'])->name('compliance');
+        Route::get('/sessions', [ComplianceController::class, 'sessions'])->name('sessions');
 
         // ── [DEV ONLY] Test halaman import/export — hapus sebelum production ──────────
         Route::get('/master-data', function () {
