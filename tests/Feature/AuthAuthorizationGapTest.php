@@ -80,7 +80,7 @@ class AuthAuthorizationGapTest extends TestCase
         User::factory()->create(['email' => 'pic@smki.test', 'password' => bcrypt('secret12')]);
 
         $this->post('/login', ['email' => 'pic@smki.test', 'password' => 'secret12'])
-            ->assertRedirect('/');
+            ->assertRedirect('/admin/kepatuhan/dashboard');
         $this->assertAuthenticated();
     }
 

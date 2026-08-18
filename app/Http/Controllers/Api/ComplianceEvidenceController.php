@@ -8,6 +8,7 @@ use App\Models\ComplianceEvidence;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class ComplianceEvidenceController extends Controller
@@ -43,11 +44,8 @@ class ComplianceEvidenceController extends Controller
             'uploaded_by' => 'required|exists:users,id',
         ]);
 
-        // Hitung nomor versi berikutnya dari seluruh riwayat (termasuk yang di-soft-delete)
-        $maxVersion = $checklistEntry->evidences()->withTrashed()->max('version_number') ?? 0;
-        $nextVersion = $maxVersion + 1;
-
-        // Upload ke Supabase Storage (S3)
+        // Upload ke Supabase Storage (S3) — lakukan di luar transaksi karena
+        // S3/Supabase tidak transactional; batalkan secara manual jika DB gagal.
         $folder = "bukti/{$checklistEntry->id}";
         $path = Storage::disk('supabase')->put($folder, $request->file('bukti_file'));
 
@@ -55,25 +53,45 @@ class ComplianceEvidenceController extends Controller
             return $this->error('Gagal mengunggah file ke Supabase Storage', 500);
         }
 
-        // Simpan record bukti baru
-        $evidence = ComplianceEvidence::create([
-            'checklist_entry_id' => $checklistEntry->id,
-            'uploaded_by' => $request->uploaded_by,
-            'file_url' => $path,
-            'version_number' => $nextVersion,
-            'is_active' => true,
-            'uploaded_at' => now(),
-        ]);
+        // Hitung versi berikutnya dan simpan record dalam satu transaksi terkunci
+        // untuk mencegah race condition: dua request bersamaan bisa membaca max()
+        // yang sama dan menghasilkan versi duplikat.
+        $evidence = DB::transaction(function () use ($checklistEntry, $request, $path) {
+            // lockForUpdate memblokir baris lain yang membaca version_number
+            // untuk entry yang sama hingga transaksi ini selesai.
+            // Catatan: aggregate (max) tidak bisa dikombinasikan dengan FOR UPDATE
+            // di PostgreSQL; kita lock semua baris terlebih dahulu lalu hitung
+            // max di PHP untuk portabilitas SQLite/PostgreSQL.
+            $lockedVersions = $checklistEntry->evidences()
+                ->withTrashed()
+                ->lockForUpdate()
+                ->pluck('version_number');
 
-        // Reset status verifikasi checklist agar diverifikasi ulang oleh Admin
-        $checklistEntry->update([
-            'tanggal_input' => now(),
-            'tanggal_verifikasi' => null,
-        ]);
+            $maxVersion = $lockedVersions->max() ?? 0;
+
+            $nextVersion = $maxVersion + 1;
+
+            $evidence = ComplianceEvidence::create([
+                'checklist_entry_id' => $checklistEntry->id,
+                'uploaded_by' => $request->uploaded_by,
+                'file_url' => $path,
+                'version_number' => $nextVersion,
+                'is_active' => true,
+                'uploaded_at' => now(),
+            ]);
+
+            // Reset status verifikasi checklist agar diverifikasi ulang oleh Admin
+            $checklistEntry->update([
+                'tanggal_input' => now(),
+                'tanggal_verifikasi' => null,
+            ]);
+
+            return $evidence;
+        });
 
         return $this->created(
             $evidence->load('uploader:id,name'),
-            "Bukti kepatuhan versi {$nextVersion} berhasil diunggah. Status checklist diperbarui (menunggu verifikasi)."
+            "Bukti kepatuhan versi {$evidence->version_number} berhasil diunggah. Status checklist diperbarui (menunggu verifikasi)."
         );
     }
 

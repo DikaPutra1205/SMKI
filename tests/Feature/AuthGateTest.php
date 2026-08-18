@@ -44,7 +44,7 @@ class AuthGateTest extends TestCase
         $this->post('/login', [
             'email' => 'pic@smki.test',
             'password' => 'secret12',
-        ])->assertRedirect('/');
+        ])->assertRedirect('/admin/kepatuhan/dashboard');
 
         $this->assertAuthenticatedAs($user);
     }

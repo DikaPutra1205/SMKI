@@ -3,10 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreFrameworkRequest;
+use App\Http\Requests\UpdateFrameworkRequest;
 use App\Models\Framework;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class FrameworkController extends Controller
 {
@@ -19,15 +20,13 @@ class FrameworkController extends Controller
         return $this->success($frameworks);
     }
 
-    public function store(Request $request): JsonResponse
+    /**
+     * Uses StoreFrameworkRequest (same as Web) so unique-nama validation is
+     * consistent across both surfaces — no more duplicate framework names via API.
+     */
+    public function store(StoreFrameworkRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'nama' => 'required|string|max:255',
-            'versi' => 'required|string|max:50',
-            'url_file' => 'nullable|url',
-        ]);
-
-        $framework = Framework::create($data);
+        $framework = Framework::create($request->validated());
 
         return $this->created($framework);
     }
@@ -39,15 +38,13 @@ class FrameworkController extends Controller
         return $this->success($framework);
     }
 
-    public function update(Request $request, Framework $framework): JsonResponse
+    /**
+     * Uses UpdateFrameworkRequest (same as Web) so unique-nama validation
+     * (with current-record ignore) is consistent across both surfaces.
+     */
+    public function update(UpdateFrameworkRequest $request, Framework $framework): JsonResponse
     {
-        $data = $request->validate([
-            'nama' => 'sometimes|string|max:255',
-            'versi' => 'sometimes|string|max:50',
-            'url_file' => 'nullable|url',
-        ]);
-
-        $framework->update($data);
+        $framework->update($request->validated());
 
         return $this->success($framework, 'Framework berhasil diperbarui');
     }
