@@ -109,7 +109,7 @@ Route::middleware('auth')->group(function () {
         Route::get('recent-activities', [DashboardApiController::class, 'recentActivities']);
     });
 
-    // ── Compliance Officer Governance (Risks, Findings & Verify) ──────────────────────────────────
+    // ── Compliance Officer (Findings, Risk Management & Bulk Verification) ───────
     Route::prefix('v1/compliance-officer')->group(function () {
         Route::get('findings', [ComplianceOfficerApiController::class, 'indexFindings']);
         Route::get('findings/{id}', [ComplianceOfficerApiController::class, 'showFinding']);
@@ -127,9 +127,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/stats', [AuditLogApiController::class, 'stats']);
     });
 
-    // ── Report Generator & Export (Pair B) ──────────────────────────────────────
+    // ── Report Generator & Export (Audit Reports) ──────────────────────────────
     Route::prefix('v1/reports')->group(function () {
         Route::get('/compliance-summary', [ReportExportApiController::class, 'complianceSummary']);
+        Route::get('/export-pdf', [ReportExportApiController::class, 'exportPdf']);
         Route::get('/export-csv', [ReportExportApiController::class, 'exportCsv']);
     });
 
