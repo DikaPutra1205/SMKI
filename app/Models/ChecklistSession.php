@@ -14,6 +14,8 @@ class ChecklistSession extends Model
 
     protected $fillable = [
         'nama_sesi',
+        'periode',
+        'konteks_penilaian',
         'unit_id',
         'framework_id',
         'created_by',

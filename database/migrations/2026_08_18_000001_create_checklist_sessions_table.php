@@ -11,6 +11,8 @@ return new class extends Migration
         Schema::create('checklist_sessions', function (Blueprint $table) {
             $table->id();
             $table->string('nama_sesi');
+            $table->string('periode')->nullable();
+            $table->text('konteks_penilaian')->nullable();
             $table->foreignId('unit_id')->constrained('work_units')->cascadeOnDelete();
             $table->foreignId('framework_id')->nullable()->constrained('frameworks')->nullOnDelete();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
@@ -24,6 +26,7 @@ return new class extends Migration
             $table->softDeletes();
 
             $table->index(['unit_id', 'status']);
+            $table->index(['unit_id', 'periode']);
             $table->index(['framework_id']);
             $table->index(['start_date', 'end_date']);
         });

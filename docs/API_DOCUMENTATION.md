@@ -73,9 +73,10 @@ Gunakan `id` atau `email` user berikut untuk simulasi pengujian hak akses peran:
 **Query Parameters (Opsional):**
 - `unit_id` (integer) — Filter berdasarkan Satker
 - `framework_id` (integer) — Filter framework standar
+- `periode` (string) — Filter berdasarkan periode (contoh: `?periode=Q1 2025` atau `?periode=Semester 1 2026`)
 - `status` (string: `draft` | `in_progress` | `submitted` | `verified` | `closed`)
 - `auditor_id` (integer) — Filter auditor penanggung jawab
-- `search` (string) — Cari nama sesi
+- `search` (string) — Cari nama sesi, periode, atau konteks penilaian
 - `trashed` (string: `only` | `with`)
 - `all` (boolean) — Tanpa pagination
 - `per_page` (integer, default 15)
@@ -86,7 +87,9 @@ Gunakan `id` atau `email` user berikut untuk simulasi pengujian hak akses peran:
 **Request Body (JSON):**
 ```json
 {
-  "nama_sesi": "Audit Internal SMKI Semester 1 2026 - Biro TI",
+  "nama_sesi": "Audit Internal SMKI Semester 1 2026",
+  "periode": "Semester 1 2026",
+  "konteks_penilaian": "Penilaian mandiri unit kerja Biro TI dan layanan cloud publik",
   "unit_id": 3,
   "framework_id": 1,
   "auditor_id": 4,
