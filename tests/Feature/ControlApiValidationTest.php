@@ -101,13 +101,10 @@ class ControlApiValidationTest extends TestCase
         $this->assertDatabaseHas('controls', ['id' => $control1->id, 'framework_id' => $fw1->id]);
     }
 
-    // KNOWN BUG: the Form Request unique rule excludes soft-deleted rows
-    // (->whereNull('deleted_at')), but the DB constraint uniq_ctrl_fw_kode
-    // (migration 2026_08_16_000011) is NOT partial on deleted_at. Reusing a
-    // kode after soft-delete passes validation and then 500s on INSERT.
-    // Pin the current behaviour; flip to assertCreated() once the constraint
-    // becomes a partial unique index.
-    public function test_api_recreating_kode_of_soft_deleted_control_hits_db_unique_violation(): void
+    // FIX VERIFIED: With the partial unique index (WHERE deleted_at IS NULL),
+    // reusing a kode_klausul after soft-delete successfully inserts a new row
+    // without SQLSTATE[23505] unique violation.
+    public function test_api_recreating_kode_of_soft_deleted_control_succeeds(): void
     {
         $user = User::factory()->create(['role' => User::ROLE_ADMIN_KEPATUHAN]);
         $framework = Framework::factory()->create();
@@ -126,7 +123,13 @@ class ControlApiValidationTest extends TestCase
                 'kategori' => 'annex_a',
             ]);
 
-        $response->assertStatus(500);
+        $response->assertCreated();
+        $this->assertDatabaseHas('controls', [
+            'framework_id' => $framework->id,
+            'kode_klausul' => 'A.5.1',
+            'judul' => 'Reused clause',
+            'deleted_at' => null,
+        ]);
     }
 
     public function test_api_store_rejects_empty_framework_id(): void

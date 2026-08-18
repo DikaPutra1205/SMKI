@@ -65,7 +65,9 @@ class DashboardAnalyticsTest extends TestCase
 
         // Explicit ids do not advance the Postgres sequence; re-sync the
         // sequence so factory-created frameworks never collide with ids 1 and 2.
-        \DB::statement("SELECT setval(pg_get_serial_sequence('frameworks', 'id'), (SELECT COALESCE(MAX(id), 1) FROM frameworks))");
+        if (\DB::connection()->getDriverName() === 'pgsql') {
+            \DB::statement("SELECT setval(pg_get_serial_sequence('frameworks', 'id'), (SELECT COALESCE(MAX(id), 1) FROM frameworks))");
+        }
     }
 
     protected function resetSharedFeatureTables(): void

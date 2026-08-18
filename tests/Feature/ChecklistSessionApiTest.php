@@ -562,4 +562,3 @@ class ChecklistSessionApiTest extends TestCase
             ->assertNotFound();
     }
 }
-
