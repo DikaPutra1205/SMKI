@@ -43,7 +43,7 @@ class AppServiceProvider extends ServiceProvider
             return in_array($user->role, ['superadmin', 'admin_kepatuhan', 'koordinator_smki', 'auditor']);
         });
 
-        Gate::define('manage-governance', function (User $user) {
+        Gate::define('manage-compliance', function (User $user) {
             return in_array($user->role, ['superadmin', 'admin_kepatuhan']);
         });
     }

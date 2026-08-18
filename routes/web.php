@@ -63,7 +63,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/master-data/import/preview', [AdminControlController::class, 'previewMasterDataImport'])->name('master-data.import.preview');
         Route::post('/master-data/import', [AdminControlController::class, 'importMasterData'])->name('master-data.import');
 
-        // ── Compliance Officer Governance (Pair B) ──────────────────────────────────
+        // ── Compliance Officer (Findings, Risks & Verification) ────────────────────
         Route::get('/findings', [ComplianceOfficerController::class, 'findings'])->name('findings.index');
         Route::put('/findings/{finding}', [ComplianceOfficerController::class, 'updateFinding'])->name('findings.update');
         Route::get('/risks', [ComplianceOfficerController::class, 'risks'])->name('risks.index');
@@ -73,8 +73,9 @@ Route::middleware('auth')->group(function () {
         // ── Audit Trail (Pair B) ───────────────────────────────────────────────────
         Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
 
-        // ── Report Generator (Pair B) ──────────────────────────────────────────────
-        Route::get('/reports/export', [ReportExportController::class, 'exportCsv'])->name('reports.export');
+        // ── Report Generator (Audit Reports) ──────────────────────────────────────────
+        Route::get('/reports/export', [ReportExportController::class, 'exportPdf'])->name('reports.export');
+        Route::get('/reports/export-pdf', [ReportExportController::class, 'exportPdf'])->name('reports.export-pdf');
     });
 
     Route::prefix('admin/superadmin')->name('admin.superadmin.')->group(function () {

@@ -228,7 +228,7 @@ class AuthGateTest extends TestCase
         $this->assertTrue(Gate::forUser($pic)->denies('export-reports'));
     }
 
-    public function test_manage_governance_gate_allows_only_governance_roles(): void
+    public function test_manage_compliance_gate_allows_only_compliance_roles(): void
     {
         $allowed = [
             User::factory()->create(['role' => User::ROLE_SUPERADMIN]),
@@ -241,10 +241,10 @@ class AuthGateTest extends TestCase
         ];
 
         foreach ($allowed as $user) {
-            $this->assertTrue(Gate::forUser($user)->allows('manage-governance'));
+            $this->assertTrue(Gate::forUser($user)->allows('manage-compliance'));
         }
         foreach ($denied as $user) {
-            $this->assertTrue(Gate::forUser($user)->denies('manage-governance'));
+            $this->assertTrue(Gate::forUser($user)->denies('manage-compliance'));
         }
     }
 
