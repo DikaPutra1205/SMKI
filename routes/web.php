@@ -85,4 +85,4 @@ Route::middleware('guest')->group(function () {
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 });
 
-Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth');
+Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout'])->name('logout');
