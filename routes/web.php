@@ -51,8 +51,6 @@ Route::middleware('auth')->group(function () {
         // ── Checklist Sessions (Inertia-style) ───────────────────────────────────
         Route::post('/checklist-sessions', [ChecklistSessionController::class, 'store'])->name('checklist-sessions.store');
         Route::put('/checklist-sessions/{checklistSession}', [ChecklistSessionController::class, 'update'])->name('checklist-sessions.update');
-        Route::post('/checklist-sessions/{checklistSession}/submit', [ChecklistSessionController::class, 'submit'])->name('checklist-sessions.submit');
-        Route::patch('/checklist-sessions/{checklistSession}/verify', [ChecklistSessionController::class, 'verify'])->name('checklist-sessions.verify');
         Route::delete('/checklist-sessions/{checklistSession}', [ChecklistSessionController::class, 'destroy'])->name('checklist-sessions.destroy');
         Route::post('/checklist-sessions/{id}/restore', [ChecklistSessionController::class, 'restore'])->name('checklist-sessions.restore');
 

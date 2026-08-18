@@ -53,7 +53,7 @@ class ComplianceService
      */
     public function getChecklistSessions(array $filters = []): array
     {
-        $query = ChecklistSession::with(['unit:id,nama', 'framework:id,nama,versi', 'creator:id,name', 'auditor:id,name']);
+        $query = ChecklistSession::with(['unit:id,nama', 'framework:id,nama,versi', 'creator:id,name', 'updater:id,name']);
 
         if (! empty($filters['unit_id'])) {
             $query->where('unit_id', $filters['unit_id']);
@@ -63,8 +63,8 @@ class ComplianceService
             $query->where('framework_id', $filters['framework_id']);
         }
 
-        if (! empty($filters['status'])) {
-            $query->where('status', $filters['status']);
+        if (! empty($filters['periode'])) {
+            $query->where('periode', $filters['periode']);
         }
 
         return $query->orderByDesc('id')
@@ -72,16 +72,16 @@ class ComplianceService
             ->map(function (ChecklistSession $session) {
                 return [
                     'id' => $session->id,
-                    'nama_sesi' => $session->nama_sesi,
+                    'konteks_penilaian' => $session->konteks_penilaian,
+                    'periode' => $session->periode ?? '',
                     'unit_id' => $session->unit_id,
                     'unit_nama' => $session->unit?->nama ?? '',
                     'framework_id' => $session->framework_id,
                     'framework_nama' => $session->framework ? "{$session->framework->nama}:{$session->framework->versi}" : '',
-                    'auditor_id' => $session->auditor_id,
-                    'auditor_name' => $session->auditor?->name ?? '',
-                    'start_date' => $session->start_date?->format('Y-m-d'),
-                    'end_date' => $session->end_date?->format('Y-m-d'),
-                    'status' => $session->status,
+                    'created_by' => $session->created_by,
+                    'creator_name' => $session->creator?->name ?? '',
+                    'updated_by' => $session->updated_by,
+                    'updater_name' => $session->updater?->name ?? '',
                     'catatan' => $session->catatan ?? '',
                     'summary' => $session->summary,
                 ];

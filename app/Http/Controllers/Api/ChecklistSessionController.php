@@ -23,7 +23,7 @@ class ChecklistSessionController extends Controller
             'unit:id,nama',
             'framework:id,nama,versi',
             'creator:id,name',
-            'auditor:id,name',
+            'updater:id,name',
         ])->withCount([
             'entries as total_entries',
             'entries as compliant_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_COMPLIANT),
@@ -46,18 +46,18 @@ class ChecklistSessionController extends Controller
             $query->where('framework_id', $request->framework_id);
         }
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        if ($request->filled('auditor_id')) {
-            $query->where('auditor_id', $request->auditor_id);
+        if ($request->filled('periode')) {
+            $query->where('periode', $request->periode);
         }
 
         if ($request->filled('search')) {
             $search = $request->search;
             $like = config('database.default') === 'pgsql' ? 'ilike' : 'like';
-            $query->where('nama_sesi', $like, "%{$search}%");
+            $query->where(function ($q) use ($search, $like) {
+                $q->where('konteks_penilaian', $like, "%{$search}%")
+                    ->orWhere('periode', $like, "%{$search}%")
+                    ->orWhere('catatan', $like, "%{$search}%");
+            });
         }
 
         $query->orderByDesc('id');
@@ -76,7 +76,7 @@ class ChecklistSessionController extends Controller
     {
         $data = $request->validated();
         $data['created_by'] = $data['created_by'] ?? auth()->id();
-        $data['status'] = $data['status'] ?? ChecklistSession::STATUS_IN_PROGRESS;
+        $data['updated_by'] = $data['updated_by'] ?? auth()->id();
 
         $session = ChecklistSession::create($data);
 
@@ -87,7 +87,7 @@ class ChecklistSessionController extends Controller
             'unit:id,nama',
             'framework:id,nama,versi',
             'creator:id,name',
-            'auditor:id,name',
+            'updater:id,name',
         ]);
 
         return $this->created([
@@ -102,7 +102,7 @@ class ChecklistSessionController extends Controller
             'unit:id,nama',
             'framework:id,nama,versi',
             'creator:id,name',
-            'auditor:id,name',
+            'updater:id,name',
             'entries.control:id,framework_id,kode_klausul,judul,kategori',
             'entries.pic:id,name',
             'entries.admin:id,name',
@@ -117,61 +117,14 @@ class ChecklistSessionController extends Controller
 
     public function update(UpdateChecklistSessionRequest $request, ChecklistSession $checklistSession): JsonResponse
     {
-        if ($checklistSession->isClosed() && ! $request->has('status')) {
-            return $this->error('Sesi checklist sudah ditutup (closed) dan tidak dapat diubah.', 422);
-        }
+        $data = $request->validated();
+        $data['updated_by'] = auth()->id();
 
-        $checklistSession->update($request->validated());
+        $checklistSession->update($data);
 
         return $this->success(
-            $checklistSession->fresh(['unit:id,nama', 'framework:id,nama,versi', 'creator:id,name', 'auditor:id,name']),
+            $checklistSession->fresh(['unit:id,nama', 'framework:id,nama,versi', 'creator:id,name', 'updater:id,name']),
             'Sesi checklist berhasil diperbarui.'
-        );
-    }
-
-    public function submit(Request $request, ChecklistSession $checklistSession): JsonResponse
-    {
-        if ($checklistSession->isClosed()) {
-            return $this->error('Sesi checklist sudah ditutup (closed).', 422);
-        }
-
-        $checklistSession->update([
-            'status' => ChecklistSession::STATUS_SUBMITTED,
-        ]);
-
-        return $this->success(
-            $checklistSession->fresh(['unit:id,nama', 'framework:id,nama,versi', 'creator:id,name', 'auditor:id,name']),
-            'Sesi checklist berhasil disubmit untuk diverifikasi oleh Auditor / Admin.'
-        );
-    }
-
-    public function verify(Request $request, ChecklistSession $checklistSession): JsonResponse
-    {
-        $data = $request->validate([
-            'status' => 'nullable|in:verified,closed,in_progress',
-            'catatan' => 'nullable|string',
-            'auditor_id' => 'nullable|exists:users,id',
-        ]);
-
-        $updateData = [
-            'status' => $data['status'] ?? ChecklistSession::STATUS_VERIFIED,
-        ];
-
-        if (isset($data['catatan'])) {
-            $updateData['catatan'] = $data['catatan'];
-        }
-
-        if (isset($data['auditor_id'])) {
-            $updateData['auditor_id'] = $data['auditor_id'];
-        } elseif (! $checklistSession->auditor_id && auth()->id()) {
-            $updateData['auditor_id'] = auth()->id();
-        }
-
-        $checklistSession->update($updateData);
-
-        return $this->success(
-            $checklistSession->fresh(['unit:id,nama', 'framework:id,nama,versi', 'creator:id,name', 'auditor:id,name']),
-            "Status sesi checklist berhasil diubah menjadi {$updateData['status']}."
         );
     }
 
@@ -189,7 +142,7 @@ class ChecklistSessionController extends Controller
         $session->restore();
         $session->entries()->withTrashed()->restore();
 
-        return $this->success($session->load(['unit', 'framework']), 'Sesi checklist berhasil dipulihkan.');
+        return $this->success($session->load(['unit', 'framework', 'creator', 'updater']), 'Sesi checklist berhasil dipulihkan.');
     }
 
     protected function provisionSessionEntries(ChecklistSession $session): void

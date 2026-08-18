@@ -54,6 +54,8 @@ class ChecklistSessionApiTest extends TestCase
 
         $payload = [
             'nama_sesi' => 'Audit Internal Semester 1 2026',
+            'periode' => 'Semester 1 2026',
+            'konteks_penilaian' => 'Penilaian mandiri lingkup layanan cloud dan sistem informasi kepegawaian.',
             'unit_id' => $unit->id,
             'framework_id' => $fw->id,
             'auditor_id' => $auditor->id,
@@ -69,13 +71,15 @@ class ChecklistSessionApiTest extends TestCase
             'status',
             'message',
             'data' => [
-                'session' => ['id', 'nama_sesi', 'status', 'unit_id', 'framework_id'],
+                'session' => ['id', 'nama_sesi', 'periode', 'konteks_penilaian', 'status', 'unit_id', 'framework_id'],
                 'summary' => ['total_entries', 'compliant', 'compliance_percentage'],
             ],
         ]);
 
         $session = ChecklistSession::where('nama_sesi', 'Audit Internal Semester 1 2026')->first();
         $this->assertNotNull($session);
+        $this->assertSame('Semester 1 2026', $session->periode);
+        $this->assertSame('Penilaian mandiri lingkup layanan cloud dan sistem informasi kepegawaian.', $session->konteks_penilaian);
         $this->assertSame(ChecklistSession::STATUS_IN_PROGRESS, $session->status);
 
         // Checklist entries should be auto-provisioned for all controls in framework
@@ -103,6 +107,8 @@ class ChecklistSessionApiTest extends TestCase
 
         $session1 = ChecklistSession::create([
             'nama_sesi' => 'Audit Internal Q1',
+            'periode' => 'Q1 2026',
+            'konteks_penilaian' => 'Konteks Unit Surabaya',
             'unit_id' => $unit->id,
             'framework_id' => $fw->id,
             'status' => ChecklistSession::STATUS_IN_PROGRESS,
@@ -110,6 +116,8 @@ class ChecklistSessionApiTest extends TestCase
 
         $session2 = ChecklistSession::create([
             'nama_sesi' => 'Audit Eksternal Q2',
+            'periode' => 'Q2 2026',
+            'konteks_penilaian' => 'Konteks Unit Jakarta',
             'unit_id' => $unit->id,
             'framework_id' => $fw->id,
             'status' => ChecklistSession::STATUS_CLOSED,
@@ -119,6 +127,16 @@ class ChecklistSessionApiTest extends TestCase
         $res->assertOk();
         $res->assertJsonFragment(['nama_sesi' => 'Audit Internal Q1']);
         $res->assertJsonMissing(['nama_sesi' => 'Audit Eksternal Q2']);
+
+        $resPeriode = $this->actingAs($admin)->getJson('/api/checklist-sessions?periode=Q1 2026');
+        $resPeriode->assertOk();
+        $resPeriode->assertJsonFragment(['periode' => 'Q1 2026']);
+        $resPeriode->assertJsonMissing(['periode' => 'Q2 2026']);
+
+        $resSearch = $this->actingAs($admin)->getJson('/api/checklist-sessions?search=Surabaya');
+        $resSearch->assertOk();
+        $resSearch->assertJsonFragment(['konteks_penilaian' => 'Konteks Unit Surabaya']);
+        $resSearch->assertJsonMissing(['konteks_penilaian' => 'Konteks Unit Jakarta']);
     }
 
     public function test_show_session_returns_entries_and_summary(): void

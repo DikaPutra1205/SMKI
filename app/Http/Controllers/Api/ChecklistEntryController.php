@@ -196,10 +196,6 @@ class ChecklistEntryController extends Controller
 
     public function update(Request $request, ChecklistEntry $checklistEntry): JsonResponse
     {
-        if ($checklistEntry->session && $checklistEntry->session->isClosed()) {
-            return $this->error('Sesi checklist audit sudah ditutup (closed) dan dikunci.', 422);
-        }
-
         $data = $request->validate([
             'status' => 'sometimes|in:compliant,partial,non_compliant,na',
             'catatan' => 'nullable|string',
@@ -252,10 +248,6 @@ class ChecklistEntryController extends Controller
 
     public function verify(Request $request, ChecklistEntry $checklistEntry): JsonResponse
     {
-        if ($checklistEntry->session && $checklistEntry->session->isClosed()) {
-            return $this->error('Sesi checklist audit sudah ditutup (closed) dan dikunci.', 422);
-        }
-
         $data = $request->validate([
             'admin_id' => 'required|exists:users,id',
             'catatan_admin' => 'nullable|string',
