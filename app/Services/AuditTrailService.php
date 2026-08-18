@@ -20,6 +20,7 @@ class AuditTrailService
             throw new AuthorizationException('Anda tidak memiliki wewenang untuk melihat jejak audit.');
         }
 
+        $safePerPage = max(1, min((int) ($perPage ?: 25), 100));
         $query = AuditLog::with(['actor.workUnit'])->orderByDesc('id');
 
         if (! empty($filters['action'])) {
@@ -37,23 +38,33 @@ class AuditTrailService
         }
 
         if (! empty($filters['start_date'])) {
-            $query->whereDate('created_at', '>=', Carbon::parse($filters['start_date']));
+            try {
+                $startDate = Carbon::parse($filters['start_date'])->startOfDay();
+                $query->where('created_at', '>=', $startDate);
+            } catch (\Throwable $e) {
+                // Ignore invalid date format to prevent 500 error
+            }
         }
 
         if (! empty($filters['end_date'])) {
-            $query->whereDate('created_at', '<=', Carbon::parse($filters['end_date']));
+            try {
+                $endDate = Carbon::parse($filters['end_date'])->endOfDay();
+                $query->where('created_at', '<=', $endDate);
+            } catch (\Throwable $e) {
+                // Ignore invalid date format to prevent 500 error
+            }
         }
 
         if (! empty($filters['search'])) {
-            $search = trim($filters['search']);
+            $search = mb_strtolower(trim($filters['search']));
             $query->where(function ($q) use ($search) {
-                $q->where('aksi', 'like', "%{$search}%")
-                    ->orWhere('entity_type', 'like', "%{$search}%")
-                    ->orWhereHas('actor', fn ($aq) => $aq->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%"));
+                $q->whereRaw('LOWER(aksi) LIKE ?', ["%{$search}%"])
+                    ->orWhereRaw('LOWER(entity_type) LIKE ?', ["%{$search}%"])
+                    ->orWhereHas('actor', fn ($aq) => $aq->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"])->orWhereRaw('LOWER(email) LIKE ?', ["%{$search}%"]));
             });
         }
 
-        $paginator = $query->paginate($perPage);
+        $paginator = $query->paginate($safePerPage);
 
         $paginator->getCollection()->transform(function (AuditLog $log) {
             return $this->formatAuditLogResource($log);
