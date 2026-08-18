@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateRiskRequest extends FormRequest
@@ -12,16 +11,13 @@ class UpdateRiskRequest extends FormRequest
         return true;
     }
 
-    /**
-     * @return array<string, ValidationRule|array<mixed>|string>
-     */
     public function rules(): array
     {
         return [
-            'level_risiko' => 'sometimes|in:low,medium,high,critical',
-            'pemilik_risiko' => 'sometimes|string|max:255',
-            'rencana_mitigasi' => 'nullable|string',
+            'risk_level' => 'sometimes|in:low,medium,high,critical',
             'status' => 'sometimes|in:open,mitigated,accepted',
+            'mitigation_plan' => 'nullable|string|max:3000',
+            'risk_owner' => 'nullable|string|max:255',
         ];
     }
 }

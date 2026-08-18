@@ -67,7 +67,6 @@ class DashboardAnalyticsTest extends TestCase
         $session = ChecklistSession::factory()->create([
             'unit_id' => $this->unitA->id,
             'framework_id' => $this->iso27001->id,
-            'status' => 'verified',
         ]);
 
         ChecklistEntry::factory()->create([
