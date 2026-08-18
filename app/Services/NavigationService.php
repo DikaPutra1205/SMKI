@@ -89,6 +89,11 @@ class NavigationService
                         'url' => '/admin/kepatuhan/compliance',
                         'roles' => [self::ROLE_ADMIN_KEPATUHAN],
                     ],
+                    [
+                        'label' => 'Assessment PIC',
+                        'url' => '/admin/kepatuhan/sessions',
+                        'roles' => [self::ROLE_ADMIN_KEPATUHAN],
+                    ],
                 ],
             ],
 

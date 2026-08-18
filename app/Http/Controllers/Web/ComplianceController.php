@@ -34,6 +34,21 @@ class ComplianceController extends Controller
         ]);
     }
 
+    public function sessions(Request $request): Response
+    {
+        $filters = $request->only(['search', 'unit_id', 'framework_id', 'periode']);
+
+        $sessions = $this->complianceService->getAdminSessions($filters);
+
+        return Inertia::render('admin-kepatuhan/sessions', [
+            'sessions' => $sessions,
+            'workUnits' => $this->complianceService->getWorkUnits(),
+            'frameworks' => $this->complianceService->getFrameworkSummaries(),
+            'periodeOptions' => $this->complianceService->getSessionPeriodeOptions(),
+            'filters' => $filters,
+        ]);
+    }
+
     public function dashboard(Request $request): Response
     {
         $user = $request->user();
