@@ -1,11 +1,13 @@
 <?php
 
+use App\Http\Controllers\Web\AuditLogController;
 use App\Http\Controllers\Web\AuthController;
 use App\Http\Controllers\Web\ChecklistSessionController;
 use App\Http\Controllers\Web\ComplianceController;
 use App\Http\Controllers\Web\ComplianceOfficerController;
 use App\Http\Controllers\Web\ControlController as AdminControlController;
 use App\Http\Controllers\Web\FrameworkController;
+use App\Http\Controllers\Web\ReportExportController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -66,6 +68,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/risks', [ComplianceOfficerController::class, 'risks'])->name('risks.index');
         Route::put('/risks/{risk}', [ComplianceOfficerController::class, 'updateRisk'])->name('risks.update');
         Route::post('/bulk-verify', [ComplianceOfficerController::class, 'bulkVerify'])->name('bulk-verify');
+
+        // ── Audit Trail (Pair B) ───────────────────────────────────────────────────
+        Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+
+        // ── Report Generator (Pair B) ──────────────────────────────────────────────
+        Route::get('/reports/export', [ReportExportController::class, 'exportCsv'])->name('reports.export');
     });
 
     Route::prefix('admin/superadmin')->name('admin.superadmin.')->group(function () {
