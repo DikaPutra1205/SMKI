@@ -18,16 +18,12 @@ class StoreChecklistSessionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nama_sesi' => 'required|string|max:255',
+            'konteks_penilaian' => 'required|string|max:255',
             'periode' => 'nullable|string|max:100',
-            'konteks_penilaian' => 'nullable|string',
             'unit_id' => 'required|exists:work_units,id',
             'framework_id' => 'nullable|exists:frameworks,id',
             'created_by' => 'nullable|exists:users,id',
-            'auditor_id' => 'nullable|exists:users,id',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
-            'status' => 'nullable|in:draft,in_progress,submitted,verified,closed',
+            'updated_by' => 'nullable|exists:users,id',
             'catatan' => 'nullable|string',
         ];
     }
