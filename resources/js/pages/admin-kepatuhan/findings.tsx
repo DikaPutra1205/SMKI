@@ -132,10 +132,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
         return () => clearTimeout(timer);
     }, [searchQuery, selectedSeverity, selectedStatus, selectedUnit]);
 
-    const breadcrumbs = [
-        { label: t('common.dashboard'), href: '/admin/kepatuhan/dashboard' },
-        { label: t('findings.title') },
-    ];
+    const breadcrumbs = [{ label: t('common.dashboard'), href: '/admin/kepatuhan/dashboard' }, { label: t('findings.title') }];
 
     const groupByStatus = (status: string) => items.filter((f) => f.status === status);
 
@@ -161,10 +158,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
         }
 
         const remaining = f.days_remaining ?? 0;
-        const toneClass =
-            remaining <= 3
-                ? 'border-warning-border bg-warning-bg text-warning'
-                : 'border-success-border bg-success-bg text-success';
+        const toneClass = remaining <= 3 ? 'border-warning-border bg-warning-bg text-warning' : 'border-success-border bg-success-bg text-success';
 
         return (
             <span className={`inline-flex items-center gap-1.5 rounded-[6px] border px-2 py-1 text-[11px] font-semibold ${toneClass}`}>
@@ -193,7 +187,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                             <div className="flex items-center gap-2">
                                 <span className={`h-2 w-2 rounded-full ${col.dotClass}`} />
                                 <strong className="text-navy text-[13px] font-bold">{t(col.label as never)}</strong>
-                                <span className="border-border bg-white text-body rounded-full border px-2 py-0.5 text-[11px] font-semibold">
+                                <span className="border-border text-body rounded-full border bg-white px-2 py-0.5 text-[11px] font-semibold">
                                     {columnItems.length}
                                 </span>
                             </div>
@@ -206,13 +200,11 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                                         key={f.id}
                                         type="button"
                                         onClick={() => setDetailTarget(f)}
-                                        className="hover:border-primary-300 border-border bg-white block w-full rounded-[12px] border p-3.5 text-left shadow-sm transition-colors"
+                                        className="hover:border-primary-300 border-border block w-full rounded-[12px] border bg-white p-3.5 text-left shadow-sm transition-colors"
                                     >
                                         <div className="flex items-center justify-between gap-2">
                                             <code className="text-primary text-[12px] font-bold">FND-{findingRef(f)}</code>
-                                            <StatusBadge tone={SEVERITY_TONE[f.kategori] ?? 'gray'}>
-                                                {severityLabel(f.kategori)}
-                                            </StatusBadge>
+                                            <StatusBadge tone={SEVERITY_TONE[f.kategori] ?? 'gray'}>{severityLabel(f.kategori)}</StatusBadge>
                                         </div>
 
                                         <div className="text-navy mt-2 line-clamp-2 text-[13px] leading-snug font-semibold">
@@ -227,7 +219,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                                                 {f.unit?.nama || '—'}
                                             </span>
                                             {f.pic?.name && (
-                                                <span className="bg-primary text-white grid h-5 w-5 shrink-0 place-items-center rounded-full text-[9px] font-bold">
+                                                <span className="bg-primary grid h-5 w-5 shrink-0 place-items-center rounded-full text-[9px] font-bold text-white">
                                                     {initials(f.pic.name)}
                                                 </span>
                                             )}
@@ -237,7 +229,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                                     </button>
                                 ))
                             ) : (
-                                <div className="border-border bg-white rounded-[12px] border border-dashed p-6 text-center">
+                                <div className="border-border rounded-[12px] border border-dashed bg-white p-6 text-center">
                                     <span className="text-faint text-[12px]">{t('common.noData')}</span>
                                 </div>
                             )}
@@ -288,15 +280,13 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                                         <button
                                             type="button"
                                             onClick={() => setDetailTarget(f)}
-                                            className="text-navy text-left font-semibold hover:text-primary"
+                                            className="text-navy hover:text-primary text-left font-semibold"
                                         >
                                             {f.control?.judul || t('common.noData')}
                                         </button>
                                     </td>
                                     <td className="px-5 py-4 whitespace-nowrap">
-                                        <StatusBadge tone={SEVERITY_TONE[f.kategori] ?? 'gray'}>
-                                            {severityLabel(f.kategori)}
-                                        </StatusBadge>
+                                        <StatusBadge tone={SEVERITY_TONE[f.kategori] ?? 'gray'}>{severityLabel(f.kategori)}</StatusBadge>
                                     </td>
                                     <td className="text-body px-5 py-4 whitespace-nowrap">{f.unit?.nama || '—'}</td>
                                     <td className="text-body px-5 py-4 whitespace-nowrap">{f.pic?.name || '—'}</td>
@@ -353,14 +343,17 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                     <p className="text-muted mt-1 text-xs sm:text-sm">
                         {t('findings.subtitle')}
                         {items.some((f) => f.is_overdue) && (
-                            <strong className="text-danger"> · {items.filter((f) => f.is_overdue).length} {t('findings.overdue')}</strong>
+                            <strong className="text-danger">
+                                {' '}
+                                · {items.filter((f) => f.is_overdue).length} {t('findings.overdue')}
+                            </strong>
                         )}
                     </p>
                 </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2.5">
-                <div className="border-border bg-white flex items-center rounded-[10px] border p-0.5 shadow-sm">
+                <div className="border-border flex items-center rounded-[10px] border bg-white p-0.5 shadow-sm">
                     <button
                         type="button"
                         onClick={() => setView('kanban')}
@@ -501,7 +494,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                         {detailTarget.admin_notes || detailTarget.catatan_admin ? (
                             <div>
                                 <h4 className="text-navy text-sm font-bold">{t('findings.notesLabel')}</h4>
-                                <p className="text-body mt-2 rounded-[10px] border border-border bg-surface/50 p-3.5 text-[13px] leading-relaxed">
+                                <p className="text-body border-border bg-surface/50 mt-2 rounded-[10px] border p-3.5 text-[13px] leading-relaxed">
                                     {detailTarget.admin_notes || detailTarget.catatan_admin}
                                 </p>
                             </div>

@@ -170,10 +170,14 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
         }
 
         const timer = setTimeout(() => {
-            router.get('/admin/kepatuhan/audit-logs', buildFilterParams(searchQuery, selectedAction, selectedEntity, selectedActor, dateFrom, dateTo), {
-                preserveState: true,
-                replace: true,
-            });
+            router.get(
+                '/admin/kepatuhan/audit-logs',
+                buildFilterParams(searchQuery, selectedAction, selectedEntity, selectedActor, dateFrom, dateTo),
+                {
+                    preserveState: true,
+                    replace: true,
+                },
+            );
         }, 350);
 
         return () => clearTimeout(timer);
@@ -183,10 +187,7 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
     const entityOptions = stats?.by_entity ? Object.keys(stats.by_entity) : [];
     const diff = detailTarget ? diffEntries(detailTarget.changes) : [];
 
-    const breadcrumbs = [
-        { label: t('common.dashboard'), href: '/admin/kepatuhan/dashboard' },
-        { label: t('audit.title') },
-    ];
+    const breadcrumbs = [{ label: t('common.dashboard'), href: '/admin/kepatuhan/dashboard' }, { label: t('audit.title') }];
 
     return (
         <>
@@ -194,24 +195,24 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
             <AppLayout breadcrumbs={breadcrumbs} currentPath="/admin/kepatuhan/audit-logs">
                 <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
                     <div>
-                        <h1 className="text-2xl font-bold tracking-tight text-navy">{t('audit.title')}</h1>
-                        <p className="mt-1 text-sm text-muted">{t('audit.subtitle')}</p>
+                        <h1 className="text-navy text-2xl font-bold tracking-tight">{t('audit.title')}</h1>
+                        <p className="text-muted mt-1 text-sm">{t('audit.subtitle')}</p>
                     </div>
 
-                    <section className="rounded-[14px] border border-border bg-white shadow-sm">
-                        <div className="border-b border-border px-5 py-4">
-                            <h3 className="text-[15px] font-bold text-navy">{t('audit.cardTitle')}</h3>
+                    <section className="border-border rounded-[14px] border bg-white shadow-sm">
+                        <div className="border-border border-b px-5 py-4">
+                            <h3 className="text-navy text-[15px] font-bold">{t('audit.cardTitle')}</h3>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-3 border-b border-border px-5 py-4">
+                        <div className="border-border flex flex-wrap items-center gap-3 border-b px-5 py-4">
                             <div className="relative min-w-[220px] flex-1">
-                                <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted" />
+                                <Search className="text-muted pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                                 <input
                                     type="text"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     placeholder={t('audit.searchPlaceholder')}
-                                    className="h-10 w-full rounded-[10px] border border-border-strong bg-white pr-3 pl-9 text-sm text-ink focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                                    className="border-border-strong text-ink focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white pr-3 pl-9 text-sm focus:ring-2 focus:outline-none"
                                 />
                             </div>
                             <Select value={selectedAction} onChange={(e) => setSelectedAction(e.target.value)} className="w-44">
@@ -244,15 +245,15 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                                     value={dateFrom}
                                     onChange={(e) => setDateFrom(e.target.value)}
                                     aria-label={t('audit.dateFrom')}
-                                    className="h-10 rounded-[10px] border border-border-strong bg-white px-3 text-sm text-ink focus:border-primary focus:outline-none"
+                                    className="border-border-strong text-ink focus:border-primary h-10 rounded-[10px] border bg-white px-3 text-sm focus:outline-none"
                                 />
-                                <span className="text-xs text-muted">→</span>
+                                <span className="text-muted text-xs">→</span>
                                 <input
                                     type="date"
                                     value={dateTo}
                                     onChange={(e) => setDateTo(e.target.value)}
                                     aria-label={t('audit.dateTo')}
-                                    className="h-10 rounded-[10px] border border-border-strong bg-white px-3 text-sm text-ink focus:border-primary focus:outline-none"
+                                    className="border-border-strong text-ink focus:border-primary h-10 rounded-[10px] border bg-white px-3 text-sm focus:outline-none"
                                 />
                             </div>
                         </div>
@@ -260,7 +261,7 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                         <div className="overflow-x-auto">
                             <table className="w-full text-left text-sm">
                                 <thead>
-                                    <tr className="border-b border-border text-xs text-muted">
+                                    <tr className="border-border text-muted border-b text-xs">
                                         <th scope="col" className="px-5 py-3 font-semibold">
                                             {t('audit.colTime')}
                                         </th>
@@ -311,7 +312,7 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                                                     <button
                                                         type="button"
                                                         onClick={() => setDetailTarget(log)}
-                                                        className="rounded-lg border border-border-strong bg-white px-3 py-1.5 text-xs font-semibold text-body shadow-sm transition-colors hover:bg-surface"
+                                                        className="border-border-strong text-body hover:bg-surface rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold shadow-sm transition-colors"
                                                     >
                                                         {t('audit.detail')}
                                                     </button>
@@ -357,7 +358,7 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                         <button
                             type="button"
                             onClick={() => setDetailTarget(null)}
-                            className="rounded-lg border border-border-strong bg-white px-4 py-2 text-sm font-semibold text-body shadow-sm transition-colors hover:bg-surface"
+                            className="border-border-strong text-body hover:bg-surface rounded-lg border bg-white px-4 py-2 text-sm font-semibold shadow-sm transition-colors"
                         >
                             {t('audit.close')}
                         </button>
@@ -395,17 +396,17 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                             <div>
                                 <h4 className="text-navy mb-2 text-[13px] font-bold">{t('audit.changesLabel')}</h4>
                                 {diff.length > 0 ? (
-                                    <div className="overflow-x-auto rounded-[10px] border border-border">
+                                    <div className="border-border overflow-x-auto rounded-[10px] border">
                                         <table className="w-full text-left text-sm">
                                             <thead>
-                                                <tr className="border-b border-border bg-surface/60 text-xs">
-                                                    <th scope="col" className="px-4 py-2.5 font-semibold text-navy">
+                                                <tr className="border-border bg-surface/60 border-b text-xs">
+                                                    <th scope="col" className="text-navy px-4 py-2.5 font-semibold">
                                                         {t('audit.field')}
                                                     </th>
-                                                    <th scope="col" className="px-4 py-2.5 font-semibold text-danger">
+                                                    <th scope="col" className="text-danger px-4 py-2.5 font-semibold">
                                                         {t('audit.before')}
                                                     </th>
-                                                    <th scope="col" className="px-4 py-2.5 font-semibold text-success">
+                                                    <th scope="col" className="text-success px-4 py-2.5 font-semibold">
                                                         {t('audit.after')}
                                                     </th>
                                                 </tr>
@@ -424,7 +425,7 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                                         </table>
                                     </div>
                                 ) : (
-                                    <p className="text-sm text-muted">{t('common.noData')}</p>
+                                    <p className="text-muted text-sm">{t('common.noData')}</p>
                                 )}
                             </div>
 

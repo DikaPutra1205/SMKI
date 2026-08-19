@@ -1,10 +1,10 @@
+import ComplianceAreaChart from '@/components/dashboards/ComplianceAreaChart';
+import RiskAssessment from '@/components/dashboards/RiskAssessment';
 import AppLayout from '@/layouts/AppLayout';
 import { t } from '@/lib/i18n';
 import { type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { CheckCircle2, TrendingUp, ShieldCheck, ShieldAlert, ClipboardList } from 'lucide-react';
-import ComplianceAreaChart from '@/components/dashboards/ComplianceAreaChart';
-import RiskAssessment from '@/components/dashboards/RiskAssessment';
+import { CheckCircle2, ClipboardList, ShieldAlert, ShieldCheck, TrendingUp } from 'lucide-react';
 
 interface RecentActivity {
     id: number;
@@ -23,7 +23,16 @@ interface AuditorDashboardProps {
         total_controls_active: number;
         frameworks_breakdown: { id: number; nama: string; versi: string; compliance_rate: number; compliant_count: number; total_controls: number }[];
         findings_summary: { total_active: number; major: number; minor: number; observasi: number; overdue: number };
-        risks_summary: { total_active: number; critical: number; high: number; medium: number; low: number; major?: number; minor?: number; observasi?: number };
+        risks_summary: {
+            total_active: number;
+            critical: number;
+            high: number;
+            medium: number;
+            low: number;
+            major?: number;
+            minor?: number;
+            observasi?: number;
+        };
     };
     trends?: { period: string; label: string; iso27001_rate: number; iso27701_rate: number; overall_rate: number }[];
     recent_activities?: RecentActivity[];
@@ -118,9 +127,7 @@ export default function AuditorDashboard({ summary, trends = [], recent_activiti
                         </div>
                     </div>
                     <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-navy text-3xl font-bold">
-                            {findings.total_active}
-                        </span>
+                        <span className="text-navy text-3xl font-bold">{findings.total_active}</span>
                         <span className="text-warning text-xs font-medium">{t('dashboard.needsAction')}</span>
                     </div>
                     <p className="text-muted mt-3 text-xs">{findings.overdue} overdue</p>
@@ -197,10 +204,7 @@ export default function AuditorDashboard({ summary, trends = [], recent_activiti
                     </div>
                     <div className="px-5 py-4">
                         {trendValues.length > 0 ? (
-                            <ComplianceAreaChart
-                                labels={trendLabels}
-                                values={trendValues}
-                            />
+                            <ComplianceAreaChart labels={trendLabels} values={trendValues} />
                         ) : (
                             <div className="text-muted flex h-[230px] items-center justify-center text-sm">{t('common.noData')}</div>
                         )}
@@ -256,12 +260,8 @@ export default function AuditorDashboard({ summary, trends = [], recent_activiti
                             {recent_activities.length > 0 ? (
                                 recent_activities.map((act) => (
                                     <tr key={act.id} className="hover:bg-surface/50 transition-colors">
-                                        <td className="text-muted px-5 py-3.5 text-xs whitespace-nowrap">
-                                            {act.time_ago}
-                                        </td>
-                                        <td className="text-navy px-5 py-3.5 text-sm font-medium whitespace-nowrap">
-                                            {act.actor_name}
-                                        </td>
+                                        <td className="text-muted px-5 py-3.5 text-xs whitespace-nowrap">{act.time_ago}</td>
+                                        <td className="text-navy px-5 py-3.5 text-sm font-medium whitespace-nowrap">{act.actor_name}</td>
                                         <td className="px-5 py-3.5">
                                             <span className="text-navy block text-sm font-semibold">{act.action}</span>
                                             <span className="text-muted block text-xs">{act.entity_name}</span>

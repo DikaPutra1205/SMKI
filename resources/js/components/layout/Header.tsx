@@ -30,7 +30,8 @@ export function Header({ onToggleSidebar, breadcrumbs = [] }: HeaderProps) {
 
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
-const defaultHref = userRole === 'superadmin' ? '/admin/superadmin/dashboard' : userRole === 'pic' ? '/admin/pic/assessments' : '/admin/kepatuhan/dashboard';
+    const defaultHref =
+        userRole === 'superadmin' ? '/admin/superadmin/dashboard' : userRole === 'pic' ? '/admin/pic/assessments' : '/admin/kepatuhan/dashboard';
     const activeBreadcrumbs = breadcrumbs.length > 0 ? breadcrumbs : [{ label: t('common.dashboard'), href: defaultHref }];
     const roleLabel = t(`role.${userRole}` as never);
 

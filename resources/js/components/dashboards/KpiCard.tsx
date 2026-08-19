@@ -1,5 +1,4 @@
 import { t } from '@/lib/i18n';
-import React from 'react';
 
 interface KpiCardProps {
     title: string;
@@ -16,11 +15,12 @@ export default function KpiCard({ title, value, subtitle, trend }: KpiCardProps)
                 <span className="text-navy text-3xl font-bold">{value}</span>
             </div>
             {trend && (
-                <span className="text-xs text-muted">
-                    {trend.positive ? '+' : ''}{trend.delta} {t('dashboard.thisMonth')}
+                <span className="text-muted text-xs">
+                    {trend.positive ? '+' : ''}
+                    {trend.delta} {t('dashboard.thisMonth')}
                 </span>
             )}
-            {subtitle && <p className="mt-2 text-sm text-muted">{subtitle}</p>}
+            {subtitle && <p className="text-muted mt-2 text-sm">{subtitle}</p>}
         </div>
     );
 }
