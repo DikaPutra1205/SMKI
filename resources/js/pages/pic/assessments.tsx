@@ -33,10 +33,7 @@ interface AssessmentsProps {
     user_unit: WorkUnit;
 }
 
-const MONTHS = [
-    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
-];
+const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
 export default function Assessments({ sessions, user_unit }: AssessmentsProps) {
     const { flash } = usePage<{ flash?: { type: string; message: string } }>().props;
@@ -126,20 +123,21 @@ export default function Assessments({ sessions, user_unit }: AssessmentsProps) {
 
                                 <div className="mb-3">
                                     <div className="mb-1 flex items-baseline justify-between">
-                                        <span className="text-xs text-slate-500">{compliant}/{total} Kontrol</span>
+                                        <span className="text-xs text-slate-500">
+                                            {compliant}/{total} Kontrol
+                                        </span>
                                         <span className="text-xs font-bold text-blue-600">{pct}%</span>
                                     </div>
                                     <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                                        <div
-                                            className="h-full rounded-full bg-blue-600 transition-all duration-500"
-                                            style={{ width: `${pct}%` }}
-                                        />
+                                        <div className="h-full rounded-full bg-blue-600 transition-all duration-500" style={{ width: `${pct}%` }} />
                                     </div>
                                 </div>
 
                                 <div className="mt-auto flex items-center justify-between text-[11px] text-slate-400">
                                     <span>{s.framework?.nama || 'Semua Kerangka'}</span>
-                                    <span>{new Date(s.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                                    <span>
+                                        {new Date(s.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                    </span>
                                 </div>
                             </button>
                         );
@@ -167,16 +165,22 @@ function CreateModal({ onClose, userUnit }: { onClose: () => void; userUnit: Wor
         return isNaN(m) ? -1 : m - 1;
     }, [data.periode]);
 
-    const handleMonthChange = useCallback((monthIndex: number) => {
-        const monthName = MONTHS[monthIndex];
-        const yearPart = data.periode?.split(' ')[1] || String(new Date().getFullYear());
-        setData('periode', `${monthName} ${yearPart}`);
-    }, [data.periode, setData]);
+    const handleMonthChange = useCallback(
+        (monthIndex: number) => {
+            const monthName = MONTHS[monthIndex];
+            const yearPart = data.periode?.split(' ')[1] || String(new Date().getFullYear());
+            setData('periode', `${monthName} ${yearPart}`);
+        },
+        [data.periode, setData],
+    );
 
-    const handleYearChange = useCallback((year: number) => {
-        const monthPart = data.periode?.split(' ')[0] || MONTHS[new Date().getMonth()];
-        setData('periode', `${monthPart} ${year}`);
-    }, [data.periode, setData]);
+    const handleYearChange = useCallback(
+        (year: number) => {
+            const monthPart = data.periode?.split(' ')[0] || MONTHS[new Date().getMonth()];
+            setData('periode', `${monthPart} ${year}`);
+        },
+        [data.periode, setData],
+    );
 
     const selectedYear = parseInt(data.periode?.split(' ')[1] || '', 10) || currentYear;
 
@@ -192,7 +196,11 @@ function CreateModal({ onClose, userUnit }: { onClose: () => void; userUnit: Wor
             <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-slate-900" onClick={(e) => e.stopPropagation()}>
                 <div className="mb-5 flex items-center justify-between">
                     <h2 className="text-lg font-bold text-slate-900 dark:text-white">Buat Assessment Baru</h2>
-                    <button type="button" onClick={onClose} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
+                    >
                         <X className="h-5 w-5" />
                     </button>
                 </div>
@@ -221,7 +229,9 @@ function CreateModal({ onClose, userUnit }: { onClose: () => void; userUnit: Wor
                             >
                                 <option value="">Pilih bulan</option>
                                 {MONTHS.map((m, i) => (
-                                    <option key={m} value={i}>{m}</option>
+                                    <option key={m} value={i}>
+                                        {m}
+                                    </option>
                                 ))}
                             </select>
                         </div>
@@ -233,7 +243,9 @@ function CreateModal({ onClose, userUnit }: { onClose: () => void; userUnit: Wor
                                 className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
                             >
                                 {[currentYear - 1, currentYear, currentYear + 1].map((y) => (
-                                    <option key={y} value={y}>{y}</option>
+                                    <option key={y} value={y}>
+                                        {y}
+                                    </option>
                                 ))}
                             </select>
                         </div>
@@ -252,7 +264,11 @@ function CreateModal({ onClose, userUnit }: { onClose: () => void; userUnit: Wor
                     </div>
 
                     <div className="flex items-center justify-end gap-3 pt-2">
-                        <button type="button" onClick={onClose} className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+                        >
                             Batal
                         </button>
                         <button

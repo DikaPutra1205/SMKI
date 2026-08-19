@@ -1,11 +1,11 @@
-import AppLayout from '@/layouts/AppLayout';
-import { Head, router, usePage } from '@inertiajs/react';
-import { CheckCircle2, Search, ShieldCheck, UserRound } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Pagination } from '@/components/ui/Pagination';
 import { Select } from '@/components/ui/Select';
+import AppLayout from '@/layouts/AppLayout';
 import { t } from '@/lib/i18n';
+import { Head, router, usePage } from '@inertiajs/react';
+import { CheckCircle2, Search, ShieldCheck, UserRound } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 interface SessionItem {
     id: number;
@@ -105,10 +105,7 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
     const endIndex = perPage === 'all' ? totalItems : Math.min(startIndex + effectivePerPage, totalItems);
     const paginatedSessions = perPage === 'all' ? sessions : sessions.slice(startIndex, endIndex);
 
-    const breadcrumbs = [
-        { label: t('common.dashboard'), href: '/admin/kepatuhan/dashboard' },
-        { label: 'Assessment PIC' },
-    ];
+    const breadcrumbs = [{ label: t('common.dashboard'), href: '/admin/kepatuhan/dashboard' }, { label: 'Assessment PIC' }];
 
     return (
         <AppLayout breadcrumbs={breadcrumbs} currentPath="/admin/kepatuhan/sessions">
@@ -117,12 +114,12 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
             {flash?.message && flashVisible && (
                 <div className="border-border mb-4 flex items-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium shadow-sm">
                     {flash.type === 'success' ? (
-                        <div className="flex items-center gap-2 text-success">
+                        <div className="text-success flex items-center gap-2">
                             <CheckCircle2 className="h-4 w-4" />
                             {flash.message}
                         </div>
                     ) : (
-                        <div className="flex items-center gap-2 text-danger">
+                        <div className="text-danger flex items-center gap-2">
                             <Send className="h-4 w-4" />
                             {flash.message}
                         </div>
@@ -133,9 +130,7 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
             <div className="page-head flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">Assessment PIC</h1>
-                    <p className="text-muted mt-1 text-xs sm:text-sm">
-                        Pantau seluruh session pengecekan mandiri dari setiap satuan kerja.
-                    </p>
+                    <p className="text-muted mt-1 text-xs sm:text-sm">Pantau seluruh session pengecekan mandiri dari setiap satuan kerja.</p>
                 </div>
             </div>
 
@@ -155,21 +150,27 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
                 <Select value={unitId} onChange={(e) => setUnitId(e.target.value)} className="min-w-[170px]">
                     <option value="">Semua Unit</option>
                     {workUnits.map((u) => (
-                        <option key={u.id} value={String(u.id)}>{u.nama}</option>
+                        <option key={u.id} value={String(u.id)}>
+                            {u.nama}
+                        </option>
                     ))}
                 </Select>
 
                 <Select value={frameworkId} onChange={(e) => setFrameworkId(e.target.value)} className="min-w-[170px]">
                     <option value="">Semua Framework</option>
                     {frameworks.map((f) => (
-                        <option key={f.id} value={String(f.id)}>{f.nama} ({f.versi})</option>
+                        <option key={f.id} value={String(f.id)}>
+                            {f.nama} ({f.versi})
+                        </option>
                     ))}
                 </Select>
 
                 <Select value={periode} onChange={(e) => setPeriode(e.target.value)} className="min-w-[140px]">
                     <option value="">Semua Periode</option>
                     {periodeOptions.map((p) => (
-                        <option key={p} value={p}>{p}</option>
+                        <option key={p} value={p}>
+                            {p}
+                        </option>
                     ))}
                 </Select>
             </div>
@@ -185,28 +186,24 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
                         return (
                             <div
                                 key={s.id}
-                                className="border-border group flex flex-col rounded-[14px] border bg-white p-5 shadow-sm transition-all hover:border-primary-200 hover:shadow-md"
+                                className="border-border group hover:border-primary-200 flex flex-col rounded-[14px] border bg-white p-5 shadow-sm transition-all hover:shadow-md"
                             >
                                 <div className="mb-3">
-                                    <h3 className="text-navy truncate text-sm leading-snug font-bold">
-                                        {s.konteks_penilaian}
-                                    </h3>
+                                    <h3 className="text-navy truncate text-sm leading-snug font-bold">{s.konteks_penilaian}</h3>
                                     <p className="text-faint mt-0.5 text-xs">{s.periode || 'Tanpa Periode'}</p>
                                 </div>
 
-                                <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted">
+                                <div className="text-muted mb-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs">
                                     <span className="inline-flex items-center gap-1.5">
                                         <UserRound className="text-faint h-3.5 w-3.5" />
                                         {s.unit_nama || 'Unit tidak diketahui'}
                                     </span>
-                                    {s.creator_name && (
-                                        <span className="text-faint">oleh {s.creator_name}</span>
-                                    )}
+                                    {s.creator_name && <span className="text-faint">oleh {s.creator_name}</span>}
                                 </div>
 
                                 {s.framework_nama && (
                                     <div className="mb-3">
-                                        <span className="border-border text-body inline-flex items-center rounded-[6px] border bg-surface px-2.5 py-1 text-[11px] font-semibold">
+                                        <span className="border-border text-body bg-surface inline-flex items-center rounded-[6px] border px-2.5 py-1 text-[11px] font-semibold">
                                             {s.framework_nama}
                                         </span>
                                     </div>
@@ -214,16 +211,13 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
 
                                 <div className="mb-3">
                                     <div className="mb-1 flex items-baseline justify-between">
-                                        <span className="text-xs text-muted">
+                                        <span className="text-muted text-xs">
                                             {s.compliant_entries}/{s.total_entries} Patuh
                                         </span>
                                         <span className="text-primary text-xs font-bold">{pct}%</span>
                                     </div>
                                     <div className="bg-surface-2 h-1.5 w-full overflow-hidden rounded-full">
-                                        <div
-                                            className="bg-primary h-full rounded-full transition-all duration-500"
-                                            style={{ width: `${pct}%` }}
-                                        />
+                                        <div className="bg-primary h-full rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
                                     </div>
                                 </div>
 

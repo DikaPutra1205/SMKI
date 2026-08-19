@@ -2,7 +2,7 @@ import AppLayout from '@/layouts/AppLayout';
 import { t } from '@/lib/i18n';
 import { type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { CheckCircle2, TrendingUp, ShieldCheck, ClipboardList, ShieldAlert } from 'lucide-react';
+import { CheckCircle2, ClipboardList, ShieldAlert, ShieldCheck, TrendingUp } from 'lucide-react';
 
 interface FrameworkBreakdown {
     id: number;
@@ -32,7 +32,16 @@ interface PicDashboardProps {
         total_controls_active: number;
         frameworks_breakdown: FrameworkBreakdown[];
         findings_summary: { total_active: number; major: number; minor: number; observasi: number; overdue: number };
-        risks_summary: { total_active: number; critical: number; high: number; medium: number; low: number; major?: number; minor?: number; observasi?: number };
+        risks_summary: {
+            total_active: number;
+            critical: number;
+            high: number;
+            medium: number;
+            low: number;
+            major?: number;
+            minor?: number;
+            observasi?: number;
+        };
     };
     recent_sessions?: RecentSession[];
 }
@@ -121,9 +130,7 @@ export default function PicDashboard({ summary, recent_sessions = [] }: PicDashb
                         </div>
                     </div>
                     <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-navy text-3xl font-bold">
-                            {findings.total_active + risks.total_active}
-                        </span>
+                        <span className="text-navy text-3xl font-bold">{findings.total_active + risks.total_active}</span>
                         <span className="text-warning text-xs font-medium">{t('dashboard.needsAction')}</span>
                     </div>
                     <p className="text-muted mt-3 text-xs">{recent_sessions.length} sesi</p>
@@ -153,9 +160,7 @@ export default function PicDashboard({ summary, recent_sessions = [] }: PicDashb
                 <div className="border-border rounded-[14px] border bg-white p-5 shadow-sm">
                     <div className="border-border flex items-center justify-between border-b pb-3">
                         <h3 className="text-[15px] font-bold">{iso27701?.nama ?? 'ISO/IEC 27701:2019'}</h3>
-                        <span className="border-navy/15 bg-navy/5 text-navy rounded-[6px] border px-2 py-0.5 text-xs font-semibold">
-                            v2019
-                        </span>
+                        <span className="border-navy/15 bg-navy/5 text-navy rounded-[6px] border px-2 py-0.5 text-xs font-semibold">v2019</span>
                     </div>
                     <div className="flex items-center justify-between pt-4">
                         <strong className="text-navy text-[13.5px]">{t('dashboard.compliance')}</strong>
@@ -181,9 +186,7 @@ export default function PicDashboard({ summary, recent_sessions = [] }: PicDashb
                         </div>
                     </div>
                     <div className="px-5 py-4">
-                        <div className="text-muted flex h-[230px] items-center justify-center text-sm">
-                            {t('common.noData')}
-                        </div>
+                        <div className="text-muted flex h-[230px] items-center justify-center text-sm">{t('common.noData')}</div>
                     </div>
                 </div>
 
@@ -256,14 +259,14 @@ export default function PicDashboard({ summary, recent_sessions = [] }: PicDashb
                                 recent_sessions.map((session) => (
                                     <tr key={session.id} className="hover:bg-surface/50 transition-colors">
                                         <td className="text-muted px-5 py-3.5 text-xs whitespace-nowrap">
-                                            {session.created_at ? new Date(session.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) + ' · ' + new Date(session.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '—'}
+                                            {session.created_at
+                                                ? new Date(session.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) +
+                                                  ' · ' +
+                                                  new Date(session.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+                                                : '—'}
                                         </td>
-                                        <td className="text-navy px-5 py-3.5 text-sm font-medium whitespace-nowrap">
-                                            {session.konteks_penilaian}
-                                        </td>
-                                        <td className="px-5 py-3.5 text-sm whitespace-nowrap">
-                                            {session.framework}
-                                        </td>
+                                        <td className="text-navy px-5 py-3.5 text-sm font-medium whitespace-nowrap">{session.konteks_penilaian}</td>
+                                        <td className="px-5 py-3.5 text-sm whitespace-nowrap">{session.framework}</td>
                                         <td className="text-body px-5 py-3.5 text-sm whitespace-nowrap">
                                             {session.total_entries} {t('common.active')}
                                         </td>

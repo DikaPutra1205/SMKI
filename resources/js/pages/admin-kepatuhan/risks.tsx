@@ -121,10 +121,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
         return () => clearTimeout(timer);
     }, [searchQuery, selectedLevel, selectedStatus, selectedUnit]);
 
-    const breadcrumbs = [
-        { label: t('common.dashboard'), href: '/admin/kepatuhan/dashboard' },
-        { label: t('risks.title') },
-    ];
+    const breadcrumbs = [{ label: t('common.dashboard'), href: '/admin/kepatuhan/dashboard' }, { label: t('risks.title') }];
 
     const goToPage = (p: number) =>
         router.get(
@@ -285,7 +282,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
                                             <button
                                                 type="button"
                                                 onClick={() => setDetailTarget(r)}
-                                                className="text-navy text-left font-semibold hover:text-primary"
+                                                className="text-navy hover:text-primary text-left font-semibold"
                                             >
                                                 {r.control?.judul || t('common.noData')}
                                             </button>
@@ -297,9 +294,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
                                         </td>
                                         <td className="text-body px-5 py-4 whitespace-nowrap">
                                             <span className="text-navy font-medium">{r.control?.kode_klausul || '—'}</span>
-                                            {r.control?.framework ? (
-                                                <div className="text-faint text-xs">{r.control.framework.nama}</div>
-                                            ) : null}
+                                            {r.control?.framework ? <div className="text-faint text-xs">{r.control.framework.nama}</div> : null}
                                         </td>
                                         <td className="px-5 py-4 whitespace-nowrap">
                                             <StatusBadge tone={LEVEL_TONE[r.risk_level || r.level_risiko] ?? 'gray'}>
@@ -358,9 +353,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
                         <div className="border-border overflow-hidden rounded-[10px] border">
                             <div className="border-border flex items-center justify-between border-b px-4 py-2.5">
                                 <span className="text-body text-[13px] font-medium">{t('risks.risk')}</span>
-                                <span className="text-navy max-w-[60%] text-right text-[13px] font-semibold">
-                                    {detailTarget.control?.judul}
-                                </span>
+                                <span className="text-navy max-w-[60%] text-right text-[13px] font-semibold">{detailTarget.control?.judul}</span>
                             </div>
                             <div className="border-border flex items-center justify-between border-b px-4 py-2.5">
                                 <span className="text-body text-[13px] font-medium">{t('risks.unitControl')}</span>
@@ -371,9 +364,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
                             </div>
                             <div className="border-border flex items-center justify-between border-b px-4 py-2.5">
                                 <span className="text-body text-[13px] font-medium">{t('risks.frameworkLabel')}</span>
-                                <span className="text-navy text-[13px] font-semibold">
-                                    {detailTarget.control?.framework?.nama || '—'}
-                                </span>
+                                <span className="text-navy text-[13px] font-semibold">{detailTarget.control?.framework?.nama || '—'}</span>
                             </div>
                             <div className="flex items-center justify-between px-4 py-2.5">
                                 <span className="text-body text-[13px] font-medium">{t('risks.owner')}</span>
@@ -388,7 +379,9 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
                                 <h4 className="text-navy text-sm font-bold">{t('risks.level')}</h4>
                                 <div className="mt-2">
                                     <StatusBadge tone={LEVEL_TONE[detailTarget.risk_level || detailTarget.level_risiko] ?? 'gray'}>
-                                        {t(`status.${(detailTarget.risk_level || detailTarget.level_risiko) as 'critical' | 'high' | 'medium' | 'low'}`)}
+                                        {t(
+                                            `status.${(detailTarget.risk_level || detailTarget.level_risiko) as 'critical' | 'high' | 'medium' | 'low'}`,
+                                        )}
                                     </StatusBadge>
                                 </div>
                             </div>
@@ -405,7 +398,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
                         {detailTarget.mitigation_plan || detailTarget.rencana_mitigasi ? (
                             <div>
                                 <h4 className="text-navy text-sm font-bold">{t('risks.mitigationLabel')}</h4>
-                                <p className="text-body mt-2 rounded-[10px] border border-border bg-surface/50 p-3.5 text-[13px] leading-relaxed">
+                                <p className="text-body border-border bg-surface/50 mt-2 rounded-[10px] border p-3.5 text-[13px] leading-relaxed">
                                     {detailTarget.mitigation_plan || detailTarget.rencana_mitigasi}
                                 </p>
                             </div>
