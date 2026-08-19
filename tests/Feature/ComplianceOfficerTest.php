@@ -927,7 +927,7 @@ class ComplianceOfficerTest extends TestCase
         $this->assertEquals($superadmin->id, $entry->fresh()->admin_id);
     }
 
-    public function test_bulk_verify_without_notes_overwrites_existing_admin_notes_to_null(): void
+    public function test_bulk_verify_without_notes_preserves_existing_admin_notes(): void
     {
         $entry = ChecklistEntry::factory()->create([
             'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
