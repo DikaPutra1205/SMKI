@@ -12,9 +12,9 @@ class RbacSchemaTest extends TestCase
 {
     public function test_role_has_unique_name_and_permissions_relation(): void
     {
-        $role = Role::create(['name' => 'superadmin', 'label' => 'Super Admin']);
-        $perm = Permission::create(['key' => 'dashboard.read', 'module' => 'dashboard']);
-        $role->permissions()->attach($perm);
+        $role = Role::updateOrCreate(['name' => 'superadmin'], ['label' => 'Super Admin']);
+        $perm = Permission::updateOrCreate(['key' => 'dashboard.read'], ['module' => 'dashboard']);
+        $role->permissions()->syncWithoutDetaching($perm->id);
 
         $this->assertTrue($role->permissions()->where('key', 'dashboard.read')->exists());
 
@@ -24,12 +24,13 @@ class RbacSchemaTest extends TestCase
 
     public function test_permission_has_unique_key_and_roles_relation(): void
     {
-        $permission = Permission::create(['key' => 'checklist.verify', 'module' => 'checklist']);
-        $role = Role::create(['name' => 'admin_kepatuhan', 'label' => 'Admin Kepatuhan']);
+        $permission = Permission::updateOrCreate(['key' => 'checklist.verify'], ['module' => 'checklist']);
+        $role = Role::updateOrCreate(['name' => 'admin_kepatuhan'], ['label' => 'Admin Kepatuhan']);
+        $unseeded = Permission::create(['key' => 'checklist.relation-check', 'module' => 'checklist']);
 
-        $this->assertTrue($permission->roles()->count() === 0);
-        $permission->roles()->attach($role);
-        $this->assertTrue($permission->roles()->where('name', 'admin_kepatuhan')->exists());
+        $this->assertTrue($unseeded->roles()->count() === 0);
+        $unseeded->roles()->attach($role);
+        $this->assertTrue($unseeded->roles()->where('name', 'admin_kepatuhan')->exists());
 
         $this->expectException(QueryException::class);
         Permission::create(['key' => 'checklist.verify', 'module' => 'checklist']);
@@ -37,7 +38,7 @@ class RbacSchemaTest extends TestCase
 
     public function test_user_role_relation_reads_name_string(): void
     {
-        $role = Role::create(['name' => 'pic', 'label' => 'PIC']);
+        $role = Role::updateOrCreate(['name' => 'pic'], ['label' => 'PIC']);
         $user = User::factory()->create(['role_id' => $role->id]);
 
         $this->assertSame('pic', $user->role);

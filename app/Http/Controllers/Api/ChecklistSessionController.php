@@ -157,8 +157,11 @@ class ChecklistSessionController extends Controller
             return;
         }
 
-        $pic = User::where('unit_id', $session->unit_id)->where('role', User::ROLE_PIC)->first()
-            ?? User::where('role', User::ROLE_PIC)->first()
+        $pic = User::with('role:id,name')
+            ->where('unit_id', $session->unit_id)
+            ->whereHas('role', fn ($q) => $q->where('name', User::ROLE_PIC))
+            ->first()
+            ?? User::with('role:id,name')->whereHas('role', fn ($q) => $q->where('name', User::ROLE_PIC))->first()
             ?? User::first();
 
         if (! $pic) {
