@@ -175,16 +175,18 @@ export default function BulkVerify({ entries, workUnits = [], filters = {} }: Bu
         });
     }
 
-    const breadcrumbs = [
-        { label: t('common.dashboard'), href: '/admin/kepatuhan/dashboard' },
-        { label: t('bulkVerify.title') },
-    ];
+    const breadcrumbs = [{ label: t('common.dashboard'), href: '/admin/kepatuhan/dashboard' }, { label: t('bulkVerify.title') }];
 
     return (
         <AppLayout breadcrumbs={breadcrumbs} currentPath="/admin/kepatuhan/checklist/bulk-verify">
             <Head title={t('bulkVerify.title')} />
 
-            <Toast visible={flashVisible} tone={flash?.type === 'error' ? 'error' : 'success'} message={flash?.message} onDismiss={() => setFlashVisible(false)} />
+            <Toast
+                visible={flashVisible}
+                tone={flash?.type === 'error' ? 'error' : 'success'}
+                message={flash?.message}
+                onDismiss={() => setFlashVisible(false)}
+            />
 
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -194,15 +196,15 @@ export default function BulkVerify({ entries, workUnits = [], filters = {} }: Bu
             </div>
 
             {/* ── Filter bar ── */}
-            <div className="mt-5 flex flex-col gap-3 rounded-[14px] border border-border bg-white p-4 lg:flex-row lg:items-center">
+            <div className="border-border mt-5 flex flex-col gap-3 rounded-[14px] border bg-white p-4 lg:flex-row lg:items-center">
                 <div className="relative flex-1">
-                    <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-faint" />
+                    <Search className="text-faint pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                     <input
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder={t('bulkVerify.searchPlaceholder')}
-                        className="w-full rounded-[10px] border border-border-strong bg-surface/40 py-2.5 pr-3 pl-9 text-sm text-navy placeholder:text-muted focus:border-primary focus:outline-none"
+                        className="border-border-strong bg-surface/40 text-navy placeholder:text-muted focus:border-primary w-full rounded-[10px] border py-2.5 pr-3 pl-9 text-sm focus:outline-none"
                     />
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
@@ -232,14 +234,14 @@ export default function BulkVerify({ entries, workUnits = [], filters = {} }: Bu
 
             {/* ── Bulk action bar ── */}
             {selectedIds.size > 0 && (
-                <div className="mt-5 rounded-[14px] border border-primary/30 bg-primary/5 p-4">
+                <div className="border-primary/30 bg-primary/5 mt-5 rounded-[14px] border p-4">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <span className="text-sm font-semibold text-navy">{t('bulkVerify.selected', selectedIds.size)}</span>
+                        <span className="text-navy text-sm font-semibold">{t('bulkVerify.selected', selectedIds.size)}</span>
                         <div className="flex items-center gap-3">
                             <button
                                 type="button"
                                 onClick={() => openConfirm('approve')}
-                                className="inline-flex items-center gap-2 rounded-[10px] bg-success px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-success/90 sm:text-sm"
+                                className="bg-success hover:bg-success/90 inline-flex items-center gap-2 rounded-[10px] px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors sm:text-sm"
                             >
                                 <CheckCircle2 className="h-4 w-4" />
                                 {t('bulkVerify.approveSelected')}
@@ -247,7 +249,7 @@ export default function BulkVerify({ entries, workUnits = [], filters = {} }: Bu
                             <button
                                 type="button"
                                 onClick={() => openConfirm('reject')}
-                                className="inline-flex items-center gap-2 rounded-[10px] bg-danger px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-danger/90 sm:text-sm"
+                                className="bg-danger hover:bg-danger/90 inline-flex items-center gap-2 rounded-[10px] px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors sm:text-sm"
                             >
                                 <XCircle className="h-4 w-4" />
                                 {t('bulkVerify.rejectSelected')}
@@ -267,18 +269,18 @@ export default function BulkVerify({ entries, workUnits = [], filters = {} }: Bu
             )}
 
             {/* ── Table ── */}
-            <div className="mt-5 overflow-hidden rounded-[14px] border border-border bg-white">
+            <div className="border-border mt-5 overflow-hidden rounded-[14px] border bg-white">
                 <div className="overflow-x-auto">
                     <table className="w-full min-w-[900px] text-left text-sm">
                         <thead>
-                            <tr className="border-b border-border bg-surface/60 text-xs text-muted">
+                            <tr className="border-border bg-surface/60 text-muted border-b text-xs">
                                 <th className="w-10 px-4 py-3">
                                     <input
                                         type="checkbox"
                                         checked={allSelectedOnPage}
                                         onChange={toggleAll}
                                         aria-label={t('bulkVerify.selectAll')}
-                                        className="h-4 w-4 rounded border-border-strong accent-primary"
+                                        className="border-border-strong accent-primary h-4 w-4 rounded"
                                     />
                                 </th>
                                 <th className="px-4 py-3 font-semibold">{t('bulkVerify.code')}</th>
@@ -307,24 +309,26 @@ export default function BulkVerify({ entries, workUnits = [], filters = {} }: Bu
                                     const hasEvidence = Boolean(entry.active_evidence?.file_url);
 
                                     return (
-                                        <tr key={entry.id} className="border-b border-border last:border-0 hover:bg-surface/50">
+                                        <tr key={entry.id} className="border-border hover:bg-surface/50 border-b last:border-0">
                                             <td className="px-4 py-3">
                                                 <input
                                                     type="checkbox"
                                                     checked={selectedIds.has(entry.id)}
                                                     onChange={() => toggleOne(entry.id)}
-                                                    className="h-4 w-4 rounded border-border-strong accent-primary"
+                                                    className="border-border-strong accent-primary h-4 w-4 rounded"
                                                 />
                                             </td>
-                                            <td className="px-4 py-3 font-mono text-xs font-semibold text-navy">{code}</td>
+                                            <td className="text-navy px-4 py-3 font-mono text-xs font-semibold">{code}</td>
                                             <td className="max-w-[280px] px-4 py-3">
-                                                <p className="truncate font-semibold text-navy">{title}</p>
-                                                {framework && <p className="truncate text-xs text-muted">{framework}</p>}
+                                                <p className="text-navy truncate font-semibold">{title}</p>
+                                                {framework && <p className="text-muted truncate text-xs">{framework}</p>}
                                             </td>
-                                            <td className="px-4 py-3 text-body">{entry.unit?.nama ?? t('bulkVerify.none')}</td>
-                                            <td className="px-4 py-3 text-body">{entry.pic?.name ?? t('bulkVerify.none')}</td>
+                                            <td className="text-body px-4 py-3">{entry.unit?.nama ?? t('bulkVerify.none')}</td>
+                                            <td className="text-body px-4 py-3">{entry.pic?.name ?? t('bulkVerify.none')}</td>
                                             <td className="px-4 py-3">
-                                                <StatusBadge tone={statusTone(entry.status)}>{t(`status.${entry.status ?? 'pending'}` as never)}</StatusBadge>
+                                                <StatusBadge tone={statusTone(entry.status)}>
+                                                    {t(`status.${entry.status ?? 'pending'}` as never)}
+                                                </StatusBadge>
                                             </td>
                                             <td className="px-4 py-3">
                                                 {hasEvidence ? (
@@ -332,23 +336,23 @@ export default function BulkVerify({ entries, workUnits = [], filters = {} }: Bu
                                                         href={entry.active_evidence?.file_url}
                                                         target="_blank"
                                                         rel="noreferrer"
-                                                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+                                                        className="text-primary inline-flex items-center gap-1.5 text-xs font-semibold hover:underline"
                                                     >
                                                         <FileText className="h-3.5 w-3.5" />
                                                         {t('bulkVerify.openEvidence')}
                                                     </a>
                                                 ) : (
-                                                    <span className="text-xs text-muted">{t('bulkVerify.none')}</span>
+                                                    <span className="text-muted text-xs">{t('bulkVerify.none')}</span>
                                                 )}
                                             </td>
                                             <td className="px-4 py-3">
                                                 {entry.tanggal_verifikasi ? (
-                                                    <span className="text-xs text-muted">
+                                                    <span className="text-muted text-xs">
                                                         {t('bulkVerify.verifiedOn', fmtDate(entry.tanggal_verifikasi))}
                                                         {entry.admin?.name ? ` · ${entry.admin.name}` : ''}
                                                     </span>
                                                 ) : (
-                                                    <span className="text-xs text-muted">{t('bulkVerify.none')}</span>
+                                                    <span className="text-muted text-xs">{t('bulkVerify.none')}</span>
                                                 )}
                                             </td>
                                         </tr>
@@ -367,11 +371,7 @@ export default function BulkVerify({ entries, workUnits = [], filters = {} }: Bu
                     startIndex={(page.current_page - 1) * page.per_page}
                     endIndex={Math.min(page.to ?? page.total, page.total)}
                     onPageChange={(p) =>
-                        router.get(
-                            '/admin/kepatuhan/checklist/bulk-verify',
-                            { page: p > 1 ? p : undefined },
-                            { preserveState: true, replace: true },
-                        )
+                        router.get('/admin/kepatuhan/checklist/bulk-verify', { page: p > 1 ? p : undefined }, { preserveState: true, replace: true })
                     }
                 />
             </div>
