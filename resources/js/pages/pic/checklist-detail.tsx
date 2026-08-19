@@ -1,6 +1,20 @@
 import AppLayout from '@/layouts/AppLayout';
 import { Head, router, usePage } from '@inertiajs/react';
-import { AlertTriangle, ArrowDownToLine, ArrowUpToLine, Check, CheckCircle2, FileText, Search, Send, Shield, ShieldAlert, ShieldCheck, Upload, XCircle } from 'lucide-react';
+import {
+    AlertTriangle,
+    ArrowDownToLine,
+    ArrowUpToLine,
+    Check,
+    CheckCircle2,
+    FileText,
+    Search,
+    Send,
+    Shield,
+    ShieldAlert,
+    ShieldCheck,
+    Upload,
+    XCircle,
+} from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 interface ControlData {
@@ -53,7 +67,13 @@ interface ChecklistDetailProps {
 }
 
 const STATUS_OPTIONS = [
-    { value: 'compliant', label: 'Patuh', icon: ShieldCheck, color: 'border-emerald-500 bg-emerald-50 text-emerald-700', radioColor: 'bg-emerald-500' },
+    {
+        value: 'compliant',
+        label: 'Patuh',
+        icon: ShieldCheck,
+        color: 'border-emerald-500 bg-emerald-50 text-emerald-700',
+        radioColor: 'bg-emerald-500',
+    },
     { value: 'non_compliant', label: 'Ketidaksesuaian', icon: ShieldAlert, color: 'border-red-500 bg-red-50 text-red-700', radioColor: 'bg-red-500' },
     { value: 'na', label: 'Tidak Berlaku', icon: Shield, color: 'border-slate-400 bg-slate-50 text-slate-600', radioColor: 'bg-slate-400' },
 ];
@@ -64,15 +84,10 @@ function getCsrfToken(): string {
 }
 
 function formatKategori(kategori: string): string {
-    return kategori
-        .replace(/_/g, ' ')
-        .replace(/\b\w/g, (c) => c.toUpperCase());
+    return kategori.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function EntryItemRow({ entry, onEntryUpdate }: {
-    entry: EntryItem;
-    onEntryUpdate: (id: number, data: Partial<EntryItem>) => void;
-}) {
+function EntryItemRow({ entry, onEntryUpdate }: { entry: EntryItem; onEntryUpdate: (id: number, data: Partial<EntryItem>) => void }) {
     const [localStatus, setLocalStatus] = useState(entry.status);
     const [localCatatan, setLocalCatatan] = useState(entry.catatan || '');
     const [saveState, setSaveState] = useState<'idle' | 'saved'>('idle');
@@ -82,56 +97,71 @@ function EntryItemRow({ entry, onEntryUpdate }: {
     const abortRef = useRef<AbortController | null>(null);
     const savedTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-    const saveToServer = useCallback((data: Record<string, unknown>) => {
-        if (abortRef.current) abortRef.current.abort();
-        abortRef.current = new AbortController();
+    const saveToServer = useCallback(
+        (data: Record<string, unknown>) => {
+            if (abortRef.current) abortRef.current.abort();
+            abortRef.current = new AbortController();
 
-        fetch(`/admin/pic/checklist-entries/${entry.id}`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-XSRF-TOKEN': getCsrfToken(),
-            },
-            body: JSON.stringify(data),
-            signal: abortRef.current.signal,
-        })
-            .then((r) => {
-                if (!r.ok) throw new Error();
-                return r.json();
+            fetch(`/admin/pic/checklist-entries/${entry.id}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-XSRF-TOKEN': getCsrfToken(),
+                },
+                body: JSON.stringify(data),
+                signal: abortRef.current.signal,
             })
-            .then(() => {
-                setSaveState('saved');
-                if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
-                savedTimeoutRef.current = setTimeout(() => setSaveState('idle'), 2000);
-            })
-            .catch(() => {
-                /* silent */
-            });
-    }, [entry.id]);
+                .then((r) => {
+                    if (!r.ok) throw new Error();
+                    return r.json();
+                })
+                .then(() => {
+                    setSaveState('saved');
+                    if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
+                    savedTimeoutRef.current = setTimeout(() => setSaveState('idle'), 2000);
+                })
+                .catch(() => {
+                    /* silent */
+                });
+        },
+        [entry.id],
+    );
 
-    const debouncedSave = useCallback((data: Record<string, unknown>) => {
-        if (debounceRef.current) clearTimeout(debounceRef.current);
-        debounceRef.current = setTimeout(() => saveToServer(data), 800);
-    }, [saveToServer]);
+    const debouncedSave = useCallback(
+        (data: Record<string, unknown>) => {
+            if (debounceRef.current) clearTimeout(debounceRef.current);
+            debounceRef.current = setTimeout(() => saveToServer(data), 800);
+        },
+        [saveToServer],
+    );
 
-    useEffect(() => () => {
-        if (debounceRef.current) clearTimeout(debounceRef.current);
-        if (abortRef.current) abortRef.current.abort();
-        if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
-    }, []);
+    useEffect(
+        () => () => {
+            if (debounceRef.current) clearTimeout(debounceRef.current);
+            if (abortRef.current) abortRef.current.abort();
+            if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
+        },
+        [],
+    );
 
-    const handleStatusClick = useCallback((status: string) => {
-        setLocalStatus(status);
-        onEntryUpdate(entry.id, { status });
-        debouncedSave({ status });
-    }, [entry.id, onEntryUpdate, debouncedSave]);
+    const handleStatusClick = useCallback(
+        (status: string) => {
+            setLocalStatus(status);
+            onEntryUpdate(entry.id, { status });
+            debouncedSave({ status });
+        },
+        [entry.id, onEntryUpdate, debouncedSave],
+    );
 
-    const handleCatatanInput = useCallback((value: string) => {
-        setLocalCatatan(value);
-        onEntryUpdate(entry.id, { catatan: value });
-        debouncedSave({ catatan: value });
-    }, [entry.id, onEntryUpdate, debouncedSave]);
+    const handleCatatanInput = useCallback(
+        (value: string) => {
+            setLocalCatatan(value);
+            onEntryUpdate(entry.id, { catatan: value });
+            debouncedSave({ catatan: value });
+        },
+        [entry.id, onEntryUpdate, debouncedSave],
+    );
 
     const isVerified = entry.tanggal_verifikasi !== null;
     const isCatatanRequired = localStatus === 'non_compliant' || localStatus === 'na';
@@ -154,17 +184,13 @@ function EntryItemRow({ entry, onEntryUpdate }: {
                 )}
             </div>
 
-            {entry.control.deskripsi && (
-                <p className="mb-3 text-xs leading-relaxed text-slate-500">{entry.control.deskripsi}</p>
-            )}
+            {entry.control.deskripsi && <p className="mb-3 text-xs leading-relaxed text-slate-500">{entry.control.deskripsi}</p>}
 
             {isVerified && (
                 <div className="mb-3 flex items-center gap-1.5 text-xs text-emerald-600">
                     <CheckCircle2 className="h-3.5 w-3.5" />
                     Sudah Diverifikasi oleh Pengelola
-                    {entry.catatan_admin && (
-                        <span className="text-slate-400">&mdash; {entry.catatan_admin}</span>
-                    )}
+                    {entry.catatan_admin && <span className="text-slate-400">&mdash; {entry.catatan_admin}</span>}
                 </div>
             )}
 
@@ -183,7 +209,9 @@ function EntryItemRow({ entry, onEntryUpdate }: {
                                     : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900'
                             }`}
                         >
-                            <span className={`flex h-4 w-4 items-center justify-center rounded-full border-2 ${isActive ? 'border-current' : 'border-slate-300'}`}>
+                            <span
+                                className={`flex h-4 w-4 items-center justify-center rounded-full border-2 ${isActive ? 'border-current' : 'border-slate-300'}`}
+                            >
                                 {isActive && <span className={`h-2 w-2 rounded-full ${opt.radioColor}`} />}
                             </span>
                             <Icon className="h-3.5 w-3.5" />
@@ -206,11 +234,13 @@ function EntryItemRow({ entry, onEntryUpdate }: {
                                 : 'border-slate-200 focus:border-blue-400 focus:ring-blue-400 dark:border-slate-700'
                         }`}
                     />
-                    <label className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
-                        uploading
-                            ? 'cursor-wait border-blue-200 bg-blue-50 text-blue-400 dark:border-blue-800 dark:bg-blue-950'
-                            : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-400'
-                    }`}>
+                    <label
+                        className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
+                            uploading
+                                ? 'cursor-wait border-blue-200 bg-blue-50 text-blue-400 dark:border-blue-800 dark:bg-blue-950'
+                                : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-400'
+                        }`}
+                    >
                         {uploading ? (
                             <>
                                 <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-blue-400 border-t-transparent" />
@@ -222,12 +252,12 @@ function EntryItemRow({ entry, onEntryUpdate }: {
                                 {entry.active_evidence ? 'Unggah Ulang' : 'Unggah Bukti'}
                             </>
                         )}
-                    <input
-                        type="file"
-                        className="hidden"
-                        accept=".jpg,.jpeg,.png,.webp,.gif"
-                        disabled={uploading}
-                        onChange={(e) => {
+                        <input
+                            type="file"
+                            className="hidden"
+                            accept=".jpg,.jpeg,.png,.webp,.gif"
+                            disabled={uploading}
+                            onChange={(e) => {
                                 const file = e.target.files?.[0];
                                 if (!file || uploading) return;
                                 setUploading(true);
@@ -270,7 +300,7 @@ function EntryItemRow({ entry, onEntryUpdate }: {
                         href={entry.active_evidence.file_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="truncate max-w-[240px] font-medium text-blue-600 underline-offset-2 hover:underline dark:text-blue-400"
+                        className="max-w-[240px] truncate font-medium text-blue-600 underline-offset-2 hover:underline dark:text-blue-400"
                     >
                         {entry.active_evidence.nama_file}
                     </a>
@@ -292,8 +322,7 @@ export default function ChecklistDetail({ session, entries: initialEntries }: Ch
     useEffect(() => {
         const onScroll = () => {
             const threshold = 80;
-            const nearBottom =
-                window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - threshold;
+            const nearBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - threshold;
             setAtBottom(nearBottom);
         };
         onScroll();
@@ -325,19 +354,19 @@ export default function ChecklistDetail({ session, entries: initialEntries }: Ch
 
     const kategoris = useMemo(() => {
         const set = new Set(entries.map((e) => e.control.kategori));
-        return Array.from(set).sort().map((k) => ({
-            value: k,
-            label: formatKategori(k),
-        }));
+        return Array.from(set)
+            .sort()
+            .map((k) => ({
+                value: k,
+                label: formatKategori(k),
+            }));
     }, [entries]);
 
     const filtered = useMemo(() => {
         let result = entries;
         if (search) {
             const q = search.toLowerCase();
-            result = result.filter(
-                (e) => e.control.kode_klausul.toLowerCase().includes(q) || e.control.judul.toLowerCase().includes(q),
-            );
+            result = result.filter((e) => e.control.kode_klausul.toLowerCase().includes(q) || e.control.judul.toLowerCase().includes(q));
         }
         if (frameworkFilter) {
             result = result.filter((e) => e.control.framework_name === frameworkFilter);
@@ -360,13 +389,16 @@ export default function ChecklistDetail({ session, entries: initialEntries }: Ch
 
     const totalEntries = entries.length;
     const completedEntries = entries.filter(
-        (e) => e.status === 'compliant' || (e.status === 'non_compliant' && e.catatan && e.catatan.trim()) || (e.status === 'na' && e.catatan && e.catatan.trim()),
+        (e) =>
+            e.status === 'compliant' ||
+            (e.status === 'non_compliant' && e.catatan && e.catatan.trim()) ||
+            (e.status === 'na' && e.catatan && e.catatan.trim()),
     ).length;
     const progress = totalEntries > 0 ? Math.round((completedEntries / totalEntries) * 100) : 0;
 
-    const invalidCount = entries.filter(
-        (e) => !e.status || e.status === 'non_compliant' || e.status === 'na',
-    ).filter((e) => !e.catatan || !e.catatan.trim()).length;
+    const invalidCount = entries
+        .filter((e) => !e.status || e.status === 'non_compliant' || e.status === 'na')
+        .filter((e) => !e.catatan || !e.catatan.trim()).length;
 
     const handleEntryUpdate = useCallback((entryId: number, data: Partial<EntryItem>) => {
         setEntries((prev) => prev.map((e) => (e.id === entryId ? { ...e, ...data } : e)));
@@ -411,14 +443,13 @@ export default function ChecklistDetail({ session, entries: initialEntries }: Ch
                     <span className="text-[11px] font-bold tracking-wider text-blue-600 uppercase">Progress Pengecekan</span>
                     <div className="flex items-baseline gap-1.5">
                         <span className="text-2xl font-bold text-blue-700 dark:text-blue-400">{progress}%</span>
-                        <span className="text-xs text-blue-500">{completedEntries}/{totalEntries} Kontrol</span>
+                        <span className="text-xs text-blue-500">
+                            {completedEntries}/{totalEntries} Kontrol
+                        </span>
                     </div>
                 </div>
                 <div className="h-2 w-full overflow-hidden rounded-full bg-blue-200/50 dark:bg-blue-800/50">
-                    <div
-                        className="h-full rounded-full bg-blue-600 transition-all duration-500"
-                        style={{ width: `${progress}%` }}
-                    />
+                    <div className="h-full rounded-full bg-blue-600 transition-all duration-500" style={{ width: `${progress}%` }} />
                 </div>
             </div>
 
@@ -440,7 +471,9 @@ export default function ChecklistDetail({ session, entries: initialEntries }: Ch
                 >
                     <option value="">Semua Framework</option>
                     {frameworks.map((f) => (
-                        <option key={f.name} value={f.name}>{f.name} ({f.ver})</option>
+                        <option key={f.name} value={f.name}>
+                            {f.name} ({f.ver})
+                        </option>
                     ))}
                 </select>
                 <select
@@ -450,7 +483,9 @@ export default function ChecklistDetail({ session, entries: initialEntries }: Ch
                 >
                     <option value="">Semua Kategori</option>
                     {kategoris.map((k) => (
-                        <option key={k.value} value={k.value}>{k.label}</option>
+                        <option key={k.value} value={k.value}>
+                            {k.label}
+                        </option>
                     ))}
                 </select>
             </div>
@@ -472,11 +507,7 @@ export default function ChecklistDetail({ session, entries: initialEntries }: Ch
                         </div>
                         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
                             {items.map((entry) => (
-                                <EntryItemRow
-                                    key={entry.id}
-                                    entry={entry}
-                                    onEntryUpdate={handleEntryUpdate}
-                                />
+                                <EntryItemRow key={entry.id} entry={entry} onEntryUpdate={handleEntryUpdate} />
                             ))}
                         </div>
                     </div>
@@ -484,11 +515,7 @@ export default function ChecklistDetail({ session, entries: initialEntries }: Ch
             </div>
 
             <div className="mt-8 flex flex-col items-center gap-3">
-                {invalidCount > 0 && (
-                    <p className="text-xs text-slate-500">
-                        {invalidCount} kontrol belum terisi dengan benar
-                    </p>
-                )}
+                {invalidCount > 0 && <p className="text-xs text-slate-500">{invalidCount} kontrol belum terisi dengan benar</p>}
                 <button
                     type="button"
                     disabled={invalidCount > 0}

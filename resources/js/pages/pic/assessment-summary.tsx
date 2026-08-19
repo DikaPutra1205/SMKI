@@ -1,17 +1,6 @@
 import AppLayout from '@/layouts/AppLayout';
 import { Head, router } from '@inertiajs/react';
-import {
-    AlertTriangle,
-    ArrowLeft,
-    CheckCircle2,
-    Clock,
-    FileText,
-    Send,
-    Shield,
-    ShieldAlert,
-    ShieldCheck,
-    XCircle,
-} from 'lucide-react';
+import { AlertTriangle, ArrowLeft, CheckCircle2, Clock, FileText, Send, Shield, ShieldAlert, ShieldCheck, XCircle } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 
 interface ControlData {
@@ -74,22 +63,10 @@ interface AssessmentSummaryProps {
 }
 
 function formatKategori(kategori: string): string {
-    return kategori
-        .replace(/_/g, ' ')
-        .replace(/\b\w/g, (c) => c.toUpperCase());
+    return kategori.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function DonutChart({
-    percentage,
-    compliant,
-    nonCompliant,
-    na,
-}: {
-    percentage: number;
-    compliant: number;
-    nonCompliant: number;
-    na: number;
-}) {
+function DonutChart({ percentage, compliant, nonCompliant, na }: { percentage: number; compliant: number; nonCompliant: number; na: number }) {
     const radius = 48;
     const circumference = 2 * Math.PI * radius;
     const total = compliant + nonCompliant + na;
@@ -223,9 +200,7 @@ function ControlCardHeader({ entry }: { entry: EntryItem }) {
             <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-600 dark:bg-blue-900/40 dark:text-blue-400">
                 {entry.control.framework_name}
             </span>
-            <span className="text-[11px] text-slate-400">
-                {formatKategori(entry.control.kategori)}
-            </span>
+            <span className="text-[11px] text-slate-400">{formatKategori(entry.control.kategori)}</span>
         </div>
     );
 }
@@ -243,13 +218,9 @@ function NonCompliantCard({ entry, index }: { entry: EntryItem; index: number })
                 </div>
             </div>
             <ControlCardHeader entry={entry} />
-            <h4 className="mb-1 text-sm font-bold text-slate-900 dark:text-white">
-                {entry.control.judul}
-            </h4>
+            <h4 className="mb-1 text-sm font-bold text-slate-900 dark:text-white">{entry.control.judul}</h4>
             {entry.control.deskripsi && (
-                <p className="mb-3 line-clamp-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                    {entry.control.deskripsi}
-                </p>
+                <p className="mb-3 line-clamp-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400">{entry.control.deskripsi}</p>
             )}
             {entry.catatan && (
                 <div className="mb-3 flex items-start gap-1.5 rounded-lg bg-amber-50 px-2.5 py-2 text-xs text-slate-600 dark:bg-amber-900/20 dark:text-slate-400">
@@ -280,13 +251,9 @@ function NaCard({ entry, index }: { entry: EntryItem; index: number }) {
                 </div>
             </div>
             <ControlCardHeader entry={entry} />
-            <h4 className="mb-1 text-sm font-bold text-slate-900 dark:text-white">
-                {entry.control.judul}
-            </h4>
+            <h4 className="mb-1 text-sm font-bold text-slate-900 dark:text-white">{entry.control.judul}</h4>
             {entry.control.deskripsi && (
-                <p className="mb-3 line-clamp-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                    {entry.control.deskripsi}
-                </p>
+                <p className="mb-3 line-clamp-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400">{entry.control.deskripsi}</p>
             )}
             {entry.catatan && (
                 <div className="mb-3 flex items-start gap-1.5 rounded-lg bg-slate-50 px-2.5 py-2 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-400">
@@ -314,18 +281,13 @@ function CompliantCard({ entry }: { entry: EntryItem }) {
                 </div>
             </div>
             <ControlCardHeader entry={entry} />
-            <h4 className="mb-1 text-sm font-bold text-slate-900 dark:text-white">
-                {entry.control.judul}
-            </h4>
+            <h4 className="mb-1 text-sm font-bold text-slate-900 dark:text-white">{entry.control.judul}</h4>
             {entry.control.deskripsi && (
-                <p className="mb-3 line-clamp-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                    {entry.control.deskripsi}
-                </p>
+                <p className="mb-3 line-clamp-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400">{entry.control.deskripsi}</p>
             )}
             {entry.catatan && (
                 <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
-                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">Catatan:</span>{' '}
-                    {entry.catatan}
+                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">Catatan:</span> {entry.catatan}
                 </p>
             )}
             <div className="mt-auto pt-1">
@@ -354,35 +316,23 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
 
     const kategoris = useMemo(() => {
         const seen = new Set<string>();
-        return entries
-            .map((e) => e.control.kategori)
-            .filter((k) => (seen.has(k) ? false : (seen.add(k), true)));
+        return entries.map((e) => e.control.kategori).filter((k) => (seen.has(k) ? false : (seen.add(k), true)));
     }, [entries]);
 
     const filteredEntries = useMemo(
         () =>
             entries.filter(
                 (e) =>
-                    (!frameworkFilter || e.control.framework_name === frameworkFilter) &&
-                    (!kategoriFilter || e.control.kategori === kategoriFilter),
+                    (!frameworkFilter || e.control.framework_name === frameworkFilter) && (!kategoriFilter || e.control.kategori === kategoriFilter),
             ),
         [entries, frameworkFilter, kategoriFilter],
     );
 
-    const nonCompliantEntries = useMemo(
-        () => filteredEntries.filter((e) => e.status === 'non_compliant'),
-        [filteredEntries],
-    );
+    const nonCompliantEntries = useMemo(() => filteredEntries.filter((e) => e.status === 'non_compliant'), [filteredEntries]);
 
-    const naEntries = useMemo(
-        () => filteredEntries.filter((e) => e.status === 'na'),
-        [filteredEntries],
-    );
+    const naEntries = useMemo(() => filteredEntries.filter((e) => e.status === 'na'), [filteredEntries]);
 
-    const compliantEntries = useMemo(
-        () => filteredEntries.filter((e) => e.status === 'compliant'),
-        [filteredEntries],
-    );
+    const compliantEntries = useMemo(() => filteredEntries.filter((e) => e.status === 'compliant'), [filteredEntries]);
 
     const hasActiveFilter = frameworkFilter !== '' || kategoriFilter !== '';
 
@@ -390,20 +340,20 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
         if (submittingRef.current) return;
         submittingRef.current = true;
         setSubmitting(true);
-        router.post(`/admin/pic/assessments/${session.id}/submit`, {}, {
-            onFinish: () => {
-                submittingRef.current = false;
-                setSubmitting(false);
+        router.post(
+            `/admin/pic/assessments/${session.id}/submit`,
+            {},
+            {
+                onFinish: () => {
+                    submittingRef.current = false;
+                    setSubmitting(false);
+                },
             },
-        });
+        );
     };
 
     const complianceColor =
-        summary.compliance_percentage >= 80
-            ? 'text-emerald-600'
-            : summary.compliance_percentage >= 50
-              ? 'text-amber-600'
-              : 'text-red-600';
+        summary.compliance_percentage >= 80 ? 'text-emerald-600' : summary.compliance_percentage >= 50 ? 'text-amber-600' : 'text-red-600';
 
     return (
         <AppLayout>
@@ -420,9 +370,7 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
                         <ArrowLeft className="h-4 w-4" />
                         Kembali ke Checklist
                     </button>
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                        Ringkasan Assessment
-                    </h1>
+                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Ringkasan Assessment</h1>
                     <p className="mt-1 text-sm text-slate-500">
                         {session.konteks_penilaian} &middot; {session.periode || 'Tanpa Periode'}
                     </p>
@@ -458,9 +406,7 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
                                       ? 'Perlu Perbaikan'
                                       : 'Tingkat Kepatuhan Rendah'}
                             </p>
-                            <p className="text-xs text-slate-400">
-                                {summary.total_entries} total kontrol dievaluasi
-                            </p>
+                            <p className="text-xs text-slate-400">{summary.total_entries} total kontrol dievaluasi</p>
                         </div>
                     </div>
 
@@ -501,7 +447,9 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
                     >
                         <option value="">Semua Framework</option>
                         {frameworks.map(([name, ver]) => (
-                            <option key={name} value={name}>{name} ({ver})</option>
+                            <option key={name} value={name}>
+                                {name} ({ver})
+                            </option>
                         ))}
                     </select>
                     <select
@@ -511,7 +459,9 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
                     >
                         <option value="">Semua Kategori</option>
                         {kategoris.map((k) => (
-                            <option key={k} value={k}>{formatKategori(k)}</option>
+                            <option key={k} value={k}>
+                                {formatKategori(k)}
+                            </option>
                         ))}
                     </select>
                 </div>
@@ -529,16 +479,12 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
                         <div className="flex h-6 w-6 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/40">
                             <ShieldAlert className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
                         </div>
-                        <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                            Temuan Ketidaksesuaian
-                        </h2>
+                        <h2 className="text-lg font-bold text-slate-900 dark:text-white">Temuan Ketidaksesuaian</h2>
                         <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-700 dark:bg-red-900/40 dark:text-red-400">
                             {nonCompliantEntries.length}
                         </span>
-                </div>
-                    <p className="mb-4 text-sm text-slate-500">
-                        Kontrol berikut memerlukan tindakan perbaikan untuk mencapai kepatuhan.
-                    </p>
+                    </div>
+                    <p className="mb-4 text-sm text-slate-500">Kontrol berikut memerlukan tindakan perbaikan untuk mencapai kepatuhan.</p>
 
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         {nonCompliantEntries.map((entry, idx) => (
@@ -555,9 +501,7 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
                         <div className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
                             <Shield className="h-3.5 w-3.5 text-slate-500" />
                         </div>
-                        <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                            Kontrol Tidak Berlaku
-                        </h2>
+                        <h2 className="text-lg font-bold text-slate-900 dark:text-white">Kontrol Tidak Berlaku</h2>
                         <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-400">
                             {naEntries.length}
                         </span>
@@ -577,9 +521,7 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
                         <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/40">
                             <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                         </div>
-                        <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                            Kontrol Patuh
-                        </h2>
+                        <h2 className="text-lg font-bold text-slate-900 dark:text-white">Kontrol Patuh</h2>
                         <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
                             {compliantEntries.length}
                         </span>
@@ -595,12 +537,8 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
             {/* Submit Action */}
             <div className="mt-10 flex flex-col items-center gap-4 rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50 to-indigo-50/50 p-8 dark:border-blue-900 dark:from-blue-950/30 dark:to-indigo-950/20">
                 <div className="text-center">
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                        Kirim Assessment untuk Verifikasi?
-                    </h3>
-                    <p className="mt-1 text-sm text-slate-500">
-                        Pastikan semua data sudah benar sebelum mengirim ke pengelola kepatuhan.
-                    </p>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Kirim Assessment untuk Verifikasi?</h3>
+                    <p className="mt-1 text-sm text-slate-500">Pastikan semua data sudah benar sebelum mengirim ke pengelola kepatuhan.</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <button
@@ -628,21 +566,16 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
                     className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm"
                     onClick={() => !submitting && setShowConfirm(false)}
                 >
-                    <div
-                        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-slate-900"
-                        onClick={(e) => e.stopPropagation()}
-                    >
+                    <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-slate-900" onClick={(e) => e.stopPropagation()}>
                         <div className="mb-4 flex justify-center">
                             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/40">
                                 <Send className="h-7 w-7 text-blue-600 dark:text-blue-400" />
                             </div>
                         </div>
-                        <h3 className="mb-2 text-center text-lg font-bold text-slate-900 dark:text-white">
-                            Konfirmasi Pengiriman
-                        </h3>
+                        <h3 className="mb-2 text-center text-lg font-bold text-slate-900 dark:text-white">Konfirmasi Pengiriman</h3>
                         <p className="mb-6 text-center text-sm text-slate-500">
-                            Assessment akan dikirim ke pengelola kepatuhan untuk diverifikasi. 
-                            Anda masih bisa mengedit entri setelah pengiriman jika diperlukan.
+                            Assessment akan dikirim ke pengelola kepatuhan untuk diverifikasi. Anda masih bisa mengedit entri setelah pengiriman jika
+                            diperlukan.
                         </p>
 
                         {nonCompliantEntries.length > 0 && (
