@@ -614,15 +614,29 @@ class ChecklistEntryApiTest extends TestCase
 
         $this->artisan('smki:generate-monthly-checklist')->assertSuccessful();
 
+        $this->assertDatabaseHas('checklist_sessions', [
+            'unit_id' => $unit->id,
+            'framework_id' => $fw->id,
+            'periode' => now()->format('Y-m'),
+        ]);
+
+        $session = ChecklistSession::where('unit_id', $unit->id)->first();
+        $this->assertNotNull($session);
+
         $this->assertDatabaseHas('checklist_entries', [
-            'unit_id' => $unit->id, 'control_id' => $ctrl->id, 'pic_id' => $pic->id,
+            'session_id' => $session->id,
+            'unit_id' => $unit->id,
+            'control_id' => $ctrl->id,
+            'pic_id' => $pic->id,
             'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
         ]);
 
         $countAfterFirstRun = ChecklistEntry::count();
+        $sessionsAfterFirstRun = ChecklistSession::count();
 
         $this->artisan('smki:generate-monthly-checklist')->assertSuccessful();
         $this->assertSame($countAfterFirstRun, ChecklistEntry::count(), 'Duplicate prevention: second run must not re-insert.');
+        $this->assertSame($sessionsAfterFirstRun, ChecklistSession::count(), 'Duplicate prevention: second run must not duplicate session.');
     }
 
     public function test_web_pic_entry_update_scoped_to_own_pic_and_requires_catatan(): void

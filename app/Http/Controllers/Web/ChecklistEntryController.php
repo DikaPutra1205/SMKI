@@ -7,7 +7,6 @@ use App\Models\ChecklistEntry;
 use App\Models\ChecklistSession;
 use App\Models\ComplianceEvidence;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class ChecklistEntryController extends Controller
 {
@@ -62,7 +61,7 @@ class ChecklistEntryController extends Controller
         $evidence = ComplianceEvidence::create([
             'checklist_entry_id' => $entry->id,
             'uploaded_by' => $user->id,
-            'file_url' => Storage::disk('supabase')->url($path),
+            'file_url' => $path,
             'version_number' => $lastVersion + 1,
             'is_active' => true,
             'uploaded_at' => now(),
