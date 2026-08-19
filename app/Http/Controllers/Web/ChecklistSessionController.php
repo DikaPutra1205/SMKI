@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ChecklistEntry;
 use App\Models\ChecklistSession;
 use App\Models\Control;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -94,23 +95,88 @@ class ChecklistSessionController extends Controller
         $checklistSession->load([
             'unit:id,nama',
             'framework:id,nama,versi',
-            'entries' => function ($q) {
-                $q->with([
-                    'control.framework:id,nama,versi',
-                    'activeEvidence:id,checklist_entry_id,version_number,file_url,is_active',
-                ])
-                    ->join('controls', 'controls.id', '=', 'checklist_entries.control_id')
-                    ->orderBy('controls.kategori', 'desc')
-                    ->orderBy('controls.kode_klausul', 'asc')
-                    ->select('checklist_entries.*');
-            },
-            'entries.control:id,framework_id,kode_klausul,judul,deskripsi,kategori',
-            'entries.control.framework:id,nama,versi',
         ]);
+
+        $allEntries = ChecklistEntry::where('checklist_entries.session_id', $checklistSession->id)
+            ->with([
+                'control.framework:id,nama,versi',
+                'activeEvidence:id,checklist_entry_id,version_number,file_url,is_active',
+            ])
+            ->join('controls', 'controls.id', '=', 'checklist_entries.control_id')
+            ->orderBy('controls.kategori', 'desc')
+            ->orderBy('controls.kode_klausul', 'asc')
+            ->select('checklist_entries.*')
+            ->get();
+
+        $grouped = $allEntries->groupBy(fn ($e) => $e->control->framework_name . '|||' . $e->control->kategori);
+
+        $pages = [];
+        $index = 0;
+        foreach ($grouped as $key => $items) {
+            [$frameworkName, $kategori] = explode('|||', $key);
+            $pages[] = [
+                'index' => $index,
+                'framework_name' => $frameworkName,
+                'kategori' => $kategori,
+                'entry_count' => $items->count(),
+            ];
+            $index++;
+        }
+
+        $firstPageEntries = $grouped->values()->first() ?? collect();
 
         return Inertia::render('pic/checklist-detail', [
             'session' => $checklistSession,
-            'entries' => $checklistSession->entries,
+            'initialEntries' => $firstPageEntries->values(),
+            'pageMeta' => $pages,
+            'totalEntries' => $allEntries->count(),
+        ]);
+    }
+
+    public function checklistPage(ChecklistSession $checklistSession, Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($checklistSession->unit_id !== $user->unit_id) {
+            abort(403);
+        }
+
+        $allEntries = ChecklistEntry::where('checklist_entries.session_id', $checklistSession->id)
+            ->with([
+                'control.framework:id,nama,versi',
+                'activeEvidence:id,checklist_entry_id,version_number,file_url,is_active',
+            ])
+            ->join('controls', 'controls.id', '=', 'checklist_entries.control_id')
+            ->orderBy('controls.kategori', 'desc')
+            ->orderBy('controls.kode_klausul', 'asc')
+            ->select('checklist_entries.*')
+            ->get();
+
+        $grouped = $allEntries->groupBy(fn ($e) => $e->control->framework_name . '|||' . $e->control->kategori);
+
+        $pages = [];
+        $index = 0;
+        foreach ($grouped as $key => $items) {
+            [$frameworkName, $kategori] = explode('|||', $key);
+            $pages[] = [
+                'index' => $index,
+                'framework_name' => $frameworkName,
+                'kategori' => $kategori,
+                'entry_count' => $items->count(),
+            ];
+            $index++;
+        }
+
+        $page = (int) $request->query('page', 0);
+        $page = max(0, min($page, count($pages) - 1));
+
+        $pageEntries = $grouped->values()->get($page) ?? collect();
+
+        return response()->json([
+            'entries' => $pageEntries->values(),
+            'page_meta' => $pages,
+            'current_page' => $page,
+            'total_entries' => $allEntries->count(),
         ]);
     }
 

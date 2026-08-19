@@ -91,11 +91,13 @@ Route::middleware('auth')->group(function () {
         Route::get('/assessments', [ChecklistSessionController::class, 'index'])->name('assessments');
         Route::post('/assessments', [ChecklistSessionController::class, 'store'])->name('assessments.store');
         Route::get('/assessments/{checklistSession}', [ChecklistSessionController::class, 'show'])->name('assessments.show');
+        Route::get('/assessments/{checklistSession}/checklist-page', [ChecklistSessionController::class, 'checklistPage'])->name('assessments.checklist-page');
         Route::patch('/assessments/{checklistSession}', [ChecklistSessionController::class, 'update'])->name('assessments.update');
         Route::get('/assessments/{checklistSession}/summary', [ChecklistSessionController::class, 'summary'])->name('assessments.summary');
         Route::post('/assessments/{checklistSession}/submit', [ChecklistSessionController::class, 'submitAssessment'])->name('assessments.submit');
 
         Route::patch('/checklist-entries/{id}', [ChecklistEntryController::class, 'update'])->name('entries.update');
+        Route::post('/checklist-entries/batch', [ChecklistEntryController::class, 'batchUpdate'])->name('entries.batch');
         Route::post('/checklist-entries/{id}/evidence', [ChecklistEntryController::class, 'uploadEvidence'])->name('entries.evidence');
     });
 });
