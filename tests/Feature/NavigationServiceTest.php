@@ -39,6 +39,7 @@ class NavigationServiceTest extends TestCase
         $this->assertSame([
             '/admin/kepatuhan/dashboard',
             '/admin/kepatuhan/compliance',
+            '/admin/kepatuhan/checklist/bulk-verify',
             '/admin/kepatuhan/sessions',
         ], $this->urlsFor($user));
     }
