@@ -25,6 +25,7 @@ class EvidenceAuthorizationGapTest extends TestCase
         ]);
         $picA = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unitA->id]);
         $picB = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unitB->id]);
+
         return compact('unitA', 'unitB', 'control', 'picA', 'picB');
     }
 

@@ -14,6 +14,7 @@ use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 
 class ChecklistEntryController extends Controller
@@ -25,8 +26,17 @@ class ChecklistEntryController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $user = $request->user();
+        if ($user) {
+            Gate::authorize('viewAny', [ChecklistEntry::class, $request->filled('unit_id') ? (int) $request->unit_id : null]);
+        }
+
+        $targetUnitId = $request->filled('unit_id')
+            ? (int) $request->unit_id
+            : ($user?->isPic() ? (int) $user->unit_id : null);
+
         // 1. Auto-provisioning otomatis jika belum ada data di database atau per-unit
-        $this->ensureChecklistProvisioned($request->unit_id);
+        $this->ensureChecklistProvisioned($targetUnitId);
 
         // Query join ke controls agar pengurutan selalu konsisten berdasarkan Klausul Standar
         $query = ChecklistEntry::select('checklist_entries.*')
@@ -57,6 +67,8 @@ class ChecklistEntryController extends Controller
         // ── Filter Unit Kerja ──
         if ($request->filled('unit_id')) {
             $query->where('checklist_entries.unit_id', $request->unit_id);
+        } elseif ($user?->isPic()) {
+            $query->where('checklist_entries.unit_id', $user->unit_id);
         }
 
         // ── Filter Status Kepatuhan ──
@@ -178,6 +190,8 @@ class ChecklistEntryController extends Controller
             'tanggal_input' => 'nullable|date',
         ]);
 
+        Gate::authorize('create', [ChecklistEntry::class, (int) $data['unit_id']]);
+
         $data['tanggal_input'] = $data['tanggal_input'] ?? now();
 
         $entry = ChecklistEntry::create($data);
@@ -187,6 +201,8 @@ class ChecklistEntryController extends Controller
 
     public function show(ChecklistEntry $checklistEntry): JsonResponse
     {
+        Gate::authorize('view', $checklistEntry);
+
         $checklistEntry->load([
             'session',
             'control.framework',
@@ -203,6 +219,8 @@ class ChecklistEntryController extends Controller
 
     public function update(Request $request, ChecklistEntry $checklistEntry): JsonResponse
     {
+        Gate::authorize('update', $checklistEntry);
+
         $data = $request->validate([
             'status' => 'sometimes|in:compliant,partial,non_compliant,na',
             'catatan' => 'nullable|string',
@@ -212,7 +230,11 @@ class ChecklistEntryController extends Controller
 
         $evidenceData = null;
         if ($request->hasFile('bukti_file')) {
-            $uploaderId = $request->uploaded_by ?? $checklistEntry->pic_id;
+            Gate::authorize('uploadEvidence', [$checklistEntry, $request->filled('uploaded_by') ? (int) $request->uploaded_by : null]);
+
+            $uploaderId = $request->user()?->isPic()
+                ? $request->user()->id
+                : ($request->uploaded_by ?? $checklistEntry->pic_id);
 
             // Upload the file first (outside the transaction — S3 is not transactional).
             $folder = "bukti/{$checklistEntry->id}";
@@ -273,6 +295,8 @@ class ChecklistEntryController extends Controller
 
     public function verify(Request $request, ChecklistEntry $checklistEntry): JsonResponse
     {
+        Gate::authorize('verify', $checklistEntry);
+
         $data = $request->validate([
             'admin_id' => 'required|exists:users,id',
             'catatan_admin' => 'nullable|string',
@@ -291,6 +315,8 @@ class ChecklistEntryController extends Controller
 
     public function destroy(ChecklistEntry $checklistEntry): JsonResponse
     {
+        Gate::authorize('delete', $checklistEntry);
+
         $checklistEntry->delete();
 
         return $this->success(null, 'Checklist berhasil dihapus (soft delete)');
@@ -299,6 +325,8 @@ class ChecklistEntryController extends Controller
     public function restore(int $id): JsonResponse
     {
         $entry = ChecklistEntry::withTrashed()->findOrFail($id);
+        Gate::authorize('restore', $entry);
+
         $entry->restore();
 
         return $this->success($entry, 'Checklist berhasil dipulihkan');
