@@ -40,5 +40,9 @@ class AppServiceProvider extends ServiceProvider
             return $user->hasPermissionTo($ability) ? true : null;
         });
 
-        }
+        // Fail fast on N+1 of the new `role` relation in dev/test. The compat
+        // accessor + $appends makes `$user->role` lazy-loadable; this surfaces any
+        // controller that forgets `with('role')` during the suite.
+        Model::preventLazyLoading(! app()->isProduction());
+    }
 }

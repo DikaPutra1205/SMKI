@@ -3,6 +3,7 @@
 .env
 .env.backup
 .env.production
+.env.testing
 TEAM_CREDENTIALS.env
 TEAM_CREDENTIALS.*
 credentials.txt
@@ -40,7 +41,8 @@ Thumbs.db
 
 graphify-out/
 .opencode/
-
+docs/superpowers/
+.superpowers/
 CLAUDE.md
 .claude/
 .mcp.json
