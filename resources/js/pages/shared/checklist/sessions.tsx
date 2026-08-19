@@ -182,6 +182,10 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {paginatedSessions.map((s) => {
                         const pct = s.compliance_percentage;
+                        const total = s.total_entries || 0;
+                        const compliantPct = total > 0 ? (s.compliant_entries / total) * 100 : 0;
+                        const nonCompliantPct = total > 0 ? (s.non_compliant_entries / total) * 100 : 0;
+                        const naPct = total > 0 ? (s.na_entries / total) * 100 : 0;
 
                         return (
                             <div
@@ -216,8 +220,16 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
                                         </span>
                                         <span className="text-primary text-xs font-bold">{pct}%</span>
                                     </div>
-                                    <div className="bg-surface-2 h-1.5 w-full overflow-hidden rounded-full">
-                                        <div className="bg-primary h-full rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                                    <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                                        {compliantPct > 0 && (
+                                            <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${compliantPct}%` }} />
+                                        )}
+                                        {nonCompliantPct > 0 && (
+                                            <div className="h-full bg-red-500 transition-all duration-500" style={{ width: `${nonCompliantPct}%` }} />
+                                        )}
+                                        {naPct > 0 && (
+                                            <div className="h-full bg-slate-300 transition-all duration-500" style={{ width: `${naPct}%` }} />
+                                        )}
                                     </div>
                                 </div>
 
