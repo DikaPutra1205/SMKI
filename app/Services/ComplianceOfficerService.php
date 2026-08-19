@@ -303,6 +303,68 @@ class ComplianceOfficerService
     }
 
     /**
+     * Get paginated checklist entries for the compliance officer review queue.
+     * Mirrors the shape returned by GET /api/v1/checklist-entries so the
+     * bulk-verify page can rely on the same data contract.
+     */
+    public function getReviewQueueEntries(User $user, array $filters = [], int $perPage = 20): LengthAwarePaginator
+    {
+        $scopedUnitId = $this->resolveScopedUnitId($user, $filters['unit_id'] ?? null);
+
+        $query = ChecklistEntry::select('checklist_entries.*')
+            ->join('controls', 'controls.id', '=', 'checklist_entries.control_id')
+            ->with([
+                'control:id,framework_id,kode_klausul,judul,kategori',
+                'control.framework:id,nama,versi',
+                'unit:id,nama',
+                'pic:id,name',
+                'admin:id,name',
+                'activeEvidence:id,checklist_entry_id,version_number,file_url,is_active',
+            ]);
+
+        if ($scopedUnitId) {
+            $query->where('checklist_entries.unit_id', $scopedUnitId);
+        }
+
+        if (! empty($filters['status'])) {
+            $query->where('checklist_entries.status', $filters['status']);
+        }
+
+        if (! empty($filters['framework_id'])) {
+            $query->where('controls.framework_id', $filters['framework_id']);
+        }
+
+        if (! empty($filters['session_id'])) {
+            $query->where('checklist_entries.session_id', $filters['session_id']);
+        }
+
+        if (isset($filters['is_verified'])) {
+            $isVerified = filter_var($filters['is_verified'], FILTER_VALIDATE_BOOLEAN);
+            if ($isVerified) {
+                $query->whereNotNull('checklist_entries.tanggal_verifikasi');
+            } else {
+                $query->whereNull('checklist_entries.tanggal_verifikasi');
+            }
+        }
+
+        if (! empty($filters['search'])) {
+            $search = trim($filters['search']);
+            $like = config('database.default') === 'pgsql' ? 'ilike' : 'like';
+            $query->where(function ($q) use ($search, $like) {
+                $q->where('controls.kode_klausul', $like, "%{$search}%")
+                    ->orWhere('controls.judul', $like, "%{$search}%");
+            });
+        }
+
+        $query->orderBy('controls.kategori', 'desc')
+            ->orderBy('controls.kode_klausul', 'asc')
+            ->orderBy('checklist_entries.unit_id', 'asc')
+            ->orderBy('checklist_entries.id', 'asc');
+
+        return $query->paginate($perPage);
+    }
+
+    /**
      * Format finding model into consistent English resource representation.
      */
     protected function formatFindingResource(Finding $finding, Carbon $today): Finding

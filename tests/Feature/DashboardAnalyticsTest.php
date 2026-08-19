@@ -146,6 +146,37 @@ class DashboardAnalyticsTest extends TestCase
         );
     }
 
+    public function test_auditor_receives_complete_dashboard_props_via_inertia(): void
+    {
+        $auditor = User::factory()->create([
+            'role' => 'auditor',
+            'unit_id' => $this->unitA->id,
+        ]);
+
+        $ctrl1 = Control::factory()->create(['framework_id' => $this->iso27001->id]);
+
+        ChecklistEntry::factory()->create([
+            'control_id' => $ctrl1->id,
+            'unit_id' => $this->unitA->id,
+            'status' => ChecklistEntry::STATUS_COMPLIANT,
+        ]);
+
+        $response = $this->actingAs($auditor)->get('/admin/auditor/dashboard');
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('auditor/dashboard')
+            ->has('summary')
+            ->has('summary.overall_compliance_rate')
+            ->has('summary.frameworks_breakdown')
+            ->has('summary.findings_summary')
+            ->has('summary.risks_summary')
+            ->has('trends')
+            ->has('recent_activities')
+            ->has('workUnits')
+        );
+    }
+
     public function test_pic_dashboard_is_strictly_scoped_to_their_unit(): void
     {
         $ctrl1 = Control::factory()->create(['framework_id' => $this->iso27001->id]);

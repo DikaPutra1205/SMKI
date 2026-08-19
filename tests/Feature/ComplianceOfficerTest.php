@@ -1110,4 +1110,53 @@ class ComplianceOfficerTest extends TestCase
 
         $this->assertSame(1, $count, 'Satu mutasi risiko harus menghasilkan tepat satu entri audit, bukan duplikat.');
     }
+
+    public function test_admin_can_view_bulk_verify_page_with_review_queue_entries(): void
+    {
+        ChecklistEntry::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'pic_id' => $this->picA->id,
+            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+        ]);
+
+        $response = $this->actingAs($this->admin)->get('/admin/kepatuhan/checklist/bulk-verify');
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('admin-kepatuhan/checklist/bulk-verify', false)
+            ->has('entries.data', 1)
+            ->where('entries.data.0.control.kode_klausul', 'A.5.1')
+            ->where('entries.data.0.unit.nama', 'Pusat Ekosistem SDM')
+            ->where('entries.data.0.pic.name', $this->picA->name)
+            ->where('entries.data.0.status', ChecklistEntry::STATUS_NON_COMPLIANT)
+            ->has('workUnits')
+            ->has('filters'));
+    }
+
+    public function test_bulk_verify_page_filters_unverified_entries_by_default_filter(): void
+    {
+        ChecklistEntry::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'pic_id' => $this->picA->id,
+            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'tanggal_verifikasi' => now(),
+            'admin_id' => $this->admin->id,
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->get('/admin/kepatuhan/checklist/bulk-verify?is_verified=0');
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('admin-kepatuhan/checklist/bulk-verify', false)
+            ->has('entries.data', 0)
+            ->where('filters.is_verified', '0'));
+    }
+
+    public function test_pic_cannot_access_bulk_verify_page(): void
+    {
+        $this->actingAs($this->picA)->get('/admin/kepatuhan/checklist/bulk-verify')->assertForbidden();
+    }
 }

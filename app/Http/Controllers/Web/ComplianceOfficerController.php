@@ -103,4 +103,26 @@ class ComplianceOfficerController extends Controller
             'message' => "Berhasil memverifikasi {$verifiedCount} entri checklist secara massal.",
         ]);
     }
+
+    /**
+     * Compliance Officer Checklist Review / Bulk Verify page.
+     */
+    public function bulkVerifyPage(Request $request): Response
+    {
+        $user = $request->user();
+
+        if (! $user->hasPermissionTo('checklist.bulk-verify')) {
+            abort(403);
+        }
+
+        $filters = $request->only(['status', 'unit_id', 'framework_id', 'session_id', 'is_verified', 'search']);
+
+        $entries = $this->complianceOfficerService->getReviewQueueEntries($user, $filters, 20);
+
+        return Inertia::render('admin-kepatuhan/checklist/bulk-verify', [
+            'entries' => $entries,
+            'workUnits' => $this->complianceService->getWorkUnits(),
+            'filters' => $filters,
+        ]);
+    }
 }

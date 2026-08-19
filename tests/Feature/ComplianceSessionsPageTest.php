@@ -45,7 +45,7 @@ class ComplianceSessionsPageTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('admin-kepatuhan/sessions', false)
+            ->component('shared/checklist/sessions', false)
             ->has('sessions', 1)
             ->has('workUnits')
             ->has('frameworks')
@@ -72,7 +72,7 @@ class ComplianceSessionsPageTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('admin-kepatuhan/sessions', false)
+            ->component('shared/checklist/sessions', false)
             ->has('sessions', 1));
     }
 

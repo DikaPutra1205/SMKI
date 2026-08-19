@@ -33,7 +33,7 @@ return new class extends Migration
             );
         }
 
-        DB::statement('UPDATE users u SET role_id = r.id FROM roles r WHERE r.name = u.role');
+        DB::statement('UPDATE users SET role_id = (SELECT id FROM roles WHERE roles.name = users.role)');
 
         Schema::table('users', function (Blueprint $table) {
             $table->dropColumn('role');
@@ -46,7 +46,7 @@ return new class extends Migration
             $table->string('role')->default('pic')->after('email');
         });
 
-        DB::statement('UPDATE users u SET role = r.name FROM roles r WHERE r.id = u.role_id');
+        DB::statement('UPDATE users SET role = (SELECT name FROM roles WHERE roles.id = users.role_id)');
 
         Schema::table('users', function (Blueprint $table) {
             $table->dropForeign(['role_id']);

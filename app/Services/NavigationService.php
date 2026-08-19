@@ -103,6 +103,11 @@ class NavigationService
                         'permissions' => ['control.view'],
                     ],
                     [
+                        'label' => 'Bulk Verify',
+                        'url' => '/admin/kepatuhan/checklist/bulk-verify',
+                        'permissions' => ['checklist.bulk-verify'],
+                    ],
+                    [
                         'label' => 'Assessment PIC',
                         'url' => '/admin/kepatuhan/sessions',
                         'permissions' => ['control.view'],

@@ -25,7 +25,7 @@ class ComplianceController extends Controller
         $controls = $this->complianceService->getControls($filters);
         $sessions = $this->complianceService->getChecklistSessions($filters);
 
-        return Inertia::render('admin-kepatuhan/compliance', [
+        return Inertia::render('shared/controls/compliance', [
             'frameworks' => $frameworks,
             'controls' => $controls,
             'workUnits' => $workUnits,
@@ -40,7 +40,7 @@ class ComplianceController extends Controller
 
         $sessions = $this->complianceService->getAdminSessions($filters);
 
-        return Inertia::render('admin-kepatuhan/sessions', [
+        return Inertia::render('shared/checklist/sessions', [
             'sessions' => $sessions,
             'workUnits' => $this->complianceService->getWorkUnits(),
             'frameworks' => $this->complianceService->getFrameworkSummaries(),

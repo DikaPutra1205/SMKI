@@ -4,7 +4,7 @@ import { Select } from '@/components/ui/Select';
 import AppLayout from '@/layouts/AppLayout';
 import { t } from '@/lib/i18n';
 import { Head, router, usePage } from '@inertiajs/react';
-import { CheckCircle2, Search, ShieldCheck, UserRound } from 'lucide-react';
+import { CheckCircle2, Search, Send, ShieldCheck, UserRound } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 interface SessionItem {
