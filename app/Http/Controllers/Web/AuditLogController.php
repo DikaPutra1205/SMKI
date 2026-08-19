@@ -24,7 +24,10 @@ class AuditLogController extends Controller
         $filters = $request->only(['action', 'aksi', 'entity_type', 'actor_id', 'start_date', 'end_date', 'search']);
         $logs = $this->auditTrailService->getAuditLogs($user, $filters, 25);
         $stats = $this->auditTrailService->getAuditStats($user);
-        $actors = User::select(['id', 'name', 'email', 'role'])->orderBy('name')->get();
+        $actors = User::with('role:id,name')
+            ->select(['id', 'name', 'email', 'role_id'])
+            ->orderBy('name')
+            ->get();
 
         return Inertia::render('admin-kepatuhan/audit-logs', [
             'logs' => $logs,

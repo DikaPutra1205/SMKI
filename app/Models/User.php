@@ -3,20 +3,21 @@
 namespace App\Models;
 
 use Database\Factories\UserFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Cache;
 
-#[Fillable(['name', 'email', 'password', 'role', 'unit_id'])]
-#[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
+
+    protected $fillable = ['name', 'email', 'password', 'role', 'role_id', 'unit_id'];
+
+    protected $hidden = ['password', 'remember_token'];
 
     // Konstanta role agar tidak typo di controller
     const ROLE_SUPERADMIN = 'superadmin';
@@ -40,6 +41,54 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    // Backward-compat: JSON responses keep the legacy `role` string.
+    protected $appends = ['role'];
+
+    public function role(): BelongsTo
+    {
+        return $this->belongsTo(Role::class, 'role_id');
+    }
+
+    /**
+     * Legacy read-compat: `$user->role` returns the role name string.
+     */
+    public function getRoleAttribute(): ?string
+    {
+        return $this->relationLoaded('role') ? $this->getRelation('role')?->name : $this->role()->value('name');
+    }
+
+    /**
+     * Legacy write-compat: `create(['role' => 'pic'])` keeps working.
+     * New code should assign `role_id` directly instead.
+     */
+    public function setRoleAttribute(string $name): void
+    {
+        $this->attributes['role_id'] = Role::where('name', $name)->firstOrFail()->id;
+    }
+
+    public function hasPermissionTo(string $key): bool
+    {
+        return in_array($key, $this->cachedPermissionKeys(), true);
+    }
+
+    public function cachedPermissionKeys(): array
+    {
+        if ($this->role_id === null) {
+            return [];
+        }
+
+        return once(fn () => Cache::remember(Role::permissionsCacheKey($this->role_id), now()->addHour(), fn () => $this->role()->first()?->permissions()->pluck('permissions.key')->all() ?? []));
+    }
+
+    // The eager-loaded `role` relation may not shadow the appended `role` string in JSON.
+    protected function getArrayableRelations()
+    {
+        $relations = parent::getArrayableRelations();
+        unset($relations['role']);
+
+        return $relations;
     }
 
     public function unit(): BelongsTo

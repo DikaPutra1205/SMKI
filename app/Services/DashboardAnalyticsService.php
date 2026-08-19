@@ -239,7 +239,7 @@ class DashboardAnalyticsService
 
         $safeLimit = max(1, min((int) ($limit ?: 6), 100));
 
-        return AuditLog::with('actor.workUnit')
+        return AuditLog::with(['actor.workUnit', 'actor.role'])
             ->orderByDesc('id')
             ->limit($safeLimit)
             ->get()
