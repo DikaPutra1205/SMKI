@@ -7,7 +7,6 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\Gate;
 
 class AuditTrailService
 {
@@ -16,7 +15,7 @@ class AuditTrailService
      */
     public function getAuditLogs(User $user, array $filters = [], int $perPage = 25): LengthAwarePaginator
     {
-        if (Gate::forUser($user)->denies('view-audit-logs')) {
+        if (! $user->hasPermissionTo('audit-log.view')) {
             throw new AuthorizationException('Anda tidak memiliki wewenang untuk melihat jejak audit.');
         }
 
@@ -78,7 +77,7 @@ class AuditTrailService
      */
     public function getAuditStats(User $user): array
     {
-        if (Gate::forUser($user)->denies('view-audit-logs')) {
+        if (! $user->hasPermissionTo('audit-log.view')) {
             throw new AuthorizationException('Anda tidak memiliki wewenang untuk melihat statistik jejak audit.');
         }
 

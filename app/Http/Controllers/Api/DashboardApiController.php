@@ -68,7 +68,7 @@ class DashboardApiController extends Controller
     {
         $user = $request->user();
 
-        if (! in_array($user->role, ['superadmin', 'admin_kepatuhan', 'koordinator_smki', 'auditor'])) {
+        if (! $user->hasPermissionTo('dashboard.recent-activities')) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Akses ditolak. Jejak audit hanya dapat diakses oleh Superadmin, Admin Kepatuhan, Koordinator SMKI, dan Auditor.',
