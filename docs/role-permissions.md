@@ -1,0 +1,84 @@
+# Role Permissions
+
+Matrix of permissions per role, based on the current application behavior. Each row is a
+permission key (`module.action`) granted role-wise. Access control is enforced with
+authenticated-route checks plus role checks in application services; this table reflects the
+effective outcome of those checks.
+
+Legend: ✓ = allowed, ✗ = not allowed
+
+Rule: for `pic`, every ✓ grant is limited to records owned by the PIC's own unit (`users.unit_id`) or by the PIC themselves (e.g. `user.profileview`).
+
+| Permission | superadmin | admin_kepatuhan | koordinator_smki | auditor | pic |
+| --- | :-: | :-: | :-: | :-: | :-: |
+| **dashboard** | | | | | |
+| dashboard.read | ✓ | ✓ | ✓ | ✓ | ✓ |
+| dashboard.recent-activities | ✓ | ✓ | ✓ | ✓ | ✗ |
+| **checklist** | | | | | |
+| checklist.view | ✓ | ✓ | ✓ | ✓ | ✓ |
+| checklist.read | ✓ | ✓ | ✓ | ✓ | ✓ |
+| checklist.create | ✓ | ✓ | ✗ | ✗ | ✓ |
+| checklist.update | ✓ | ✓ | ✗ | ✗ | ✓ |
+| checklist.verify | ✓ | ✓ | ✗ | ✗ | ✓ |
+| checklist.bulk-verify | ✓ | ✓ | ✗ | ✗ | ✗ |
+| checklist.delete | ✓ | ✓ | ✗ | ✗ | ✓ |
+| checklist.restore | ✓ | ✓ | ✗ | ✗ | ✓ |
+| checklist.generate-monthly | ✓ | ✓ | ✗ | ✗ | ✓ |
+| **checklist-session** | | | | | |
+| checklist-session.view | ✓ | ✓ | ✓ | ✓ | ✓ |
+| checklist-session.read | ✓ | ✓ | ✓ | ✓ | ✓ |
+| checklist-session.create | ✓ | ✓ | ✗ | ✗ | ✓ |
+| checklist-session.update | ✓ | ✓ | ✗ | ✗ | ✓ |
+| checklist-session.delete | ✓ | ✓ | ✗ | ✗ | ✓ |
+| checklist-session.restore | ✓ | ✓ | ✗ | ✗ | ✓ |
+| **control** | | | | | |
+| control.view | ✓ | ✓ | ✗ | ✗ | ✗ |
+| control.read | ✓ | ✓ | ✓ | ✓ | ✓ |
+| control.create | ✓ | ✓ | ✗ | ✗ | ✗ |
+| control.update | ✓ | ✓ | ✗ | ✗ | ✗ |
+| control.delete | ✓ | ✓ | ✗ | ✗ | ✗ |
+| control.export | ✓ | ✓ | ✗ | ✗ | ✗ |
+| control.import | ✓ | ✓ | ✗ | ✗ | ✗ |
+| **framework** | | | | | |
+| framework.view | ✓ | ✓ | ✗ | ✗ | ✗ |
+| framework.read | ✓ | ✓ | ✓ | ✓ | ✓ |
+| framework.create | ✓ | ✓ | ✗ | ✗ | ✗ |
+| framework.update | ✓ | ✓ | ✗ | ✗ | ✗ |
+| framework.delete | ✓ | ✓ | ✗ | ✗ | ✗ |
+| **evidence** | | | | | |
+| evidence.read | ✓ | ✓ | ✓ | ✓ | ✓ |
+| evidence.upload | ✓ | ✓ | ✗ | ✗ | ✓ |
+| evidence.delete | ✓ | ✓ | ✗ | ✗ | ✓ |
+| evidence.restore | ✓ | ✓ | ✗ | ✗ | ✓ |
+| **finding** | | | | | |
+| finding.view | ✓ | ✓ | ✓ | ✓ | ✓ |
+| finding.read | ✓ | ✓ | ✓ | ✓ | ✓ |
+| finding.create | ✓ | ✓ | ✗ | ✗ | ✓ |
+| finding.update | ✓ | ✓ | ✗ | ✗ | ✓ |
+| finding.update-status | ✓ | ✓ | ✗ | ✗ | ✓ |
+| finding.delete | ✓ | ✓ | ✗ | ✗ | ✓ |
+| **risk** | | | | | |
+| risk.view | ✓ | ✓ | ✓ | ✓ | ✓ |
+| risk.read | ✓ | ✓ | ✓ | ✓ | ✓ |
+| risk.create | ✓ | ✓ | ✗ | ✗ | ✓ |
+| risk.update | ✓ | ✓ | ✗ | ✗ | ✓ |
+| risk.delete | ✓ | ✓ | ✗ | ✗ | ✓ |
+| **work-unit** | | | | | |
+| work-unit.view | ✓ | ✗ | ✗ | ✗ | ✗ |
+| work-unit.read | ✓ | ✓ | ✓ | ✓ | ✓ |
+| work-unit.create | ✓ | ✗ | ✗ | ✗ | ✗ |
+| work-unit.update | ✓ | ✗ | ✗ | ✗ | ✗ |
+| work-unit.delete | ✓ | ✗ | ✗ | ✗ | ✗ |
+| **audit-log** | | | | | |
+| audit-log.view | ✓ | ✓ | ✓ | ✓ | ✗ |
+| audit-log.read | ✓ | ✓ | ✓ | ✓ | ✗ |
+| **report** | | | | | |
+| report.read | ✓ | ✓ | ✓ | ✓ | ✗ |
+| report.export | ✓ | ✓ | ✓ | ✓ | ✗ |
+| **user** | | | | | |
+| user.profileview | ✓ | ✓ | ✓ | ✓ | ✓ |
+| user.managementview | ✓ | ✗ | ✓ | ✓ | ✗ |
+| user.read | ✓ | ✗ | ✓ | ✓ | ✗ |
+| user.create | ✓ | ✗ | ✗ | ✗ | ✗ |
+| user.update | ✓ | ✗ | ✗ | ✗ | ✗ |
+| user.delete | ✓ | ✗ | ✗ | ✗ | ✗ |
