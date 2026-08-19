@@ -56,26 +56,33 @@ class ChecklistSession extends Model
                 SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as partial,
                 SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as non_compliant,
                 SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as na,
+                SUM(CASE WHEN (
+                    status = ?
+                    OR (status IN (?, ?) AND catatan IS NOT NULL AND catatan != \'\')
+                ) THEN 1 ELSE 0 END) as completed,
                 SUM(CASE WHEN tanggal_verifikasi IS NOT NULL THEN 1 ELSE 0 END) as verified_entries
             ', [
                 ChecklistEntry::STATUS_COMPLIANT,
                 ChecklistEntry::STATUS_PARTIAL,
                 ChecklistEntry::STATUS_NON_COMPLIANT,
                 ChecklistEntry::STATUS_NA,
+                ChecklistEntry::STATUS_COMPLIANT,
+                ChecklistEntry::STATUS_NON_COMPLIANT,
+                ChecklistEntry::STATUS_NA,
             ])
             ->first();
 
         $total = (int) $stats->total_entries;
-        $compliant = (int) $stats->compliant;
+        $completed = (int) $stats->completed;
 
         return [
             'total_entries' => $total,
-            'compliant' => $compliant,
+            'compliant' => (int) $stats->compliant,
             'partial' => (int) $stats->partial,
             'non_compliant' => (int) $stats->non_compliant,
             'na' => (int) $stats->na,
             'verified_entries' => (int) $stats->verified_entries,
-            'compliance_percentage' => $total > 0 ? (int) round(($compliant / $total) * 100) : 0,
+            'compliance_percentage' => $total > 0 ? (int) round(($completed / $total) * 100) : 0,
         ];
     }
 }

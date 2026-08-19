@@ -21,7 +21,7 @@ interface RecentSession {
     periode: string;
     framework: string;
     total_entries: number;
-    compliant_entries: number;
+    completed_entries: number;
     created_at: string | null;
 }
 
@@ -273,9 +273,9 @@ export default function PicDashboard({ summary, recent_sessions = [] }: PicDashb
                                         <td className="px-5 py-3.5">
                                             <div className="inline-flex items-center gap-1 rounded-[6px] border px-2 py-0.5 text-xs font-semibold">
                                                 <span
-                                                    className={`bg-surface-2 text-body inline-flex items-center gap-0.5 rounded-[3px] px-1.5 py-0.5 text-[10px] font-semibold ${session.compliant_entries > 0 ? 'text-success' : 'text-muted'}`}
+                                                    className={`bg-surface-2 text-body inline-flex items-center gap-0.5 rounded-[3px] px-1.5 py-0.5 text-[10px] font-semibold ${session.completed_entries > 0 ? 'text-success' : 'text-muted'}`}
                                                 >
-                                                    {session.compliant_entries}/{session.total_entries}
+                                                    {session.completed_entries}/{session.total_entries}
                                                 </span>
                                             </div>
                                         </td>
