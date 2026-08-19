@@ -33,6 +33,7 @@ class ChecklistEntryController extends Controller
             ->join('controls', 'controls.id', '=', 'checklist_entries.control_id')
             ->with([
                 'control:id,framework_id,kode_klausul,judul,kategori',
+                'control.framework:id,nama,versi',
                 'unit:id,nama',
                 'pic:id,name',
                 'admin:id,name',
