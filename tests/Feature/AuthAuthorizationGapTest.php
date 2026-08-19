@@ -9,6 +9,7 @@ use App\Models\WorkUnit;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class AuthAuthorizationGapTest extends TestCase
@@ -53,6 +54,8 @@ class AuthAuthorizationGapTest extends TestCase
     // D6 — pic reaches evidence store (writes any role's data).
     public function test_pic_reaches_evidence_store(): void
     {
+        Storage::fake('supabase');
+
         ['pic' => $pic, 'entry' => $entry] = $this->seedEntry();
 
         $this->actingAs($pic)
