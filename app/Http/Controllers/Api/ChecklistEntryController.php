@@ -136,8 +136,11 @@ class ChecklistEntryController extends Controller
         foreach ($units as $unit) {
             $hasEntries = ChecklistEntry::where('unit_id', $unit->id)->exists();
             if (! $hasEntries) {
-                $pic = User::where('unit_id', $unit->id)->where('role', User::ROLE_PIC)->first()
-                    ?? User::where('role', User::ROLE_PIC)->first();
+                $pic = User::with('role:id,name')
+                    ->where('unit_id', $unit->id)
+                    ->whereHas('role', fn ($q) => $q->where('name', User::ROLE_PIC))
+                    ->first()
+                    ?? User::with('role:id,name')->whereHas('role', fn ($q) => $q->where('name', User::ROLE_PIC))->first();
 
                 if ($pic) {
                     $insertData = [];
@@ -341,8 +344,11 @@ class ChecklistEntryController extends Controller
         $sessionsCreated = 0;
 
         foreach ($units as $unit) {
-            $pic = User::where('unit_id', $unit->id)->where('role', User::ROLE_PIC)->first()
-                ?? User::where('role', User::ROLE_PIC)->first();
+            $pic = User::with('role:id,name')
+                ->where('unit_id', $unit->id)
+                ->whereHas('role', fn ($q) => $q->where('name', User::ROLE_PIC))
+                ->first()
+                ?? User::with('role:id,name')->whereHas('role', fn ($q) => $q->where('name', User::ROLE_PIC))->first();
 
             foreach ($frameworks as $framework) {
                 $frameworkId = $framework?->id;

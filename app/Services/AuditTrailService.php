@@ -21,7 +21,7 @@ class AuditTrailService
         }
 
         $safePerPage = max(1, min((int) ($perPage ?: 25), 100));
-        $query = AuditLog::with(['actor.workUnit'])->orderByDesc('id');
+        $query = AuditLog::with(['actor.workUnit', 'actor.role'])->orderByDesc('id');
 
         if (! empty($filters['action'])) {
             $query->where('aksi', $filters['action']);
