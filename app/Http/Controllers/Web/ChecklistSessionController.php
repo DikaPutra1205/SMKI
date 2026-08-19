@@ -25,7 +25,15 @@ class ChecklistSessionController extends Controller
             ->where('unit_id', $user->unit_id)
             ->withCount([
                 'entries as total_entries',
+                'entries as completed_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_COMPLIANT)
+                    ->orWhere(function ($q2) {
+                        $q2->whereIn('status', [ChecklistEntry::STATUS_NON_COMPLIANT, ChecklistEntry::STATUS_NA])
+                            ->where('catatan', '!=', '')
+                            ->whereNotNull('catatan');
+                    }),
                 'entries as compliant_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_COMPLIANT),
+                'entries as non_compliant_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_NON_COMPLIANT),
+                'entries as na_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_NA),
             ])
             ->orderByDesc('id')
             ->get();

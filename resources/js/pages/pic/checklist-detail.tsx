@@ -518,86 +518,150 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
                 <div className="mb-2 flex items-center justify-between">
                     <span className="text-[11px] font-bold tracking-wider text-blue-600 uppercase">Progress Pengecekan</span>
                     <div className="flex items-baseline gap-1.5">
-                        <span className="text-2xl font-bold text-blue-700 dark:text-blue-400">{progress}%</span>
+                        <span className="text-2xl font-bold text-blue-700 dark:text-blue-400">{progress.percentage}%</span>
                         <span className="text-xs text-blue-500">
-                            {completedEntries}/{totalEntries} Kontrol
+                            {progress.completed}/{progress.total} Kontrol
                         </span>
                     </div>
                 </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-blue-200/50 dark:bg-blue-800/50">
-                    <div className="h-full rounded-full bg-blue-600 transition-all duration-500" style={{ width: `${progress}%` }} />
+                <div className="flex h-2 w-full overflow-hidden rounded-full bg-blue-200/50 dark:bg-blue-800/50">
+                    {progress.compliantCount > 0 && (
+                        <div
+                            className="h-full bg-emerald-500 transition-all duration-500"
+                            style={{ width: `${progress.total > 0 ? (progress.compliantCount / progress.total) * 100 : 0}%` }}
+                        />
+                    )}
+                    {progress.nonCompliantCount > 0 && (
+                        <div
+                            className="h-full bg-red-500 transition-all duration-500"
+                            style={{ width: `${progress.total > 0 ? (progress.nonCompliantCount / progress.total) * 100 : 0}%` }}
+                        />
+                    )}
+                    {progress.naCount > 0 && (
+                        <div
+                            className="h-full bg-slate-300 transition-all duration-500 dark:bg-slate-600"
+                            style={{ width: `${progress.total > 0 ? (progress.naCount / progress.total) * 100 : 0}%` }}
+                        />
+                    )}
                 </div>
             </div>
 
-            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-                <div className="relative flex-1">
-                    <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                    <input
-                        type="text"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Cari kode atau judul kontrol..."
-                        className="w-full rounded-lg border border-slate-200 bg-white py-2 pr-3 pl-9 text-sm text-slate-700 placeholder-slate-400 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
-                    />
+            {pageMeta.length > 0 && (
+                <div className="mb-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+                    <div className="flex items-center justify-between">
+                        <button
+                            type="button"
+                            onClick={handlePrevPage}
+                            disabled={currentPageIndex === 0 || pageLoading}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                        >
+                            <ArrowLeft className="h-4 w-4" />
+                            Sebelumnya
+                        </button>
+
+                        <div className="flex flex-col items-center gap-1">
+                            <span className="text-xs font-medium text-slate-500">
+                                Halaman {currentPageIndex + 1} dari {pageMeta.length}
+                            </span>
+                            {currentPageMeta && (
+                                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                    {currentPageMeta.framework_name} &bull; {formatKategori(currentPageMeta.kategori)}
+                                </span>
+                            )}
+                            {currentPageMeta && <span className="text-[11px] text-slate-400">{currentPageMeta.entry_count} kontrol</span>}
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={handleNextPage}
+                            disabled={currentPageIndex >= pageMeta.length - 1 || pageLoading || !isCurrentPageComplete}
+                            title={!isCurrentPageComplete ? 'Jawab semua kontrol di halaman ini terlebih dahulu' : ''}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                        >
+                            Selanjutnya
+                            <ArrowRight className="h-4 w-4" />
+                        </button>
+                    </div>
+                    {pageLoading && (
+                        <div className="mt-2 flex justify-center">
+                            <span className="text-xs text-blue-500">Memuat halaman...</span>
+                        </div>
+                    )}
+                    {!pageLoading && !isCurrentPageComplete && currentPageIndex < pageMeta.length - 1 && (
+                        <div className="mt-2 flex justify-center">
+                            <span className="text-xs text-amber-500">Isi semua status dan unggah bukti di halaman ini untuk melanjutkan</span>
+                        </div>
+                    )}
                 </div>
-                <select
-                    value={frameworkFilter}
-                    onChange={(e) => setFrameworkFilter(e.target.value)}
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
-                >
-                    <option value="">Semua Framework</option>
-                    {frameworks.map((f) => (
-                        <option key={f.name} value={f.name}>
-                            {f.name} ({f.ver})
-                        </option>
-                    ))}
-                </select>
-                <select
-                    value={kategoriFilter}
-                    onChange={(e) => setKategoriFilter(e.target.value)}
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
-                >
-                    <option value="">Semua Kategori</option>
-                    {kategoris.map((k) => (
-                        <option key={k.value} value={k.value}>
-                            {k.label}
-                        </option>
-                    ))}
-                </select>
-            </div>
+            )}
 
             <div className="space-y-6">
-                {grouped.map(([groupKey, items]) => (
-                    <div key={groupKey}>
+                <div>
+                    {currentPageMeta && (
                         <div className="mb-3 flex items-center gap-3 rounded-xl border border-blue-100 bg-white px-4 py-3 shadow-sm dark:border-blue-900 dark:bg-slate-900">
                             <span className="inline-flex items-center rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-bold text-white shadow-sm">
-                                {items[0].control.framework_name}
+                                {currentPageMeta.framework_name}
                             </span>
                             <span className="text-slate-300 dark:text-slate-600">|</span>
                             <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                                {formatKategori(items[0].control.kategori)}
+                                {formatKategori(currentPageMeta.kategori)}
                             </span>
                             <span className="ml-auto rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                                {items.length} Kontrol
+                                {currentEntries.length} Kontrol
                             </span>
                         </div>
-                        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-                            {items.map((entry) => (
-                                <EntryItemRow key={entry.id} entry={entry} onEntryUpdate={handleEntryUpdate} />
-                            ))}
-                        </div>
+                    )}
+                    <div className="relative mb-3">
+                        <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Cari kode klausul atau judul kontrol..."
+                            className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pr-3 pl-9 text-sm text-slate-700 placeholder-slate-400 transition-colors focus:border-blue-400 focus:ring-1 focus:ring-blue-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:placeholder-slate-500"
+                        />
+                        {searchQuery && (
+                            <button
+                                type="button"
+                                onClick={() => setSearchQuery('')}
+                                className="absolute top-1/2 right-3 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                            >
+                                <XCircle className="h-4 w-4" />
+                            </button>
+                        )}
                     </div>
-                ))}
+                    {searchQuery && filteredEntries.length === 0 && (
+                        <div className="mb-3 rounded-lg border border-slate-100 bg-slate-50 py-4 text-center text-sm text-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-500">
+                            Tidak ada kontrol yang cocok dengan pencarian
+                        </div>
+                    )}
+                    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+                        {filteredEntries.map((entry) => (
+                            <EntryItemRow
+                                key={entry.id}
+                                entryId={entry.id}
+                                onEntryUpdate={handleEntryUpdate}
+                                onEvidenceUpdate={handleEvidenceUpdate}
+                            />
+                        ))}
+                    </div>
+                </div>
             </div>
 
             <div className="mt-8 flex flex-col items-center gap-3">
-                {invalidCount > 0 && <p className="text-xs text-slate-500">{invalidCount} kontrol belum terisi dengan benar</p>}
                 <button
                     type="button"
-                    disabled={invalidCount > 0}
-                    onClick={() => router.get(`/admin/pic/assessments/${session.id}/summary`)}
+                    disabled={progress.invalidCount > 0}
+                    onClick={async () => {
+                        try {
+                            await assessmentStore.flushDirty(session.id);
+                        } catch {
+                            /* continue */
+                        }
+                        router.get(`/admin/pic/assessments/${session.id}/summary`);
+                    }}
                     className={`inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold shadow-sm transition-all ${
-                        invalidCount === 0
+                        progress.invalidCount === 0
                             ? 'bg-blue-600 text-white hover:bg-blue-700'
                             : 'cursor-not-allowed bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-600'
                     }`}
