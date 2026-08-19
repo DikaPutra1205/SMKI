@@ -20,7 +20,7 @@ class DashboardAnalyticsService
      */
     public function resolveScopedUnitId(User $user, ?int $requestedUnitId = null): ?int
     {
-        if ($user->role === 'pic') {
+        if ($user->isPic()) {
             return $user->unit_id ? (int) $user->unit_id : null;
         }
 
@@ -233,7 +233,7 @@ class DashboardAnalyticsService
      */
     public function getRecentActivities(User $user, int $limit = 6): array
     {
-        if (! in_array($user->role, ['superadmin', 'admin_kepatuhan', 'koordinator_smki', 'auditor'])) {
+        if (! $user->hasPermissionTo('audit-log.view')) {
             return [];
         }
 

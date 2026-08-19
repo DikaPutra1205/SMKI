@@ -20,7 +20,7 @@ class ComplianceOfficerService
      */
     public function resolveScopedUnitId(User $user, ?int $requestedUnitId = null): ?int
     {
-        if ($user->role === 'pic') {
+        if ($user->isPic()) {
             return $user->unit_id ? (int) $user->unit_id : null;
         }
 
@@ -92,7 +92,7 @@ class ComplianceOfficerService
     {
         $finding = Finding::with(['control.framework', 'unit', 'pic', 'admin'])->findOrFail($id);
 
-        if ($user->role === 'pic' && $finding->unit_id !== $user->unit_id) {
+        if ($user->isPic() && $finding->unit_id !== $user->unit_id) {
             throw new AuthorizationException('Anda tidak memiliki hak akses untuk temuan unit lain.');
         }
 
@@ -104,7 +104,7 @@ class ComplianceOfficerService
      */
     public function updateFinding(User $user, Finding $finding, array $data): Finding
     {
-        if ($user->role === 'pic' && $finding->unit_id !== $user->unit_id) {
+        if ($user->isPic() && $finding->unit_id !== $user->unit_id) {
             throw new AuthorizationException('Anda tidak memiliki wewenang untuk mengubah temuan unit lain.');
         }
 
@@ -268,7 +268,7 @@ class ComplianceOfficerService
      */
     public function bulkVerifyChecklistEntries(User $user, array $entryIds, string $status, ?string $adminNotes = null): int
     {
-        if (! in_array($user->role, ['superadmin', 'admin_kepatuhan'])) {
+        if (! $user->hasPermissionTo('checklist.bulk-verify')) {
             throw new AuthorizationException('Hanya Admin Kepatuhan dan Superadmin yang memiliki wewenang verifikasi massal.');
         }
 

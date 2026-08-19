@@ -19,8 +19,8 @@ class RbacSeederTest extends TestCase
 
         foreach (config('permissions.roles') as $roleName => $grants) {
             $role = Role::where('name', $roleName)->firstOrFail();
-            $dbKeys = $role->permissions()->orderBy('key')->pluck('key')->all();
-            $this->assertSame($this->sorted($grants), $dbKeys, "Grant mismatch for role {$roleName}");
+            $dbKeys = $role->permissions()->pluck('key')->all();
+            $this->assertEqualsCanonicalizing($this->sorted($grants), $dbKeys, "Grant mismatch for role {$roleName}");
         }
 
         $this->assertSame(

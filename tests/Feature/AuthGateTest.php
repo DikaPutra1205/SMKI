@@ -209,43 +209,43 @@ class AuthGateTest extends TestCase
 
     // ── RBAC Gates (app/Providers/AppServiceProvider.php) ─────────────────────
 
-    public function test_view_audit_logs_and_export_reports_gate_role_matrix(): void
+    public function test_permission_gates_follow_the_role_matrix(): void
     {
-        $allowed = [
-            User::factory()->create(['role' => User::ROLE_SUPERADMIN]),
-            User::factory()->create(['role' => User::ROLE_ADMIN_KEPATUHAN]),
-            User::factory()->create(['role' => User::ROLE_KOORDINATOR_SMKI]),
-            User::factory()->create(['role' => User::ROLE_AUDITOR]),
-        ];
         $pic = User::factory()->create(['role' => User::ROLE_PIC]);
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN_KEPATUHAN]);
+        $koordinator = User::factory()->create(['role' => User::ROLE_KOORDINATOR_SMKI]);
 
-        foreach ($allowed as $user) {
-            $this->assertTrue(Gate::forUser($user)->allows('view-audit-logs'));
-            $this->assertTrue(Gate::forUser($user)->allows('export-reports'));
-        }
+        // audit-log.view: granted to superadmin/admin/koordinator/auditor, not pic
+        $this->assertTrue($admin->hasPermissionTo('audit-log.view'));
+        $this->assertTrue($koordinator->hasPermissionTo('audit-log.view'));
+        $this->assertFalse($pic->hasPermissionTo('audit-log.view'));
 
-        $this->assertTrue(Gate::forUser($pic)->denies('view-audit-logs'));
-        $this->assertTrue(Gate::forUser($pic)->denies('export-reports'));
+        // report.export: same matrix as audit-log.view
+        $this->assertTrue($admin->hasPermissionTo('report.export'));
+        $this->assertFalse($pic->hasPermissionTo('report.export'));
+
+        // checklist.bulk-verify: only superadmin + admin_kepatuhan
+        $this->assertTrue($admin->hasPermissionTo('checklist.bulk-verify'));
+        $this->assertFalse($koordinator->hasPermissionTo('checklist.bulk-verify'));
+        $this->assertFalse($pic->hasPermissionTo('checklist.bulk-verify'));
     }
 
-    public function test_manage_compliance_gate_allows_only_compliance_roles(): void
+    public function test_gate_ability_equals_permission_key(): void
     {
-        $allowed = [
-            User::factory()->create(['role' => User::ROLE_SUPERADMIN]),
-            User::factory()->create(['role' => User::ROLE_ADMIN_KEPATUHAN]),
-        ];
-        $denied = [
-            User::factory()->create(['role' => User::ROLE_KOORDINATOR_SMKI]),
-            User::factory()->create(['role' => User::ROLE_AUDITOR]),
-            User::factory()->create(['role' => User::ROLE_PIC]),
-        ];
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN_KEPATUHAN]);
+        $pic = User::factory()->create(['role' => User::ROLE_PIC]);
 
-        foreach ($allowed as $user) {
-            $this->assertTrue(Gate::forUser($user)->allows('manage-compliance'));
-        }
-        foreach ($denied as $user) {
-            $this->assertTrue(Gate::forUser($user)->denies('manage-compliance'));
-        }
+        $this->assertTrue(Gate::forUser($admin)->allows('checklist.verify'));
+        $this->assertTrue(Gate::forUser($pic)->allows('checklist.verify'));
+        $this->assertTrue(Gate::forUser($admin)->allows('audit-log.view'));
+        $this->assertTrue(Gate::forUser($pic)->denies('audit-log.view'));
+        $this->assertTrue(Gate::forUser($pic)->denies('checklist.bulk-verify'));
+    }
+
+    public function test_unknown_ability_denies(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN_KEPATUHAN]);
+        $this->assertTrue(Gate::forUser($admin)->denies('no.such-permission'));
     }
 
     public function test_user_role_helper_methods(): void

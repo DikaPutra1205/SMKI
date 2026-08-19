@@ -9,6 +9,7 @@ use App\Models\Finding;
 use App\Models\Risk;
 use App\Models\User;
 use App\Observers\SmkiObserver;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -34,17 +35,10 @@ class AppServiceProvider extends ServiceProvider
         Finding::observe(SmkiObserver::class);
         Risk::observe(SmkiObserver::class);
 
-        // RBAC Gates
-        Gate::define('view-audit-logs', function (User $user) {
-            return in_array($user->role, ['superadmin', 'admin_kepatuhan', 'koordinator_smki', 'auditor']);
+        // RBAC: permission keys ARE Gate abilities, granted per role in the DB
+        Gate::before(function (User $user, string $ability) {
+            return $user->hasPermissionTo($ability) ? true : null;
         });
 
-        Gate::define('export-reports', function (User $user) {
-            return in_array($user->role, ['superadmin', 'admin_kepatuhan', 'koordinator_smki', 'auditor']);
-        });
-
-        Gate::define('manage-compliance', function (User $user) {
-            return in_array($user->role, ['superadmin', 'admin_kepatuhan']);
-        });
-    }
+        }
 }

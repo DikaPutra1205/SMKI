@@ -10,7 +10,6 @@ use App\Models\User;
 use App\Models\WorkUnit;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportGeneratorService
@@ -24,7 +23,7 @@ class ReportGeneratorService
      */
     public function getComplianceReportData(User $user, ?int $unitId = null): array
     {
-        if (Gate::forUser($user)->denies('export-reports')) {
+        if (! $user->hasPermissionTo('report.export')) {
             throw new AuthorizationException('Anda tidak memiliki wewenang untuk mengekspor laporan kepatuhan.');
         }
 
@@ -71,7 +70,7 @@ class ReportGeneratorService
      */
     public function exportComplianceSummaryPdf(User $user, ?int $unitId = null): Response
     {
-        if (Gate::forUser($user)->denies('export-reports')) {
+        if (! $user->hasPermissionTo('report.export')) {
             throw new AuthorizationException('Anda tidak memiliki wewenang untuk mengekspor laporan kepatuhan.');
         }
 
@@ -219,7 +218,7 @@ class ReportGeneratorService
      */
     public function exportComplianceSummaryCsv(User $user, ?int $unitId = null): StreamedResponse
     {
-        if (Gate::forUser($user)->denies('export-reports')) {
+        if (! $user->hasPermissionTo('report.export')) {
             throw new AuthorizationException('Anda tidak memiliki wewenang untuk mengekspor laporan kepatuhan.');
         }
 

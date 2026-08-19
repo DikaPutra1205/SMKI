@@ -10,8 +10,13 @@ abstract class TestCase extends BaseTestCase
 {
     use RefreshDatabase;
 
-    protected function afterRefreshingDatabase()
+    protected function setUp(): void
     {
+        parent::setUp();
+
+        // afterRefreshingDatabase seeds once but the per-test transaction
+        // rollBack wipes role_permission rows, so reseed inside each test's
+        // transaction to keep RBAC grants available for every test.
         $this->seed(RolesAndPermissionsSeeder::class);
     }
 }
