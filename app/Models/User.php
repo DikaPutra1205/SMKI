@@ -79,7 +79,11 @@ class User extends Authenticatable
             return [];
         }
 
-        return once(fn () => Cache::remember(Role::permissionsCacheKey($this->role_id), now()->addHour(), fn () => $this->role()->first()?->permissions()->pluck('permissions.key')->all() ?? []));
+        return Cache::remember(
+            Role::permissionsCacheKey($this->role_id),
+            now()->addHour(),
+            fn () => $this->role()->first()?->permissions()->pluck('permissions.key')->all() ?? []
+        );
     }
 
     // The eager-loaded `role` relation may not shadow the appended `role` string in JSON.
