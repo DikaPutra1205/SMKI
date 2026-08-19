@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\ChecklistEntry;
+use App\Models\ChecklistSession;
 use App\Models\ComplianceEvidence;
 use App\Models\Control;
+use App\Models\Framework;
 use App\Models\User;
 use App\Models\WorkUnit;
 use App\Traits\ApiResponse;
@@ -326,34 +328,67 @@ class ChecklistEntryController extends Controller
             return $this->success(['created' => 0], 'Tidak ada unit kerja yang ditemukan.');
         }
 
-        $rowsToInsert = [];
         $now = now();
+        $period = $request->input('periode', $now->format('Y-m'));
+        $periodLabel = $now->translatedFormat('F Y');
+
+        $frameworks = Framework::whereHas('controls')->get();
+        if ($frameworks->isEmpty()) {
+            $frameworks = collect([null]);
+        }
+
+        $rowsToInsert = [];
+        $sessionsCreated = 0;
 
         foreach ($units as $unit) {
             $pic = User::where('unit_id', $unit->id)->where('role', User::ROLE_PIC)->first()
                 ?? User::where('role', User::ROLE_PIC)->first();
 
-            if (! $pic) {
-                continue;
-            }
+            foreach ($frameworks as $framework) {
+                $frameworkId = $framework?->id;
+                $frameworkControls = Control::when($frameworkId, fn ($q) => $q->where('framework_id', $frameworkId))->get();
 
-            $existingControlIds = ChecklistEntry::where('unit_id', $unit->id)
-                ->pluck('control_id')
-                ->flip()
-                ->toArray();
+                if ($frameworkControls->isEmpty()) {
+                    continue;
+                }
 
-            foreach ($controls as $ctrl) {
-                if (! isset($existingControlIds[$ctrl->id])) {
-                    $rowsToInsert[] = [
-                        'control_id' => $ctrl->id,
+                $session = ChecklistSession::firstOrCreate(
+                    [
                         'unit_id' => $unit->id,
-                        'pic_id' => $pic->id,
-                        'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
-                        'catatan' => 'Belum diisi oleh PIC.',
-                        'tanggal_input' => $now,
-                        'created_at' => $now,
-                        'updated_at' => $now,
-                    ];
+                        'framework_id' => $frameworkId,
+                        'periode' => $period,
+                    ],
+                    [
+                        'konteks_penilaian' => "Penilaian Bulanan SMKI - {$periodLabel}".($framework ? " ({$framework->nama})" : ''),
+                        'created_by' => $pic?->id,
+                        'updated_by' => $pic?->id,
+                        'catatan' => 'Otomatis di-generate oleh sistem untuk periode '.$periodLabel,
+                    ]
+                );
+
+                if ($session->wasRecentlyCreated) {
+                    $sessionsCreated++;
+                }
+
+                $existingControlIds = ChecklistEntry::where('session_id', $session->id)
+                    ->pluck('control_id')
+                    ->flip()
+                    ->toArray();
+
+                foreach ($frameworkControls as $ctrl) {
+                    if (! isset($existingControlIds[$ctrl->id])) {
+                        $rowsToInsert[] = [
+                            'session_id' => $session->id,
+                            'control_id' => $ctrl->id,
+                            'unit_id' => $unit->id,
+                            'pic_id' => $pic?->id,
+                            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+                            'catatan' => 'Belum diisi oleh PIC.',
+                            'tanggal_input' => $now,
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ];
+                    }
                 }
             }
         }
@@ -363,10 +398,10 @@ class ChecklistEntryController extends Controller
             ChecklistEntry::insert($chunk);
         }
 
-        $message = $totalCreated === 0
+        $message = ($totalCreated === 0 && $sessionsCreated === 0)
             ? 'Semua checklist sudah lengkap, tidak ada entri baru yang dibuat.'
-            : "{$totalCreated} checklist baru berhasil dibuat.";
+            : "{$sessionsCreated} sesi dan {$totalCreated} checklist baru berhasil dibuat.";
 
-        return $this->success(['created' => $totalCreated], $message);
+        return $this->success(['created' => $totalCreated, 'sessions_created' => $sessionsCreated], $message);
     }
 }
