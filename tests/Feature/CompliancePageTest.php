@@ -47,7 +47,7 @@ class CompliancePageTest extends TestCase
         $response->assertOk();
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('admin-kepatuhan/compliance', false)
+            ->component('shared/controls/compliance', false)
             ->has('frameworks')
             ->has('controls')
             ->has('workUnits')
@@ -78,7 +78,7 @@ class CompliancePageTest extends TestCase
         $response->assertOk();
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('admin-kepatuhan/compliance', false)
+            ->component('shared/controls/compliance', false)
             ->has('sessions', 2)
             ->has('sessions.0', fn (Assert $session) => $session
                 ->where('unit_id', $unit->id)
@@ -119,7 +119,7 @@ class CompliancePageTest extends TestCase
         $response->assertOk();
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('admin-kepatuhan/compliance', false)
+            ->component('shared/controls/compliance', false)
             ->has('controls', 2)
             ->where('controls.0.id', (string) $annexCtrl->id)
             ->where('controls.0.code', 'A.5.4')
@@ -153,7 +153,7 @@ class CompliancePageTest extends TestCase
         $response->assertOk();
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('admin-kepatuhan/compliance', false)
+            ->component('shared/controls/compliance', false)
             ->has('frameworks', 2)
             ->where('frameworks.0.compliance_percentage', 50)
             ->where('frameworks.0.controls_count', 1)

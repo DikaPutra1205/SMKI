@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Web\AuditLogController;
 use App\Http\Controllers\Web\AuthController;
+use App\Http\Controllers\Web\AuditorDashboardController;
 use App\Http\Controllers\Web\ChecklistEntryController;
 use App\Http\Controllers\Web\ChecklistSessionController;
 use App\Http\Controllers\Web\ComplianceController;
@@ -43,21 +44,16 @@ Route::middleware('auth')->group(function () {
         Route::get('/compliance', [ComplianceController::class, 'index'])->name('compliance');
         Route::get('/sessions', [ComplianceController::class, 'sessions'])->name('sessions');
 
-        // ── [DEV ONLY] Test halaman import/export — hapus sebelum production ──────────
-        Route::get('/master-data', function () {
-            return Inertia::render('admin-kepatuhan/master-data-test');
-        })->name('master-data.test');
-
-        // ── Controls CRUD (Inertia-style) ──────────────────────────────────────────
-        Route::post('/controls', [AdminControlController::class, 'store'])->name('controls.store');
-        Route::put('/controls/{control}', [AdminControlController::class, 'update'])->name('controls.update');
-        Route::delete('/controls/{control}', [AdminControlController::class, 'destroy'])->name('controls.destroy');
-
         // ── Checklist Sessions (Inertia-style) ───────────────────────────────────
         Route::post('/checklist-sessions', [ChecklistSessionController::class, 'store'])->name('checklist-sessions.store');
         Route::put('/checklist-sessions/{checklistSession}', [ChecklistSessionController::class, 'update'])->name('checklist-sessions.update');
         Route::delete('/checklist-sessions/{checklistSession}', [ChecklistSessionController::class, 'destroy'])->name('checklist-sessions.destroy');
         Route::post('/checklist-sessions/{id}/restore', [ChecklistSessionController::class, 'restore'])->name('checklist-sessions.restore');
+
+        // ── Controls CRUD (Inertia-style) ──────────────────────────────────────────
+        Route::post('/controls', [AdminControlController::class, 'store'])->name('controls.store');
+        Route::put('/controls/{control}', [AdminControlController::class, 'update'])->name('controls.update');
+        Route::delete('/controls/{control}', [AdminControlController::class, 'destroy'])->name('controls.destroy');
 
         // ── Master Data Export / Import (unified 2-sheet Excel) ───────────────────────
         Route::get('/master-data/export', [AdminControlController::class, 'exportMasterData'])->name('master-data.export');
@@ -69,6 +65,7 @@ Route::middleware('auth')->group(function () {
         Route::put('/findings/{finding}', [ComplianceOfficerController::class, 'updateFinding'])->name('findings.update');
         Route::get('/risks', [ComplianceOfficerController::class, 'risks'])->name('risks.index');
         Route::put('/risks/{risk}', [ComplianceOfficerController::class, 'updateRisk'])->name('risks.update');
+        Route::get('/checklist/bulk-verify', [ComplianceOfficerController::class, 'bulkVerifyPage'])->name('checklist.bulk-verify');
         Route::post('/bulk-verify', [ComplianceOfficerController::class, 'bulkVerify'])->name('bulk-verify');
 
         // ── Audit Trail (Pair B) ───────────────────────────────────────────────────
@@ -85,6 +82,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/frameworks', [FrameworkController::class, 'store'])->name('frameworks.store');
         Route::patch('/frameworks/{framework}', [FrameworkController::class, 'update'])->name('frameworks.update');
         Route::delete('/frameworks/{framework}', [FrameworkController::class, 'destroy'])->name('frameworks.destroy');
+    });
+
+    Route::prefix('admin/auditor')->name('admin.auditor.')->group(function () {
+        Route::get('/dashboard', [AuditorDashboardController::class, 'index'])->name('dashboard');
     });
 
     Route::prefix('admin/pic')->name('admin.pic.')->group(function () {
