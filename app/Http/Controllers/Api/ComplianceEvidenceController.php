@@ -9,6 +9,7 @@ use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 
 class ComplianceEvidenceController extends Controller
@@ -22,6 +23,8 @@ class ComplianceEvidenceController extends Controller
      */
     public function index(Request $request, ChecklistEntry $checklistEntry): JsonResponse
     {
+        Gate::authorize('viewAny', [ComplianceEvidence::class, $checklistEntry]);
+
         $query = $checklistEntry->evidences()->with('uploader:id,name');
 
         if ($request->trashed === 'only' || $request->boolean('only_trashed')) {
@@ -39,10 +42,14 @@ class ComplianceEvidenceController extends Controller
     /** Upload bukti baru — otomatis buat versi baru & tandai revisi */
     public function store(Request $request, ChecklistEntry $checklistEntry): JsonResponse
     {
+        Gate::authorize('create', [ComplianceEvidence::class, $checklistEntry, $request->filled('uploaded_by') ? (int) $request->uploaded_by : null]);
+
         $request->validate([
             'bukti_file' => 'required|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240', // maks 10MB
             'uploaded_by' => 'required|exists:users,id',
         ]);
+
+        $uploaderId = $request->user()?->isPic() ? $request->user()->id : $request->uploaded_by;
 
         // Upload ke Supabase Storage (S3) — lakukan di luar transaksi karena
         // S3/Supabase tidak transactional; batalkan secara manual jika DB gagal.
@@ -56,7 +63,7 @@ class ComplianceEvidenceController extends Controller
         // Hitung versi berikutnya dan simpan record dalam satu transaksi terkunci
         // untuk mencegah race condition: dua request bersamaan bisa membaca max()
         // yang sama dan menghasilkan versi duplikat.
-        $evidence = DB::transaction(function () use ($checklistEntry, $request, $path) {
+        $evidence = DB::transaction(function () use ($checklistEntry, $uploaderId, $path) {
             // lockForUpdate memblokir baris lain yang membaca version_number
             // untuk entry yang sama hingga transaksi ini selesai.
             // Catatan: aggregate (max) tidak bisa dikombinasikan dengan FOR UPDATE
@@ -73,7 +80,7 @@ class ComplianceEvidenceController extends Controller
 
             $evidence = ComplianceEvidence::create([
                 'checklist_entry_id' => $checklistEntry->id,
-                'uploaded_by' => $request->uploaded_by,
+                'uploaded_by' => $uploaderId,
                 'file_url' => $path,
                 'version_number' => $nextVersion,
                 'is_active' => true,
@@ -98,6 +105,8 @@ class ComplianceEvidenceController extends Controller
     /** Soft delete satu bukti */
     public function destroy(ComplianceEvidence $complianceEvidence): JsonResponse
     {
+        Gate::authorize('delete', $complianceEvidence);
+
         $complianceEvidence->delete();
 
         return $this->success(null, 'Bukti berhasil dihapus (soft delete)');
@@ -107,6 +116,8 @@ class ComplianceEvidenceController extends Controller
     public function restore(int $id): JsonResponse
     {
         $evidence = ComplianceEvidence::withTrashed()->findOrFail($id);
+        Gate::authorize('restore', $evidence);
+
         $evidence->restore();
 
         return $this->success($evidence->load('uploader:id,name'), 'Bukti berhasil dipulihkan');

@@ -140,7 +140,7 @@ class ChecklistEntryApiTest extends TestCase
     // Coverage gap: index() keys off the request unit_id param and never scopes
     // by the authenticated user, so any logged-in caller can read any unit's
     // checklist. PASS here proves the absence of tenant scoping (cross-unit leak).
-    public function test_index_cross_unit_read_is_not_scoped(): void
+    public function test_index_cross_unit_read_is_scoped(): void
     {
         $viewer = User::factory()->create(['role' => User::ROLE_PIC]);
         ['unit' => $unit] = $this->seedUnitControlPics();
@@ -148,9 +148,7 @@ class ChecklistEntryApiTest extends TestCase
         $response = $this->actingAs($viewer)
             ->getJson("/api/checklist-entries?unit_id={$unit->id}");
 
-        $response->assertOk();
-        $data = $response->json('data');
-        $this->assertGreaterThan(0, $data['total']);
+        $response->assertForbidden();
     }
 
     public function test_store_creates_entry(): void
@@ -254,8 +252,8 @@ class ChecklistEntryApiTest extends TestCase
     // D6 — verify endpoint reachable by a pic (no authorization layer). Verify, don't fix.
     public function test_verify_reachable_by_pic_role(): void
     {
-        $pic = User::factory()->create(['role' => User::ROLE_PIC]);
         ['unit' => $unit, 'control' => $control] = $this->seedUnitControlPics();
+        $pic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unit->id]);
         $entry = ChecklistEntry::create([
             'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
             'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
@@ -582,7 +580,7 @@ class ChecklistEntryApiTest extends TestCase
 
     // D-gap — verify() trusts the caller's admin_id and never checks unit or role:
     // a PIC of another unit can verify a foreign unit's entry.
-    public function test_verify_cross_unit_not_scoped(): void
+    public function test_verify_cross_unit_is_scoped(): void
     {
         $unitA = WorkUnit::create(['nama' => 'Unit A']);
         $unitB = WorkUnit::create(['nama' => 'Unit B']);
@@ -600,9 +598,7 @@ class ChecklistEntryApiTest extends TestCase
             ->patchJson("/api/checklist-entries/{$entry->id}/verify", [
                 'admin_id' => $picB->id, 'status' => 'compliant',
             ])
-            ->assertOk();
-
-        $this->assertNotNull(ChecklistEntry::find($entry->id)->tanggal_verifikasi);
+            ->assertForbidden();
     }
 
     public function test_generate_monthly_command_is_idempotent_and_assigns_pic(): void

@@ -106,8 +106,7 @@ class ComplianceEvidenceApiTest extends TestCase
         if (! env('RUN_REAL_SUPABASE_E2E')) {
             $this->markTestSkipped('Real Supabase E2E skipped unless RUN_REAL_SUPABASE_E2E is explicitly enabled.');
         }
-        $pic = User::factory()->create(['role' => User::ROLE_PIC]);
-        ['entry' => $entry] = $this->seedEntry();
+        ['entry' => $entry, 'pic' => $pic] = $this->seedEntry();
 
         $file = UploadedFile::fake()->create('bukti.pdf', 500, 'application/pdf');
 
@@ -131,8 +130,7 @@ class ComplianceEvidenceApiTest extends TestCase
         if (! env('SUPABASE_ENDPOINT')) {
             $this->markTestSkipped('SUPABASE_ENDPOINT not set — skipping real-bucket E2E.');
         }
-        $pic = User::factory()->create(['role' => User::ROLE_PIC]);
-        ['entry' => $entry] = $this->seedEntry();
+        ['entry' => $entry, 'pic' => $pic] = $this->seedEntry();
 
         $file = UploadedFile::fake()->create('bukti.pdf', 10240, 'application/pdf');
 
@@ -148,8 +146,7 @@ class ComplianceEvidenceApiTest extends TestCase
     public function test_store_rejects_missing_file(): void
     {
         Storage::fake('supabase');
-        $pic = User::factory()->create(['role' => User::ROLE_PIC]);
-        ['entry' => $entry] = $this->seedEntry();
+        ['entry' => $entry, 'pic' => $pic] = $this->seedEntry();
 
         $this->actingAs($pic)
             ->postJson("/api/checklist-entries/{$entry->id}/evidences", ['uploaded_by' => $pic->id])
@@ -159,8 +156,7 @@ class ComplianceEvidenceApiTest extends TestCase
     public function test_store_rejects_oversized_file(): void
     {
         Storage::fake('supabase');
-        $pic = User::factory()->create(['role' => User::ROLE_PIC]);
-        ['entry' => $entry] = $this->seedEntry();
+        ['entry' => $entry, 'pic' => $pic] = $this->seedEntry();
 
         $file = UploadedFile::fake()->create('bukti.pdf', 10241, 'application/pdf');
 
@@ -174,8 +170,7 @@ class ComplianceEvidenceApiTest extends TestCase
     public function test_store_rejects_non_document_mime(): void
     {
         Storage::fake('supabase');
-        $pic = User::factory()->create(['role' => User::ROLE_PIC]);
-        ['entry' => $entry] = $this->seedEntry();
+        ['entry' => $entry, 'pic' => $pic] = $this->seedEntry();
 
         $file = UploadedFile::fake()->create('bukti.exe', 100, 'application/x-msdownload');
 
@@ -188,8 +183,7 @@ class ComplianceEvidenceApiTest extends TestCase
     public function test_version_increment_and_prior_deactivated(): void
     {
         Storage::fake('supabase');
-        $pic = User::factory()->create(['role' => User::ROLE_PIC]);
-        ['entry' => $entry] = $this->seedEntry();
+        ['entry' => $entry, 'pic' => $pic] = $this->seedEntry();
 
         $this->actingAs($pic)->postJson("/api/checklist-entries/{$entry->id}/evidences",
             ['bukti_file' => UploadedFile::fake()->create('a.pdf', 100, 'application/pdf'), 'uploaded_by' => $pic->id])
@@ -210,8 +204,7 @@ class ComplianceEvidenceApiTest extends TestCase
         $disk->shouldReceive('put')->andReturn(false);
         Storage::shouldReceive('disk')->with('supabase')->andReturn($disk);
 
-        $pic = User::factory()->create(['role' => User::ROLE_PIC]);
-        ['entry' => $entry] = $this->seedEntry();
+        ['entry' => $entry, 'pic' => $pic] = $this->seedEntry();
 
         $this->actingAs($pic)->postJson("/api/checklist-entries/{$entry->id}/evidences",
             ['bukti_file' => UploadedFile::fake()->create('a.pdf', 100, 'application/pdf'), 'uploaded_by' => $pic->id])
@@ -225,8 +218,7 @@ class ComplianceEvidenceApiTest extends TestCase
         $disk->shouldReceive('put')->andReturn(false);
         Storage::shouldReceive('disk')->with('supabase')->andReturn($disk);
 
-        $pic = User::factory()->create(['role' => User::ROLE_PIC]);
-        ['entry' => $entry] = $this->seedEntry();
+        ['entry' => $entry, 'pic' => $pic] = $this->seedEntry();
         $before = $entry->evidences()->count();
 
         $this->actingAs($pic)->patchJson("/api/checklist-entries/{$entry->id}",
@@ -240,8 +232,7 @@ class ComplianceEvidenceApiTest extends TestCase
     public function test_destroy_soft_deletes_evidence(): void
     {
         Storage::fake('supabase');
-        $pic = User::factory()->create(['role' => User::ROLE_PIC]);
-        ['entry' => $entry] = $this->seedEntry();
+        ['entry' => $entry, 'pic' => $pic] = $this->seedEntry();
         $evidence = $entry->evidences()->create([
             'uploaded_by' => $pic->id, 'file_url' => 'bukti/1/a.pdf',
             'version_number' => 1, 'is_active' => true, 'uploaded_at' => now(),
@@ -254,8 +245,7 @@ class ComplianceEvidenceApiTest extends TestCase
     public function test_restore_by_raw_id(): void
     {
         Storage::fake('supabase');
-        $pic = User::factory()->create(['role' => User::ROLE_PIC]);
-        ['entry' => $entry] = $this->seedEntry();
+        ['entry' => $entry, 'pic' => $pic] = $this->seedEntry();
         $evidence = $entry->evidences()->create([
             'uploaded_by' => $pic->id, 'file_url' => 'bukti/1/a.pdf',
             'version_number' => 1, 'is_active' => true, 'uploaded_at' => now(),
@@ -271,7 +261,7 @@ class ComplianceEvidenceApiTest extends TestCase
     // Coverage gap: evidence index is nested under a checklist entry and never
     // scopes by the authenticated user, so any logged-in caller can list any
     // entry's evidence history. PASS here proves the absence of tenant scoping.
-    public function test_index_cross_entry_read_is_not_scoped(): void
+    public function test_index_cross_entry_read_is_scoped(): void
     {
         Storage::fake('supabase');
         $viewer = User::factory()->create(['role' => User::ROLE_PIC]);
@@ -283,14 +273,13 @@ class ComplianceEvidenceApiTest extends TestCase
 
         $this->actingAs($viewer)
             ->getJson("/api/checklist-entries/{$entry->id}/evidences")
-            ->assertOk()
-            ->assertJsonCount(1, 'data');
+            ->assertForbidden();
     }
 
     // Coverage gap: uploaded_by is client-supplied with no check that it equals
     // the authenticated user, so any caller can attribute evidence to any user
     // (e.g. an admin). Documents current behavior.
-    public function test_store_accepts_arbitrary_uploaded_by(): void
+    public function test_store_rejects_arbitrary_uploaded_by(): void
     {
         Storage::fake('supabase');
         $pic = User::factory()->create(['role' => User::ROLE_PIC]);
@@ -299,16 +288,13 @@ class ComplianceEvidenceApiTest extends TestCase
 
         $this->actingAs($pic)->postJson("/api/checklist-entries/{$entry->id}/evidences",
             ['bukti_file' => UploadedFile::fake()->create('a.pdf', 100, 'application/pdf'), 'uploaded_by' => $other->id])
-            ->assertCreated();
-
-        $this->assertDatabaseHas('compliance_evidences', ['checklist_entry_id' => $entry->id, 'uploaded_by' => $other->id]);
+            ->assertForbidden();
     }
 
     public function test_no_download_endpoint_exists(): void
     {
         Storage::fake('supabase');
-        $pic = User::factory()->create(['role' => User::ROLE_PIC]);
-        ['entry' => $entry] = $this->seedEntry();
+        ['entry' => $entry, 'pic' => $pic] = $this->seedEntry();
         $evidence = $entry->evidences()->create([
             'uploaded_by' => $pic->id, 'file_url' => 'bukti/1/a.pdf',
             'version_number' => 1, 'is_active' => true, 'uploaded_at' => now(),
@@ -322,8 +308,7 @@ class ComplianceEvidenceApiTest extends TestCase
     public function test_store_requires_uploaded_by_field(): void
     {
         Storage::fake('supabase');
-        $pic = User::factory()->create(['role' => User::ROLE_PIC]);
-        ['entry' => $entry] = $this->seedEntry();
+        ['entry' => $entry, 'pic' => $pic] = $this->seedEntry();
 
         $this->actingAs($pic)->postJson("/api/checklist-entries/{$entry->id}/evidences",
             ['bukti_file' => UploadedFile::fake()->create('a.pdf', 100, 'application/pdf')])
@@ -334,10 +319,10 @@ class ComplianceEvidenceApiTest extends TestCase
     public function test_store_rejects_unknown_uploaded_by(): void
     {
         Storage::fake('supabase');
-        $pic = User::factory()->create(['role' => User::ROLE_PIC]);
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
         ['entry' => $entry] = $this->seedEntry();
 
-        $this->actingAs($pic)->postJson("/api/checklist-entries/{$entry->id}/evidences",
+        $this->actingAs($admin)->postJson("/api/checklist-entries/{$entry->id}/evidences",
             ['bukti_file' => UploadedFile::fake()->create('a.pdf', 100, 'application/pdf'), 'uploaded_by' => 999999])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['uploaded_by']);
@@ -347,8 +332,7 @@ class ComplianceEvidenceApiTest extends TestCase
     public function test_store_accepts_exact_10mb_boundary_offline(): void
     {
         Storage::fake('supabase');
-        $pic = User::factory()->create(['role' => User::ROLE_PIC]);
-        ['entry' => $entry] = $this->seedEntry();
+        ['entry' => $entry, 'pic' => $pic] = $this->seedEntry();
 
         $this->actingAs($pic)->postJson("/api/checklist-entries/{$entry->id}/evidences",
             ['bukti_file' => UploadedFile::fake()->create('bukti.pdf', 10240, 'application/pdf'), 'uploaded_by' => $pic->id])
@@ -359,8 +343,7 @@ class ComplianceEvidenceApiTest extends TestCase
     public function test_store_records_path_and_resets_verification_status(): void
     {
         Storage::fake('supabase');
-        $pic = User::factory()->create(['role' => User::ROLE_PIC]);
-        ['entry' => $entry] = $this->seedEntry();
+        ['entry' => $entry, 'pic' => $pic] = $this->seedEntry();
         $entry->update(['tanggal_verifikasi' => now()]);
 
         $response = $this->actingAs($pic)->postJson("/api/checklist-entries/{$entry->id}/evidences",
@@ -387,8 +370,7 @@ class ComplianceEvidenceApiTest extends TestCase
     public function test_store_version_continues_past_soft_deleted_versions(): void
     {
         Storage::fake('supabase');
-        $pic = User::factory()->create(['role' => User::ROLE_PIC]);
-        ['entry' => $entry] = $this->seedEntry();
+        ['entry' => $entry, 'pic' => $pic] = $this->seedEntry();
         $v1 = $entry->evidences()->create([
             'uploaded_by' => $pic->id, 'file_url' => 'bukti/1/a.pdf',
             'version_number' => 1, 'is_active' => true, 'uploaded_at' => now(),
@@ -454,8 +436,7 @@ class ComplianceEvidenceApiTest extends TestCase
     public function test_restore_already_active_evidence_keeps_row(): void
     {
         Storage::fake('supabase');
-        $pic = User::factory()->create(['role' => User::ROLE_PIC]);
-        ['entry' => $entry] = $this->seedEntry();
+        ['entry' => $entry, 'pic' => $pic] = $this->seedEntry();
         $evidence = $entry->evidences()->create([
             'uploaded_by' => $pic->id, 'file_url' => 'bukti/1/a.pdf',
             'version_number' => 1, 'is_active' => true, 'uploaded_at' => now(),
@@ -469,7 +450,7 @@ class ComplianceEvidenceApiTest extends TestCase
     // Coverage gap: store() never verifies the authenticated user may upload for
     // this entry; any authenticated caller can target any entry, even another
     // unit's.
-    public function test_store_cross_entry_upload_is_not_scoped(): void
+    public function test_store_cross_entry_upload_is_scoped(): void
     {
         Storage::fake('supabase');
         $viewer = User::factory()->create(['role' => User::ROLE_PIC]);
@@ -477,12 +458,10 @@ class ComplianceEvidenceApiTest extends TestCase
 
         $this->actingAs($viewer)->postJson("/api/checklist-entries/{$entry->id}/evidences",
             ['bukti_file' => UploadedFile::fake()->create('a.pdf', 100, 'application/pdf'), 'uploaded_by' => $pic->id])
-            ->assertCreated();
+            ->assertForbidden();
     }
 
-    // Coverage gap: destroy() has no authorization — any authenticated user can
-    // soft-delete any evidence, even another unit's.
-    public function test_destroy_cross_entry_is_not_scoped(): void
+    public function test_destroy_cross_entry_is_scoped(): void
     {
         Storage::fake('supabase');
         $viewer = User::factory()->create(['role' => User::ROLE_PIC]);
@@ -492,16 +471,14 @@ class ComplianceEvidenceApiTest extends TestCase
             'version_number' => 1, 'is_active' => true, 'uploaded_at' => now(),
         ]);
 
-        $this->actingAs($viewer)->deleteJson("/api/evidences/{$evidence->id}")->assertOk();
-        $this->assertSoftDeleted('compliance_evidences', ['id' => $evidence->id]);
+        $this->actingAs($viewer)->deleteJson("/api/evidences/{$evidence->id}")->assertForbidden();
     }
 
     // ── API update (PATCH) companion for D3: success actually creates evidence ──
     public function test_api_update_creates_evidence_on_success(): void
     {
         Storage::fake('supabase');
-        $pic = User::factory()->create(['role' => User::ROLE_PIC]);
-        ['entry' => $entry] = $this->seedEntry();
+        ['entry' => $entry, 'pic' => $pic] = $this->seedEntry();
 
         $this->actingAs($pic)->patchJson("/api/checklist-entries/{$entry->id}",
             ['status' => ChecklistEntry::STATUS_COMPLIANT, 'bukti_file' => UploadedFile::fake()->create('a.pdf', 100, 'application/pdf'), 'uploaded_by' => $pic->id])
