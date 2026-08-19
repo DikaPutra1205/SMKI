@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\ChecklistEntry;
 use App\Models\ChecklistSession;
 use App\Models\ComplianceEvidence;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ChecklistEntryController extends Controller
 {
@@ -33,6 +35,60 @@ class ChecklistEntryController extends Controller
         $entry->update($updateData);
 
         return response()->json(['ok' => true]);
+    }
+
+    public function batchUpdate(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'session_id' => 'required|integer|exists:checklist_sessions,id',
+            'entries' => 'required|array|min:1|max:100',
+            'entries.*.id' => 'required|integer|exists:checklist_entries,id',
+            'entries.*.status' => 'sometimes|nullable|string|in:compliant,partial,non_compliant,na',
+            'entries.*.catatan' => 'sometimes|nullable|string|max:2000',
+        ]);
+
+        $session = ChecklistSession::where('id', $validated['session_id'])
+            ->where('unit_id', $user->unit_id)
+            ->firstOrFail();
+
+        $entryIds = array_column($validated['entries'], 'id');
+        $entries = ChecklistEntry::whereIn('id', $entryIds)
+            ->where('session_id', $session->id)
+            ->where('pic_id', $user->id)
+            ->get()
+            ->keyBy('id');
+
+        $now = now();
+        $updated = 0;
+
+        DB::transaction(function () use ($validated, $entries, $now, &$updated) {
+            foreach ($validated['entries'] as $item) {
+                $entry = $entries->get($item['id']);
+                if (! $entry) {
+                    continue;
+                }
+
+                $updateData = ['updated_at' => $now];
+
+                if (array_key_exists('status', $item) && $item['status'] !== $entry->status) {
+                    $updateData['status'] = $item['status'];
+                    $updateData['tanggal_verifikasi'] = null;
+                    $updateData['tanggal_input'] = $now;
+                } elseif (array_key_exists('catatan', $item)) {
+                    $updateData['catatan'] = $item['catatan'];
+                    $updateData['tanggal_input'] = $now;
+                }
+
+                if (count($updateData) > 1) {
+                    $entry->update($updateData);
+                    $updated++;
+                }
+            }
+        });
+
+        return response()->json(['ok' => true, 'updated' => $updated]);
     }
 
     public function uploadEvidence(Request $request, int $id)

@@ -1,4 +1,7 @@
+import AssessmentSummarySkeleton from '@/components/skeletons/AssessmentSummarySkeleton';
+import { usePageLoading } from '@/hooks/usePageLoading';
 import AppLayout from '@/layouts/AppLayout';
+import { assessmentStore } from '@/stores/assessmentStore';
 import { Head, router } from '@inertiajs/react';
 import { AlertTriangle, ArrowLeft, CheckCircle2, Clock, FileText, Send, Shield, ShieldAlert, ShieldCheck, XCircle } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
@@ -303,6 +306,7 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
     const submittingRef = useRef(false);
     const [frameworkFilter, setFrameworkFilter] = useState('');
     const [kategoriFilter, setKategoriFilter] = useState('');
+    const isLoading = usePageLoading();
 
     const frameworks = useMemo(() => {
         const map = new Map<string, string>();
@@ -336,10 +340,15 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
 
     const hasActiveFilter = frameworkFilter !== '' || kategoriFilter !== '';
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (submittingRef.current) return;
         submittingRef.current = true;
         setSubmitting(true);
+        try {
+            await assessmentStore.flushDirty(session.id);
+        } catch {
+            // continue anyway
+        }
         router.post(
             `/admin/pic/assessments/${session.id}/submit`,
             {},
@@ -354,6 +363,10 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
 
     const complianceColor =
         summary.compliance_percentage >= 80 ? 'text-emerald-600' : summary.compliance_percentage >= 50 ? 'text-amber-600' : 'text-red-600';
+
+    if (isLoading) {
+        return <AssessmentSummarySkeleton />;
+    }
 
     return (
         <AppLayout>

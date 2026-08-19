@@ -1,3 +1,5 @@
+import AssessmentsListSkeleton from '@/components/skeletons/AssessmentsListSkeleton';
+import { usePageLoading } from '@/hooks/usePageLoading';
 import AppLayout from '@/layouts/AppLayout';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { AlertTriangle, CheckCircle2, ChevronRight, ClipboardCheck, Plus, X } from 'lucide-react';
@@ -39,6 +41,7 @@ export default function Assessments({ sessions, user_unit }: AssessmentsProps) {
     const { flash } = usePage<{ flash?: { type: string; message: string } }>().props;
     const [flashVisible, setFlashVisible] = useState(false);
     const [showModal, setShowModal] = useState(false);
+    const isLoading = usePageLoading();
 
     useEffect(() => {
         if (flash?.message) {
@@ -49,6 +52,10 @@ export default function Assessments({ sessions, user_unit }: AssessmentsProps) {
     }, [flash]);
 
     const sorted = useMemo(() => [...sessions].sort((a, b) => b.id - a.id), [sessions]);
+
+    if (isLoading) {
+        return <AssessmentsListSkeleton />;
+    }
 
     return (
         <AppLayout>
