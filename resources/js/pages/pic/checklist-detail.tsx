@@ -1,8 +1,15 @@
+import ChecklistDetailSkeleton from '@/components/skeletons/ChecklistDetailSkeleton';
+import SyncWorker from '@/components/SyncWorker';
+import { useAssessmentEntry, useAssessmentStore } from '@/hooks/useAssessmentStore';
+import { usePageLoading } from '@/hooks/usePageLoading';
 import AppLayout from '@/layouts/AppLayout';
+import { assessmentStore } from '@/stores/assessmentStore';
 import { Head, router, usePage } from '@inertiajs/react';
 import {
     AlertTriangle,
     ArrowDownToLine,
+    ArrowLeft,
+    ArrowRight,
     ArrowUpToLine,
     Check,
     CheckCircle2,
@@ -17,38 +24,6 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-interface ControlData {
-    id: number;
-    framework_id: number;
-    kode_klausul: string;
-    judul: string;
-    deskripsi: string | null;
-    kategori: string;
-    framework_name: string;
-    framework_versi: string;
-}
-
-interface EvidenceData {
-    id: number;
-    checklist_entry_id: number;
-    version_number: number;
-    file_url: string;
-    nama_file: string;
-    is_active: boolean;
-}
-
-interface EntryItem {
-    id: number;
-    control_id: number;
-    status: string;
-    catatan: string | null;
-    catatan_admin: string | null;
-    tanggal_input: string | null;
-    tanggal_verifikasi: string | null;
-    control: ControlData;
-    active_evidence: EvidenceData | null;
-}
-
 interface SessionData {
     id: number;
     konteks_penilaian: string;
@@ -61,9 +36,52 @@ interface SessionData {
     framework: { id: number; nama: string; versi: string } | null;
 }
 
+interface PageMeta {
+    index: number;
+    framework_name: string;
+    kategori: string;
+    entry_count: number;
+}
+
+interface ChecklistPageResponse {
+    entries: EntryInput[];
+    page_meta: PageMeta[];
+    total_entries: number;
+}
+
+interface EntryInput {
+    id: number;
+    control_id: number;
+    status: string;
+    catatan: string | null;
+    catatan_admin: string | null;
+    tanggal_input: string | null;
+    tanggal_verifikasi: string | null;
+    control: {
+        id: number;
+        framework_id: number;
+        kode_klausul: string;
+        judul: string;
+        deskripsi: string | null;
+        kategori: string;
+        framework_name: string;
+        framework_versi: string;
+    };
+    active_evidence: {
+        id: number;
+        checklist_entry_id: number;
+        version_number: number;
+        file_url: string;
+        nama_file: string;
+        is_active: boolean;
+    } | null;
+}
+
 interface ChecklistDetailProps {
     session: SessionData;
-    entries: EntryItem[];
+    initialEntries: EntryInput[];
+    pageMeta: PageMeta[];
+    totalEntries: number;
 }
 
 const STATUS_OPTIONS = [
@@ -87,85 +105,84 @@ function formatKategori(kategori: string): string {
     return kategori.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function EntryItemRow({ entry, onEntryUpdate }: { entry: EntryItem; onEntryUpdate: (id: number, data: Partial<EntryItem>) => void }) {
-    const [localStatus, setLocalStatus] = useState(entry.status);
-    const [localCatatan, setLocalCatatan] = useState(entry.catatan || '');
+function fetchChecklistPage(sessionId: number, page: number): Promise<ChecklistPageResponse> {
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `/admin/pic/assessments/${sessionId}/checklist-page?page=${page}`);
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+        xhr.setRequestHeader('Accept', 'application/json');
+        xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                resolve(JSON.parse(xhr.responseText));
+            } else {
+                reject(new Error(`HTTP ${xhr.status}`));
+            }
+        };
+        xhr.onerror = () => reject(new Error('Network error'));
+        xhr.send();
+    });
+}
+
+function EntryItemRow({
+    entryId,
+    onEntryUpdate,
+    onEvidenceUpdate,
+}: {
+    entryId: number;
+    onEntryUpdate: (id: number, changes: Record<string, unknown>) => void;
+    onEvidenceUpdate: (
+        id: number,
+        evidence: { id: number; checklist_entry_id: number; version_number: number; file_url: string; nama_file: string; is_active: boolean },
+    ) => void;
+}) {
+    const entry = useAssessmentEntry(entryId);
+    const [localCatatan, setLocalCatatan] = useState(entry?.catatan || '');
     const [saveState, setSaveState] = useState<'idle' | 'saved'>('idle');
     const [uploading, setUploading] = useState(false);
-
-    const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-    const abortRef = useRef<AbortController | null>(null);
     const savedTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-    const saveToServer = useCallback(
-        (data: Record<string, unknown>) => {
-            if (abortRef.current) abortRef.current.abort();
-            abortRef.current = new AbortController();
-
-            fetch(`/admin/pic/checklist-entries/${entry.id}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-XSRF-TOKEN': getCsrfToken(),
-                },
-                body: JSON.stringify(data),
-                signal: abortRef.current.signal,
-            })
-                .then((r) => {
-                    if (!r.ok) throw new Error();
-                    return r.json();
-                })
-                .then(() => {
-                    setSaveState('saved');
-                    if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
-                    savedTimeoutRef.current = setTimeout(() => setSaveState('idle'), 2000);
-                })
-                .catch(() => {
-                    /* silent */
-                });
-        },
-        [entry.id],
-    );
-
-    const debouncedSave = useCallback(
-        (data: Record<string, unknown>) => {
-            if (debounceRef.current) clearTimeout(debounceRef.current);
-            debounceRef.current = setTimeout(() => saveToServer(data), 800);
-        },
-        [saveToServer],
-    );
+    useEffect(() => {
+        if (entry?.catatan !== undefined && entry.catatan !== localCatatan) {
+            setLocalCatatan(entry.catatan || '');
+        }
+    }, [entry?.catatan]);
 
     useEffect(
         () => () => {
-            if (debounceRef.current) clearTimeout(debounceRef.current);
-            if (abortRef.current) abortRef.current.abort();
             if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
         },
         [],
     );
 
+    const showSaved = useCallback(() => {
+        setSaveState('saved');
+        if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
+        savedTimeoutRef.current = setTimeout(() => setSaveState('idle'), 2000);
+    }, []);
+
     const handleStatusClick = useCallback(
         (status: string) => {
-            setLocalStatus(status);
-            onEntryUpdate(entry.id, { status });
-            debouncedSave({ status });
+            onEntryUpdate(entryId, { status });
+            showSaved();
         },
-        [entry.id, onEntryUpdate, debouncedSave],
+        [entryId, onEntryUpdate, showSaved],
     );
 
     const handleCatatanInput = useCallback(
         (value: string) => {
             setLocalCatatan(value);
-            onEntryUpdate(entry.id, { catatan: value });
-            debouncedSave({ catatan: value });
+            onEntryUpdate(entryId, { catatan: value });
+            showSaved();
         },
-        [entry.id, onEntryUpdate, debouncedSave],
+        [entryId, onEntryUpdate, showSaved],
     );
 
+    if (!entry) return null;
+
     const isVerified = entry.tanggal_verifikasi !== null;
-    const isCatatanRequired = localStatus === 'non_compliant' || localStatus === 'na';
+    const isCatatanRequired = entry.status === 'non_compliant' || entry.status === 'na';
     const isCatatanMissing = isCatatanRequired && !localCatatan.trim();
+    const isEvidenceMissing = !entry.active_evidence;
 
     return (
         <div className="border-b border-slate-100 py-5 last:border-b-0 dark:border-slate-800">
@@ -197,7 +214,7 @@ function EntryItemRow({ entry, onEntryUpdate }: { entry: EntryItem; onEntryUpdat
             <div className="mb-3 flex flex-wrap gap-2">
                 {STATUS_OPTIONS.map((opt) => {
                     const Icon = opt.icon;
-                    const isActive = localStatus === opt.value;
+                    const isActive = entry.status === opt.value;
                     return (
                         <button
                             key={opt.value}
@@ -265,13 +282,13 @@ function EntryItemRow({ entry, onEntryUpdate }: { entry: EntryItem; onEntryUpdat
                                 fd.append('bukti_file', file);
                                 fetch(`/admin/pic/checklist-entries/${entry.id}/evidence`, {
                                     method: 'POST',
-                                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': getCsrfToken() },
+                                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': getCsrfToken(), Accept: 'application/json' },
                                     body: fd,
                                 })
                                     .then((r) => r.json())
                                     .then((data) => {
                                         if (data?.evidence) {
-                                            onEntryUpdate(entry.id, { active_evidence: data.evidence });
+                                            onEvidenceUpdate(entry.id, data.evidence);
                                         }
                                         setSaveState('saved');
                                         if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
@@ -289,6 +306,12 @@ function EntryItemRow({ entry, onEntryUpdate }: { entry: EntryItem; onEntryUpdat
                     <div className="flex items-center gap-1 text-[11px] font-medium text-red-500">
                         <XCircle className="h-3 w-3" />
                         Catatan wajib diisi untuk status ini
+                    </div>
+                )}
+                {isEvidenceMissing && (
+                    <div className="flex items-center gap-1 text-[11px] font-medium text-amber-500">
+                        <XCircle className="h-3 w-3" />
+                        Bukti wajib diunggah
                     </div>
                 )}
             </div>
@@ -310,14 +333,90 @@ function EntryItemRow({ entry, onEntryUpdate }: { entry: EntryItem; onEntryUpdat
     );
 }
 
-export default function ChecklistDetail({ session, entries: initialEntries }: ChecklistDetailProps) {
+export default function ChecklistDetail({ session, initialEntries, pageMeta, totalEntries }: ChecklistDetailProps) {
     const { flash } = usePage<{ flash?: { type: string; message: string } }>().props;
     const [flashVisible, setFlashVisible] = useState(false);
-    const [entries, setEntries] = useState(initialEntries);
-    const [search, setSearch] = useState('');
-    const [frameworkFilter, setFrameworkFilter] = useState('');
-    const [kategoriFilter, setKategoriFilter] = useState('');
+    const [currentPageIndex, setCurrentPageIndex] = useState(0);
+    const [pageLoading, setPageLoading] = useState(false);
     const [atBottom, setAtBottom] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const isLoading = usePageLoading();
+
+    const {
+        initialize,
+        updateEntry,
+        updateEvidence,
+        entries: storeEntries,
+        computeProgress,
+        setCurrentPage,
+        setPageEntries,
+        getPageEntries,
+        hasPage,
+    } = useAssessmentStore();
+
+    const loadPage = useCallback(
+        async (pageIndex: number) => {
+            if (hasPage(pageIndex)) {
+                setCurrentPage(pageIndex);
+                setCurrentPageIndex(pageIndex);
+                return;
+            }
+            setPageLoading(true);
+            try {
+                const data = await fetchChecklistPage(session.id, pageIndex);
+                setPageEntries(pageIndex, data.entries as unknown as import('@/stores/assessmentStore').EntryItem[]);
+                setCurrentPage(pageIndex);
+                setCurrentPageIndex(pageIndex);
+            } finally {
+                setPageLoading(false);
+            }
+        },
+        [session.id, hasPage, setCurrentPage, setPageEntries],
+    );
+
+    useEffect(() => {
+        initialize(session.id, initialEntries as unknown as import('@/stores/assessmentStore').EntryItem[], pageMeta, totalEntries);
+        setPageEntries(0, initialEntries as unknown as import('@/stores/assessmentStore').EntryItem[]);
+        setCurrentPage(0);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    useEffect(() => {
+        if (pageMeta.length <= 1) return;
+        const pagesToFetch: number[] = [];
+        for (let p = 1; p < pageMeta.length; p++) {
+            if (!hasPage(p)) {
+                pagesToFetch.push(p);
+            }
+        }
+        for (const p of pagesToFetch) {
+            fetchChecklistPage(session.id, p).then((data) => {
+                setPageEntries(p, data.entries as unknown as import('@/stores/assessmentStore').EntryItem[]);
+            });
+        }
+    }, [session.id, pageMeta, hasPage, setPageEntries]);
+
+    const currentEntries: EntryInput[] = useMemo(() => {
+        return getPageEntries(currentPageIndex) ?? [];
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentPageIndex, getPageEntries, storeEntries]);
+
+    const filteredEntries = useMemo(() => {
+        if (!searchQuery.trim()) return currentEntries;
+        const q = searchQuery.toLowerCase();
+        return currentEntries.filter(
+            (e) =>
+                e.control.kode_klausul.toLowerCase().includes(q) ||
+                e.control.judul.toLowerCase().includes(q) ||
+                (e.control.deskripsi && e.control.deskripsi.toLowerCase().includes(q)),
+        );
+    }, [currentEntries, searchQuery]);
+
+    const currentPageMeta = pageMeta[currentPageIndex];
+
+    const isCurrentPageComplete = useMemo(() => {
+        if (currentEntries.length === 0) return false;
+        return currentEntries.every((e) => e.status && e.status !== '' && e.active_evidence);
+    }, [currentEntries]);
 
     useEffect(() => {
         const onScroll = () => {
@@ -346,67 +445,44 @@ export default function ChecklistDetail({ session, entries: initialEntries }: Ch
         }
     }, [flash]);
 
-    const frameworks = useMemo(() => {
-        const map = new Map<string, { name: string; ver: string }>();
-        entries.forEach((e) => map.set(e.control.framework_name, { name: e.control.framework_name, ver: e.control.framework_versi }));
-        return Array.from(map.values());
-    }, [entries]);
+    const progress = computeProgress();
 
-    const kategoris = useMemo(() => {
-        const set = new Set(entries.map((e) => e.control.kategori));
-        return Array.from(set)
-            .sort()
-            .map((k) => ({
-                value: k,
-                label: formatKategori(k),
-            }));
-    }, [entries]);
+    const handleEntryUpdate = useCallback(
+        (entryId: number, data: Record<string, unknown>) => {
+            updateEntry(entryId, data as Partial<import('@/stores/assessmentStore').EntryItem>);
+        },
+        [updateEntry],
+    );
 
-    const filtered = useMemo(() => {
-        let result = entries;
-        if (search) {
-            const q = search.toLowerCase();
-            result = result.filter((e) => e.control.kode_klausul.toLowerCase().includes(q) || e.control.judul.toLowerCase().includes(q));
+    const handleEvidenceUpdate = useCallback(
+        (entryId: number, evidence: import('@/stores/assessmentStore').EvidenceData) => {
+            updateEvidence(entryId, evidence);
+        },
+        [updateEvidence],
+    );
+
+    const handlePrevPage = () => {
+        if (currentPageIndex > 0) {
+            loadPage(currentPageIndex - 1);
+            scrollToTop();
         }
-        if (frameworkFilter) {
-            result = result.filter((e) => e.control.framework_name === frameworkFilter);
+    };
+
+    const handleNextPage = () => {
+        if (currentPageIndex < pageMeta.length - 1) {
+            loadPage(currentPageIndex + 1);
+            scrollToTop();
         }
-        if (kategoriFilter) {
-            result = result.filter((e) => e.control.kategori === kategoriFilter);
-        }
-        return result;
-    }, [entries, search, frameworkFilter, kategoriFilter]);
+    };
 
-    const grouped = useMemo(() => {
-        const groups = new Map<string, EntryItem[]>();
-        filtered.forEach((e) => {
-            const key = `${e.control.framework_name} \u2022 ${formatKategori(e.control.kategori)}`;
-            if (!groups.has(key)) groups.set(key, []);
-            groups.get(key)!.push(e);
-        });
-        return Array.from(groups.entries());
-    }, [filtered]);
-
-    const totalEntries = entries.length;
-    const completedEntries = entries.filter(
-        (e) =>
-            e.status === 'compliant' ||
-            (e.status === 'non_compliant' && e.catatan && e.catatan.trim()) ||
-            (e.status === 'na' && e.catatan && e.catatan.trim()),
-    ).length;
-    const progress = totalEntries > 0 ? Math.round((completedEntries / totalEntries) * 100) : 0;
-
-    const invalidCount = entries
-        .filter((e) => !e.status || e.status === 'non_compliant' || e.status === 'na')
-        .filter((e) => !e.catatan || !e.catatan.trim()).length;
-
-    const handleEntryUpdate = useCallback((entryId: number, data: Partial<EntryItem>) => {
-        setEntries((prev) => prev.map((e) => (e.id === entryId ? { ...e, ...data } : e)));
-    }, []);
+    if (isLoading) {
+        return <ChecklistDetailSkeleton />;
+    }
 
     return (
         <AppLayout>
             <Head title={session.konteks_penilaian} />
+            <SyncWorker sessionId={session.id} />
 
             {flash?.message && flashVisible && (
                 <div className="mb-4 flex items-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium shadow-sm">
