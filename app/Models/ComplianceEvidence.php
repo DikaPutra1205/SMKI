@@ -55,26 +55,22 @@ class ComplianceEvidence extends Model
 
     public function getFileUrlAttribute(): string
     {
-        $raw = $this->attributes['file_url'] ?? '';
-
-        if (filter_var($raw, FILTER_VALIDATE_URL)) {
-            $bucket = config('filesystems.disks.supabase.bucket');
-            $prefix = "/storage/v1/s3/{$bucket}/";
-            $pos = strpos($raw, $prefix);
-            $key = $pos !== false ? substr($raw, $pos + strlen($prefix)) : parse_url($raw, PHP_URL_PATH);
-            $key = rawurldecode($key);
-        } else {
-            $key = $raw;
-        }
+        $key = $this->attributes['file_url'] ?? '';
 
         if (! $key) {
-            return $raw;
+            return '';
+        }
+
+        if (filter_var($key, FILTER_VALIDATE_URL)) {
+            return $key;
         }
 
         try {
             return Storage::disk('supabase')->temporaryUrl($key, now()->addMinutes(30));
-        } catch (\Throwable) {
-            return $raw;
+        } catch (\Throwable $e) {
+            report($e);
+
+            return $key;
         }
     }
 
