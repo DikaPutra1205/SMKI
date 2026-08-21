@@ -8,7 +8,7 @@ import { Toast } from '@/components/ui/Toast';
 import AppLayout from '@/layouts/AppLayout';
 import { t } from '@/lib/i18n';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { CheckCircle2, FileText, Search, XCircle } from 'lucide-react';
+import { CheckCircle2, CheckSquare, FileText, Search, Square, X, XCircle } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 interface ControlRef {
@@ -82,6 +82,7 @@ export default function BulkVerify({ entries, workUnits = [], filters = {} }: Bu
     const [searchQuery, setSearchQuery] = useState(filters.search || '');
     const [selectedStatus, setSelectedStatus] = useState<string>(filters.status || 'all');
     const [selectedUnit, setSelectedUnit] = useState<string>(filters.unit_id || 'all');
+    const [selectedSessionId] = useState<string>(filters.session_id || '');
     const [verification, setVerification] = useState<string>(() => {
         const v = filters.is_verified;
         if (!v || v === '' || v === 'all') return 'all';
@@ -89,12 +90,22 @@ export default function BulkVerify({ entries, workUnits = [], filters = {} }: Bu
     });
     const isFirstRender = useRef(true);
 
+    // ── Selection-mode state (photo-picker pattern) ───────────────────────────
+    const [selectionMode, setSelectionMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
     const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
     const [adminNote, setAdminNote] = useState('');
     const [busy, setBusy] = useState(false);
 
     const form = useForm({ entry_ids: [] as number[], status: '', admin_notes: '' });
+
+    /** Exit selection mode and deselect everything. */
+    function exitSelectionMode() {
+        setSelectionMode(false);
+        setSelectedIds(new Set());
+        setAdminNote('');
+        setConfirmAction(null);
+    }
 
     useEffect(() => {
         if (flash?.message) {
@@ -118,18 +129,20 @@ export default function BulkVerify({ entries, workUnits = [], filters = {} }: Bu
                     status: selectedStatus !== 'all' ? selectedStatus : undefined,
                     unit_id: selectedUnit !== 'all' ? selectedUnit : undefined,
                     is_verified: verification === 'all' ? undefined : verification === 'verified' ? '1' : '0',
+                    session_id: selectedSessionId || undefined,
                 },
                 { preserveState: true, replace: true },
             );
         }, 350);
 
         return () => clearTimeout(timer);
-    }, [searchQuery, selectedStatus, selectedUnit, verification]);
+    }, [searchQuery, selectedStatus, selectedUnit, verification, selectedSessionId]);
 
     const pageIds = items.map((i) => i.id);
-    const allSelectedOnPage = pageIds.length > 0 && pageIds.every((id) => selectedIds.has(id));
+    const allSelectedOnPage = selectionMode && pageIds.length > 0 && pageIds.every((id) => selectedIds.has(id));
 
     function toggleAll() {
+        if (!selectionMode) return;
         setSelectedIds((prev) => {
             const next = new Set(prev);
             if (allSelectedOnPage) {
@@ -142,6 +155,7 @@ export default function BulkVerify({ entries, workUnits = [], filters = {} }: Bu
     }
 
     function toggleOne(id: number) {
+        if (!selectionMode) return;
         setSelectedIds((prev) => {
             const next = new Set(prev);
             if (next.has(id)) next.delete(id);
@@ -167,15 +181,19 @@ export default function BulkVerify({ entries, workUnits = [], filters = {} }: Bu
             preserveScroll: true,
             onSuccess: () => {
                 setBusy(false);
-                setSelectedIds(new Set());
-                setAdminNote('');
-                setConfirmAction(null);
+                exitSelectionMode();
             },
             onError: () => setBusy(false),
         });
     }
 
-    const breadcrumbs = [{ label: t('common.dashboard'), href: '/admin/kepatuhan/dashboard' }, { label: t('bulkVerify.title') }];
+    const breadcrumbs = selectedSessionId
+        ? [
+              { label: t('common.dashboard'), href: '/admin/kepatuhan/dashboard' },
+              { label: t('bulkVerify.title'), href: '/admin/kepatuhan/checklist/bulk-verify' },
+              { label: 'Detail Sesi' },
+          ]
+        : [{ label: t('common.dashboard'), href: '/admin/kepatuhan/dashboard' }, { label: t('bulkVerify.title') }];
 
     return (
         <AppLayout breadcrumbs={breadcrumbs} currentPath="/admin/kepatuhan/checklist/bulk-verify">
@@ -188,15 +206,47 @@ export default function BulkVerify({ entries, workUnits = [], filters = {} }: Bu
                 onDismiss={() => setFlashVisible(false)}
             />
 
+            {/* ── Page header + "Pilih" toggle ── */}
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">{t('bulkVerify.title')}</h1>
                     <p className="text-muted text-sm">{t('bulkVerify.subtitle')}</p>
                 </div>
+
+                {/* Photo-picker style: only one button visible at a time */}
+                {!selectionMode ? (
+                    <button
+                        type="button"
+                        onClick={() => setSelectionMode(true)}
+                        className="bg-primary hover:bg-primary/90 inline-flex items-center gap-2 self-start rounded-[10px] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors sm:self-auto"
+                    >
+                        <CheckSquare className="h-4 w-4" />
+                        Pilih / Verifikasi Massal
+                    </button>
+                ) : (
+                    <button
+                        type="button"
+                        onClick={exitSelectionMode}
+                        className="border-border-strong hover:bg-surface inline-flex items-center gap-2 self-start rounded-[10px] border bg-white px-4 py-2 text-sm font-semibold text-body shadow-sm transition-colors sm:self-auto"
+                    >
+                        <X className="h-4 w-4" />
+                        Batal
+                    </button>
+                )}
             </div>
 
+            {/* ── Selection-mode active banner ── */}
+            {selectionMode && (
+                <div className="border-primary/30 bg-primary/5 rounded-[12px] border px-4 py-3 flex items-center gap-3">
+                    <Square className="h-4 w-4 text-primary shrink-0" />
+                    <p className="text-sm font-medium text-navy">
+                        Mode pilih aktif — centang baris yang ingin diverifikasi, lalu pilih tindakan di bawah.
+                    </p>
+                </div>
+            )}
+
             {/* ── Filter bar ── */}
-            <div className="border-border mt-5 flex flex-col gap-3 rounded-[14px] border bg-white p-4 lg:flex-row lg:items-center">
+            <div className="border-border flex flex-col gap-3 rounded-[14px] border bg-white p-4 lg:flex-row lg:items-center">
                 <div className="relative flex-1">
                     <Search className="text-faint pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                     <input
@@ -232,9 +282,9 @@ export default function BulkVerify({ entries, workUnits = [], filters = {} }: Bu
                 </div>
             </div>
 
-            {/* ── Bulk action bar ── */}
-            {selectedIds.size > 0 && (
-                <div className="border-primary/30 bg-primary/5 mt-5 rounded-[14px] border p-4">
+            {/* ── Bulk action bar — only visible in selection mode with items selected ── */}
+            {selectionMode && selectedIds.size > 0 && (
+                <div className="border-primary/30 bg-primary/5 rounded-[14px] border p-4">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <span className="text-navy text-sm font-semibold">{t('bulkVerify.selected', selectedIds.size)}</span>
                         <div className="flex items-center gap-3">
@@ -269,20 +319,23 @@ export default function BulkVerify({ entries, workUnits = [], filters = {} }: Bu
             )}
 
             {/* ── Table ── */}
-            <div className="border-border mt-5 overflow-hidden rounded-[14px] border bg-white">
+            <div className="border-border overflow-hidden rounded-[14px] border bg-white">
                 <div className="overflow-x-auto">
                     <table className="w-full min-w-[900px] text-left text-sm">
                         <thead>
                             <tr className="border-border bg-surface/60 text-muted border-b text-xs">
-                                <th className="w-10 px-4 py-3">
-                                    <input
-                                        type="checkbox"
-                                        checked={allSelectedOnPage}
-                                        onChange={toggleAll}
-                                        aria-label={t('bulkVerify.selectAll')}
-                                        className="border-border-strong accent-primary h-4 w-4 rounded"
-                                    />
-                                </th>
+                                {/* Checkbox col: only shown in selection mode */}
+                                {selectionMode && (
+                                    <th className="w-10 px-4 py-3">
+                                        <input
+                                            type="checkbox"
+                                            checked={allSelectedOnPage}
+                                            onChange={toggleAll}
+                                            aria-label={t('bulkVerify.selectAll')}
+                                            className="border-border-strong accent-primary h-4 w-4 rounded"
+                                        />
+                                    </th>
+                                )}
                                 <th className="px-4 py-3 font-semibold">{t('bulkVerify.code')}</th>
                                 <th className="px-4 py-3 font-semibold">{t('bulkVerify.control')}</th>
                                 <th className="px-4 py-3 font-semibold">{t('bulkVerify.workUnit')}</th>
@@ -295,7 +348,7 @@ export default function BulkVerify({ entries, workUnits = [], filters = {} }: Bu
                         <tbody>
                             {items.length === 0 ? (
                                 <tr>
-                                    <td colSpan={8} className="px-4 py-10">
+                                    <td colSpan={selectionMode ? 9 : 8} className="px-4 py-10">
                                         <EmptyState message={t('bulkVerify.noEntries')} />
                                     </td>
                                 </tr>
@@ -307,17 +360,32 @@ export default function BulkVerify({ entries, workUnits = [], filters = {} }: Bu
                                         ? `${entry.control.framework.nama}${entry.control.framework.versi ? `:${entry.control.framework.versi}` : ''}`
                                         : '';
                                     const hasEvidence = Boolean(entry.active_evidence?.file_url);
+                                    const isChecked = selectedIds.has(entry.id);
 
                                     return (
-                                        <tr key={entry.id} className="border-border hover:bg-surface/50 border-b last:border-0">
-                                            <td className="px-4 py-3">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedIds.has(entry.id)}
-                                                    onChange={() => toggleOne(entry.id)}
-                                                    className="border-border-strong accent-primary h-4 w-4 rounded"
-                                                />
-                                            </td>
+                                        <tr
+                                            key={entry.id}
+                                            onClick={() => selectionMode && toggleOne(entry.id)}
+                                            className={`border-border border-b last:border-0 transition-colors ${
+                                                selectionMode
+                                                    ? isChecked
+                                                        ? 'bg-primary/5 cursor-pointer'
+                                                        : 'hover:bg-surface/50 cursor-pointer'
+                                                    : 'hover:bg-surface/50'
+                                            }`}
+                                        >
+                                            {/* Checkbox cell — only in selection mode */}
+                                            {selectionMode && (
+                                                <td className="px-4 py-3">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={isChecked}
+                                                        onChange={() => toggleOne(entry.id)}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        className="border-border-strong accent-primary h-4 w-4 rounded"
+                                                    />
+                                                </td>
+                                            )}
                                             <td className="text-navy px-4 py-3 font-mono text-xs font-semibold">{code}</td>
                                             <td className="max-w-[280px] px-4 py-3">
                                                 <p className="text-navy truncate font-semibold">{title}</p>
@@ -336,6 +404,7 @@ export default function BulkVerify({ entries, workUnits = [], filters = {} }: Bu
                                                         href={entry.active_evidence?.file_url}
                                                         target="_blank"
                                                         rel="noreferrer"
+                                                        onClick={(e) => e.stopPropagation()}
                                                         className="text-primary inline-flex items-center gap-1.5 text-xs font-semibold hover:underline"
                                                     >
                                                         <FileText className="h-3.5 w-3.5" />

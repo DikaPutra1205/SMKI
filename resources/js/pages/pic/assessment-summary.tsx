@@ -358,7 +358,8 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
     const submittingRef = useRef(false);
     const [frameworkFilter, setFrameworkFilter] = useState('');
     const [kategoriFilter, setKategoriFilter] = useState('');
-    const isLoading = usePageLoading();
+    // Summary URLs are /admin/pic/assessments/{id}/summary
+    const isLoading = usePageLoading('/admin/pic/assessments/');
 
     const frameworks = useMemo(() => {
         const map = new Map<string, string>();
