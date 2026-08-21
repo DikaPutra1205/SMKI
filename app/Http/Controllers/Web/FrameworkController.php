@@ -10,6 +10,7 @@ use App\Models\Framework;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -45,6 +46,7 @@ class FrameworkController extends Controller
             'nama' => $fw->nama,
             'versi' => $fw->versi,
             'url_file' => $fw->url_file,
+            'nama_file' => $fw->nama_file,
             'controls_count' => $fw->controls_count,
         ])->toArray();
 
@@ -56,7 +58,18 @@ class FrameworkController extends Controller
 
     public function store(StoreFrameworkRequest $request): RedirectResponse
     {
-        Framework::create($request->validated());
+        $data = $request->validated();
+
+        if ($request->hasFile('file_dokumen')) {
+            $file = $request->file('file_dokumen');
+            $filename = time().'_'.preg_replace('/[^a-zA-Z0-9._-]/', '_', $file->getClientOriginalName());
+            $path = $file->storeAs('frameworks', $filename, 'supabase');
+            $data['url_file'] = $path;
+        }
+
+        unset($data['file_dokumen']);
+
+        Framework::create($data);
 
         return redirect()->back()->with('flash', [
             'type' => 'success',
@@ -66,7 +79,28 @@ class FrameworkController extends Controller
 
     public function update(UpdateFrameworkRequest $request, Framework $framework): RedirectResponse
     {
-        $framework->update($request->validated());
+        $data = $request->validated();
+
+        if ($request->hasFile('file_dokumen')) {
+            $file = $request->file('file_dokumen');
+            $filename = time().'_'.preg_replace('/[^a-zA-Z0-9._-]/', '_', $file->getClientOriginalName());
+            $path = $file->storeAs('frameworks', $filename, 'supabase');
+
+            $oldPath = $framework->getRawOriginal('url_file');
+            if ($oldPath && ! filter_var($oldPath, FILTER_VALIDATE_URL)) {
+                try {
+                    Storage::disk('supabase')->delete($oldPath);
+                } catch (\Throwable $e) {
+                    report($e);
+                }
+            }
+
+            $data['url_file'] = $path;
+        }
+
+        unset($data['file_dokumen']);
+
+        $framework->update($data);
 
         return redirect()->back()->with('flash', [
             'type' => 'success',
@@ -76,6 +110,15 @@ class FrameworkController extends Controller
 
     public function destroy(Framework $framework): RedirectResponse
     {
+        $oldPath = $framework->getRawOriginal('url_file');
+        if ($oldPath && ! filter_var($oldPath, FILTER_VALIDATE_URL)) {
+            try {
+                Storage::disk('supabase')->delete($oldPath);
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+
         $framework->delete();
 
         return redirect()->back()->with('flash', [

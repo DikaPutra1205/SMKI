@@ -1,8 +1,8 @@
 <?php
 
 use App\Http\Controllers\Web\AuditLogController;
-use App\Http\Controllers\Web\AuthController;
 use App\Http\Controllers\Web\AuditorDashboardController;
+use App\Http\Controllers\Web\AuthController;
 use App\Http\Controllers\Web\ChecklistEntryController;
 use App\Http\Controllers\Web\ChecklistSessionController;
 use App\Http\Controllers\Web\ComplianceController;

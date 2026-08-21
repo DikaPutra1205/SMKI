@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 class Framework extends Model
 {
@@ -21,6 +22,38 @@ class Framework extends Model
     public function checklistSessions(): HasMany
     {
         return $this->hasMany(ChecklistSession::class, 'framework_id');
+    }
+
+    public function getUrlFileAttribute(): ?string
+    {
+        $url = $this->attributes['url_file'] ?? null;
+
+        if (! $url) {
+            return null;
+        }
+
+        if (filter_var($url, FILTER_VALIDATE_URL)) {
+            return $url;
+        }
+
+        try {
+            return Storage::disk('supabase')->temporaryUrl($url, now()->addHours(24));
+        } catch (\Throwable $e) {
+            report($e);
+
+            return Storage::disk('supabase')->url($url);
+        }
+    }
+
+    public function getNamaFileAttribute(): ?string
+    {
+        $url = $this->attributes['url_file'] ?? null;
+
+        if (! $url) {
+            return null;
+        }
+
+        return rawurldecode(basename($url));
     }
 
     protected static function booted(): void

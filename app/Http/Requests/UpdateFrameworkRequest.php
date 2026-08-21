@@ -22,6 +22,7 @@ class UpdateFrameworkRequest extends FormRequest
             'nama' => ['sometimes', 'string', 'max:255', Rule::unique('frameworks', 'nama')->ignore($this->route('framework'))],
             'versi' => 'sometimes|string|max:50',
             'url_file' => 'nullable|url|max:500',
+            'file_dokumen' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx|max:20480',
         ];
     }
 }
