@@ -11,6 +11,7 @@ use App\Http\Controllers\Web\ComplianceOfficerController;
 use App\Http\Controllers\Web\ControlController as AdminControlController;
 use App\Http\Controllers\Web\FrameworkController;
 use App\Http\Controllers\Web\ReportExportController;
+use App\Http\Controllers\Web\UserController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -86,6 +87,11 @@ Route::middleware('auth')->group(function () {
         Route::post('/frameworks', [FrameworkController::class, 'store'])->name('frameworks.store');
         Route::patch('/frameworks/{framework}', [FrameworkController::class, 'update'])->name('frameworks.update');
         Route::delete('/frameworks/{framework}', [FrameworkController::class, 'destroy'])->name('frameworks.destroy');
+
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::post('/users', [UserController::class, 'store'])->name('users.store');
+        Route::patch('/users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
     });
 
     Route::prefix('admin/auditor')->name('admin.auditor.')->group(function () {
