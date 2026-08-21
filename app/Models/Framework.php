@@ -37,11 +37,11 @@ class Framework extends Model
         }
 
         try {
-            return Storage::disk('supabase')->temporaryUrl($url, now()->addHours(24));
+            return Storage::disk('supabase-frameworks')->temporaryUrl($url, now()->addHours(24));
         } catch (\Throwable $e) {
             report($e);
 
-            return Storage::disk('supabase')->url($url);
+            return Storage::disk('supabase-frameworks')->url($url);
         }
     }
 
