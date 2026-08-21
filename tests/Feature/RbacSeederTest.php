@@ -15,7 +15,7 @@ class RbacSeederTest extends TestCase
         $this->seed(RolesAndPermissionsSeeder::class);
 
         $this->assertSame(5, Role::count());
-        $this->assertSame(59, Permission::count());
+        $this->assertSame(63, Permission::count());
 
         foreach (config('permissions.roles') as $roleName => $grants) {
             $role = Role::where('name', $roleName)->firstOrFail();
@@ -24,7 +24,7 @@ class RbacSeederTest extends TestCase
         }
 
         $this->assertSame(
-            59,
+            63,
             Role::where('name', 'superadmin')->first()->permissions()->count()
         );
     }
@@ -42,7 +42,7 @@ class RbacSeederTest extends TestCase
         $this->seed(RolesAndPermissionsSeeder::class);
 
         $this->assertSame(5, Role::count());
-        $this->assertSame(59, Permission::count());
+        $this->assertSame(63, Permission::count());
         $this->assertSame(50, Role::where('name', 'admin_kepatuhan')->first()->permissions()->count());
     }
 

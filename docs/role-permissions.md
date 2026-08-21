@@ -82,3 +82,8 @@ Rule: for `pic`, every ✓ grant is limited to records owned by the PIC's own un
 | user.create | ✓ | ✗ | ✗ | ✗ | ✗ |
 | user.update | ✓ | ✗ | ✗ | ✗ | ✗ |
 | user.delete | ✓ | ✗ | ✗ | ✗ | ✗ |
+| **role** | | | | | |
+| role.managementview | ✓ | ✗ | ✗ | ✗ | ✗ |
+| role.create | ✓ | ✗ | ✗ | ✗ | ✗ |
+| role.update | ✓ | ✗ | ✗ | ✗ | ✗ |
+| role.delete | ✓ | ✗ | ✗ | ✗ | ✗ |
