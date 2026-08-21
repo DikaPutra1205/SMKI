@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\WorkUnit;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -45,7 +46,9 @@ class UserController extends Controller
     {
         $this->authorize('user.create');
 
-        User::create($request->validated());
+        $data = $request->validated();
+        $data['password'] = Hash::make($request->input('password', 'password'));
+        User::create($data);
 
         return redirect()->back()->with('flash', [
             'type' => 'success',
