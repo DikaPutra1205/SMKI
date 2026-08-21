@@ -7,6 +7,7 @@ use App\Models\ChecklistEntry;
 use App\Models\ComplianceEvidence;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -121,5 +122,32 @@ class ComplianceEvidenceController extends Controller
         $evidence->restore();
 
         return $this->success($evidence->load('uploader:id,name'), 'Bukti berhasil dipulihkan');
+    }
+
+    /**
+     * Unduh file bukti kepatuhan on-demand (Lazy Proxy Download).
+     */
+    public function download(Request $request, int $id): RedirectResponse
+    {
+        $evidence = ComplianceEvidence::withTrashed()->findOrFail($id);
+        Gate::authorize('view', $evidence);
+
+        $rawKey = $evidence->getRawOriginal('file_url');
+
+        if (! $rawKey) {
+            abort(404, 'File bukti tidak ditemukan');
+        }
+
+        if (filter_var($rawKey, FILTER_VALIDATE_URL)) {
+            return redirect()->away($rawKey);
+        }
+
+        $presignedUrl = $evidence->getPresignedUrl(30);
+
+        if (! $presignedUrl) {
+            abort(404, 'Gagal menghasilkan tautan unduhan');
+        }
+
+        return redirect()->away($presignedUrl);
     }
 }

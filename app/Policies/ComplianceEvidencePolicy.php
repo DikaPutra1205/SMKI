@@ -39,6 +39,16 @@ class ComplianceEvidencePolicy
     }
 
     /**
+     * Determine whether the user can view/download a single evidence.
+     */
+    public function view(User $user, ComplianceEvidence $complianceEvidence): bool
+    {
+        $entry = $this->getChecklistEntry($complianceEvidence);
+
+        return $entry ? $this->isUserAuthorizedForEntry($user, $entry) : true;
+    }
+
+    /**
      * Determine whether the user can create evidence for a checklist entry.
      */
     public function create(User $user, ChecklistEntry $checklistEntry, ?int $uploadedBy = null): bool

@@ -69,7 +69,7 @@ return [
             'url' => env('SUPABASE_URL'),
             'endpoint' => env('SUPABASE_ENDPOINT'),
             'use_path_style_endpoint' => env('SUPABASE_USE_PATH_STYLE_ENDPOINT', true),
-            'throw' => true,
+            'throw' => false,
             'report' => false,
         ],
 
