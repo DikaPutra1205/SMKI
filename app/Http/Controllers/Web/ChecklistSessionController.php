@@ -116,7 +116,7 @@ class ChecklistSessionController extends Controller
             ->select('checklist_entries.*')
             ->get();
 
-        $grouped = $allEntries->groupBy(fn ($e) => $e->control->framework_name . '|||' . $e->control->kategori);
+        $grouped = $allEntries->groupBy(fn ($e) => $e->control->framework_name.'|||'.$e->control->kategori);
 
         $pages = [];
         $index = 0;
@@ -160,7 +160,7 @@ class ChecklistSessionController extends Controller
             ->select('checklist_entries.*')
             ->get();
 
-        $grouped = $allEntries->groupBy(fn ($e) => $e->control->framework_name . '|||' . $e->control->kategori);
+        $grouped = $allEntries->groupBy(fn ($e) => $e->control->framework_name.'|||'.$e->control->kategori);
 
         $pages = [];
         $index = 0;
