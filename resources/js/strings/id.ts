@@ -146,7 +146,7 @@ export const id = {
         deleteConfirm: (code: string, title: string) => `Hapus kontrol "${code} — ${title}"? Tindakan ini tidak dapat dibatalkan.`,
     },
     frameworks: {
-        title: 'Framework Management',
+        title: 'Manajemen Framework',
         subtitle: 'Kelola seluruh framework standar kepatuhan beserta dokumen referensinya.',
         addFramework: 'Tambah Framework',
         name: 'NAMA',
@@ -185,9 +185,9 @@ export const id = {
         manage: 'Kelola',
         quickActions: 'Quick Actions',
         quickActionsDesc: 'Akses cepat ke manajemen sistem',
-        frameworkManagement: 'Framework Management',
+        frameworkManagement: 'Manajemen Framework',
         frameworkCrud: 'CRUD framework & kontrol',
-        userManagement: 'User Management',
+        userManagement: 'Manajemen User',
         systemSettings: 'System Settings',
         auditLogs: 'Audit Logs',
         totalActiveUsers: 'Total Active Users',
@@ -454,7 +454,7 @@ export const id = {
     },
     admin: {
         users: {
-            title: 'User Management',
+            title: 'Manajemen User',
             subtitle: 'Kelola pengguna, role, dan unit kerja.',
             addUser: 'Tambah User',
             name: 'Nama',
@@ -465,7 +465,7 @@ export const id = {
             deleteConfirm: (name: string) => `Hapus user "${name}"? Tindakan ini tidak dapat dibatalkan.`,
         },
         roles: {
-            title: 'Role Management',
+            title: 'Manajemen Role',
             subtitle: 'Kelola role dan hak akses (permissions).',
             addRole: 'Tambah Role',
             name: 'Nama',

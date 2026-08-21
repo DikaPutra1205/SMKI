@@ -4,6 +4,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
 import { Toast } from '@/components/ui/Toast';
 import AppLayout from '@/layouts/AppLayout';
+import { useCan } from '@/lib/can';
 import { t } from '@/lib/i18n';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { Database, ExternalLink, Pencil, Plus, Search, Trash2, Upload } from 'lucide-react';
@@ -32,6 +33,7 @@ type FrameworkFormData = {
 };
 
 export default function Frameworks({ frameworks = [], filters = {} }: FrameworksProps) {
+    const can = useCan();
     const [searchQuery, setSearchQuery] = useState(filters.search || '');
     const [perPage, setPerPage] = useState<number | 'all'>(20);
     const [currentPage, setCurrentPage] = useState(1);
@@ -162,14 +164,16 @@ export default function Frameworks({ frameworks = [], filters = {} }: Frameworks
                     <h1 className="text-2xl font-bold tracking-tight">{t('frameworks.title')}</h1>
                     <p className="text-muted mt-1 text-xs sm:text-sm">{t('frameworks.subtitle')}</p>
                 </div>
-                <button
-                    type="button"
-                    onClick={openCreate}
-                    className="bg-primary shadow-blue hover:bg-primary-700 inline-flex items-center gap-2 rounded-[10px] px-4 py-2 text-xs font-semibold text-white transition-colors sm:text-sm"
-                >
-                    <Plus className="h-4 w-4" />
-                    <span>{t('frameworks.addFramework')}</span>
-                </button>
+                {can('framework.create') && (
+                    <button
+                        type="button"
+                        onClick={openCreate}
+                        className="bg-primary shadow-blue hover:bg-primary-700 inline-flex items-center gap-2 rounded-[10px] px-4 py-2 text-xs font-semibold text-white transition-colors sm:text-sm"
+                    >
+                        <Plus className="h-4 w-4" />
+                        <span>{t('frameworks.addFramework')}</span>
+                    </button>
+                )}
             </div>
 
             <div className="border-border overflow-hidden rounded-[14px] border bg-white shadow-sm">
@@ -221,22 +225,26 @@ export default function Frameworks({ frameworks = [], filters = {} }: Frameworks
                                 )}
 
                                 <div className="border-border mt-4 flex items-center justify-end gap-1.5 border-t pt-3">
-                                    <button
-                                        type="button"
-                                        onClick={() => openEdit(item)}
-                                        className="border-border-strong text-navy hover:bg-surface inline-flex items-center gap-1.5 rounded-[10px] border bg-white px-3 py-1.5 text-xs font-semibold transition-colors"
-                                    >
-                                        <Pencil className="h-3.5 w-3.5" />
-                                        {t('common.edit')}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => handleDelete(item)}
-                                        className="border-danger-border bg-danger-bg text-danger hover:bg-danger/10 inline-flex items-center gap-1.5 rounded-[10px] border px-3 py-1.5 text-xs font-semibold transition-colors"
-                                    >
-                                        <Trash2 className="h-3.5 w-3.5" />
-                                        {t('common.delete')}
-                                    </button>
+                                    {can('framework.update') && (
+                                        <button
+                                            type="button"
+                                            onClick={() => openEdit(item)}
+                                            className="border-border-strong text-navy hover:bg-surface inline-flex items-center gap-1.5 rounded-[10px] border bg-white px-3 py-1.5 text-xs font-semibold transition-colors"
+                                        >
+                                            <Pencil className="h-3.5 w-3.5" />
+                                            {t('common.edit')}
+                                        </button>
+                                    )}
+                                    {can('framework.delete') && (
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDelete(item)}
+                                            className="border-danger-border bg-danger-bg text-danger hover:bg-danger/10 inline-flex items-center gap-1.5 rounded-[10px] border px-3 py-1.5 text-xs font-semibold transition-colors"
+                                        >
+                                            <Trash2 className="h-3.5 w-3.5" />
+                                            {t('common.delete')}
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         ))}

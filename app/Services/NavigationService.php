@@ -77,19 +77,19 @@ class NavigationService
                 'permissions' => ['work-unit.view'],
             ],
             [
-                'label' => 'Framework Management',
+                'label' => 'Manajemen Framework',
                 'url' => '/admin/superadmin/frameworks',
                 'icon' => 'Database',
                 'permissions' => ['framework.view', 'work-unit.view'],
             ],
             [
-                'label' => 'User Management',
+                'label' => 'Manajemen User',
                 'url' => '/admin/superadmin/users',
                 'icon' => 'Users',
                 'permissions' => ['user.managementview'],
             ],
             [
-                'label' => 'Role Management',
+                'label' => 'Manajemen Role',
                 'url' => '/admin/superadmin/roles',
                 'icon' => 'Shield',
                 'permissions' => ['role.managementview'],
@@ -104,7 +104,7 @@ class NavigationService
                 'denies' => ['work-unit.view'],
             ],
             [
-                'label' => 'Controls Management',
+                'label' => 'Manajemen Kontrol',
                 'url' => '/admin/kepatuhan/compliance',
                 'icon' => 'ShieldCheck',
                 'permissions' => ['control.view'],
@@ -129,7 +129,6 @@ class NavigationService
                 'url' => '/admin/kepatuhan/audit-logs',
                 'icon' => 'History',
                 'permissions' => ['audit-log.view'],
-                'denies' => ['work-unit.view'],
             ],
             [
                 'label' => 'Findings',
