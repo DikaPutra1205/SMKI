@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreFrameworkRequest;
 use App\Http\Requests\UpdateFrameworkRequest;
 use App\Models\Framework;
+use App\Services\FrameworkDocumentService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 
@@ -24,9 +25,16 @@ class FrameworkController extends Controller
      * Uses StoreFrameworkRequest (same as Web) so unique-nama validation is
      * consistent across both surfaces — no more duplicate framework names via API.
      */
-    public function store(StoreFrameworkRequest $request): JsonResponse
+    public function store(StoreFrameworkRequest $request, FrameworkDocumentService $documents): JsonResponse
     {
-        $framework = Framework::create($request->validated());
+        $data = $request->validated();
+        unset($data['file_dokumen']);
+
+        if ($request->hasFile('file_dokumen')) {
+            $data['url_file'] = $documents->store($request->file('file_dokumen'));
+        }
+
+        $framework = Framework::create($data);
 
         return $this->created($framework);
     }
@@ -42,15 +50,25 @@ class FrameworkController extends Controller
      * Uses UpdateFrameworkRequest (same as Web) so unique-nama validation
      * (with current-record ignore) is consistent across both surfaces.
      */
-    public function update(UpdateFrameworkRequest $request, Framework $framework): JsonResponse
+    public function update(UpdateFrameworkRequest $request, Framework $framework, FrameworkDocumentService $documents): JsonResponse
     {
-        $framework->update($request->validated());
+        $data = $request->validated();
+        unset($data['file_dokumen']);
+
+        if ($request->hasFile('file_dokumen')) {
+            $documents->deleteExisting($framework->getRawOriginal('url_file'));
+            $data['url_file'] = $documents->store($request->file('file_dokumen'));
+        }
+
+        $framework->update($data);
 
         return $this->success($framework, 'Framework berhasil diperbarui');
     }
 
-    public function destroy(Framework $framework): JsonResponse
+    public function destroy(Framework $framework, FrameworkDocumentService $documents): JsonResponse
     {
+        $documents->deleteExisting($framework->getRawOriginal('url_file'));
+
         $framework->delete();
 
         return $this->success(null, 'Framework berhasil dihapus');

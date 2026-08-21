@@ -6,6 +6,8 @@ use App\Models\Framework;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -38,7 +40,6 @@ class FrameworkCrudTest extends TestCase
             ->post('/admin/superadmin/frameworks', [
                 'nama' => 'ISO 27001',
                 'versi' => '2022',
-                'url_file' => 'https://example.com/iso27001.pdf',
             ])
             ->assertRedirect('/admin/superadmin/frameworks')
             ->assertSessionHas('flash.type', 'success');
@@ -46,8 +47,78 @@ class FrameworkCrudTest extends TestCase
         $this->assertDatabaseHas('frameworks', [
             'nama' => 'ISO 27001',
             'versi' => '2022',
-            'url_file' => 'https://example.com/iso27001.pdf',
+            'url_file' => null,
         ]);
+    }
+
+    public function test_superadmin_can_create_framework_with_document_upload(): void
+    {
+        Storage::fake('frameworks');
+        $user = $this->makeAdmin();
+
+        $this->actingAs($user)
+            ->from('/admin/superadmin/frameworks')
+            ->post('/admin/superadmin/frameworks', [
+                'nama' => 'ISO 27001',
+                'versi' => '2022',
+                'file_dokumen' => UploadedFile::fake()->createWithContent('iso-27001.pdf', "%PDF-1.4\ncontent"),
+            ])
+            ->assertRedirect('/admin/superadmin/frameworks')
+            ->assertSessionHas('flash.type', 'success');
+
+        $framework = Framework::query()->where('nama', 'ISO 27001')->firstOrFail();
+
+        $this->assertStringStartsWith('frameworks/', $framework->getRawOriginal('url_file'));
+        Storage::disk('frameworks')->assertExists($framework->getRawOriginal('url_file'));
+        $this->assertStringEndsWith('iso-27001.pdf', $framework->nama_file);
+    }
+
+    public function test_update_replaces_framework_document_and_deletes_old_file(): void
+    {
+        Storage::fake('frameworks');
+        $user = $this->makeAdmin();
+        $framework = Framework::create(['nama' => 'ISO 27001', 'versi' => '2022', 'url_file' => 'frameworks/old_iso.pdf']);
+        Storage::disk('frameworks')->put('frameworks/old_iso.pdf', '%PDF-1.4 old');
+
+        $this->actingAs($user)
+            ->from('/admin/superadmin/frameworks')
+            ->patch("/admin/superadmin/frameworks/{$framework->id}", [
+                'nama' => 'ISO 27001',
+                'versi' => '2025',
+                'file_dokumen' => UploadedFile::fake()->createWithContent('iso-27001-2025.docx', 'PK docx content'),
+            ])
+            ->assertRedirect('/admin/superadmin/frameworks')
+            ->assertSessionHas('flash.type', 'success');
+
+        $framework->refresh();
+
+        Storage::disk('frameworks')->assertMissing('frameworks/old_iso.pdf');
+        Storage::disk('frameworks')->assertExists($framework->getRawOriginal('url_file'));
+        $this->assertStringEndsWith('.docx', $framework->getRawOriginal('url_file'));
+    }
+
+    public function test_framework_document_rejects_invalid_file_type(): void
+    {
+        Storage::fake('frameworks');
+        $user = $this->makeAdmin();
+
+        $this->actingAs($user)
+            ->post('/admin/superadmin/frameworks', [
+                'nama' => 'ISO 27001',
+                'versi' => '2022',
+                'file_dokumen' => UploadedFile::fake()->create('malicious.exe', 100, 'application/x-msdownload'),
+            ])
+            ->assertSessionHasErrors(['file_dokumen']);
+
+        $this->assertDatabaseMissing('frameworks', ['nama' => 'ISO 27001']);
+    }
+
+    public function test_url_file_accessor_passes_through_legacy_full_urls(): void
+    {
+        $framework = Framework::create(['nama' => 'Legacy FW', 'versi' => '1.0', 'url_file' => 'https://example.com/legacy.pdf']);
+
+        $this->assertSame('https://example.com/legacy.pdf', $framework->url_file);
+        $this->assertSame('legacy.pdf', $framework->nama_file);
     }
 
     public function test_creating_framework_requires_valid_fields(): void

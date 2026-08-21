@@ -1,7 +1,7 @@
 import { t } from '@/lib/i18n';
 import { SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { Bell, ChevronDown, ChevronRight, Menu } from 'lucide-react';
+import { Bell, ChevronDown, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 
 export interface BreadcrumbItem {
@@ -10,11 +10,10 @@ export interface BreadcrumbItem {
 }
 
 interface HeaderProps {
-    onToggleSidebar: () => void;
     breadcrumbs?: BreadcrumbItem[];
 }
 
-export function Header({ onToggleSidebar, breadcrumbs = [] }: HeaderProps) {
+export function Header({ breadcrumbs = [] }: HeaderProps) {
     const page = usePage<SharedData>();
     const authUser = page.props.auth?.user;
 
