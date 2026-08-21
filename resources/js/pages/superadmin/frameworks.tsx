@@ -337,7 +337,7 @@ export default function Frameworks({ frameworks = [], filters = {} }: Frameworks
                                 className="border-border-strong text-navy hover:bg-surface inline-flex items-center gap-1.5 rounded-[10px] border bg-white px-3 py-2 text-xs font-semibold transition-colors"
                             >
                                 <Upload className="h-3.5 w-3.5" />
-                                {t('frameworks.chooseFile')}
+                                <span className="whitespace-nowrap">{t('frameworks.chooseFile')}</span>
                             </button>
                             <span className={`truncate text-xs ${selectedFileName ? 'text-body' : 'text-faint'}`}>
                                 {selectedFileName || t('frameworks.noFileSelected')}
