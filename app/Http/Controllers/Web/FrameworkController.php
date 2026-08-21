@@ -63,7 +63,7 @@ class FrameworkController extends Controller
         if ($request->hasFile('file_dokumen')) {
             $file = $request->file('file_dokumen');
             $filename = time().'_'.preg_replace('/[^a-zA-Z0-9._-]/', '_', $file->getClientOriginalName());
-            $path = $file->storeAs('frameworks', $filename, 'supabase');
+            $path = $file->storeAs('', $filename, 'supabase-frameworks');
             $data['url_file'] = $path;
         }
 
@@ -84,12 +84,12 @@ class FrameworkController extends Controller
         if ($request->hasFile('file_dokumen')) {
             $file = $request->file('file_dokumen');
             $filename = time().'_'.preg_replace('/[^a-zA-Z0-9._-]/', '_', $file->getClientOriginalName());
-            $path = $file->storeAs('frameworks', $filename, 'supabase');
+            $path = $file->storeAs('', $filename, 'supabase-frameworks');
 
             $oldPath = $framework->getRawOriginal('url_file');
             if ($oldPath && ! filter_var($oldPath, FILTER_VALIDATE_URL)) {
                 try {
-                    Storage::disk('supabase')->delete($oldPath);
+                    Storage::disk('supabase-frameworks')->delete($oldPath);
                 } catch (\Throwable $e) {
                     report($e);
                 }
@@ -113,7 +113,7 @@ class FrameworkController extends Controller
         $oldPath = $framework->getRawOriginal('url_file');
         if ($oldPath && ! filter_var($oldPath, FILTER_VALIDATE_URL)) {
             try {
-                Storage::disk('supabase')->delete($oldPath);
+                Storage::disk('supabase-frameworks')->delete($oldPath);
             } catch (\Throwable $e) {
                 report($e);
             }
