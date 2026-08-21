@@ -70,10 +70,10 @@ export default function Roles({ roles, permissionCatalog }: Props) {
     function submit(e: React.FormEvent) {
         e.preventDefault();
         if (mode === 'create') form.post('/admin/superadmin/roles', { onSuccess: close });
-        else if (mode === 'edit' && editingId)
-            form.transform((data) => ({ ...data, permissions: Array.from(selectedPerms) })).patch(`/admin/superadmin/roles/${editingId}`, {
-                onSuccess: close,
-            });
+        else if (mode === 'edit' && editingId) {
+            form.transform((data) => ({ ...data, permissions: Array.from(selectedPerms) }));
+            form.patch(`/admin/superadmin/roles/${editingId}`, { onSuccess: close });
+        }
     }
     function togglePerm(key: string) {
         setSelectedPerms((prev) => {
