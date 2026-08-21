@@ -22,6 +22,7 @@ import { StatusBadge, statusTone } from '@/components/ui/StatusBadge';
 import { Textarea } from '@/components/ui/Textarea';
 import { Toast } from '@/components/ui/Toast';
 import AppLayout from '@/layouts/AppLayout';
+import { useCan } from '@/lib/can';
 import { t } from '@/lib/i18n';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { CheckCircle2, ExternalLink, FileText, Search, ShieldCheck, X, XCircle } from 'lucide-react';
@@ -102,6 +103,7 @@ interface DetailPanelProps {
 }
 
 function DetailPanel({ entry, onClose }: DetailPanelProps) {
+    const can = useCan();
     const { flash } = usePage<{ flash?: { type: string; message: string } }>().props;
     const [flashVisible, setFlashVisible] = useState(false);
     const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
@@ -292,24 +294,26 @@ function DetailPanel({ entry, onClose }: DetailPanelProps) {
                 </div>
 
                 {/* Footer action bar */}
-                <div className="border-border bg-surface/60 flex items-center gap-3 border-t px-5 py-4">
-                    <button
-                        type="button"
-                        onClick={() => setConfirmAction('approve')}
-                        className="bg-success hover:bg-success/90 inline-flex flex-1 items-center justify-center gap-2 rounded-[10px] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors"
-                    >
-                        <CheckCircle2 className="h-4 w-4" />
-                        Setujui (Patuh)
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setConfirmAction('reject')}
-                        className="bg-danger hover:bg-danger/90 inline-flex flex-1 items-center justify-center gap-2 rounded-[10px] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors"
-                    >
-                        <XCircle className="h-4 w-4" />
-                        Tolak (Tidak Patuh)
-                    </button>
-                </div>
+                {can('checklist.bulk-verify') && (
+                    <div className="border-border bg-surface/60 flex items-center gap-3 border-t px-5 py-4">
+                        <button
+                            type="button"
+                            onClick={() => setConfirmAction('approve')}
+                            className="bg-success hover:bg-success/90 inline-flex flex-1 items-center justify-center gap-2 rounded-[10px] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors"
+                        >
+                            <CheckCircle2 className="h-4 w-4" />
+                            Setujui (Patuh)
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setConfirmAction('reject')}
+                            className="bg-danger hover:bg-danger/90 inline-flex flex-1 items-center justify-center gap-2 rounded-[10px] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors"
+                        >
+                            <XCircle className="h-4 w-4" />
+                            Tolak (Tidak Patuh)
+                        </button>
+                    </div>
+                )}
             </aside>
 
             <ConfirmDialog

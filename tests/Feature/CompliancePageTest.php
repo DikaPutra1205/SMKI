@@ -120,13 +120,43 @@ class CompliancePageTest extends TestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('shared/controls/compliance', false)
-            ->has('controls', 2)
-            ->where('controls.0.id', (string) $annexCtrl->id)
-            ->where('controls.0.code', 'A.5.4')
-            ->where('controls.0.title', 'Annex control')
-            ->where('controls.0.category', 'Annex A')
-            ->where('controls.0.framework_nama', 'ISO/IEC 27701:2019')
-            ->where('controls.1.category', 'Klausul 4-10')
+            ->has('controls.data', 2)
+            ->where('controls.data.0.id', (string) $annexCtrl->id)
+            ->where('controls.data.0.code', 'A.5.4')
+            ->where('controls.data.0.title', 'Annex control')
+            ->where('controls.data.0.category', 'Annex A')
+            ->where('controls.data.0.framework_nama', 'ISO/IEC 27701:2019')
+            ->where('controls.data.1.category', 'Klausul 4-10')
+            ->where('controls.total', 2)
+            ->where('controls.current_page', 1)
+        );
+    }
+
+    public function test_compliance_page_paginates_controls_server_side(): void
+    {
+        $user = User::factory()->create(['role' => User::ROLE_ADMIN_KEPATUHAN]);
+        $framework = Framework::factory()->create(['nama' => 'ISO/IEC 27001', 'versi' => '2022']);
+
+        Control::factory()->count(25)->create(['framework_id' => $framework->id]);
+
+        $response = $this->actingAs($user)->get('/admin/kepatuhan/compliance?page=2');
+
+        $response->assertOk();
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('shared/controls/compliance', false)
+            ->has('controls.data', 5)
+            ->where('controls.current_page', 2)
+            ->where('controls.last_page', 2)
+            ->where('controls.per_page', 20)
+            ->where('controls.total', 25)
+        );
+
+        $capped = $this->actingAs($user)->get('/admin/kepatuhan/compliance?per_page=500');
+        $capped->assertOk();
+        $capped->assertInertia(fn (Assert $page) => $page
+            ->has('controls.data', 25)
+            ->where('controls.per_page', 100)
         );
     }
 
@@ -185,8 +215,8 @@ class CompliancePageTest extends TestCase
 
         $byCategory->assertOk();
         $byCategory->assertInertia(fn (Assert $page) => $page
-            ->has('controls', 1)
-            ->where('controls.0.code', 'A.5.1')
+            ->has('controls.data', 1)
+            ->where('controls.data.0.code', 'A.5.1')
         );
 
         $bySearch = $this->actingAs($user)
@@ -194,8 +224,8 @@ class CompliancePageTest extends TestCase
 
         $bySearch->assertOk();
         $bySearch->assertInertia(fn (Assert $page) => $page
-            ->has('controls', 1)
-            ->where('controls.0.title', 'Organisasi')
+            ->has('controls.data', 1)
+            ->where('controls.data.0.title', 'Organisasi')
         );
     }
 }

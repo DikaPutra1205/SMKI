@@ -3,9 +3,9 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
 import { Select } from '@/components/ui/Select';
-import { StatusBadge, statusTone } from '@/components/ui/StatusBadge';
 import { Toast } from '@/components/ui/Toast';
 import AppLayout from '@/layouts/AppLayout';
+import { useCan } from '@/lib/can';
 import { t } from '@/lib/i18n';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { Eye, Plus, Search } from 'lucide-react';
@@ -28,9 +28,16 @@ export interface ControlItem {
     title: string;
     description: string;
     category: string;
-    status: string | null;
-    unit_nama: string;
-    pic_name: string;
+}
+
+interface Paginator<T> {
+    data: T[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    from: number | null;
+    to: number | null;
 }
 
 export interface WorkUnitItem {
@@ -40,7 +47,7 @@ export interface WorkUnitItem {
 
 interface ComplianceProps {
     frameworks?: FrameworkItem[];
-    controls?: ControlItem[];
+    controls?: Paginator<ControlItem>;
     workUnits?: WorkUnitItem[];
     filters?: {
         search?: string;
@@ -62,21 +69,17 @@ interface ControlFormData {
     [key: string]: string;
 }
 
-const STATUS_OPTIONS = ['compliant', 'partial', 'non_compliant', 'na'] as const;
-
-export default function Compliance({ frameworks = [], controls = [], workUnits = [], filters = {} }: ComplianceProps) {
+export default function Compliance({ frameworks = [], controls, filters = {} }: ComplianceProps) {
+    const can = useCan();
     const [searchQuery, setSearchQuery] = useState(filters.search || '');
-    const [selectedStatus, setSelectedStatus] = useState(filters.status || 'Semua Status');
-    const [selectedUnit, setSelectedUnit] = useState<string>(filters.unit_id || 'Semua Unit');
     const [selectedFrameworkId, setSelectedFrameworkId] = useState<number | null>(
         filters.framework_id ? Number(filters.framework_id) : (frameworks[0]?.id ?? null),
     );
 
-    const [perPage, setPerPage] = useState<number | 'all'>(20);
-    const [currentPage, setCurrentPage] = useState(1);
-
     const activeFramework = frameworks.find((f) => f.id === selectedFrameworkId) ?? null;
     const isFirstRender = useRef(true);
+
+    const items = controls?.data ?? [];
 
     const { flash } = usePage<{ flash?: { type: string; message: string } }>().props;
     const [flashVisible, setFlashVisible] = useState(false);
@@ -164,10 +167,6 @@ export default function Compliance({ frameworks = [], controls = [], workUnits =
     }
 
     useEffect(() => {
-        setCurrentPage(1);
-    }, [searchQuery, selectedStatus, selectedUnit, selectedFrameworkId, perPage]);
-
-    useEffect(() => {
         if (isFirstRender.current) {
             isFirstRender.current = false;
             return;
@@ -178,8 +177,6 @@ export default function Compliance({ frameworks = [], controls = [], workUnits =
                 '/admin/kepatuhan/compliance',
                 {
                     search: searchQuery || undefined,
-                    status: selectedStatus !== 'Semua Status' ? selectedStatus : undefined,
-                    unit_id: selectedUnit !== 'Semua Unit' ? selectedUnit : undefined,
                     framework_id: selectedFrameworkId ? String(selectedFrameworkId) : undefined,
                 },
                 { preserveState: true, replace: true },
@@ -187,17 +184,7 @@ export default function Compliance({ frameworks = [], controls = [], workUnits =
         }, 350);
 
         return () => clearTimeout(timer);
-    }, [searchQuery, selectedStatus, selectedUnit, selectedFrameworkId]);
-
-    const totalItems = controls.length;
-    const effectivePerPage = perPage === 'all' ? totalItems || 1 : perPage;
-    const totalPages = perPage === 'all' || totalItems === 0 ? 1 : Math.ceil(totalItems / effectivePerPage);
-    const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
-
-    const startIndex = totalItems === 0 ? 0 : (safeCurrentPage - 1) * effectivePerPage;
-    const endIndex = perPage === 'all' ? totalItems : Math.min(startIndex + effectivePerPage, totalItems);
-
-    const paginatedControls = perPage === 'all' ? controls : controls.slice(startIndex, endIndex);
+    }, [searchQuery, selectedFrameworkId]);
 
     const breadcrumbs = [{ label: t('common.dashboard'), href: '/admin/kepatuhan/dashboard' }, { label: t('compliance.title') }];
 
@@ -211,14 +198,16 @@ export default function Compliance({ frameworks = [], controls = [], workUnits =
                     <p className="text-muted mt-1 text-xs sm:text-sm">{t('compliance.subtitle')}</p>
                 </div>
 
-                <button
-                    type="button"
-                    onClick={openCreate}
-                    className="bg-primary shadow-blue hover:bg-primary-700 inline-flex items-center gap-2 rounded-[10px] px-4 py-2 text-xs font-semibold text-white transition-colors sm:text-sm"
-                >
-                    <Plus className="h-4 w-4" />
-                    <span>{t('compliance.addControl')}</span>
-                </button>
+                {can('control.create') && (
+                    <button
+                        type="button"
+                        onClick={openCreate}
+                        className="bg-primary shadow-blue hover:bg-primary-700 inline-flex items-center gap-2 rounded-[10px] px-4 py-2 text-xs font-semibold text-white transition-colors sm:text-sm"
+                    >
+                        <Plus className="h-4 w-4" />
+                        <span>{t('compliance.addControl')}</span>
+                    </button>
+                )}
             </div>
 
             {/* Framework cards grid */}
@@ -306,24 +295,6 @@ export default function Compliance({ frameworks = [], controls = [], workUnits =
                             className="border-border-strong text-ink placeholder:text-faint focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white py-2 pr-4 pl-9 text-xs focus:ring-2 focus:outline-none sm:text-sm"
                         />
                     </div>
-
-                    <Select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className="min-w-[150px]">
-                        <option value="Semua Status">{t('compliance.allStatus')}</option>
-                        {STATUS_OPTIONS.map((s) => (
-                            <option key={s} value={s}>
-                                {t(`status.${s}`)}
-                            </option>
-                        ))}
-                    </Select>
-
-                    <Select value={selectedUnit} onChange={(e) => setSelectedUnit(e.target.value)} className="min-w-[170px]">
-                        <option value="Semua Unit">{t('compliance.allUnits')}</option>
-                        {workUnits.map((u) => (
-                            <option key={u.id} value={String(u.id)}>
-                                {u.nama}
-                            </option>
-                        ))}
-                    </Select>
                 </div>
 
                 <div className="overflow-x-auto">
@@ -339,20 +310,14 @@ export default function Compliance({ frameworks = [], controls = [], workUnits =
                                 <th scope="col" className="px-5 py-3 text-left font-semibold">
                                     {t('compliance.category')}
                                 </th>
-                                <th scope="col" className="px-5 py-3 text-left font-semibold">
-                                    {t('compliance.workUnit')}
-                                </th>
-                                <th scope="col" className="px-5 py-3 text-left font-semibold">
-                                    {t('compliance.status')}
-                                </th>
                                 <th scope="col" className="px-5 py-3 text-right font-semibold">
                                     {t('compliance.actions')}
                                 </th>
                             </tr>
                         </thead>
                         <tbody className="divide-border divide-y">
-                            {paginatedControls.length > 0 ? (
-                                paginatedControls.map((item) => (
+                            {items.length > 0 ? (
+                                items.map((item) => (
                                     <tr key={item.id} className="hover:bg-surface/50 transition-colors">
                                         <td className="text-primary px-5 py-4 font-bold whitespace-nowrap">{item.code}</td>
                                         <td className="px-5 py-4 text-left">
@@ -364,25 +329,6 @@ export default function Compliance({ frameworks = [], controls = [], workUnits =
                                                 {item.category === 'Annex A' ? 'Annex A' : 'Klausul 4-10'}
                                             </span>
                                         </td>
-                                        <td className="px-5 py-4 text-left whitespace-nowrap">
-                                            {item.unit_nama ? (
-                                                <>
-                                                    <div className="text-navy font-medium">{item.unit_nama}</div>
-                                                    <div className="text-faint text-xs">{item.pic_name}</div>
-                                                </>
-                                            ) : (
-                                                <span className="text-faint text-xs">{t('compliance.noEntryYet')}</span>
-                                            )}
-                                        </td>
-                                        <td className="px-5 py-4 text-left whitespace-nowrap">
-                                            {item.status ? (
-                                                <StatusBadge tone={statusTone(item.status)}>
-                                                    {t(`status.${item.status as 'compliant' | 'partial' | 'non_compliant' | 'na'}`)}
-                                                </StatusBadge>
-                                            ) : (
-                                                <StatusBadge tone="gray">{t('status.na')}</StatusBadge>
-                                            )}
-                                        </td>
                                         <td className="px-5 py-4 text-right whitespace-nowrap">
                                             <div className="flex items-center justify-end gap-1.5">
                                                 <button
@@ -393,54 +339,58 @@ export default function Compliance({ frameworks = [], controls = [], workUnits =
                                                 >
                                                     <Eye className="h-4 w-4" />
                                                 </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => openEdit(item)}
-                                                    className="text-muted hover:bg-surface-2 rounded-lg p-1.5 transition-colors"
-                                                    title={t('compliance.editControl')}
-                                                >
-                                                    <svg
-                                                        width="16"
-                                                        height="16"
-                                                        viewBox="0 0 24 24"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        strokeWidth="2"
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
+                                                {can('control.update') && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => openEdit(item)}
+                                                        className="text-muted hover:bg-surface-2 rounded-lg p-1.5 transition-colors"
+                                                        title={t('compliance.editControl')}
                                                     >
-                                                        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                                                    </svg>
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleDelete(item)}
-                                                    className="text-danger hover:bg-danger-bg rounded-lg p-1.5 transition-colors"
-                                                    title={t('compliance.deleteControl')}
-                                                >
-                                                    <svg
-                                                        width="16"
-                                                        height="16"
-                                                        viewBox="0 0 24 24"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        strokeWidth="2"
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
+                                                        <svg
+                                                            width="16"
+                                                            height="16"
+                                                            viewBox="0 0 24 24"
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            strokeWidth="2"
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                        >
+                                                            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                                                        </svg>
+                                                    </button>
+                                                )}
+                                                {can('control.delete') && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDelete(item)}
+                                                        className="text-danger hover:bg-danger-bg rounded-lg p-1.5 transition-colors"
+                                                        title={t('compliance.deleteControl')}
                                                     >
-                                                        <path d="M3 6h18" />
-                                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                                        <line x1="10" x2="10" y1="11" y2="17" />
-                                                        <line x1="14" x2="14" y1="11" y2="17" />
-                                                    </svg>
-                                                </button>
+                                                        <svg
+                                                            width="16"
+                                                            height="16"
+                                                            viewBox="0 0 24 24"
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            strokeWidth="2"
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                        >
+                                                            <path d="M3 6h18" />
+                                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                                            <line x1="10" x2="10" y1="11" y2="17" />
+                                                            <line x1="14" x2="14" y1="11" y2="17" />
+                                                        </svg>
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={6}>
+                                    <td colSpan={4}>
                                         <EmptyState message={t('compliance.noResults')} />
                                     </td>
                                 </tr>
@@ -450,14 +400,23 @@ export default function Compliance({ frameworks = [], controls = [], workUnits =
                 </div>
 
                 <Pagination
-                    currentPage={safeCurrentPage}
-                    totalPages={totalPages}
-                    perPage={perPage}
-                    totalItems={totalItems}
-                    startIndex={startIndex}
-                    endIndex={endIndex}
-                    onPageChange={setCurrentPage}
-                    onPerPageChange={setPerPage}
+                    currentPage={controls?.current_page ?? 1}
+                    totalPages={controls?.last_page ?? 1}
+                    perPage={controls?.per_page ?? 20}
+                    totalItems={controls?.total ?? 0}
+                    startIndex={((controls?.current_page ?? 1) - 1) * (controls?.per_page ?? 20)}
+                    endIndex={controls?.to ?? 0}
+                    onPageChange={(target) =>
+                        router.get(
+                            '/admin/kepatuhan/compliance',
+                            {
+                                search: searchQuery || undefined,
+                                framework_id: selectedFrameworkId ? String(selectedFrameworkId) : undefined,
+                                page: target > 1 ? target : undefined,
+                            },
+                            { preserveState: true },
+                        )
+                    }
                 />
             </section>
 
@@ -516,38 +475,6 @@ export default function Compliance({ frameworks = [], controls = [], workUnits =
                                 </span>
                             </div>
                         </div>
-
-                        <h4 className="text-navy text-sm font-bold">{t('compliance.unitsAssessed')}</h4>
-                        {detailTarget.unit_nama ? (
-                            <div className="border-border overflow-hidden rounded-[10px] border">
-                                <table className="w-full text-left text-[13px]">
-                                    <thead className="border-border bg-surface/60 text-muted border-b text-[11px] font-bold tracking-wider uppercase">
-                                        <tr>
-                                            <th className="px-4 py-2.5 font-semibold">{t('compliance.unitWork')}</th>
-                                            <th className="px-4 py-2.5 font-semibold">{t('compliance.pic')}</th>
-                                            <th className="px-4 py-2.5 font-semibold">{t('compliance.cycleStatus')}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr className="border-border border-t">
-                                            <td className="text-navy px-4 py-3 font-semibold">{detailTarget.unit_nama}</td>
-                                            <td className="px-4 py-3">{detailTarget.pic_name}</td>
-                                            <td className="px-4 py-3">
-                                                {detailTarget.status ? (
-                                                    <StatusBadge tone={statusTone(detailTarget.status)}>
-                                                        {t(`status.${detailTarget.status as 'compliant' | 'partial' | 'non_compliant' | 'na'}`)}
-                                                    </StatusBadge>
-                                                ) : (
-                                                    <StatusBadge tone="gray">{t('status.na')}</StatusBadge>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        ) : (
-                            <p className="text-faint text-[13px]">{t('compliance.noEntryYet')}</p>
-                        )}
                     </div>
                 )}
             </Modal>
