@@ -91,6 +91,7 @@ Route::middleware('auth')->group(function () {
     // Evidences
     Route::get('checklist-entries/{checklistEntry}/evidences', [ComplianceEvidenceController::class, 'index']);
     Route::post('checklist-entries/{checklistEntry}/evidences', [ComplianceEvidenceController::class, 'store']);
+    Route::get('evidences/{id}/download', [ComplianceEvidenceController::class, 'download']);
     Route::delete('evidences/{complianceEvidence}', [ComplianceEvidenceController::class, 'destroy']);
     Route::post('evidences/{id}/restore', [ComplianceEvidenceController::class, 'restore']);
 

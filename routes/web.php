@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\ComplianceEvidenceController;
 use App\Http\Controllers\Web\AuditLogController;
 use App\Http\Controllers\Web\AuditorDashboardController;
 use App\Http\Controllers\Web\AuthController;
@@ -20,6 +21,8 @@ use Inertia\Inertia;
 */
 
 Route::middleware('auth')->group(function () {
+    Route::get('/evidences/{id}/download', [ComplianceEvidenceController::class, 'download'])->name('evidences.download');
+
     Route::get('/', function () {
         $target = match (auth()->user()->role) {
             'superadmin' => '/admin/superadmin/dashboard',
