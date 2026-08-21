@@ -1,6 +1,6 @@
 import { t } from '@/lib/i18n';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Eye, EyeOff, Lock, Mail, Shield, TrendingUp } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff, Loader2, Lock, Mail, Shield, ShieldCheck, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Login() {
@@ -10,6 +10,11 @@ export default function Login() {
     });
 
     const [showPassword, setShowPassword] = useState(false);
+
+    // Backend attaches the combined credential failure ("Email atau password salah.")
+    // to the `email` key — surface it as a form-level alert, not an email-field error.
+    const formError = errors.email?.toLowerCase().includes('password') ? errors.email : null;
+    const emailFieldError = formError ? null : errors.email;
 
     function submit(e: React.FormEvent) {
         e.preventDefault();
@@ -21,66 +26,107 @@ export default function Login() {
             <Head title="Masuk - SMKI" />
             <div className="flex min-h-screen flex-col bg-white lg:flex-row">
                 {/* Left brand panel */}
-                <aside className="from-navy relative flex flex-col justify-between overflow-hidden bg-gradient-to-b to-[#001A30] px-8 py-8 text-white lg:w-[44%] lg:px-14 lg:py-12">
+                <aside className="from-navy relative flex flex-col justify-between overflow-hidden bg-gradient-to-b to-[#001A30] px-8 py-8 text-white lg:w-[46%] lg:px-14 lg:py-12">
+                    {/* Ambient glows */}
                     <div
-                        className="absolute inset-0 opacity-40"
+                        aria-hidden
+                        className="absolute inset-0"
                         style={{
                             backgroundImage:
-                                'radial-gradient(circle at 20% 10%, rgba(25,110,205,.35) 0, transparent 45%), radial-gradient(circle at 85% 90%, rgba(25,110,205,.22) 0, transparent 40%)',
+                                'radial-gradient(circle at 18% 8%, rgba(25,110,205,.38) 0, transparent 45%), radial-gradient(circle at 85% 92%, rgba(25,110,205,.24) 0, transparent 42%)',
                         }}
                     />
+                    {/* Grid texture */}
+                    <div
+                        aria-hidden
+                        className="absolute inset-0 opacity-[0.05]"
+                        style={{
+                            backgroundImage:
+                                'linear-gradient(rgba(255,255,255,.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.6) 1px, transparent 1px)',
+                            backgroundSize: '44px 44px',
+                        }}
+                    />
+                    {/* Floating orb */}
+                    <div aria-hidden className="bg-primary/25 absolute -top-28 -right-28 h-80 w-80 rounded-full blur-3xl" />
 
-                    <div className="relative flex items-center gap-3">
-                        <div className="bg-primary shadow-blue flex h-11 w-11 items-center justify-center rounded-xl text-white">
+                    <div className="animate-in fade-in relative flex items-center gap-3 duration-500">
+                        <div className="bg-primary shadow-blue ring-white/25 flex h-11 w-11 items-center justify-center rounded-xl text-white ring-1 ring-inset">
                             <Shield className="h-6 w-6 fill-white/20" />
                         </div>
-                        <div>
-                            <strong className="block text-[17px] font-bold">{t('layout.brand')}</strong>
-                        </div>
+                        <strong className="block text-[17px] font-bold tracking-tight">{t('layout.brand')}</strong>
                     </div>
 
-                    <div className="relative hidden lg:block">
-                        <h2 className="text-2xl leading-snug font-bold">
-                            {t('auth.brandPanel.headlineBefore')}{' '}
-                            <em className="text-primary-200 not-italic">{t('auth.brandPanel.headlineHighlight')}</em>
-                        </h2>
-                        <p className="mt-3 max-w-md text-sm leading-relaxed text-[#B9D1E6]">{t('auth.brandPanel.description')}</p>
+                    <div className="relative my-10 hidden lg:block">
+                        <span className="border-white/15 text-primary-100 inline-flex items-center gap-2 rounded-full border bg-white/5 px-3 py-1.5 text-[11px] font-bold tracking-[0.18em] uppercase">
+                            <ShieldCheck className="h-3.5 w-3.5" />
+                            {t('auth.brandPanel.eyebrow')}
+                        </span>
 
-                        <div className="mt-8 flex flex-wrap gap-2">
+                        <h2 className="mt-5 max-w-lg text-[32px] leading-[1.15] font-extrabold tracking-tight text-white">
+                            {t('auth.brandPanel.headlineBefore')}{' '}
+                            <em className="from-primary-200 to-sky-300 bg-gradient-to-r bg-clip-text not-italic text-transparent">
+                                {t('auth.brandPanel.headlineHighlight')}
+                            </em>
+                        </h2>
+
+                        <div className="mt-8 flex max-w-md flex-col gap-3">
                             {[
                                 { icon: TrendingUp, label: t('auth.brandPanel.features.auditable') },
                                 { icon: Shield, label: t('auth.brandPanel.features.centralized') },
                                 { icon: Lock, label: t('auth.brandPanel.features.notifications') },
-                            ].map((f) => (
-                                <span
+                            ].map((f, i) => (
+                                <div
                                     key={f.label}
-                                    className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-medium text-[#B9D1E6]"
+                                    className="animate-in fade-in slide-in-from-bottom-2 border-white/10 flex items-center gap-3 rounded-xl border bg-white/[0.06] px-4 py-3 backdrop-blur-sm"
+                                    style={{ animationDelay: `${150 + i * 90}ms`, animationFillMode: 'backwards' }}
                                 >
-                                    <f.icon className="h-3.5 w-3.5" />
-                                    {f.label}
-                                </span>
+                                    <div className="bg-primary/25 text-primary-200 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">
+                                        <f.icon className="h-4 w-4" />
+                                    </div>
+                                    <span className="text-sm font-medium text-white/90">{f.label}</span>
+                                </div>
                             ))}
                         </div>
                     </div>
 
-                    <p className="relative text-xs text-[#7D9BB5]">{t('auth.brandPanel.copyright')}</p>
+                    <div className="relative">
+                        <p className="text-xs text-[#7D9BB5]">{t('auth.brandPanel.copyright')}</p>
+                    </div>
                 </aside>
 
                 {/* Right form panel */}
-                <main className="bg-surface flex flex-1 items-center justify-center px-6 py-10">
-                    <div className="w-full max-w-md">
-                        <div className="border-border rounded-[18px] border bg-white p-8 shadow-md">
+                <main className="bg-surface relative flex flex-1 items-center justify-center overflow-hidden px-6 py-10">
+                    <div
+                        aria-hidden
+                        className="absolute inset-0"
+                        style={{
+                            backgroundImage:
+                                'radial-gradient(circle at 82% -5%, rgba(25,110,205,.09) 0, transparent 42%), radial-gradient(circle at 0% 105%, rgba(25,110,205,.07) 0, transparent 45%)',
+                        }}
+                    />
+
+                    <div className="relative w-full max-w-md">
+                        <div className="animate-in fade-in slide-in-from-bottom-4 ring-navy/5 duration-500 rounded-[20px] border bg-white p-8 shadow-lg ring-1 sm:p-10">
+                            {/* Mobile brand */}
                             <div className="mb-6 flex items-center gap-3 lg:hidden">
-                                <div className="bg-primary flex h-10 w-10 items-center justify-center rounded-xl text-white">
+                                <div className="bg-primary shadow-blue flex h-10 w-10 items-center justify-center rounded-xl text-white">
                                     <Shield className="h-5 w-5 fill-white/20" />
                                 </div>
-                                <div>
-                                    <strong className="text-navy block text-[15px] font-bold">{t('layout.brand')}</strong>
-                                </div>
+                                <strong className="text-navy block text-[15px] font-bold tracking-tight">{t('layout.brand')}</strong>
                             </div>
 
-                            <h1 className="text-navy text-xl font-bold">{t('auth.welcomeBack')}</h1>
-                            <p className="ac-sub text-muted mt-1 text-sm">{t('auth.welcomeBackSubtitle')}</p>
+                            <h1 className="text-navy text-2xl font-bold tracking-tight">{t('auth.welcomeBack')}</h1>
+                            <p className="text-muted mt-1.5 text-sm">{t('auth.welcomeBackSubtitle')}</p>
+
+                            {formError && (
+                                <div
+                                    role="alert"
+                                    className="animate-in fade-in slide-in-from-bottom-2 bg-danger-bg border-danger-border text-danger mt-5 flex items-start gap-2.5 rounded-xl border px-4 py-3 text-sm font-medium"
+                                >
+                                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                                    <span>{formError}</span>
+                                </div>
+                            )}
 
                             <form onSubmit={submit} className="mt-6 flex flex-col gap-4">
                                 <div>
@@ -88,18 +134,23 @@ export default function Login() {
                                         {t('auth.login.email')}
                                     </label>
                                     <div className="relative">
-                                        <Mail className="text-faint absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                                        <Mail className="text-faint pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2" />
                                         <input
                                             id="email"
                                             type="email"
+                                            autoComplete="email"
                                             value={data.email}
                                             onChange={(e) => setData('email', e.target.value)}
                                             placeholder="nama@perusahaan.co.id"
                                             autoFocus
-                                            className="border-border-strong text-ink placeholder:text-faint focus:border-primary focus:ring-primary/20 h-11 w-full rounded-[10px] border bg-white pr-3 pl-10 text-sm focus:ring-2 focus:outline-none"
+                                            className={`focus:ring-primary/20 h-11 w-full rounded-xl border bg-white pr-3 pl-10 text-sm transition-colors focus:ring-2 focus:outline-none ${
+                                                emailFieldError
+                                                    ? 'border-danger focus:border-danger focus:ring-danger/20'
+                                                    : 'border-border-strong focus:border-primary'
+                                            }`}
                                         />
                                     </div>
-                                    {errors.email && <p className="text-danger mt-1 text-xs font-medium">{errors.email}</p>}
+                                    {emailFieldError && <p className="text-danger mt-1.5 text-xs font-medium">{emailFieldError}</p>}
                                 </div>
 
                                 <div>
@@ -107,33 +158,38 @@ export default function Login() {
                                         {t('auth.login.password')}
                                     </label>
                                     <div className="relative">
-                                        <Lock className="text-faint absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                                        <Lock className="text-faint pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2" />
                                         <input
                                             id="password"
                                             type={showPassword ? 'text' : 'password'}
+                                            autoComplete="current-password"
                                             value={data.password}
                                             onChange={(e) => setData('password', e.target.value)}
                                             placeholder="••••••••"
-                                            className="border-border-strong text-ink placeholder:text-faint focus:border-primary focus:ring-primary/20 h-11 w-full rounded-[10px] border bg-white pr-10 pl-10 text-sm focus:ring-2 focus:outline-none"
+                                            className={`focus:ring-primary/20 h-11 w-full rounded-xl border bg-white pr-11 pl-10 text-sm transition-colors focus:ring-2 focus:outline-none ${
+                                                errors.password
+                                                    ? 'border-danger focus:border-danger focus:ring-danger/20'
+                                                    : 'border-border-strong focus:border-primary'
+                                            }`}
                                         />
                                         <button
                                             type="button"
                                             onClick={() => setShowPassword((v) => !v)}
-                                            className="text-faint hover:text-muted absolute top-1/2 right-3 -translate-y-1/2"
+                                            className="text-faint hover:text-muted absolute top-1/2 right-3 -translate-y-1/2 transition-colors"
                                             aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                                         >
                                             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                         </button>
                                     </div>
-                                    {errors.password && <p className="text-danger mt-1 text-xs font-medium">{errors.password}</p>}
+                                    {errors.password && <p className="text-danger mt-1.5 text-xs font-medium">{errors.password}</p>}
                                 </div>
 
-                                <div className="flex items-center justify-between">
-                                    <label className="text-body flex items-center gap-2 text-[13px]">
+                                <div className="flex items-center justify-between pt-1">
+                                    <label className="text-body flex cursor-pointer items-center gap-2 text-[13px] select-none">
                                         <input type="checkbox" className="border-border-strong accent-primary h-4 w-4 rounded" />
                                         {t('auth.rememberMe')}
                                     </label>
-                                    <Link href={route('password.request')} className="text-primary hover:text-primary-700 text-[13px] font-semibold">
+                                    <Link href={route('password.request')} className="text-primary hover:text-primary-700 text-[13px] font-semibold transition-colors">
                                         {t('auth.login.forgotPassword')}
                                     </Link>
                                 </div>
@@ -141,25 +197,40 @@ export default function Login() {
                                 <button
                                     type="submit"
                                     disabled={processing}
-                                    className="bg-primary shadow-blue hover:bg-primary-700 mt-1 inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] text-sm font-semibold text-white transition-colors disabled:opacity-60"
+                                    className="group bg-primary shadow-blue hover:bg-primary-700 mt-2 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-105 active:scale-[0.99] disabled:pointer-events-none disabled:opacity-60"
                                 >
-                                    {t('auth.login.submit')}
-                                    <svg
-                                        width="16"
-                                        height="16"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                    >
-                                        <line x1="5" x2="19" y1="12" y2="12" />
-                                        <polyline points="12 5 19 12 12 19" />
-                                    </svg>
+                                    {processing ? (
+                                        <>
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                            {t('auth.login.submit')}
+                                        </>
+                                    ) : (
+                                        <>
+                                            {t('auth.login.submit')}
+                                            <svg
+                                                className="transition-transform group-hover:translate-x-0.5"
+                                                width="16"
+                                                height="16"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="2"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                            >
+                                                <line x1="5" x2="19" y1="12" y2="12" />
+                                                <polyline points="12 5 19 12 12 19" />
+                                            </svg>
+                                        </>
+                                    )}
                                 </button>
                             </form>
                         </div>
+
+                        <p className="text-faint mt-6 flex items-center justify-center gap-1.5 text-xs">
+                            <Lock className="h-3 w-3" />
+                            {t('auth.secureNote')}
+                        </p>
                     </div>
                 </main>
             </div>
