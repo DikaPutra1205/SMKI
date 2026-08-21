@@ -185,6 +185,7 @@ class AssessmentStore {
         percentage: number;
         invalidCount: number;
         compliantCount: number;
+        partialCount: number;
         nonCompliantCount: number;
         naCount: number;
         pendingCount: number;
@@ -192,21 +193,21 @@ class AssessmentStore {
         const entries = Array.from(this._entries.values());
         const total = entries.length;
         const compliantCount = entries.filter((e) => e.status === 'compliant').length;
+        const partialCount = entries.filter((e) => e.status === 'partial').length;
         const nonCompliantCount = entries.filter((e) => e.status === 'non_compliant').length;
         const naCount = entries.filter((e) => e.status === 'na').length;
-        const pendingCount = total - compliantCount - nonCompliantCount - naCount;
+        const pendingCount = total - compliantCount - partialCount - nonCompliantCount - naCount;
         const completed = entries.filter(
             (e) =>
                 e.status === 'compliant' ||
-                (e.status === 'non_compliant' && e.catatan && e.catatan.trim()) ||
-                (e.status === 'na' && e.catatan && e.catatan.trim()),
+                ((e.status === 'partial' || e.status === 'non_compliant' || e.status === 'na') && e.catatan && e.catatan.trim()),
         ).length;
         const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
         const invalidCount = entries
-            .filter((e) => !e.status || e.status === 'non_compliant' || e.status === 'na')
+            .filter((e) => !e.status || e.status === 'partial' || e.status === 'non_compliant' || e.status === 'na')
             .filter((e) => !e.catatan || !e.catatan.trim()).length;
 
-        return { completed, total, percentage, invalidCount, compliantCount, nonCompliantCount, naCount, pendingCount };
+        return { completed, total, percentage, invalidCount, compliantCount, partialCount, nonCompliantCount, naCount, pendingCount };
     }
 
     subscribe(listener: Listener): () => void {

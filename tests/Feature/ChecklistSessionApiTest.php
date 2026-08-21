@@ -206,6 +206,92 @@ class ChecklistSessionApiTest extends TestCase
         $this->assertSame('Semua klausul terverifikasi memuaskan.', $session->fresh()->catatan);
     }
 
+    public function test_summary_counts_partial_with_catatan_as_completed(): void
+    {
+        extract($this->setupData());
+
+        $session = ChecklistSession::create([
+            'konteks_penilaian' => 'Sesi Partial Summary',
+            'unit_id' => $unit->id,
+            'framework_id' => $fw->id,
+            'status' => 'in_progress',
+        ]);
+
+        ChecklistEntry::create([
+            'session_id' => $session->id,
+            'control_id' => $control1->id,
+            'unit_id' => $unit->id,
+            'pic_id' => $pic->id,
+            'status' => ChecklistEntry::STATUS_COMPLIANT,
+        ]);
+
+        ChecklistEntry::create([
+            'session_id' => $session->id,
+            'control_id' => $control2->id,
+            'unit_id' => $unit->id,
+            'pic_id' => $pic->id,
+            'status' => ChecklistEntry::STATUS_PARTIAL,
+            'catatan' => 'Kebijakan ada namun belum disosialisasikan.',
+        ]);
+
+        $res = $this->actingAs($admin)->getJson("/api/checklist-sessions/{$session->id}");
+        $res->assertOk();
+        $res->assertJsonPath('data.summary.total_entries', 2);
+        $res->assertJsonPath('data.summary.compliant', 1);
+        $res->assertJsonPath('data.summary.partial', 1);
+        $res->assertJsonPath('data.summary.compliance_percentage', 100);
+
+        // Partial without catatan must not count as completed
+        ChecklistEntry::create([
+            'session_id' => $session->id,
+            'control_id' => $control1->id,
+            'unit_id' => $unit->id,
+            'pic_id' => $pic->id,
+            'status' => ChecklistEntry::STATUS_PARTIAL,
+        ]);
+
+        $res = $this->actingAs($admin)->getJson("/api/checklist-sessions/{$session->id}");
+        $res->assertOk();
+        $res->assertJsonPath('data.summary.total_entries', 3);
+        $res->assertJsonPath('data.summary.compliance_percentage', 67);
+    }
+
+    public function test_web_submit_blocks_partial_without_catatan(): void
+    {
+        extract($this->setupData());
+
+        $session = ChecklistSession::create([
+            'konteks_penilaian' => 'Sesi Submit Partial',
+            'unit_id' => $unit->id,
+            'framework_id' => $fw->id,
+            'status' => 'in_progress',
+        ]);
+
+        ChecklistEntry::create([
+            'session_id' => $session->id,
+            'control_id' => $control1->id,
+            'unit_id' => $unit->id,
+            'pic_id' => $pic->id,
+            'status' => ChecklistEntry::STATUS_PARTIAL,
+        ]);
+
+        $this->actingAs($pic)
+            ->from('/admin/pic/assessments')
+            ->post("/admin/pic/assessments/{$session->id}/submit")
+            ->assertRedirect('/admin/pic/assessments')
+            ->assertSessionHas('flash.type', 'error');
+
+        // Filling the catatan lets the submit pass
+        $entry = $session->entries()->first();
+        $entry->update(['catatan' => 'Terpenuhi sebagian, perbaikan berjalan.']);
+
+        $this->actingAs($pic)
+            ->from('/admin/pic/assessments')
+            ->post("/admin/pic/assessments/{$session->id}/submit")
+            ->assertRedirect('/admin/pic/assessments')
+            ->assertSessionHas('flash.type', 'success');
+    }
+
     public function test_closed_session_locks_checklist_entries_from_updates(): void
     {
         extract($this->setupData());

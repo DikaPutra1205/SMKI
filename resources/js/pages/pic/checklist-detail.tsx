@@ -19,6 +19,7 @@ import {
     Shield,
     ShieldAlert,
     ShieldCheck,
+    ShieldHalf,
     Upload,
     XCircle,
 } from 'lucide-react';
@@ -92,6 +93,7 @@ const STATUS_OPTIONS = [
         color: 'border-emerald-500 bg-emerald-50 text-emerald-700',
         radioColor: 'bg-emerald-500',
     },
+    { value: 'partial', label: 'Sebagian Patuh', icon: ShieldHalf, color: 'border-amber-500 bg-amber-50 text-amber-700', radioColor: 'bg-amber-500' },
     { value: 'non_compliant', label: 'Ketidaksesuaian', icon: ShieldAlert, color: 'border-red-500 bg-red-50 text-red-700', radioColor: 'bg-red-500' },
     { value: 'na', label: 'Tidak Berlaku', icon: Shield, color: 'border-slate-400 bg-slate-50 text-slate-600', radioColor: 'bg-slate-400' },
 ];
@@ -127,6 +129,7 @@ function EntryItemRow({
     entryId,
     onEntryUpdate,
     onEvidenceUpdate,
+    highlight,
 }: {
     entryId: number;
     onEntryUpdate: (id: number, changes: Record<string, unknown>) => void;
@@ -134,6 +137,7 @@ function EntryItemRow({
         id: number,
         evidence: { id: number; checklist_entry_id: number; version_number: number; file_url: string; nama_file: string; is_active: boolean },
     ) => void;
+    highlight: boolean;
 }) {
     const entry = useAssessmentEntry(entryId);
     const [localCatatan, setLocalCatatan] = useState(entry?.catatan || '');
@@ -180,18 +184,28 @@ function EntryItemRow({
     if (!entry) return null;
 
     const isVerified = entry.tanggal_verifikasi !== null;
-    const isCatatanRequired = entry.status === 'non_compliant' || entry.status === 'na';
+    const missingStatus = !entry.status;
+    const isCatatanRequired = entry.status === 'partial' || entry.status === 'non_compliant' || entry.status === 'na';
     const isCatatanMissing = isCatatanRequired && !localCatatan.trim();
     const isEvidenceMissing = !entry.active_evidence;
+    const isIncomplete = missingStatus || isCatatanMissing || isEvidenceMissing;
+    const showErrorLabels = highlight && isIncomplete;
 
     return (
-        <div className="border-b border-slate-100 py-5 last:border-b-0 dark:border-slate-800">
+        <div
+            id={`entry-row-${entryId}`}
+            className={`border-b border-slate-100 py-5 last:border-b-0 dark:border-slate-800 ${
+                showErrorLabels ? 'rounded-lg border-l-4 border-l-red-400 bg-red-50/50 pr-2 pl-3 dark:bg-red-950/20' : ''
+            }`}
+        >
             <div className="mb-2 flex items-start justify-between">
                 <div className="flex items-center gap-2">
                     <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600 dark:bg-slate-800">
                         {entry.control.kode_klausul}
                     </span>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">{entry.control.judul}</h4>
+                    <h4 className={`text-sm font-bold ${showErrorLabels ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-white'}`}>
+                        {entry.control.judul}
+                    </h4>
                 </div>
                 {saveState !== 'idle' && (
                     <span className="inline-flex items-center gap-1 text-xs font-medium text-blue-600">
@@ -208,6 +222,13 @@ function EntryItemRow({
                     <CheckCircle2 className="h-3.5 w-3.5" />
                     Sudah Diverifikasi oleh Pengelola
                     {entry.catatan_admin && <span className="text-slate-400">&mdash; {entry.catatan_admin}</span>}
+                </div>
+            )}
+
+            {showErrorLabels && missingStatus && (
+                <div className="mb-2 flex items-center gap-1 text-[11px] font-medium text-red-500">
+                    <XCircle className="h-3 w-3" />
+                    Status wajib dipilih
                 </div>
             )}
 
@@ -309,7 +330,7 @@ function EntryItemRow({
                     </div>
                 )}
                 {isEvidenceMissing && (
-                    <div className="flex items-center gap-1 text-[11px] font-medium text-amber-500">
+                    <div className={`flex items-center gap-1 text-[11px] font-medium ${showErrorLabels ? 'text-red-500' : 'text-amber-500'}`}>
                         <XCircle className="h-3 w-3" />
                         Bukti wajib diunggah
                     </div>
@@ -340,6 +361,7 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
     const [pageLoading, setPageLoading] = useState(false);
     const [atBottom, setAtBottom] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [highlightIncomplete, setHighlightIncomplete] = useState(false);
     const isLoading = usePageLoading();
 
     const {
@@ -413,10 +435,22 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
 
     const currentPageMeta = pageMeta[currentPageIndex];
 
+    const isEntryIncomplete = (e: EntryInput): boolean => {
+        const needsCatatan = e.status === 'partial' || e.status === 'non_compliant' || e.status === 'na';
+        return !e.status || !e.active_evidence || (needsCatatan && !(e.catatan ?? '').trim());
+    };
+
     const isCurrentPageComplete = useMemo(() => {
         if (currentEntries.length === 0) return false;
-        return currentEntries.every((e) => e.status && e.status !== '' && e.active_evidence);
+        return currentEntries.every((e) => !isEntryIncomplete(e));
     }, [currentEntries]);
+
+    const incompleteCount = useMemo(() => currentEntries.filter((e) => isEntryIncomplete(e)).length, [currentEntries]);
+
+    const firstIncompleteEntryId = useMemo(() => {
+        const source = filteredEntries.length > 0 ? filteredEntries : currentEntries;
+        return source.find((e) => isEntryIncomplete(e))?.id ?? null;
+    }, [filteredEntries, currentEntries]);
 
     useEffect(() => {
         const onScroll = () => {
@@ -463,12 +497,21 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
 
     const handlePrevPage = () => {
         if (currentPageIndex > 0) {
+            setHighlightIncomplete(false);
             loadPage(currentPageIndex - 1);
             scrollToTop();
         }
     };
 
     const handleNextPage = () => {
+        if (!isCurrentPageComplete) {
+            setHighlightIncomplete(true);
+            if (firstIncompleteEntryId !== null) {
+                document.getElementById(`entry-row-${firstIncompleteEntryId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            return;
+        }
+        setHighlightIncomplete(false);
         if (currentPageIndex < pageMeta.length - 1) {
             loadPage(currentPageIndex + 1);
             scrollToTop();
@@ -531,6 +574,12 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
                             style={{ width: `${progress.total > 0 ? (progress.compliantCount / progress.total) * 100 : 0}%` }}
                         />
                     )}
+                    {progress.partialCount > 0 && (
+                        <div
+                            className="h-full bg-amber-500 transition-all duration-500"
+                            style={{ width: `${progress.total > 0 ? (progress.partialCount / progress.total) * 100 : 0}%` }}
+                        />
+                    )}
                     {progress.nonCompliantCount > 0 && (
                         <div
                             className="h-full bg-red-500 transition-all duration-500"
@@ -574,9 +623,13 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
                         <button
                             type="button"
                             onClick={handleNextPage}
-                            disabled={currentPageIndex >= pageMeta.length - 1 || pageLoading || !isCurrentPageComplete}
-                            title={!isCurrentPageComplete ? 'Jawab semua kontrol di halaman ini terlebih dahulu' : ''}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                            disabled={currentPageIndex >= pageMeta.length - 1 || pageLoading}
+                            title={!isCurrentPageComplete ? 'Masih ada kontrol yang belum lengkap — klik untuk menuju bagian yang belum diisi' : ''}
+                            className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium shadow-sm transition-colors ${
+                                !isCurrentPageComplete && currentPageIndex < pageMeta.length - 1
+                                    ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-400'
+                                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'
+                            }`}
                         >
                             Selanjutnya
                             <ArrowRight className="h-4 w-4" />
@@ -587,9 +640,12 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
                             <span className="text-xs text-blue-500">Memuat halaman...</span>
                         </div>
                     )}
-                    {!pageLoading && !isCurrentPageComplete && currentPageIndex < pageMeta.length - 1 && (
+                    {!pageLoading && !isCurrentPageComplete && (
                         <div className="mt-2 flex justify-center">
-                            <span className="text-xs text-amber-500">Isi semua status dan unggah bukti di halaman ini untuk melanjutkan</span>
+                            <span className="text-xs font-medium text-red-500">
+                                {incompleteCount} kontrol belum lengkap (status/bukti/catatan)
+                                {currentPageIndex < pageMeta.length - 1 ? ' — klik "Selanjutnya" untuk menuju bagian yang belum diisi' : ''}
+                            </span>
                         </div>
                     )}
                 </div>
@@ -642,6 +698,7 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
                                 entryId={entry.id}
                                 onEntryUpdate={handleEntryUpdate}
                                 onEvidenceUpdate={handleEvidenceUpdate}
+                                highlight={highlightIncomplete}
                             />
                         ))}
                     </div>
