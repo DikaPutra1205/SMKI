@@ -82,6 +82,18 @@ class NavigationService
                 'icon' => 'Database',
                 'permissions' => ['framework.view', 'work-unit.view'],
             ],
+            [
+                'label' => 'User Management',
+                'url' => '/admin/superadmin/users',
+                'icon' => 'Users',
+                'permissions' => ['user.managementview'],
+            ],
+            [
+                'label' => 'Role Management',
+                'url' => '/admin/superadmin/roles',
+                'icon' => 'Shield',
+                'permissions' => ['role.managementview'],
+            ],
 
             // ── Admin Kepatuhan & other roles ───────────────────────────
             [
