@@ -108,7 +108,6 @@ class NavigationService
                 'url' => '/admin/kepatuhan/compliance',
                 'icon' => 'ShieldCheck',
                 'permissions' => ['control.view'],
-                'denies' => ['work-unit.view'],
             ],
             [
                 'label' => 'Verifikasi Entri',
@@ -126,25 +125,25 @@ class NavigationService
             ],
 
             [
-                'label'       => 'Audit Log',
-                'url'         => '/admin/kepatuhan/audit-logs',
-                'icon'        => 'History',
+                'label' => 'Audit Log',
+                'url' => '/admin/kepatuhan/audit-logs',
+                'icon' => 'History',
                 'permissions' => ['audit-log.view'],
-                'denies'      => ['work-unit.view'],
+                'denies' => ['work-unit.view'],
             ],
             [
-                'label'       => 'Findings',
-                'url'         => '/admin/kepatuhan/findings',
-                'icon'        => 'AlertCircle',
+                'label' => 'Findings',
+                'url' => '/admin/kepatuhan/findings',
+                'icon' => 'AlertCircle',
                 'permissions' => ['finding.view'],
-                'denies'      => ['work-unit.view'],
+                'denies' => ['work-unit.view'],
             ],
             [
-                'label'       => 'Risks',
-                'url'         => '/admin/kepatuhan/risks',
-                'icon'        => 'AlertTriangle',
+                'label' => 'Risks',
+                'url' => '/admin/kepatuhan/risks',
+                'icon' => 'AlertTriangle',
                 'permissions' => ['risk.view'],
-                'denies'      => ['work-unit.view'],
+                'denies' => ['work-unit.view'],
             ],
 
             // ── PIC Satuan Kerja ──────────────────────────────────────
