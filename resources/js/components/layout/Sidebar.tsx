@@ -2,7 +2,7 @@ import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { NavEntry, SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { ChevronDown, ChevronRight, ClipboardCheck, Database, LayoutGrid, LogOut, Shield, ShieldCheck, X } from 'lucide-react';
+import { CheckSquare, ChevronDown, ChevronRight, ClipboardCheck, Database, LayoutGrid, LogOut, Shield, ShieldCheck, X } from 'lucide-react';
 import { type ComponentType, useState } from 'react';
 
 interface SidebarProps {
@@ -16,7 +16,9 @@ const ICON_MAP: Record<string, ComponentType<{ className?: string }>> = {
     Database,
     ShieldCheck,
     ClipboardCheck,
+    CheckSquare,
 };
+
 
 export function Sidebar({ isOpen, onClose, currentPath }: SidebarProps) {
     const page = usePage<SharedData>();

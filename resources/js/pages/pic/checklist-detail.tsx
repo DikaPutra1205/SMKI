@@ -362,7 +362,8 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
     const [atBottom, setAtBottom] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [highlightIncomplete, setHighlightIncomplete] = useState(false);
-    const isLoading = usePageLoading();
+    // Checklist detail URLs are /admin/pic/assessments/{id} — use prefix matching
+    const isLoading = usePageLoading('/admin/pic/assessments/');
 
     const {
         initialize,
