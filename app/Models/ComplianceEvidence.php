@@ -65,12 +65,34 @@ class ComplianceEvidence extends Model
             return $key;
         }
 
+        if (! empty($this->attributes['id'])) {
+            return route('evidences.download', $this->attributes['id']);
+        }
+
+        return $key;
+    }
+
+    /**
+     * Dapatkan Presigned S3/Supabase URL secara on-demand saat file diunduh.
+     */
+    public function getPresignedUrl(int $minutes = 30): ?string
+    {
+        $key = $this->attributes['file_url'] ?? '';
+
+        if (! $key) {
+            return null;
+        }
+
+        if (filter_var($key, FILTER_VALIDATE_URL)) {
+            return $key;
+        }
+
         try {
-            return Storage::disk('supabase')->temporaryUrl($key, now()->addMinutes(30));
+            return Storage::disk('supabase')->temporaryUrl($key, now()->addMinutes($minutes));
         } catch (\Throwable $e) {
             report($e);
 
-            return $key;
+            return Storage::disk('supabase')->url($key);
         }
     }
 
