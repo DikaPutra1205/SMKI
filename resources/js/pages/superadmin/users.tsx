@@ -77,8 +77,13 @@ export default function Users({ users, roles, units }: Props) {
             role_id: data.role_id ? Number(data.role_id) : null,
             unit_id: data.unit_id ? Number(data.unit_id) : null,
         });
-        if (mode === 'create') form.transform(coerce).post('/admin/superadmin/users', { onSuccess: close });
-        else if (mode === 'edit' && editingId) form.transform(coerce).patch(`/admin/superadmin/users/${editingId}`, { onSuccess: close });
+        if (mode === 'create') {
+            form.transform(coerce);
+            form.post('/admin/superadmin/users', { onSuccess: close });
+        } else if (mode === 'edit' && editingId) {
+            form.transform(coerce);
+            form.patch(`/admin/superadmin/users/${editingId}`, { onSuccess: close });
+        }
     }
     function confirmDelete() {
         if (!delTarget) return;
