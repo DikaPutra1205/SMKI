@@ -227,10 +227,9 @@ export const id = {
             backToLogin: 'Kembali ke login',
         },
         brandPanel: {
+            eyebrow: 'Sistem Kepatuhan Digital',
             headlineBefore: 'Kelola kepatuhan organisasi Anda dalam',
             headlineHighlight: 'satu platform.',
-            description:
-                'Framework kontrol, checklist, evidence, temuan, dan risiko — terintegrasi dengan alur kerja yang transparan dan dapat diaudit.',
             footerQuote: 'Sistem Kepatuhan Digital membantu Anda menjaga kepatuhan standar ISO tetap transparan, terdokumentasi, dan siap diaudit.',
             features: {
                 auditable: '100% dapat diaudit',
@@ -242,10 +241,9 @@ export const id = {
         welcomeBack: 'Selamat datang kembali',
         welcomeBackSubtitle: 'Masuk untuk mengakses dashboard kepatuhan Anda.',
         rememberMe: 'Ingat saya',
-        noAccount: 'Belum punya akun?',
-        contactAdmin: 'Hubungi Administrator',
         showPassword: 'Tampilkan kata sandi',
         hidePassword: 'Sembunyikan kata sandi',
+        secureNote: 'Koneksi terenkripsi · Aktivitas tercatat untuk audit',
         resetSent: 'Permintaan terkirim (fitur reset masih dalam pengembangan).',
     },
     checklist: {
