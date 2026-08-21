@@ -36,7 +36,6 @@ export default function Login() {
                         </div>
                         <div>
                             <strong className="block text-[17px] font-bold">{t('layout.brand')}</strong>
-                            <span className="text-primary-200 block text-[11px] font-semibold tracking-[.12em] uppercase">{t('layout.suite')}</span>
                         </div>
                     </div>
 
@@ -77,7 +76,6 @@ export default function Login() {
                                 </div>
                                 <div>
                                     <strong className="text-navy block text-[15px] font-bold">{t('layout.brand')}</strong>
-                                    <span className="text-faint block text-[11px] tracking-[.12em] uppercase">{t('layout.suite')}</span>
                                 </div>
                             </div>
 
@@ -162,13 +160,6 @@ export default function Login() {
                                 </button>
                             </form>
                         </div>
-
-                        <p className="text-muted mt-5 text-center text-[13px]">
-                            {t('auth.noAccount')}{' '}
-                            <a href="#" className="text-primary font-semibold">
-                                {t('auth.contactAdmin')}
-                            </a>
-                        </p>
                     </div>
                 </main>
             </div>
