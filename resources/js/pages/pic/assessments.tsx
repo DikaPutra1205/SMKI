@@ -45,7 +45,7 @@ export default function Assessments({ sessions, user_unit }: AssessmentsProps) {
     const { flash } = usePage<{ flash?: { type: string; message: string } }>().props;
     const [flashVisible, setFlashVisible] = useState(false);
     const [showModal, setShowModal] = useState(false);
-    const isLoading = usePageLoading();
+    const isLoading = usePageLoading('/admin/pic/assessments');
 
     useEffect(() => {
         if (flash?.message) {
