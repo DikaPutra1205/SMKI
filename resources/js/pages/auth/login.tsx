@@ -24,7 +24,7 @@ export default function Login() {
     return (
         <>
             <Head title="Masuk - SMKI" />
-            <div className="flex min-h-screen flex-col bg-white lg:flex-row">
+            <div className="flex min-h-screen flex-col bg-white dark:bg-slate-900 lg:flex-row">
                 {/* Left brand panel */}
                 <aside className="from-navy relative flex flex-col justify-between overflow-hidden bg-gradient-to-b to-[#001A30] px-8 py-8 text-white lg:w-[46%] lg:px-14 lg:py-12">
                     {/* Ambient glows */}
@@ -95,7 +95,7 @@ export default function Login() {
                 </aside>
 
                 {/* Right form panel */}
-                <main className="bg-surface relative flex flex-1 items-center justify-center overflow-hidden px-6 py-10">
+                <main className="bg-surface dark:bg-slate-900 relative flex flex-1 items-center justify-center overflow-hidden px-6 py-10">
                     <div
                         aria-hidden
                         className="absolute inset-0"
@@ -106,22 +106,22 @@ export default function Login() {
                     />
 
                     <div className="relative w-full max-w-md">
-                        <div className="animate-in fade-in slide-in-from-bottom-4 ring-navy/5 duration-500 rounded-[20px] border bg-white p-8 shadow-lg ring-1 sm:p-10">
+                        <div className="animate-in fade-in slide-in-from-bottom-4 ring-navy/5 dark:ring-white/10 duration-500 rounded-[20px] border bg-white dark:bg-slate-900 p-8 shadow-lg ring-1 sm:p-10">
                             {/* Mobile brand */}
                             <div className="mb-6 flex items-center gap-3 lg:hidden">
                                 <div className="bg-primary shadow-blue flex h-10 w-10 items-center justify-center rounded-xl text-white">
                                     <Shield className="h-5 w-5 fill-white/20" />
                                 </div>
-                                <strong className="text-navy block text-[15px] font-bold tracking-tight">{t('layout.brand')}</strong>
+                                <strong className="text-navy dark:text-white block text-[15px] font-bold tracking-tight">{t('layout.brand')}</strong>
                             </div>
 
-                            <h1 className="text-navy text-2xl font-bold tracking-tight">{t('auth.welcomeBack')}</h1>
-                            <p className="text-muted mt-1.5 text-sm">{t('auth.welcomeBackSubtitle')}</p>
+                            <h1 className="text-navy dark:text-white text-2xl font-bold tracking-tight">{t('auth.welcomeBack')}</h1>
+                            <p className="text-muted dark:text-slate-400 mt-1.5 text-sm">{t('auth.welcomeBackSubtitle')}</p>
 
                             {formError && (
                                 <div
                                     role="alert"
-                                    className="animate-in fade-in slide-in-from-bottom-2 bg-danger-bg border-danger-border text-danger mt-5 flex items-start gap-2.5 rounded-xl border px-4 py-3 text-sm font-medium"
+                                    className="animate-in fade-in slide-in-from-bottom-2 bg-danger-bg border-danger-border dark:border-red-800 text-danger dark:text-red-400 mt-5 flex items-start gap-2.5 rounded-xl border px-4 py-3 text-sm font-medium"
                                 >
                                     <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                                     <span>{formError}</span>
@@ -130,11 +130,11 @@ export default function Login() {
 
                             <form onSubmit={submit} className="mt-6 flex flex-col gap-4">
                                 <div>
-                                    <label htmlFor="email" className="text-navy mb-1.5 block text-xs font-semibold">
+                                    <label htmlFor="email" className="text-navy dark:text-white mb-1.5 block text-xs font-semibold">
                                         {t('auth.login.email')}
                                     </label>
                                     <div className="relative">
-                                        <Mail className="text-faint pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2" />
+                                        <Mail className="text-faint dark:text-slate-500 pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2" />
                                         <input
                                             id="email"
                                             type="email"
@@ -143,22 +143,22 @@ export default function Login() {
                                             onChange={(e) => setData('email', e.target.value)}
                                             placeholder="nama@perusahaan.co.id"
                                             autoFocus
-                                            className={`focus:ring-primary/20 h-11 w-full rounded-xl border bg-white pr-3 pl-10 text-sm transition-colors focus:ring-2 focus:outline-none ${
+                                            className={`focus:ring-primary/20 h-11 w-full rounded-xl border bg-white dark:bg-slate-900 pr-3 pl-10 text-sm transition-colors focus:ring-2 focus:outline-none ${
                                                 emailFieldError
-                                                    ? 'border-danger focus:border-danger focus:ring-danger/20'
-                                                    : 'border-border-strong focus:border-primary'
+                                                    ? 'border-danger dark:border-red-700 focus:border-danger dark:focus:border-red-500 focus:ring-danger/20 dark:focus:ring-red-500/20'
+                                                    : 'border-border-strong dark:border-slate-600 focus:border-primary'
                                             }`}
                                         />
                                     </div>
-                                    {emailFieldError && <p className="text-danger mt-1.5 text-xs font-medium">{emailFieldError}</p>}
+                                    {emailFieldError && <p className="text-danger dark:text-red-400 mt-1.5 text-xs font-medium">{emailFieldError}</p>}
                                 </div>
 
                                 <div>
-                                    <label htmlFor="password" className="text-navy mb-1.5 block text-xs font-semibold">
+                                    <label htmlFor="password" className="text-navy dark:text-white mb-1.5 block text-xs font-semibold">
                                         {t('auth.login.password')}
                                     </label>
                                     <div className="relative">
-                                        <Lock className="text-faint pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2" />
+                                        <Lock className="text-faint dark:text-slate-500 pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2" />
                                         <input
                                             id="password"
                                             type={showPassword ? 'text' : 'password'}
@@ -166,30 +166,30 @@ export default function Login() {
                                             value={data.password}
                                             onChange={(e) => setData('password', e.target.value)}
                                             placeholder="••••••••"
-                                            className={`focus:ring-primary/20 h-11 w-full rounded-xl border bg-white pr-11 pl-10 text-sm transition-colors focus:ring-2 focus:outline-none ${
+                                            className={`focus:ring-primary/20 h-11 w-full rounded-xl border bg-white dark:bg-slate-900 pr-11 pl-10 text-sm transition-colors focus:ring-2 focus:outline-none ${
                                                 errors.password
-                                                    ? 'border-danger focus:border-danger focus:ring-danger/20'
-                                                    : 'border-border-strong focus:border-primary'
+                                                    ? 'border-danger dark:border-red-700 focus:border-danger dark:focus:border-red-500 focus:ring-danger/20 dark:focus:ring-red-500/20'
+                                                    : 'border-border-strong dark:border-slate-600 focus:border-primary'
                                             }`}
                                         />
                                         <button
                                             type="button"
                                             onClick={() => setShowPassword((v) => !v)}
-                                            className="text-faint hover:text-muted absolute top-1/2 right-3 -translate-y-1/2 transition-colors"
+                                            className="text-faint dark:text-slate-500 hover:text-muted dark:hover:text-slate-300 absolute top-1/2 right-3 -translate-y-1/2 transition-colors"
                                             aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                                         >
                                             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                         </button>
                                     </div>
-                                    {errors.password && <p className="text-danger mt-1.5 text-xs font-medium">{errors.password}</p>}
+                                    {errors.password && <p className="text-danger dark:text-red-400 mt-1.5 text-xs font-medium">{errors.password}</p>}
                                 </div>
 
                                 <div className="flex items-center justify-between pt-1">
-                                    <label className="text-body flex cursor-pointer items-center gap-2 text-[13px] select-none">
-                                        <input type="checkbox" className="border-border-strong accent-primary h-4 w-4 rounded" />
+                                    <label className="text-body dark:text-slate-300 flex cursor-pointer items-center gap-2 text-[13px] select-none">
+                                        <input type="checkbox" className="border-border-strong dark:border-slate-600 accent-primary h-4 w-4 rounded" />
                                         {t('auth.rememberMe')}
                                     </label>
-                                    <Link href={route('password.request')} className="text-primary hover:text-primary-700 text-[13px] font-semibold transition-colors">
+                                    <Link href={route('password.request')} className="text-primary hover:text-primary-700 dark:hover:text-primary-200 text-[13px] font-semibold transition-colors">
                                         {t('auth.login.forgotPassword')}
                                     </Link>
                                 </div>
@@ -227,7 +227,7 @@ export default function Login() {
                             </form>
                         </div>
 
-                        <p className="text-faint mt-6 flex items-center justify-center gap-1.5 text-xs">
+                        <p className="text-faint dark:text-slate-500 mt-6 flex items-center justify-center gap-1.5 text-xs">
                             <Lock className="h-3 w-3" />
                             {t('auth.secureNote')}
                         </p>

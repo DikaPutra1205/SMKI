@@ -113,14 +113,14 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
             <Head title="Assessment PIC - Admin Kepatuhan" />
 
             {flash?.message && flashVisible && (
-                <div className="border-border mb-4 flex items-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium shadow-sm">
+                <div className="border-border dark:border-slate-700 mb-4 flex items-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium shadow-sm">
                     {flash.type === 'success' ? (
-                        <div className="text-success flex items-center gap-2">
+                        <div className="text-success dark:text-emerald-400 flex items-center gap-2">
                             <CheckCircle2 className="h-4 w-4" />
                             {flash.message}
                         </div>
                     ) : (
-                        <div className="text-danger flex items-center gap-2">
+                        <div className="text-danger dark:text-red-400 flex items-center gap-2">
                             <Send className="h-4 w-4" />
                             {flash.message}
                         </div>
@@ -131,20 +131,20 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
             <div className="page-head flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">Assessment PIC</h1>
-                    <p className="text-muted mt-1 text-xs sm:text-sm">Pantau seluruh session pengecekan mandiri dari setiap satuan kerja.</p>
+                    <p className="text-muted dark:text-slate-400 mt-1 text-xs sm:text-sm">Pantau seluruh session pengecekan mandiri dari setiap satuan kerja.</p>
                 </div>
             </div>
 
             {/* Toolbar */}
-            <div className="border-border flex flex-col gap-3 rounded-[14px] border bg-white p-3 shadow-sm md:flex-row md:items-center">
+            <div className="border-border dark:border-slate-700 flex flex-col gap-3 rounded-[14px] border bg-white dark:bg-slate-900 p-3 shadow-sm md:flex-row md:items-center">
                 <div className="relative min-w-[220px] flex-1">
-                    <Search className="text-faint absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                    <Search className="text-faint dark:text-slate-500 absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                     <input
                         type="text"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Cari konteks, unit, atau PIC..."
-                        className="border-border-strong text-ink placeholder:text-faint focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white py-2 pr-4 pl-9 text-xs focus:ring-2 focus:outline-none sm:text-sm"
+                        className="border-border-strong dark:border-slate-600 text-ink dark:text-white placeholder:text-faint dark:placeholder:text-slate-500 focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white dark:bg-slate-900 py-2 pr-4 pl-9 text-xs focus:ring-2 focus:outline-none sm:text-sm"
                     />
                 </div>
 
@@ -192,24 +192,24 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
                         return (
                             <div
                                 key={s.id}
-                                className="border-border group hover:border-primary-200 flex flex-col rounded-[14px] border bg-white p-5 shadow-sm transition-all hover:shadow-md"
+                                className="border-border dark:border-slate-700 group hover:border-primary-200 flex flex-col rounded-[14px] border bg-white dark:bg-slate-900 p-5 shadow-sm transition-all hover:shadow-md"
                             >
                                 <div className="mb-3">
-                                    <h3 className="text-navy truncate text-sm leading-snug font-bold">{s.konteks_penilaian}</h3>
-                                    <p className="text-faint mt-0.5 text-xs">{s.periode || 'Tanpa Periode'}</p>
+                                    <h3 className="text-navy dark:text-white truncate text-sm leading-snug font-bold">{s.konteks_penilaian}</h3>
+                                    <p className="text-faint dark:text-slate-500 mt-0.5 text-xs">{s.periode || 'Tanpa Periode'}</p>
                                 </div>
 
-                                <div className="text-muted mb-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs">
+                                <div className="text-muted dark:text-slate-400 mb-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs">
                                     <span className="inline-flex items-center gap-1.5">
-                                        <UserRound className="text-faint h-3.5 w-3.5" />
+                                        <UserRound className="text-faint dark:text-slate-500 h-3.5 w-3.5" />
                                         {s.unit_nama || 'Unit tidak diketahui'}
                                     </span>
-                                    {s.creator_name && <span className="text-faint">oleh {s.creator_name}</span>}
+                                    {s.creator_name && <span className="text-faint dark:text-slate-500">oleh {s.creator_name}</span>}
                                 </div>
 
                                 {s.framework_nama && (
                                     <div className="mb-3">
-                                        <span className="border-border text-body bg-surface inline-flex items-center rounded-[6px] border px-2.5 py-1 text-[11px] font-semibold">
+                                        <span className="border-border dark:border-slate-700 text-body dark:text-slate-300 bg-surface dark:bg-slate-900 inline-flex items-center rounded-[6px] border px-2.5 py-1 text-[11px] font-semibold">
                                             {s.framework_nama}
                                         </span>
                                     </div>
@@ -217,12 +217,12 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
 
                                 <div className="mb-3">
                                     <div className="mb-1 flex items-baseline justify-between">
-                                        <span className="text-muted text-xs">
+                                        <span className="text-muted dark:text-slate-400 text-xs">
                                             {s.compliant_entries}/{s.total_entries} Patuh
                                         </span>
                                         <span className="text-primary text-xs font-bold">{pct}%</span>
                                     </div>
-                                    <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                                    <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                                         {compliantPct > 0 && (
                                             <div
                                                 className="h-full bg-emerald-500 transition-all duration-500"
@@ -236,12 +236,12 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
                                             <div className="h-full bg-red-500 transition-all duration-500" style={{ width: `${nonCompliantPct}%` }} />
                                         )}
                                         {naPct > 0 && (
-                                            <div className="h-full bg-slate-300 transition-all duration-500" style={{ width: `${naPct}%` }} />
+                                            <div className="h-full bg-slate-300 dark:bg-slate-600 transition-all duration-500" style={{ width: `${naPct}%` }} />
                                         )}
                                     </div>
                                 </div>
 
-                                <div className="border-border text-faint mt-auto flex flex-wrap items-center justify-between gap-2 border-t pt-3 text-[11px]">
+                                <div className="border-border dark:border-slate-700 text-faint dark:text-slate-500 mt-auto flex flex-wrap items-center justify-between gap-2 border-t pt-3 text-[11px]">
                                     <span className="inline-flex items-center gap-1">
                                         <ShieldCheck className="h-3.5 w-3.5" />
                                         {s.verified_entries}/{s.total_entries} terverifikasi

@@ -31,12 +31,12 @@ export function ErrorState({ code = 404, title, message, className }: ErrorState
 
     return (
         <div className={`flex flex-col items-center justify-center gap-4 py-20 text-center ${className ?? ''}`}>
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-danger-bg text-danger">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-danger-bg text-danger dark:text-red-400">
                 <Icon className="h-8 w-8" />
             </div>
             <div>
-                <h2 className="text-lg font-bold text-navy">{title ?? cfg.title}</h2>
-                <p className="mt-1 max-w-md text-sm text-muted">{message ?? cfg.message}</p>
+                <h2 className="text-lg font-bold text-navy dark:text-white">{title ?? cfg.title}</h2>
+                <p className="mt-1 max-w-md text-sm text-muted dark:text-slate-400">{message ?? cfg.message}</p>
             </div>
         </div>
     );

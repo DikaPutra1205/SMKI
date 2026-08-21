@@ -19,7 +19,7 @@ export function Toast({ visible, tone = 'success', message = '', onDismiss }: To
         <div
             className={cn(
                 'fixed right-4 bottom-4 z-50 flex items-center gap-3 rounded-[14px] border px-5 py-3.5 shadow-lg',
-                tone === 'success' ? 'border-success-border bg-success-bg text-success' : 'border-danger-border bg-danger-bg text-danger',
+                tone === 'success' ? 'border-success-border dark:border-emerald-800 bg-success-bg text-success dark:text-emerald-400' : 'border-danger-border dark:border-red-800 bg-danger-bg text-danger dark:text-red-400',
             )}
             role="status"
         >

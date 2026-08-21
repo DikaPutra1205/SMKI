@@ -3,13 +3,13 @@ import { cn } from '@/lib/utils';
 export type StatusTone = 'green' | 'blue' | 'red' | 'amber' | 'gray' | 'violet' | 'navy';
 
 const toneStyles: Record<StatusTone, string> = {
-    green: 'bg-success-bg text-success border-success-border',
-    blue: 'bg-info-bg text-info border-info/20',
-    red: 'bg-danger-bg text-danger border-danger-border',
-    amber: 'bg-warning-bg text-warning border-warning-border',
-    gray: 'bg-neutral-bg text-neutral border-border',
-    violet: 'bg-violet-bg text-violet border-violet/20',
-    navy: 'bg-navy-50 text-navy border-navy/15',
+    green: 'bg-success-bg text-success dark:text-emerald-400 border-success-border dark:border-emerald-800',
+    blue: 'bg-info-bg text-info dark:text-sky-400 border-info/20',
+    red: 'bg-danger-bg text-danger dark:text-red-400 border-danger-border dark:border-red-800',
+    amber: 'bg-warning-bg text-warning dark:text-amber-400 border-warning-border dark:border-amber-800',
+    gray: 'bg-neutral-bg dark:bg-slate-800 text-neutral dark:text-slate-400 border-border dark:border-slate-700',
+    violet: 'bg-violet-bg text-violet dark:text-violet-400 border-violet/20',
+    navy: 'bg-navy-50 dark:bg-white/5 text-navy dark:text-white border-navy/15 dark:border-white/10',
 };
 
 interface StatusBadgeProps {

@@ -107,7 +107,7 @@ export default function Users({ users, roles, units }: Props) {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">{t('admin.users.title')}</h1>
-                    <p className="text-muted mt-1 text-xs sm:text-sm">{t('admin.users.subtitle')}</p>
+                    <p className="text-muted dark:text-slate-400 mt-1 text-xs sm:text-sm">{t('admin.users.subtitle')}</p>
                 </div>
                 {can('user.create') && (
                     <button
@@ -121,10 +121,10 @@ export default function Users({ users, roles, units }: Props) {
                 )}
             </div>
 
-            <div className="border-border overflow-hidden rounded-[14px] border bg-white shadow-sm">
+            <div className="border-border dark:border-slate-700 overflow-hidden rounded-[14px] border bg-white dark:bg-slate-900 shadow-sm">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm">
-                        <thead className="border-border bg-surface/60 text-muted border-b text-[11px] font-bold tracking-wider uppercase">
+                        <thead className="border-border dark:border-slate-700 bg-surface/60 dark:bg-slate-900/60 text-muted dark:text-slate-400 border-b text-[11px] font-bold tracking-wider uppercase">
                             <tr>
                                 <th className="px-5 py-3">{t('admin.users.name')}</th>
                                 <th className="px-5 py-3">Email</th>
@@ -133,25 +133,25 @@ export default function Users({ users, roles, units }: Props) {
                                 <th className="px-5 py-3 text-right">{t('common.actions')}</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-border divide-y">
+                        <tbody className="divide-border dark:divide-slate-700 divide-y">
                             {users.length ? (
                                 users.map((u) => (
-                                    <tr key={u.id} className="hover:bg-surface/50">
-                                        <td className="text-navy px-5 py-3 font-medium">{u.name}</td>
-                                        <td className="text-body px-5 py-3 text-xs">{u.email}</td>
+                                    <tr key={u.id} className="hover:bg-surface/50 dark:hover:bg-slate-800/50">
+                                        <td className="text-navy dark:text-white px-5 py-3 font-medium">{u.name}</td>
+                                        <td className="text-body dark:text-slate-300 px-5 py-3 text-xs">{u.email}</td>
                                         <td className="px-5 py-3">
-                                            <span className="bg-primary-50 text-primary rounded-[6px] px-2 py-0.5 text-xs font-semibold">
+                                            <span className="bg-primary-50 dark:bg-primary/10 text-primary rounded-[6px] px-2 py-0.5 text-xs font-semibold">
                                                 {u.role?.label ?? u.role_id}
                                             </span>
                                         </td>
-                                        <td className="text-body px-5 py-3 text-xs">{u.unit?.nama ?? '—'}</td>
+                                        <td className="text-body dark:text-slate-300 px-5 py-3 text-xs">{u.unit?.nama ?? '—'}</td>
                                         <td className="px-5 py-3 text-right">
                                             <div className="flex justify-end gap-1">
                                                 {can('user.update') && (
                                                     <button
                                                         type="button"
                                                         onClick={() => openEdit(u)}
-                                                        className="border-border-strong text-navy hover:bg-surface inline-flex items-center gap-1 rounded-[8px] border bg-white px-2.5 py-1.5 text-xs font-semibold"
+                                                        className="border-border-strong dark:border-slate-600 text-navy dark:text-white hover:bg-surface dark:hover:bg-slate-800 inline-flex items-center gap-1 rounded-[8px] border bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs font-semibold"
                                                     >
                                                         <Pencil className="h-3 w-3" />
                                                         {t('common.edit')}
@@ -164,7 +164,7 @@ export default function Users({ users, roles, units }: Props) {
                                                             setDelTarget(u);
                                                             setDelOpen(true);
                                                         }}
-                                                        className="border-danger-border bg-danger-bg text-danger hover:bg-danger/10 inline-flex items-center gap-1 rounded-[8px] border px-2.5 py-1.5 text-xs font-semibold"
+                                                        className="border-danger-border dark:border-red-800 bg-danger-bg text-danger dark:text-red-400 hover:bg-danger/10 inline-flex items-center gap-1 rounded-[8px] border px-2.5 py-1.5 text-xs font-semibold"
                                                     >
                                                         <Trash2 className="h-3 w-3" />
                                                         {t('common.delete')}
@@ -176,7 +176,7 @@ export default function Users({ users, roles, units }: Props) {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={5} className="text-muted px-5 py-10 text-center text-sm">
+                                    <td colSpan={5} className="text-muted dark:text-slate-400 px-5 py-10 text-center text-sm">
                                         {t('common.noData')}
                                     </td>
                                 </tr>
@@ -202,7 +202,7 @@ export default function Users({ users, roles, units }: Props) {
                         <button
                             type="button"
                             onClick={close}
-                            className="border-border-strong text-body hover:bg-surface rounded-[10px] border bg-white px-4 py-2 text-sm font-medium"
+                            className="border-border-strong dark:border-slate-600 text-body dark:text-slate-300 hover:bg-surface dark:hover:bg-slate-800 rounded-[10px] border bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium"
                         >
                             {t('common.cancel')}
                         </button>
@@ -223,24 +223,24 @@ export default function Users({ users, roles, units }: Props) {
                             value={form.data.name}
                             onChange={(e) => form.setData('name', e.target.value)}
                             placeholder={t('admin.users.nameLabel')}
-                            className="border-border-strong text-ink placeholder:text-faint focus:border-primary h-10 w-full rounded-[10px] border bg-white px-3 text-sm focus:ring-2 focus:outline-none"
+                            className="border-border-strong dark:border-slate-600 text-ink dark:text-white placeholder:text-faint dark:placeholder:text-slate-500 focus:border-primary h-10 w-full rounded-[10px] border bg-white dark:bg-slate-900 px-3 text-sm focus:ring-2 focus:outline-none"
                         />
-                        {form.errors.name && <p className="text-danger mt-1 text-[11px]">{form.errors.name}</p>}
+                        {form.errors.name && <p className="text-danger dark:text-red-400 mt-1 text-[11px]">{form.errors.name}</p>}
                     </div>
                     <div>
                         <input
                             value={form.data.email}
                             onChange={(e) => form.setData('email', e.target.value)}
                             placeholder="Email"
-                            className="border-border-strong text-ink placeholder:text-faint focus:border-primary h-10 w-full rounded-[10px] border bg-white px-3 text-sm focus:ring-2 focus:outline-none"
+                            className="border-border-strong dark:border-slate-600 text-ink dark:text-white placeholder:text-faint dark:placeholder:text-slate-500 focus:border-primary h-10 w-full rounded-[10px] border bg-white dark:bg-slate-900 px-3 text-sm focus:ring-2 focus:outline-none"
                         />
-                        {form.errors.email && <p className="text-danger mt-1 text-[11px]">{form.errors.email}</p>}
+                        {form.errors.email && <p className="text-danger dark:text-red-400 mt-1 text-[11px]">{form.errors.email}</p>}
                     </div>
                     <div>
                         <select
                             value={form.data.role_id}
                             onChange={(e) => form.setData('role_id', e.target.value)}
-                            className="border-border-strong text-ink focus:border-primary h-10 w-full rounded-[10px] border bg-white px-3 text-sm focus:ring-2 focus:outline-none"
+                            className="border-border-strong dark:border-slate-600 text-ink dark:text-white focus:border-primary h-10 w-full rounded-[10px] border bg-white dark:bg-slate-900 px-3 text-sm focus:ring-2 focus:outline-none"
                         >
                             <option value="">— Pilih Role —</option>
                             {roles.map((r) => (
@@ -249,13 +249,13 @@ export default function Users({ users, roles, units }: Props) {
                                 </option>
                             ))}
                         </select>
-                        {form.errors.role_id && <p className="text-danger mt-1 text-[11px]">{form.errors.role_id}</p>}
+                        {form.errors.role_id && <p className="text-danger dark:text-red-400 mt-1 text-[11px]">{form.errors.role_id}</p>}
                     </div>
                     <div>
                         <select
                             value={form.data.unit_id}
                             onChange={(e) => form.setData('unit_id', e.target.value)}
-                            className="border-border-strong text-ink focus:border-primary h-10 w-full rounded-[10px] border bg-white px-3 text-sm focus:ring-2 focus:outline-none"
+                            className="border-border-strong dark:border-slate-600 text-ink dark:text-white focus:border-primary h-10 w-full rounded-[10px] border bg-white dark:bg-slate-900 px-3 text-sm focus:ring-2 focus:outline-none"
                         >
                             <option value="">— Tanpa Unit —</option>
                             {units.map((u) => (
@@ -264,7 +264,7 @@ export default function Users({ users, roles, units }: Props) {
                                 </option>
                             ))}
                         </select>
-                        {form.errors.unit_id && <p className="text-danger mt-1 text-[11px]">{form.errors.unit_id}</p>}
+                        {form.errors.unit_id && <p className="text-danger dark:text-red-400 mt-1 text-[11px]">{form.errors.unit_id}</p>}
                     </div>
                 </form>
             </Modal>

@@ -131,7 +131,7 @@ export default function Roles({ roles, permissionCatalog }: Props) {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">{t('admin.roles.title')}</h1>
-                    <p className="text-muted mt-1 text-xs sm:text-sm">{t('admin.roles.subtitle')}</p>
+                    <p className="text-muted dark:text-slate-400 mt-1 text-xs sm:text-sm">{t('admin.roles.subtitle')}</p>
                 </div>
                 {can('role.create') && (
                     <button
@@ -145,10 +145,10 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                 )}
             </div>
 
-            <div className="border-border overflow-hidden rounded-[14px] border bg-white shadow-sm">
+            <div className="border-border dark:border-slate-700 overflow-hidden rounded-[14px] border bg-white dark:bg-slate-900 shadow-sm">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm">
-                        <thead className="border-border bg-surface/60 text-muted border-b text-[11px] font-bold tracking-wider uppercase">
+                        <thead className="border-border dark:border-slate-700 bg-surface/60 dark:bg-slate-900/60 text-muted dark:text-slate-400 border-b text-[11px] font-bold tracking-wider uppercase">
                             <tr>
                                 <th className="px-5 py-3">{t('admin.roles.label')}</th>
                                 <th className="px-5 py-3">{t('admin.roles.name')}</th>
@@ -156,14 +156,14 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                                 <th className="px-5 py-3 text-right">{t('common.actions')}</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-border divide-y">
+                        <tbody className="divide-border dark:divide-slate-700 divide-y">
                             {roles.length ? (
                                 roles.map((r) => (
-                                    <tr key={r.id} className="hover:bg-surface/50">
-                                        <td className="text-navy px-5 py-3 font-medium">{r.label}</td>
-                                        <td className="text-body px-5 py-3 text-xs">{r.name}</td>
+                                    <tr key={r.id} className="hover:bg-surface/50 dark:hover:bg-slate-800/50">
+                                        <td className="text-navy dark:text-white px-5 py-3 font-medium">{r.label}</td>
+                                        <td className="text-body dark:text-slate-300 px-5 py-3 text-xs">{r.name}</td>
                                         <td className="px-5 py-3">
-                                            <span className="bg-primary-50 text-primary rounded-[6px] px-2 py-0.5 text-xs font-semibold">
+                                            <span className="bg-primary-50 dark:bg-primary/10 text-primary rounded-[6px] px-2 py-0.5 text-xs font-semibold">
                                                 {r.permissions.length} {t('admin.roles.grants')}
                                             </span>
                                         </td>
@@ -173,7 +173,7 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                                                     <button
                                                         type="button"
                                                         onClick={() => openEdit(r)}
-                                                        className="border-border-strong text-navy hover:bg-surface inline-flex items-center gap-1 rounded-[8px] border bg-white px-2.5 py-1.5 text-xs font-semibold"
+                                                        className="border-border-strong dark:border-slate-600 text-navy dark:text-white hover:bg-surface dark:hover:bg-slate-800 inline-flex items-center gap-1 rounded-[8px] border bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs font-semibold"
                                                     >
                                                         <Pencil className="h-3 w-3" />
                                                         {t('common.edit')}
@@ -186,7 +186,7 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                                                             setDelTarget(r);
                                                             setDelOpen(true);
                                                         }}
-                                                        className="border-danger-border bg-danger-bg text-danger hover:bg-danger/10 inline-flex items-center gap-1 rounded-[8px] border px-2.5 py-1.5 text-xs font-semibold"
+                                                        className="border-danger-border dark:border-red-800 bg-danger-bg text-danger dark:text-red-400 hover:bg-danger/10 inline-flex items-center gap-1 rounded-[8px] border px-2.5 py-1.5 text-xs font-semibold"
                                                     >
                                                         <Trash2 className="h-3 w-3" />
                                                         {t('common.delete')}
@@ -198,7 +198,7 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={4} className="text-muted px-5 py-10 text-center text-sm">
+                                    <td colSpan={4} className="text-muted dark:text-slate-400 px-5 py-10 text-center text-sm">
                                         {t('admin.roles.noRoles')}
                                     </td>
                                 </tr>
@@ -225,7 +225,7 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                         <button
                             type="button"
                             onClick={close}
-                            className="border-border-strong text-body hover:bg-surface rounded-[10px] border bg-white px-4 py-2 text-sm font-medium"
+                            className="border-border-strong dark:border-slate-600 text-body dark:text-slate-300 hover:bg-surface dark:hover:bg-slate-800 rounded-[10px] border bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium"
                         >
                             {t('common.cancel')}
                         </button>
@@ -246,24 +246,24 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                             value={form.data.name}
                             onChange={(e) => form.setData('name', e.target.value)}
                             placeholder={t('admin.roles.name')}
-                            className="border-border-strong text-ink placeholder:text-faint focus:border-primary h-10 w-full rounded-[10px] border bg-white px-3 text-sm focus:ring-2 focus:outline-none"
+                            className="border-border-strong dark:border-slate-600 text-ink dark:text-white placeholder:text-faint dark:placeholder:text-slate-500 focus:border-primary h-10 w-full rounded-[10px] border bg-white dark:bg-slate-900 px-3 text-sm focus:ring-2 focus:outline-none"
                         />
-                        {form.errors.name && <p className="text-danger mt-1 text-[11px]">{form.errors.name}</p>}
+                        {form.errors.name && <p className="text-danger dark:text-red-400 mt-1 text-[11px]">{form.errors.name}</p>}
                     </div>
                     <div>
                         <input
                             value={form.data.label}
                             onChange={(e) => form.setData('label', e.target.value)}
                             placeholder={t('admin.roles.label')}
-                            className="border-border-strong text-ink placeholder:text-faint focus:border-primary h-10 w-full rounded-[10px] border bg-white px-3 text-sm focus:ring-2 focus:outline-none"
+                            className="border-border-strong dark:border-slate-600 text-ink dark:text-white placeholder:text-faint dark:placeholder:text-slate-500 focus:border-primary h-10 w-full rounded-[10px] border bg-white dark:bg-slate-900 px-3 text-sm focus:ring-2 focus:outline-none"
                         />
-                        {form.errors.label && <p className="text-danger mt-1 text-[11px]">{form.errors.label}</p>}
+                        {form.errors.label && <p className="text-danger dark:text-red-400 mt-1 text-[11px]">{form.errors.label}</p>}
                     </div>
 
                     {mode === 'edit' && (
-                        <div className="border-border mt-2 overflow-hidden rounded-[10px] border">
-                            <div className="bg-surface/60 flex items-center justify-between border-b px-4 py-3">
-                                <p className="text-navy text-xs font-bold tracking-wider uppercase">
+                        <div className="border-border dark:border-slate-700 mt-2 overflow-hidden rounded-[10px] border">
+                            <div className="bg-surface/60 dark:bg-slate-900/60 flex items-center justify-between border-b px-4 py-3">
+                                <p className="text-navy dark:text-white text-xs font-bold tracking-wider uppercase">
                                     {t('admin.roles.grants')} · {selectedPerms.size}/{Object.values(permissionCatalog).flat().length}
                                 </p>
                                 <div className="flex items-center gap-2">
@@ -274,23 +274,23 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                                     >
                                         Select all
                                     </button>
-                                    <span className="text-muted text-[11px]">·</span>
+                                    <span className="text-muted dark:text-slate-400 text-[11px]">·</span>
                                     <button
                                         type="button"
                                         onClick={() => setSelectedPerms(new Set())}
-                                        className="text-muted text-[11px] font-semibold hover:underline"
+                                        className="text-muted dark:text-slate-400 text-[11px] font-semibold hover:underline"
                                     >
                                         Clear
                                     </button>
                                 </div>
                             </div>
-                            <div className="bg-surface/40 relative border-b px-3 py-2">
-                                <Search className="text-faint pointer-events-none absolute top-1/2 left-6 h-3.5 w-3.5 -translate-y-1/2" />
+                            <div className="bg-surface/40 dark:bg-slate-900/40 relative border-b px-3 py-2">
+                                <Search className="text-faint dark:text-slate-500 pointer-events-none absolute top-1/2 left-6 h-3.5 w-3.5 -translate-y-1/2" />
                                 <input
                                     value={query}
                                     onChange={(e) => setQuery(e.target.value)}
                                     placeholder="Filter module / permission…"
-                                    className="border-border-strong text-ink placeholder:text-faint focus:border-primary h-8 w-full rounded-[8px] border bg-white py-1.5 pr-3 pl-8 text-xs focus:ring-1 focus:outline-none"
+                                    className="border-border-strong dark:border-slate-600 text-ink dark:text-white placeholder:text-faint dark:placeholder:text-slate-500 focus:border-primary h-8 w-full rounded-[8px] border bg-white dark:bg-slate-900 py-1.5 pr-3 pl-8 text-xs focus:ring-1 focus:outline-none"
                                 />
                             </div>
                             <div className="max-h-[50vh] overflow-y-auto">
@@ -301,7 +301,7 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                                         const partial = !checked && permissionCatalog[mod].some((k) => selectedPerms.has(k));
                                         const isCollapsed = !!collapsed[mod];
                                         return (
-                                            <div key={mod} className="border-border border-b last:border-0">
+                                            <div key={mod} className="border-border dark:border-slate-700 border-b last:border-0">
                                                 <div className="flex items-center gap-2 px-3 py-2">
                                                     <input
                                                         type="checkbox"
@@ -317,15 +317,15 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                                                         onClick={() => setCollapsed((p) => ({ ...p, [mod]: !p[mod] }))}
                                                         className="flex flex-1 items-center justify-between text-left"
                                                     >
-                                                        <span className="text-navy text-xs font-bold tracking-wider uppercase">
+                                                        <span className="text-navy dark:text-white text-xs font-bold tracking-wider uppercase">
                                                             {mod}{' '}
-                                                            <span className="text-muted ml-1 text-[11px] font-medium normal-case">
+                                                            <span className="text-muted dark:text-slate-400 ml-1 text-[11px] font-medium normal-case">
                                                                 {permissionCatalog[mod].filter((k) => selectedPerms.has(k)).length}/
                                                                 {permissionCatalog[mod].length}
                                                             </span>
                                                         </span>
                                                         <ChevronDown
-                                                            className={`text-muted h-3.5 w-3.5 transition-transform ${isCollapsed ? '-rotate-90' : ''}`}
+                                                            className={`text-muted dark:text-slate-400 h-3.5 w-3.5 transition-transform ${isCollapsed ? '-rotate-90' : ''}`}
                                                         />
                                                     </button>
                                                 </div>
@@ -336,7 +336,7 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                                                             return (
                                                                 <label
                                                                     key={key}
-                                                                    className={`inline-flex cursor-pointer items-center gap-1.5 rounded-[8px] border px-2.5 py-1.5 text-xs transition-colors ${on ? 'border-primary/30 bg-primary-50 text-primary font-medium' : 'border-border-strong hover:bg-surface text-body bg-white'}`}
+                                                                    className={`inline-flex cursor-pointer items-center gap-1.5 rounded-[8px] border px-2.5 py-1.5 text-xs transition-colors ${on ? 'border-primary/30 bg-primary-50 dark:bg-primary/10 text-primary font-medium' : 'border-border-strong dark:border-slate-600 hover:bg-surface dark:hover:bg-slate-800 text-body dark:text-slate-300 bg-white dark:bg-slate-900'}`}
                                                                 >
                                                                     <input
                                                                         type="checkbox"
@@ -354,7 +354,7 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                                         );
                                     })
                                 ) : (
-                                    <p className="text-muted py-8 text-center text-xs">No permissions match filter.</p>
+                                    <p className="text-muted dark:text-slate-400 py-8 text-center text-xs">No permissions match filter.</p>
                                 )}
                             </div>
                         </div>

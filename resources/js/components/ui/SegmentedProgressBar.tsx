@@ -34,7 +34,7 @@ export function SegmentedProgressBar({ total, segments, heightClass = 'h-2', cla
     const safeTotal = total > 0 ? total : 1;
 
     return (
-        <div className={cn('flex w-full overflow-hidden rounded-full bg-slate-100', heightClass, className)}>
+        <div className={cn('flex w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800', heightClass, className)}>
             {segments.map((seg, i) => {
                 const pct = Math.min(100, (seg.value / safeTotal) * 100);
                 if (pct <= 0) return null;
@@ -62,6 +62,6 @@ export function complianceSegments(args: {
         { value: args.compliant, colorClass: 'bg-emerald-500', label: 'Patuh' },
         { value: args.partial, colorClass: 'bg-amber-400', label: 'Sebagian Patuh' },
         { value: args.nonCompliant, colorClass: 'bg-red-500', label: 'Tidak Patuh' },
-        { value: args.na ?? 0, colorClass: 'bg-slate-300', label: 'Tidak Berlaku' },
+        { value: args.na ?? 0, colorClass: 'bg-slate-300 dark:bg-slate-600', label: 'Tidak Berlaku' },
     ];
 }
