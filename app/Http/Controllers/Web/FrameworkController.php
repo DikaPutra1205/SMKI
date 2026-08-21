@@ -62,10 +62,7 @@ class FrameworkController extends Controller
         unset($data['file_dokumen']);
 
         if ($request->hasFile('file_dokumen')) {
-            $file = $request->file('file_dokumen');
-            $filename = time().'_'.preg_replace('/[^a-zA-Z0-9._-]/', '_', $file->getClientOriginalName());
-            $path = $file->storeAs('', $filename, 'supabase-frameworks');
-            $data['url_file'] = $path;
+            $data['url_file'] = $documents->store($request->file('file_dokumen'));
         }
 
         Framework::create($data);
@@ -82,23 +79,9 @@ class FrameworkController extends Controller
         unset($data['file_dokumen']);
 
         if ($request->hasFile('file_dokumen')) {
-            $file = $request->file('file_dokumen');
-            $filename = time().'_'.preg_replace('/[^a-zA-Z0-9._-]/', '_', $file->getClientOriginalName());
-            $path = $file->storeAs('', $filename, 'supabase-frameworks');
-
-            $oldPath = $framework->getRawOriginal('url_file');
-            if ($oldPath && ! filter_var($oldPath, FILTER_VALIDATE_URL)) {
-                try {
-                    Storage::disk('supabase-frameworks')->delete($oldPath);
-                } catch (\Throwable $e) {
-                    report($e);
-                }
-            }
-
-            $data['url_file'] = $path;
+            $documents->deleteExisting($framework->getRawOriginal('url_file'));
+            $data['url_file'] = $documents->store($request->file('file_dokumen'));
         }
-
-        unset($data['file_dokumen']);
 
         $framework->update($data);
 
@@ -110,14 +93,7 @@ class FrameworkController extends Controller
 
     public function destroy(Framework $framework, FrameworkDocumentService $documents): RedirectResponse
     {
-        $oldPath = $framework->getRawOriginal('url_file');
-        if ($oldPath && ! filter_var($oldPath, FILTER_VALIDATE_URL)) {
-            try {
-                Storage::disk('supabase-frameworks')->delete($oldPath);
-            } catch (\Throwable $e) {
-                report($e);
-            }
-        }
+        $documents->deleteExisting($framework->getRawOriginal('url_file'));
 
         $framework->delete();
 
