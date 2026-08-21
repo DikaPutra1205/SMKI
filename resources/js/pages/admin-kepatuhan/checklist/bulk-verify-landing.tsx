@@ -1,29 +1,6 @@
-/**
- * bulk-verify-landing.tsx
- *
- * NEW: Landing view for the Admin Kepatuhan bulk-verify flow.
- *
- * Shows a responsive session-card grid — one card per checklist session — each with:
- * • Session title + period label
- * • Segmented compliance progress bar (compliant/partial/non-compliant/NA) + percentage
- * • Control count fraction
- * • Framework badge
- * • Last-updated date
- *
- * Clicking a card navigates to the existing per-session bulk-verify table/filter view,
- * passing the session_id through the URL query param.
- *
- * Data: reuses the same SessionItem shape already exposed by the shared sessions page
- * (ChecklistSessionController / ComplianceService). No backend edits required — the
- * existing admin-kepatuhan sessions endpoint returns all fields needed:
- *   id, konteks_penilaian, periode, framework_nama, total_entries,
- *   compliant_entries, partial_entries, non_compliant_entries, na_entries,
- *   compliance_percentage, updated_at.
- */
-
-import { SegmentedProgressBar, complianceSegments } from '@/components/ui/SegmentedProgressBar';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Pagination } from '@/components/ui/Pagination';
+import { SegmentedProgressBar, complianceSegments } from '@/components/ui/SegmentedProgressBar';
 import { Select } from '@/components/ui/Select';
 import AppLayout from '@/layouts/AppLayout';
 import { t } from '@/lib/i18n';
@@ -103,17 +80,15 @@ function SessionCard({ session }: { session: SessionItem }) {
         <button
             type="button"
             onClick={handleClick}
-            className="group relative flex flex-col rounded-[16px] border border-border bg-white p-5 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            className="group border-border hover:border-primary-200 focus-visible:ring-primary/40 relative flex flex-col rounded-[16px] border bg-white p-5 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-2 focus-visible:outline-none"
         >
             {/* Top: title + chevron */}
             <div className="mb-1 flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                    <h3 className="text-navy line-clamp-2 text-sm leading-snug font-bold">
-                        {session.konteks_penilaian}
-                    </h3>
+                    <h3 className="text-navy line-clamp-2 text-sm leading-snug font-bold">{session.konteks_penilaian}</h3>
                     <p className="text-faint mt-1 text-xs font-medium">{session.periode || 'Tanpa Periode'}</p>
                 </div>
-                <ChevronRight className="text-faint mt-0.5 h-4 w-4 shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+                <ChevronRight className="text-faint group-hover:text-primary mt-0.5 h-4 w-4 shrink-0 transition-transform group-hover:translate-x-0.5" />
             </div>
 
             {/* Framework badge */}
@@ -133,12 +108,7 @@ function SessionCard({ session }: { session: SessionItem }) {
                     </span>
                     <span className={`text-sm font-bold ${complianceColor(pct)}`}>{pct}%</span>
                 </div>
-                <SegmentedProgressBar
-                    total={session.total_entries}
-                    segments={segments}
-                    heightClass="h-2"
-                    animate
-                />
+                <SegmentedProgressBar total={session.total_entries} segments={segments} heightClass="h-2" animate />
             </div>
 
             {/* Footer meta */}
@@ -158,13 +128,7 @@ function SessionCard({ session }: { session: SessionItem }) {
 
 /* ─── Page ───────────────────────────────────────────────────────────────── */
 
-export default function BulkVerifyLanding({
-    sessions,
-    workUnits,
-    frameworks,
-    periodeOptions,
-    filters,
-}: BulkVerifyLandingProps) {
+export default function BulkVerifyLanding({ sessions, workUnits, frameworks, periodeOptions, filters }: BulkVerifyLandingProps) {
     const [search, setSearch] = useState(filters.search || '');
     const [unitId, setUnitId] = useState(filters.unit_id || '');
     const [frameworkId, setFrameworkId] = useState(filters.framework_id || '');
@@ -206,10 +170,7 @@ export default function BulkVerifyLanding({
     const endIndex = perPage === 'all' ? totalItems : Math.min(startIndex + effectivePerPage, totalItems);
     const paginatedSessions = perPage === 'all' ? sessions : sessions.slice(startIndex, endIndex);
 
-    const breadcrumbs = [
-        { label: t('common.dashboard'), href: '/admin/kepatuhan/dashboard' },
-        { label: t('bulkVerify.title') },
-    ];
+    const breadcrumbs = [{ label: t('common.dashboard'), href: '/admin/kepatuhan/dashboard' }, { label: t('bulkVerify.title') }];
 
     return (
         <AppLayout breadcrumbs={breadcrumbs} currentPath="/admin/kepatuhan/checklist/bulk-verify">
@@ -219,13 +180,9 @@ export default function BulkVerifyLanding({
             <div className="page-head flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">{t('bulkVerify.title')}</h1>
-                    <p className="text-muted mt-1 text-xs sm:text-sm">
-                        Pilih sesi penilaian yang ingin diverifikasi secara massal.
-                    </p>
+                    <p className="text-muted mt-1 text-xs sm:text-sm">Pilih sesi penilaian yang ingin diverifikasi secara massal.</p>
                 </div>
-                <div className="text-muted text-xs">
-                    {totalItems} sesi ditemukan
-                </div>
+                <div className="text-muted text-xs">{totalItems} sesi ditemukan</div>
             </div>
 
             {/* Filter toolbar */}
