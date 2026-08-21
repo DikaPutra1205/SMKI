@@ -2,6 +2,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Modal } from '@/components/ui/Modal';
 import { Toast } from '@/components/ui/Toast';
 import AppLayout from '@/layouts/AppLayout';
+import { useCan } from '@/lib/can';
 import { t } from '@/lib/i18n';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
@@ -34,6 +35,7 @@ type ModalMode = 'create' | 'edit' | null;
 type FormData = { name: string; email: string; role_id: string; unit_id: string };
 
 export default function Users({ users, roles, units }: Props) {
+    const can = useCan();
     const { flash } = usePage<{ flash?: { type: string; message: string } }>().props;
     const [visible, setVisible] = useState(false);
     useEffect(() => {
@@ -107,14 +109,16 @@ export default function Users({ users, roles, units }: Props) {
                     <h1 className="text-2xl font-bold tracking-tight">{t('admin.users.title')}</h1>
                     <p className="text-muted mt-1 text-xs sm:text-sm">{t('admin.users.subtitle')}</p>
                 </div>
-                <button
-                    type="button"
-                    onClick={openCreate}
-                    className="bg-primary shadow-blue hover:bg-primary-700 inline-flex items-center gap-2 rounded-[10px] px-4 py-2 text-xs font-semibold text-white transition-colors sm:text-sm"
-                >
-                    <Plus className="h-4 w-4" />
-                    {t('admin.users.addUser')}
-                </button>
+                {can('user.create') && (
+                    <button
+                        type="button"
+                        onClick={openCreate}
+                        className="bg-primary shadow-blue hover:bg-primary-700 inline-flex items-center gap-2 rounded-[10px] px-4 py-2 text-xs font-semibold text-white transition-colors sm:text-sm"
+                    >
+                        <Plus className="h-4 w-4" />
+                        {t('admin.users.addUser')}
+                    </button>
+                )}
             </div>
 
             <div className="border-border overflow-hidden rounded-[14px] border bg-white shadow-sm">
@@ -143,25 +147,29 @@ export default function Users({ users, roles, units }: Props) {
                                         <td className="text-body px-5 py-3 text-xs">{u.unit?.nama ?? '—'}</td>
                                         <td className="px-5 py-3 text-right">
                                             <div className="flex justify-end gap-1">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => openEdit(u)}
-                                                    className="border-border-strong text-navy hover:bg-surface inline-flex items-center gap-1 rounded-[8px] border bg-white px-2.5 py-1.5 text-xs font-semibold"
-                                                >
-                                                    <Pencil className="h-3 w-3" />
-                                                    {t('common.edit')}
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setDelTarget(u);
-                                                        setDelOpen(true);
-                                                    }}
-                                                    className="border-danger-border bg-danger-bg text-danger hover:bg-danger/10 inline-flex items-center gap-1 rounded-[8px] border px-2.5 py-1.5 text-xs font-semibold"
-                                                >
-                                                    <Trash2 className="h-3 w-3" />
-                                                    {t('common.delete')}
-                                                </button>
+                                                {can('user.update') && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => openEdit(u)}
+                                                        className="border-border-strong text-navy hover:bg-surface inline-flex items-center gap-1 rounded-[8px] border bg-white px-2.5 py-1.5 text-xs font-semibold"
+                                                    >
+                                                        <Pencil className="h-3 w-3" />
+                                                        {t('common.edit')}
+                                                    </button>
+                                                )}
+                                                {can('user.delete') && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setDelTarget(u);
+                                                            setDelOpen(true);
+                                                        }}
+                                                        className="border-danger-border bg-danger-bg text-danger hover:bg-danger/10 inline-flex items-center gap-1 rounded-[8px] border px-2.5 py-1.5 text-xs font-semibold"
+                                                    >
+                                                        <Trash2 className="h-3 w-3" />
+                                                        {t('common.delete')}
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>

@@ -19,10 +19,11 @@ class ComplianceController extends Controller
     public function index(Request $request): Response
     {
         $filters = $request->only(['search', 'status', 'unit_id', 'framework_id', 'kategori']);
+        $perPage = max(1, min(100, (int) $request->query('per_page', 20)));
 
         $frameworks = $this->complianceService->getFrameworkSummaries();
         $workUnits = $this->complianceService->getWorkUnits();
-        $controls = $this->complianceService->getControls($filters);
+        $controls = $this->complianceService->getControls($filters, $perPage);
         $sessions = $this->complianceService->getChecklistSessions($filters);
 
         return Inertia::render('shared/controls/compliance', [

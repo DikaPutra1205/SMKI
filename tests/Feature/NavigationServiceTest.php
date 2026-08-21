@@ -31,6 +31,8 @@ class NavigationServiceTest extends TestCase
             '/admin/superadmin/frameworks',
             '/admin/superadmin/users',
             '/admin/superadmin/roles',
+            '/admin/kepatuhan/compliance',
+            '/admin/kepatuhan/audit-logs',
         ], $this->urlsFor($user));
     }
 
@@ -43,6 +45,9 @@ class NavigationServiceTest extends TestCase
             '/admin/kepatuhan/compliance',
             '/admin/kepatuhan/checklist/verify',
             '/admin/kepatuhan/checklist/bulk-verify',
+            '/admin/kepatuhan/audit-logs',
+            '/admin/kepatuhan/findings',
+            '/admin/kepatuhan/risks',
         ], $this->urlsFor($user));
     }
 
@@ -54,6 +59,9 @@ class NavigationServiceTest extends TestCase
             $this->assertSame([
                 '/admin/superadmin/users',
                 '/admin/kepatuhan/dashboard',
+                '/admin/kepatuhan/audit-logs',
+                '/admin/kepatuhan/findings',
+                '/admin/kepatuhan/risks',
             ], $this->urlsFor($user));
         }
     }
@@ -62,13 +70,21 @@ class NavigationServiceTest extends TestCase
     {
         $user = User::factory()->create(['role' => User::ROLE_PIC]);
 
-        $this->assertSame(['/admin/pic/assessments'], $this->urlsFor($user));
+        $this->assertSame([
+            '/admin/kepatuhan/findings',
+            '/admin/kepatuhan/risks',
+            '/admin/pic/assessments',
+        ], $this->urlsFor($user));
     }
 
     public function test_grant_change_updates_navigation_without_code_change(): void
     {
         $pic = User::factory()->create(['role' => User::ROLE_PIC]);
-        $this->assertSame(['/admin/pic/assessments'], $this->urlsFor($pic));
+        $this->assertSame([
+            '/admin/kepatuhan/findings',
+            '/admin/kepatuhan/risks',
+            '/admin/pic/assessments',
+        ], $this->urlsFor($pic));
 
         // Grant the two permissions the kepatuhan dashboard entry requires.
         $role = $pic->role()->first();
@@ -79,6 +95,9 @@ class NavigationServiceTest extends TestCase
 
         $this->assertSame([
             '/admin/kepatuhan/dashboard',
+            '/admin/kepatuhan/audit-logs',
+            '/admin/kepatuhan/findings',
+            '/admin/kepatuhan/risks',
             '/admin/pic/assessments',
         ], $this->urlsFor($pic));
     }

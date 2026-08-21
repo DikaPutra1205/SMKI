@@ -7,6 +7,7 @@ use App\Models\ChecklistSession;
 use App\Models\Control;
 use App\Models\Framework;
 use App\Models\WorkUnit;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class ComplianceService
 {
@@ -183,7 +184,7 @@ class ComplianceService
     /**
      * Fetch controls ordered by id asc with framework and search/category filtering.
      */
-    public function getControls(array $filters = []): array
+    public function getControls(array $filters = [], int $perPage = 20): LengthAwarePaginator
     {
         $query = Control::with(['framework:id,nama,versi']);
 
@@ -212,18 +213,20 @@ class ComplianceService
             });
         }
 
-        $controls = $query->orderBy('id', 'asc')->get();
+        $perPage = max(1, min(100, $perPage));
 
-        return $controls->map(function (Control $ctrl) {
-            return [
-                'id' => (string) $ctrl->id,
-                'framework_id' => $ctrl->framework_id,
-                'framework_nama' => $ctrl->framework ? "{$ctrl->framework->nama}:{$ctrl->framework->versi}" : '',
-                'code' => $ctrl->kode_klausul,
-                'title' => $ctrl->judul,
-                'description' => $ctrl->deskripsi ?? '',
-                'category' => $ctrl->kategori === 'annex_a' ? 'Annex A' : 'Klausul 4-10',
-            ];
-        })->toArray();
+        return $query->orderBy('id', 'asc')
+            ->paginate($perPage)
+            ->through(function (Control $ctrl) {
+                return [
+                    'id' => (string) $ctrl->id,
+                    'framework_id' => $ctrl->framework_id,
+                    'framework_nama' => $ctrl->framework ? "{$ctrl->framework->nama}:{$ctrl->framework->versi}" : '',
+                    'code' => $ctrl->kode_klausul,
+                    'title' => $ctrl->judul,
+                    'description' => $ctrl->deskripsi ?? '',
+                    'category' => $ctrl->kategori === 'annex_a' ? 'Annex A' : 'Klausul 4-10',
+                ];
+            });
     }
 }

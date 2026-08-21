@@ -6,6 +6,7 @@ import { StatusBadge, statusTone } from '@/components/ui/StatusBadge';
 import { Textarea } from '@/components/ui/Textarea';
 import { Toast } from '@/components/ui/Toast';
 import AppLayout from '@/layouts/AppLayout';
+import { useCan } from '@/lib/can';
 import { t } from '@/lib/i18n';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { CheckCircle2, CheckSquare, FileText, Search, Square, X, XCircle } from 'lucide-react';
@@ -73,6 +74,7 @@ function fmtDate(value: string | null): string {
 }
 
 export default function BulkVerify({ entries, workUnits = [], filters = {} }: BulkVerifyProps) {
+    const can = useCan();
     const page = entries ?? { data: [], current_page: 1, last_page: 1, per_page: 20, total: 0, from: null, to: null };
     const items = page.data;
 
@@ -215,14 +217,16 @@ export default function BulkVerify({ entries, workUnits = [], filters = {} }: Bu
 
                 {/* Photo-picker style: only one button visible at a time */}
                 {!selectionMode ? (
-                    <button
-                        type="button"
-                        onClick={() => setSelectionMode(true)}
-                        className="bg-primary hover:bg-primary/90 inline-flex items-center gap-2 self-start rounded-[10px] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors sm:self-auto"
-                    >
-                        <CheckSquare className="h-4 w-4" />
-                        Pilih / Verifikasi Massal
-                    </button>
+                    can('checklist.bulk-verify') && (
+                        <button
+                            type="button"
+                            onClick={() => setSelectionMode(true)}
+                            className="bg-primary hover:bg-primary/90 inline-flex items-center gap-2 self-start rounded-[10px] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors sm:self-auto"
+                        >
+                            <CheckSquare className="h-4 w-4" />
+                            Pilih / Verifikasi Massal
+                        </button>
+                    )
                 ) : (
                     <button
                         type="button"
@@ -288,22 +292,26 @@ export default function BulkVerify({ entries, workUnits = [], filters = {} }: Bu
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <span className="text-navy text-sm font-semibold">{t('bulkVerify.selected', selectedIds.size)}</span>
                         <div className="flex items-center gap-3">
-                            <button
-                                type="button"
-                                onClick={() => openConfirm('approve')}
-                                className="bg-success hover:bg-success/90 inline-flex items-center gap-2 rounded-[10px] px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors sm:text-sm"
-                            >
-                                <CheckCircle2 className="h-4 w-4" />
-                                {t('bulkVerify.approveSelected')}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => openConfirm('reject')}
-                                className="bg-danger hover:bg-danger/90 inline-flex items-center gap-2 rounded-[10px] px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors sm:text-sm"
-                            >
-                                <XCircle className="h-4 w-4" />
-                                {t('bulkVerify.rejectSelected')}
-                            </button>
+                            {can('checklist.bulk-verify') && (
+                                <>
+                                    <button
+                                        type="button"
+                                        onClick={() => openConfirm('approve')}
+                                        className="bg-success hover:bg-success/90 inline-flex items-center gap-2 rounded-[10px] px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors sm:text-sm"
+                                    >
+                                        <CheckCircle2 className="h-4 w-4" />
+                                        {t('bulkVerify.approveSelected')}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => openConfirm('reject')}
+                                        className="bg-danger hover:bg-danger/90 inline-flex items-center gap-2 rounded-[10px] px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors sm:text-sm"
+                                    >
+                                        <XCircle className="h-4 w-4" />
+                                        {t('bulkVerify.rejectSelected')}
+                                    </button>
+                                </>
+                            )}
                         </div>
                     </div>
                     <div className="mt-3">
