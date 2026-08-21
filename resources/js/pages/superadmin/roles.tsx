@@ -4,8 +4,8 @@ import { Toast } from '@/components/ui/Toast';
 import AppLayout from '@/layouts/AppLayout';
 import { t } from '@/lib/i18n';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { ChevronDown, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 
 interface RolePerm {
     id: number;
@@ -95,8 +95,33 @@ export default function Roles({ roles, permissionCatalog }: Props) {
         });
     }
 
+    const [query, setQuery] = useState('');
+    const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+
     const breadcrumbs = [{ label: t('common.dashboard'), href: '/admin/superadmin/dashboard' }, { label: t('admin.roles.title') }];
-    const modules = Object.keys(permissionCatalog);
+    const modules = useMemo(
+        () =>
+            Object.keys(permissionCatalog).filter(
+                (m) =>
+                    !query ||
+                    m.toLowerCase().includes(query.toLowerCase()) ||
+                    permissionCatalog[m].some((k) => k.toLowerCase().includes(query.toLowerCase())),
+            ),
+        [permissionCatalog, query],
+    );
+
+    function allChecked(mod: string) {
+        return permissionCatalog[mod].every((k) => selectedPerms.has(k));
+    }
+    function toggleGroup(mod: string) {
+        const keys = permissionCatalog[mod];
+        const on = allChecked(mod);
+        setSelectedPerms((prev) => {
+            const n = new Set(prev);
+            keys.forEach((k) => (on ? n.delete(k) : n.add(k)));
+            return n;
+        });
+    }
 
     return (
         <AppLayout breadcrumbs={breadcrumbs} currentPath="/admin/superadmin/roles">
@@ -227,31 +252,102 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                         {form.errors.label && <p className="text-danger mt-1 text-[11px]">{form.errors.label}</p>}
                     </div>
 
-                    {mode === 'edit' && modules.length > 0 && (
-                        <div className="border-border mt-2 rounded-[10px] border p-4">
-                            <p className="text-navy mb-3 text-xs font-bold tracking-wider uppercase">{t('admin.roles.grants')}</p>
-                            <div className="space-y-4">
-                                {modules.map((mod) => (
-                                    <div key={mod}>
-                                        <p className="text-muted mb-1.5 text-[11px] font-semibold tracking-wider uppercase">{mod}</p>
-                                        <div className="flex flex-wrap gap-2">
-                                            {permissionCatalog[mod].map((key) => (
-                                                <label
-                                                    key={key}
-                                                    className="border-border-strong hover:bg-surface inline-flex items-center gap-1.5 rounded-[8px] border bg-white px-2.5 py-1.5 text-xs"
-                                                >
+                    {mode === 'edit' && (
+                        <div className="border-border mt-2 overflow-hidden rounded-[10px] border">
+                            <div className="bg-surface/60 flex items-center justify-between border-b px-4 py-3">
+                                <p className="text-navy text-xs font-bold tracking-wider uppercase">
+                                    {t('admin.roles.grants')} · {selectedPerms.size}/{Object.values(permissionCatalog).flat().length}
+                                </p>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedPerms(new Set(Object.values(permissionCatalog).flat()))}
+                                        className="text-primary text-[11px] font-semibold hover:underline"
+                                    >
+                                        Select all
+                                    </button>
+                                    <span className="text-muted text-[11px]">·</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedPerms(new Set())}
+                                        className="text-muted text-[11px] font-semibold hover:underline"
+                                    >
+                                        Clear
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="bg-surface/40 relative border-b px-3 py-2">
+                                <Search className="text-faint pointer-events-none absolute top-1/2 left-6 h-3.5 w-3.5 -translate-y-1/2" />
+                                <input
+                                    value={query}
+                                    onChange={(e) => setQuery(e.target.value)}
+                                    placeholder="Filter module / permission…"
+                                    className="border-border-strong text-ink placeholder:text-faint focus:border-primary h-8 w-full rounded-[8px] border bg-white py-1.5 pr-3 pl-8 text-xs focus:ring-1 focus:outline-none"
+                                />
+                            </div>
+                            <div className="max-h-[50vh] overflow-y-auto">
+                                {modules.length ? (
+                                    modules.map((mod) => {
+                                        const keys = permissionCatalog[mod].filter((k) => !query || k.toLowerCase().includes(query.toLowerCase()));
+                                        const checked = permissionCatalog[mod].every((k) => selectedPerms.has(k));
+                                        const partial = !checked && permissionCatalog[mod].some((k) => selectedPerms.has(k));
+                                        const isCollapsed = !!collapsed[mod];
+                                        return (
+                                            <div key={mod} className="border-border border-b last:border-0">
+                                                <div className="flex items-center gap-2 px-3 py-2">
                                                     <input
                                                         type="checkbox"
-                                                        checked={selectedPerms.has(key)}
-                                                        onChange={() => togglePerm(key)}
-                                                        className="accent-primary h-3 w-3"
+                                                        checked={checked}
+                                                        ref={(el) => {
+                                                            if (el) el.indeterminate = partial;
+                                                        }}
+                                                        onChange={() => toggleGroup(mod)}
+                                                        className="accent-primary h-3.5 w-3.5"
                                                     />
-                                                    <span className="text-body">{key}</span>
-                                                </label>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setCollapsed((p) => ({ ...p, [mod]: !p[mod] }))}
+                                                        className="flex flex-1 items-center justify-between text-left"
+                                                    >
+                                                        <span className="text-navy text-xs font-bold tracking-wider uppercase">
+                                                            {mod}{' '}
+                                                            <span className="text-muted ml-1 text-[11px] font-medium normal-case">
+                                                                {permissionCatalog[mod].filter((k) => selectedPerms.has(k)).length}/
+                                                                {permissionCatalog[mod].length}
+                                                            </span>
+                                                        </span>
+                                                        <ChevronDown
+                                                            className={`text-muted h-3.5 w-3.5 transition-transform ${isCollapsed ? '-rotate-90' : ''}`}
+                                                        />
+                                                    </button>
+                                                </div>
+                                                {!isCollapsed && (
+                                                    <div className="flex flex-wrap gap-1.5 px-3 pt-0 pb-2.5">
+                                                        {keys.map((key) => {
+                                                            const on = selectedPerms.has(key);
+                                                            return (
+                                                                <label
+                                                                    key={key}
+                                                                    className={`inline-flex cursor-pointer items-center gap-1.5 rounded-[8px] border px-2.5 py-1.5 text-xs transition-colors ${on ? 'border-primary/30 bg-primary-50 text-primary font-medium' : 'border-border-strong hover:bg-surface text-body bg-white'}`}
+                                                                >
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={on}
+                                                                        onChange={() => togglePerm(key)}
+                                                                        className="accent-primary h-3 w-3"
+                                                                    />
+                                                                    <span>{key.split('.')[1] ?? key}</span>
+                                                                </label>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })
+                                ) : (
+                                    <p className="text-muted py-8 text-center text-xs">No permissions match filter.</p>
+                                )}
                             </div>
                         </div>
                     )}
