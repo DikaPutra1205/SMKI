@@ -38,15 +38,6 @@ export function Header({ onToggleSidebar, breadcrumbs = [] }: HeaderProps) {
     return (
         <header className="border-border sticky top-0 z-30 flex h-[68px] items-center justify-between border-b bg-white/90 px-4 backdrop-blur-md transition-colors sm:px-6">
             <div className="flex items-center gap-3">
-                <button
-                    type="button"
-                    onClick={onToggleSidebar}
-                    className="border-border text-body hover:bg-surface hover:text-navy flex h-9 w-9 items-center justify-center rounded-[10px] border bg-white shadow-sm transition-colors"
-                    aria-label={t('layout.toggleSidebar')}
-                >
-                    <Menu className="h-5 w-5" />
-                </button>
-
                 <nav className="flex items-center gap-1.5 text-xs font-medium sm:text-sm">
                     {activeBreadcrumbs.map((item, index) => {
                         const isLast = index === activeBreadcrumbs.length - 1;
@@ -96,7 +87,7 @@ export function Header({ onToggleSidebar, breadcrumbs = [] }: HeaderProps) {
                     </button>
 
                     {isUserMenuOpen && (
-                        <div className="animate-in fade-in slide-in-from-top-2 border-border absolute right-0 z-50 mt-2 w-48 rounded-[14px] border bg-white p-1.5 shadow-lg duration-150">
+                        <div className="animate-in fade-in slide-in-from-top-2 border-border absolute right-0 z-[1000] mt-2 w-48 rounded-[14px] border bg-white p-1.5 shadow-lg duration-150">
                             <div className="border-border border-b px-3 py-2 md:hidden">
                                 <p className="text-navy text-xs font-semibold">{userName}</p>
                                 <p className="text-muted text-[11px]">{roleLabel}</p>

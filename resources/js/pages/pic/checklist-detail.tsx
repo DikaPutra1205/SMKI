@@ -514,7 +514,7 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
                 </button>
             </div>
 
-            <div className="sticky top-[76px] z-30 mb-6 rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50 to-blue-100/50 p-5 shadow-sm backdrop-blur-sm dark:border-blue-900 dark:from-blue-950/50 dark:to-blue-900/30">
+            <div className="sticky top-[76px] z-10 mb-6 rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50 to-blue-100/50 p-5 shadow-sm backdrop-blur-sm dark:border-blue-900 dark:from-blue-950/50 dark:to-blue-900/30">
                 <div className="mb-2 flex items-center justify-between">
                     <span className="text-[11px] font-bold tracking-wider text-blue-600 uppercase">Progress Pengecekan</span>
                     <div className="flex items-baseline gap-1.5">

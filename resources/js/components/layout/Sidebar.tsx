@@ -64,7 +64,6 @@ export function Sidebar({ isOpen, onClose, currentPath }: SidebarProps) {
                         </div>
                         <div className="flex flex-col">
                             <span className="text-sm leading-tight font-bold tracking-tight text-white">{t('layout.brand')}</span>
-                            <span className="text-primary-200 mt-0.5 text-[10px] font-semibold tracking-wider uppercase">{t('layout.suite')}</span>
                         </div>
                     </div>
                     <button
