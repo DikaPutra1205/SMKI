@@ -104,6 +104,7 @@ class ChecklistSessionController extends Controller
             'creator:id,name',
             'updater:id,name',
             'entries.control:id,framework_id,kode_klausul,judul,kategori',
+            'entries.control.framework:id,nama,versi',
             'entries.pic:id,name',
             'entries.admin:id,name',
             'entries.activeEvidence:id,checklist_entry_id,version_number,file_url,is_active',

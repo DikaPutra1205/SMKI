@@ -653,6 +653,24 @@ class ChecklistEntryApiTest extends TestCase
             ->patch("/admin/pic/checklist-entries/{$entry->id}", ['status' => 'non_compliant'])
             ->assertSessionHasErrors('catatan');
 
+        // partial also requires catatan
+        $this->actingAs($pic)
+            ->from('/admin/pic/assessments')
+            ->patch("/admin/pic/checklist-entries/{$entry->id}", ['status' => 'partial'])
+            ->assertSessionHasErrors('catatan');
+
+        $this->actingAs($pic)
+            ->from('/admin/pic/assessments')
+            ->patch("/admin/pic/checklist-entries/{$entry->id}", [
+                'status' => 'partial', 'catatan' => 'Baru terpenuhi sebagian',
+            ])
+            ->assertOk()
+            ->assertJson(['ok' => true]);
+
+        $this->assertDatabaseHas('checklist_entries', [
+            'id' => $entry->id, 'status' => 'partial', 'catatan' => 'Baru terpenuhi sebagian',
+        ]);
+
         $this->actingAs($pic)
             ->from('/admin/pic/assessments')
             ->patch("/admin/pic/checklist-entries/{$entry->id}", [

@@ -29,6 +29,7 @@ interface SessionItem {
     total_entries: number;
     completed_entries: number;
     compliant_entries: number;
+    partial_entries: number;
     non_compliant_entries: number;
     na_entries: number;
 }
@@ -116,9 +117,11 @@ export default function Assessments({ sessions, user_unit }: AssessmentsProps) {
                         const completed = s.completed_entries || 0;
                         const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
                         const compliant = s.compliant_entries || 0;
+                        const partial = s.partial_entries || 0;
                         const nonCompliant = s.non_compliant_entries || 0;
                         const na = s.na_entries || 0;
                         const compliantPct = total > 0 ? (compliant / total) * 100 : 0;
+                        const partialPct = total > 0 ? (partial / total) * 100 : 0;
                         const nonCompliantPct = total > 0 ? (nonCompliant / total) * 100 : 0;
                         const naPct = total > 0 ? (na / total) * 100 : 0;
 
@@ -147,6 +150,9 @@ export default function Assessments({ sessions, user_unit }: AssessmentsProps) {
                                     <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                                         {compliantPct > 0 && (
                                             <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${compliantPct}%` }} />
+                                        )}
+                                        {partialPct > 0 && (
+                                            <div className="h-full bg-amber-500 transition-all duration-500" style={{ width: `${partialPct}%` }} />
                                         )}
                                         {nonCompliantPct > 0 && (
                                             <div className="h-full bg-red-500 transition-all duration-500" style={{ width: `${nonCompliantPct}%` }} />

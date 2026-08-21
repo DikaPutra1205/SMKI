@@ -19,6 +19,7 @@ interface SessionItem {
     creator_name: string;
     total_entries: number;
     compliant_entries: number;
+    partial_entries: number;
     non_compliant_entries: number;
     na_entries: number;
     verified_entries: number;
@@ -184,6 +185,7 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
                         const pct = s.compliance_percentage;
                         const total = s.total_entries || 0;
                         const compliantPct = total > 0 ? (s.compliant_entries / total) * 100 : 0;
+                        const partialPct = total > 0 ? ((s.partial_entries || 0) / total) * 100 : 0;
                         const nonCompliantPct = total > 0 ? (s.non_compliant_entries / total) * 100 : 0;
                         const naPct = total > 0 ? (s.na_entries / total) * 100 : 0;
 
@@ -223,6 +225,9 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
                                     <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
                                         {compliantPct > 0 && (
                                             <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${compliantPct}%` }} />
+                                        )}
+                                        {partialPct > 0 && (
+                                            <div className="h-full bg-amber-500 transition-all duration-500" style={{ width: `${partialPct}%` }} />
                                         )}
                                         {nonCompliantPct > 0 && (
                                             <div className="h-full bg-red-500 transition-all duration-500" style={{ width: `${nonCompliantPct}%` }} />

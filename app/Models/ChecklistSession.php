@@ -58,7 +58,7 @@ class ChecklistSession extends Model
                 SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as na,
                 SUM(CASE WHEN (
                     status = ?
-                    OR (status IN (?, ?) AND catatan IS NOT NULL AND catatan != \'\')
+                    OR (status IN (?, ?, ?) AND catatan IS NOT NULL AND catatan != \'\')
                 ) THEN 1 ELSE 0 END) as completed,
                 SUM(CASE WHEN tanggal_verifikasi IS NOT NULL THEN 1 ELSE 0 END) as verified_entries
             ', [
@@ -67,6 +67,7 @@ class ChecklistSession extends Model
                 ChecklistEntry::STATUS_NON_COMPLIANT,
                 ChecklistEntry::STATUS_NA,
                 ChecklistEntry::STATUS_COMPLIANT,
+                ChecklistEntry::STATUS_PARTIAL,
                 ChecklistEntry::STATUS_NON_COMPLIANT,
                 ChecklistEntry::STATUS_NA,
             ])
