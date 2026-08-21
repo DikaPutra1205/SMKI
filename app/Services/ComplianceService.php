@@ -104,6 +104,7 @@ class ComplianceService
         ])->withCount([
             'entries as total_entries',
             'entries as compliant_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_COMPLIANT),
+            'entries as partial_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_PARTIAL),
             'entries as non_compliant_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_NON_COMPLIANT),
             'entries as na_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_NA),
             'entries as verified_entries' => fn ($q) => $q->whereNotNull('tanggal_verifikasi'),
@@ -153,6 +154,7 @@ class ComplianceService
                 'creator_name' => $session->creator?->name ?? '',
                 'total_entries' => $total,
                 'compliant_entries' => $compliant,
+                'partial_entries' => (int) $session->partial_entries,
                 'non_compliant_entries' => (int) $session->non_compliant_entries,
                 'na_entries' => (int) $session->na_entries,
                 'verified_entries' => $verified,

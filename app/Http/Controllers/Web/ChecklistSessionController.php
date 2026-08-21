@@ -27,11 +27,12 @@ class ChecklistSessionController extends Controller
                 'entries as total_entries',
                 'entries as completed_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_COMPLIANT)
                     ->orWhere(function ($q2) {
-                        $q2->whereIn('status', [ChecklistEntry::STATUS_NON_COMPLIANT, ChecklistEntry::STATUS_NA])
+                        $q2->whereIn('status', [ChecklistEntry::STATUS_PARTIAL, ChecklistEntry::STATUS_NON_COMPLIANT, ChecklistEntry::STATUS_NA])
                             ->where('catatan', '!=', '')
                             ->whereNotNull('catatan');
                     }),
                 'entries as compliant_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_COMPLIANT),
+                'entries as partial_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_PARTIAL),
                 'entries as non_compliant_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_NON_COMPLIANT),
                 'entries as na_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_NA),
             ])
@@ -231,13 +232,13 @@ class ChecklistSessionController extends Controller
         }
 
         $incomplete = $checklistSession->entries()
-            ->whereIn('status', [ChecklistEntry::STATUS_NON_COMPLIANT, ChecklistEntry::STATUS_NA])
+            ->whereIn('status', [ChecklistEntry::STATUS_PARTIAL, ChecklistEntry::STATUS_NON_COMPLIANT, ChecklistEntry::STATUS_NA])
             ->where(fn ($q) => $q->whereNull('catatan')->orWhere('catatan', ''))
             ->count();
 
         if ($incomplete > 0) {
             return redirect()->back()
-                ->with('flash', ['type' => 'error', 'message' => "{$incomplete} kontrol belum diisi catatan untuk status Ketidaksesuaian/Tidak Berlaku."]);
+                ->with('flash', ['type' => 'error', 'message' => "{$incomplete} kontrol belum diisi catatan untuk status Sebagian Patuh/Ketidaksesuaian/Tidak Berlaku."]);
         }
 
         // Mark all entries with tanggal_input

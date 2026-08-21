@@ -3,7 +3,7 @@ import { usePageLoading } from '@/hooks/usePageLoading';
 import AppLayout from '@/layouts/AppLayout';
 import { assessmentStore } from '@/stores/assessmentStore';
 import { Head, router } from '@inertiajs/react';
-import { AlertTriangle, ArrowLeft, CheckCircle2, Clock, FileText, Send, Shield, ShieldAlert, ShieldCheck, XCircle } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, CheckCircle2, Clock, FileText, Send, Shield, ShieldAlert, ShieldCheck, ShieldHalf, XCircle } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 
 interface ControlData {
@@ -69,13 +69,26 @@ function formatKategori(kategori: string): string {
     return kategori.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function DonutChart({ percentage, compliant, nonCompliant, na }: { percentage: number; compliant: number; nonCompliant: number; na: number }) {
+function DonutChart({
+    percentage,
+    compliant,
+    partial,
+    nonCompliant,
+    na,
+}: {
+    percentage: number;
+    compliant: number;
+    partial: number;
+    nonCompliant: number;
+    na: number;
+}) {
     const radius = 48;
     const circumference = 2 * Math.PI * radius;
-    const total = compliant + nonCompliant + na;
+    const total = compliant + partial + nonCompliant + na;
 
     const segments = [
         { value: compliant, color: '#10b981' },
+        { value: partial, color: '#f59e0b' },
         { value: nonCompliant, color: '#ef4444' },
         { value: na, color: '#94a3b8' },
     ];
@@ -126,6 +139,12 @@ function DonutChart({ percentage, compliant, nonCompliant, na }: { percentage: n
                     <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
                     <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
                         Patuh <span className="font-bold text-slate-900 dark:text-white">{compliant}</span>
+                    </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                        Sebagian Patuh <span className="font-bold text-slate-900 dark:text-white">{partial}</span>
                     </span>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -274,6 +293,39 @@ function NaCard({ entry, index }: { entry: EntryItem; index: number }) {
     );
 }
 
+function PartialCard({ entry, index }: { entry: EntryItem; index: number }) {
+    return (
+        <div className="flex h-full flex-col rounded-xl border border-amber-100 bg-white p-4 shadow-sm dark:border-amber-900/40 dark:bg-slate-900">
+            <div className="mb-2 flex items-center justify-between gap-2">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-100 text-xs font-bold text-amber-600 dark:bg-amber-900/40 dark:text-amber-400">
+                    {index}
+                </div>
+                <div className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+                    <ShieldHalf className="h-3.5 w-3.5" />
+                    Sebagian Patuh
+                </div>
+            </div>
+            <ControlCardHeader entry={entry} />
+            <h4 className="mb-1 text-sm font-bold text-slate-900 dark:text-white">{entry.control.judul}</h4>
+            {entry.control.deskripsi && (
+                <p className="mb-3 line-clamp-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400">{entry.control.deskripsi}</p>
+            )}
+            {entry.catatan && (
+                <div className="mb-3 flex items-start gap-1.5 rounded-lg bg-amber-50 px-2.5 py-2 text-xs text-slate-600 dark:bg-amber-900/20 dark:text-slate-400">
+                    <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0 text-amber-500" />
+                    <span>
+                        <span className="font-semibold text-amber-700 dark:text-amber-400">Catatan:</span>{' '}
+                        <span className="italic">&ldquo;{entry.catatan}&rdquo;</span>
+                    </span>
+                </div>
+            )}
+            <div className="mt-auto pt-1">
+                <EvidenceLink entry={entry} />
+            </div>
+        </div>
+    );
+}
+
 function CompliantCard({ entry }: { entry: EntryItem }) {
     return (
         <div className="flex h-full flex-col rounded-xl border border-emerald-100 bg-white p-4 shadow-sm dark:border-emerald-900/40 dark:bg-slate-900">
@@ -333,6 +385,8 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
     );
 
     const nonCompliantEntries = useMemo(() => filteredEntries.filter((e) => e.status === 'non_compliant'), [filteredEntries]);
+
+    const partialEntries = useMemo(() => filteredEntries.filter((e) => e.status === 'partial'), [filteredEntries]);
 
     const naEntries = useMemo(() => filteredEntries.filter((e) => e.status === 'na'), [filteredEntries]);
 
@@ -408,6 +462,7 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
                         <DonutChart
                             percentage={summary.compliance_percentage}
                             compliant={summary.compliant}
+                            partial={summary.partial}
                             nonCompliant={summary.non_compliant}
                             na={summary.na}
                         />
@@ -431,6 +486,13 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
                             value={summary.compliant}
                             color="bg-emerald-500"
                             bgColor="border-emerald-100 bg-emerald-50/50 dark:border-emerald-900 dark:bg-emerald-950/30"
+                        />
+                        <StatCard
+                            icon={ShieldHalf}
+                            label="Sebagian Patuh"
+                            value={summary.partial}
+                            color="bg-amber-500"
+                            bgColor="border-amber-100 bg-amber-50/50 dark:border-amber-900 dark:bg-amber-950/30"
                         />
                         <StatCard
                             icon={ShieldAlert}
@@ -502,6 +564,28 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         {nonCompliantEntries.map((entry, idx) => (
                             <NonCompliantCard key={entry.id} entry={entry} index={idx + 1} />
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Partial Compliance Items */}
+            {partialEntries.length > 0 && (
+                <div className="mb-8">
+                    <div className="mb-3 flex items-center gap-2">
+                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/40">
+                            <ShieldHalf className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                        </div>
+                        <h2 className="text-lg font-bold text-slate-900 dark:text-white">Kontrol Sebagian Patuh</h2>
+                        <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+                            {partialEntries.length}
+                        </span>
+                    </div>
+                    <p className="mb-4 text-sm text-slate-500">Kontrol berikut baru terpenuhi sebagian dan memerlukan tindak lanjut.</p>
+
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {partialEntries.map((entry, idx) => (
+                            <PartialCard key={entry.id} entry={entry} index={idx + 1} />
                         ))}
                     </div>
                 </div>
