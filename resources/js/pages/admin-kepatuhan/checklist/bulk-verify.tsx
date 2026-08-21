@@ -227,7 +227,7 @@ export default function BulkVerify({ entries, workUnits = [], filters = {} }: Bu
                     <button
                         type="button"
                         onClick={exitSelectionMode}
-                        className="border-border-strong hover:bg-surface inline-flex items-center gap-2 self-start rounded-[10px] border bg-white px-4 py-2 text-sm font-semibold text-body shadow-sm transition-colors sm:self-auto"
+                        className="border-border-strong hover:bg-surface text-body inline-flex items-center gap-2 self-start rounded-[10px] border bg-white px-4 py-2 text-sm font-semibold shadow-sm transition-colors sm:self-auto"
                     >
                         <X className="h-4 w-4" />
                         Batal
@@ -237,9 +237,9 @@ export default function BulkVerify({ entries, workUnits = [], filters = {} }: Bu
 
             {/* ── Selection-mode active banner ── */}
             {selectionMode && (
-                <div className="border-primary/30 bg-primary/5 rounded-[12px] border px-4 py-3 flex items-center gap-3">
-                    <Square className="h-4 w-4 text-primary shrink-0" />
-                    <p className="text-sm font-medium text-navy">
+                <div className="border-primary/30 bg-primary/5 flex items-center gap-3 rounded-[12px] border px-4 py-3">
+                    <Square className="text-primary h-4 w-4 shrink-0" />
+                    <p className="text-navy text-sm font-medium">
                         Mode pilih aktif — centang baris yang ingin diverifikasi, lalu pilih tindakan di bawah.
                     </p>
                 </div>
@@ -366,7 +366,7 @@ export default function BulkVerify({ entries, workUnits = [], filters = {} }: Bu
                                         <tr
                                             key={entry.id}
                                             onClick={() => selectionMode && toggleOne(entry.id)}
-                                            className={`border-border border-b last:border-0 transition-colors ${
+                                            className={`border-border border-b transition-colors last:border-0 ${
                                                 selectionMode
                                                     ? isChecked
                                                         ? 'bg-primary/5 cursor-pointer'

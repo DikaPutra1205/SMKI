@@ -128,11 +128,11 @@ class ComplianceOfficerController extends Controller
             $sessions = $this->complianceService->getAdminSessions($filters);
 
             return Inertia::render('admin-kepatuhan/checklist/bulk-verify-landing', [
-                'sessions'       => $sessions,
-                'workUnits'      => $this->complianceService->getWorkUnits(),
-                'frameworks'     => $this->complianceService->getFrameworkSummaries(),
+                'sessions' => $sessions,
+                'workUnits' => $this->complianceService->getWorkUnits(),
+                'frameworks' => $this->complianceService->getFrameworkSummaries(),
                 'periodeOptions' => $this->complianceService->getSessionPeriodeOptions(),
-                'filters'        => $filters,
+                'filters' => $filters,
             ]);
         }
 
@@ -142,9 +142,9 @@ class ComplianceOfficerController extends Controller
         $entries = $this->complianceOfficerService->getReviewQueueEntries($user, $filters, 20);
 
         return Inertia::render('admin-kepatuhan/checklist/bulk-verify', [
-            'entries'   => $entries,
+            'entries' => $entries,
             'workUnits' => $this->complianceService->getWorkUnits(),
-            'filters'   => $filters,
+            'filters' => $filters,
         ]);
     }
 
@@ -170,9 +170,9 @@ class ComplianceOfficerController extends Controller
         $entries = $this->complianceOfficerService->getReviewQueueEntries($user, $filters, 20);
 
         return Inertia::render('admin-kepatuhan/checklist/verify', [
-            'entries'   => $entries,
+            'entries' => $entries,
             'workUnits' => $this->complianceService->getWorkUnits(),
-            'filters'   => $filters,
+            'filters' => $filters,
         ]);
     }
 
@@ -196,23 +196,22 @@ class ComplianceOfficerController extends Controller
         }
 
         $validated = $request->validate([
-            'status'      => 'required|string|in:compliant,non_compliant',
+            'status' => 'required|string|in:compliant,non_compliant',
             'admin_notes' => 'nullable|string|max:2000',
         ]);
 
         $entry->update([
-            'status'             => $validated['status'],
-            'catatan_admin'      => $validated['admin_notes'] ?? null,
+            'status' => $validated['status'],
+            'catatan_admin' => $validated['admin_notes'] ?? null,
             'tanggal_verifikasi' => now(),
-            'admin_id'           => $user->id,
+            'admin_id' => $user->id,
         ]);
 
         $statusLabel = $validated['status'] === 'compliant' ? 'Patuh' : 'Tidak Patuh';
 
         return back()->with('flash', [
-            'type'    => 'success',
+            'type' => 'success',
             'message' => "Entri #{$entry->id} berhasil diverifikasi sebagai {$statusLabel}.",
         ]);
     }
 }
-
