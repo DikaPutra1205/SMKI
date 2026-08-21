@@ -224,7 +224,10 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
                                     </div>
                                     <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
                                         {compliantPct > 0 && (
-                                            <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${compliantPct}%` }} />
+                                            <div
+                                                className="h-full bg-emerald-500 transition-all duration-500"
+                                                style={{ width: `${compliantPct}%` }}
+                                            />
                                         )}
                                         {partialPct > 0 && (
                                             <div className="h-full bg-amber-500 transition-all duration-500" style={{ width: `${partialPct}%` }} />
