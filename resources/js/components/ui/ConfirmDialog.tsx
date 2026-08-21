@@ -20,21 +20,21 @@ const variantStyles: Record<ConfirmVariant, { icon: typeof AlertTriangle; iconBg
     danger: {
         icon: Trash2,
         iconBg: 'bg-danger-bg',
-        iconText: 'text-danger',
+        iconText: 'text-danger dark:text-red-400',
         confirmBg: 'bg-danger',
         confirmHover: 'hover:bg-danger/90',
     },
     warning: {
         icon: AlertTriangle,
         iconBg: 'bg-warning-bg',
-        iconText: 'text-warning',
+        iconText: 'text-warning dark:text-amber-400',
         confirmBg: 'bg-warning',
         confirmHover: 'hover:bg-warning/90',
     },
     info: {
         icon: Info,
         iconBg: 'bg-info-bg',
-        iconText: 'text-info',
+        iconText: 'text-info dark:text-sky-400',
         confirmBg: 'bg-primary',
         confirmHover: 'hover:bg-primary-700',
     },
@@ -78,23 +78,23 @@ export function ConfirmDialog({
                 if (e.target === e.currentTarget) onCancel();
             }}
         >
-            <div ref={dialogRef} className="w-full max-w-md overflow-hidden rounded-[14px] border border-border bg-white shadow-lg">
+            <div ref={dialogRef} className="w-full max-w-md overflow-hidden rounded-[14px] border border-border dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg">
                 <div className="flex items-start gap-4 p-5">
                     <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-full', v.iconBg, v.iconText)}>
                         <Icon className="h-5 w-5" />
                     </div>
                     <div>
-                        <h2 className="text-base font-bold text-navy">{title}</h2>
-                        <p className="mt-1 text-sm text-body">{description}</p>
+                        <h2 className="text-base font-bold text-navy dark:text-white">{title}</h2>
+                        <p className="mt-1 text-sm text-body dark:text-slate-300">{description}</p>
                     </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-3 border-t border-border bg-surface/60 px-5 py-4">
+                <div className="flex items-center justify-end gap-3 border-t border-border dark:border-slate-700 bg-surface/60 dark:bg-slate-900/60 px-5 py-4">
                     <button
                         type="button"
                         onClick={onCancel}
                         disabled={busy}
-                        className="rounded-[10px] border border-border-strong bg-white px-4 py-2 text-xs font-semibold text-body transition-colors hover:bg-surface disabled:opacity-50 sm:text-sm"
+                        className="rounded-[10px] border border-border-strong dark:border-slate-600 bg-white dark:bg-slate-900 px-4 py-2 text-xs font-semibold text-body dark:text-slate-300 transition-colors hover:bg-surface dark:hover:bg-slate-800 disabled:opacity-50 sm:text-sm"
                     >
                         {cancelLabel}
                     </button>

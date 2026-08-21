@@ -23,7 +23,7 @@ export default function ChecklistDetailSkeleton() {
                 <Skeleton className="h-2 w-full rounded-full" />
             </div>
 
-            <div className="mb-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 shadow-sm">
                 <div className="flex items-center justify-between">
                     <Skeleton className="h-10 w-28 rounded-lg" />
                     <div className="flex flex-col items-center gap-1">
@@ -35,16 +35,16 @@ export default function ChecklistDetailSkeleton() {
                 </div>
             </div>
 
-            <div className="mb-3 flex items-center gap-3 rounded-xl border border-blue-100 bg-white px-4 py-3 shadow-sm">
+            <div className="mb-3 flex items-center gap-3 rounded-xl border border-blue-100 bg-white dark:bg-slate-900 px-4 py-3 shadow-sm">
                 <Skeleton className="h-8 w-24 rounded-lg" />
                 <Skeleton className="h-4 w-1" />
                 <Skeleton className="h-5 w-32" />
                 <Skeleton className="ml-auto h-6 w-20 rounded-full" />
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 shadow-sm">
                 {Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className={`py-5 ${i < 3 ? 'border-b border-slate-100' : ''}`}>
+                    <div key={i} className={`py-5 ${i < 3 ? 'border-b border-slate-100 dark:border-slate-800' : ''}`}>
                         <div className="mb-2 flex items-start justify-between">
                             <div className="flex items-center gap-2">
                                 <Skeleton className="h-5 w-16 rounded-md" />

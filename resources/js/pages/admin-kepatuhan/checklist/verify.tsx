@@ -176,20 +176,20 @@ function DetailPanel({ entry, onClose }: DetailPanelProps) {
             <div className="fixed inset-0 z-40 bg-slate-900/30 backdrop-blur-[2px] transition-opacity" onClick={onClose} aria-hidden="true" />
 
             {/* Panel */}
-            <aside className="border-border fixed inset-y-0 right-0 z-50 flex w-full max-w-[480px] flex-col border-l bg-white shadow-2xl">
+            <aside className="border-border dark:border-slate-700 fixed inset-y-0 right-0 z-50 flex w-full max-w-[480px] flex-col border-l bg-white dark:bg-slate-900 shadow-2xl">
                 {/* Header */}
-                <div className="border-border flex items-start justify-between gap-4 border-b px-5 py-4">
+                <div className="border-border dark:border-slate-700 flex items-start justify-between gap-4 border-b px-5 py-4">
                     <div className="min-w-0">
                         <div className="flex items-center gap-2">
                             <ShieldCheck className="text-primary h-4 w-4 shrink-0" />
-                            <h2 className="text-navy text-base font-bold">Verifikasi Entri</h2>
+                            <h2 className="text-navy dark:text-white text-base font-bold">Verifikasi Entri</h2>
                         </div>
-                        <p className="text-muted mt-0.5 font-mono text-xs">{code}</p>
+                        <p className="text-muted dark:text-slate-400 mt-0.5 font-mono text-xs">{code}</p>
                     </div>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="text-muted hover:bg-surface hover:text-navy rounded-lg p-1.5 transition-colors"
+                        className="text-muted dark:text-slate-400 hover:bg-surface dark:hover:bg-slate-800 hover:text-navy dark:hover:text-white rounded-lg p-1.5 transition-colors"
                         aria-label="Tutup panel"
                     >
                         <X className="h-4 w-4" />
@@ -199,28 +199,28 @@ function DetailPanel({ entry, onClose }: DetailPanelProps) {
                 {/* Body */}
                 <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
                     {/* Control info */}
-                    <div className="border-border bg-surface/40 overflow-hidden rounded-[12px] border">
-                        <div className="border-border flex items-center justify-between border-b px-4 py-2.5">
-                            <span className="text-muted text-xs font-semibold tracking-wide uppercase">Kontrol</span>
+                    <div className="border-border dark:border-slate-700 bg-surface/40 dark:bg-slate-900/40 overflow-hidden rounded-[12px] border">
+                        <div className="border-border dark:border-slate-700 flex items-center justify-between border-b px-4 py-2.5">
+                            <span className="text-muted dark:text-slate-400 text-xs font-semibold tracking-wide uppercase">Kontrol</span>
                             {framework && (
-                                <span className="border-border text-body rounded-[6px] border bg-white px-2 py-0.5 text-[11px] font-semibold">
+                                <span className="border-border dark:border-slate-700 text-body dark:text-slate-300 rounded-[6px] border bg-white dark:bg-slate-900 px-2 py-0.5 text-[11px] font-semibold">
                                     {framework}
                                 </span>
                             )}
                         </div>
                         <div className="px-4 py-3">
-                            <p className="text-navy text-sm leading-snug font-bold">{title}</p>
+                            <p className="text-navy dark:text-white text-sm leading-snug font-bold">{title}</p>
                             {entry.control?.deskripsi && (
-                                <p className="text-body mt-1.5 line-clamp-3 text-xs leading-relaxed">{entry.control.deskripsi}</p>
+                                <p className="text-body dark:text-slate-300 mt-1.5 line-clamp-3 text-xs leading-relaxed">{entry.control.deskripsi}</p>
                             )}
                             {entry.control?.kategori && (
-                                <span className="text-muted mt-2 inline-block text-[11px] font-medium">{kategoriLabel(entry.control.kategori)}</span>
+                                <span className="text-muted dark:text-slate-400 mt-2 inline-block text-[11px] font-medium">{kategoriLabel(entry.control.kategori)}</span>
                             )}
                         </div>
                     </div>
 
                     {/* Meta: unit, PIC, status, dates */}
-                    <div className="border-border overflow-hidden rounded-[12px] border">
+                    <div className="border-border dark:border-slate-700 overflow-hidden rounded-[12px] border">
                         {[
                             { label: 'Unit Kerja', value: entry.unit?.nama || '—' },
                             { label: 'PIC', value: entry.pic?.name || '—' },
@@ -232,10 +232,10 @@ function DetailPanel({ entry, onClose }: DetailPanelProps) {
                         ].map(({ label, value }, i, arr) => (
                             <div
                                 key={label}
-                                className={`flex items-center justify-between gap-3 px-4 py-2.5 ${i < arr.length - 1 ? 'border-border border-b' : ''}`}
+                                className={`flex items-center justify-between gap-3 px-4 py-2.5 ${i < arr.length - 1 ? 'border-border dark:border-slate-700 border-b' : ''}`}
                             >
-                                <span className="text-body text-[13px] font-medium">{label}</span>
-                                <span className="text-navy text-right text-[13px] font-semibold">{value}</span>
+                                <span className="text-body dark:text-slate-300 text-[13px] font-medium">{label}</span>
+                                <span className="text-navy dark:text-white text-right text-[13px] font-semibold">{value}</span>
                             </div>
                         ))}
                     </div>
@@ -243,8 +243,8 @@ function DetailPanel({ entry, onClose }: DetailPanelProps) {
                     {/* PIC notes */}
                     {entry.catatan && (
                         <div>
-                            <h3 className="text-navy mb-1.5 text-xs font-bold tracking-wide uppercase">Catatan PIC</h3>
-                            <p className="border-border bg-surface/50 text-body rounded-[10px] border px-3.5 py-3 text-[13px] leading-relaxed">
+                            <h3 className="text-navy dark:text-white mb-1.5 text-xs font-bold tracking-wide uppercase">Catatan PIC</h3>
+                            <p className="border-border dark:border-slate-700 bg-surface/50 dark:bg-slate-900/50 text-body dark:text-slate-300 rounded-[10px] border px-3.5 py-3 text-[13px] leading-relaxed">
                                 {entry.catatan}
                             </p>
                         </div>
@@ -252,7 +252,7 @@ function DetailPanel({ entry, onClose }: DetailPanelProps) {
 
                     {/* Evidence */}
                     <div>
-                        <h3 className="text-navy mb-1.5 text-xs font-bold tracking-wide uppercase">Evidence</h3>
+                        <h3 className="text-navy dark:text-white mb-1.5 text-xs font-bold tracking-wide uppercase">Evidence</h3>
                         {hasEvidence ? (
                             <a
                                 href={entry.active_evidence!.file_url}
@@ -275,11 +275,11 @@ function DetailPanel({ entry, onClose }: DetailPanelProps) {
                     {/* Previous admin notes (if already verified before) */}
                     {alreadyVerified && (
                         <div className="border-info/20 bg-info-bg rounded-[10px] border px-3.5 py-3">
-                            <p className="text-info text-xs font-semibold">
+                            <p className="text-info dark:text-sky-400 text-xs font-semibold">
                                 Sudah diverifikasi · {fmtDate(entry.tanggal_verifikasi)}
                                 {entry.admin?.name ? ` oleh ${entry.admin.name}` : ''}
                             </p>
-                            {entry.catatan_admin && <p className="text-body mt-1 text-xs">{entry.catatan_admin}</p>}
+                            {entry.catatan_admin && <p className="text-body dark:text-slate-300 mt-1 text-xs">{entry.catatan_admin}</p>}
                         </div>
                     )}
 
@@ -295,7 +295,7 @@ function DetailPanel({ entry, onClose }: DetailPanelProps) {
 
                 {/* Footer action bar */}
                 {can('checklist.bulk-verify') && (
-                    <div className="border-border bg-surface/60 flex items-center gap-3 border-t px-5 py-4">
+                    <div className="border-border dark:border-slate-700 bg-surface/60 dark:bg-slate-900/60 flex items-center gap-3 border-t px-5 py-4">
                         <button
                             type="button"
                             onClick={() => setConfirmAction('approve')}
@@ -404,23 +404,23 @@ export default function Verify({ entries, workUnits = [], filters = {} }: Verify
             <div className="page-head flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">Verifikasi Entri</h1>
-                    <p className="text-muted mt-1 text-sm">
+                    <p className="text-muted dark:text-slate-400 mt-1 text-sm">
                         Tinjau setiap entri checklist satu per satu — klik baris untuk membuka detail dan mengambil keputusan.
                     </p>
                 </div>
-                <div className="text-muted text-xs">{page.total} entri ditemukan</div>
+                <div className="text-muted dark:text-slate-400 text-xs">{page.total} entri ditemukan</div>
             </div>
 
             {/* Filter bar */}
-            <div className="border-border flex flex-col gap-3 rounded-[14px] border bg-white p-4 lg:flex-row lg:items-center">
+            <div className="border-border dark:border-slate-700 flex flex-col gap-3 rounded-[14px] border bg-white dark:bg-slate-900 p-4 lg:flex-row lg:items-center">
                 <div className="relative flex-1">
-                    <Search className="text-faint pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                    <Search className="text-faint dark:text-slate-500 pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                     <input
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder={t('bulkVerify.searchPlaceholder')}
-                        className="border-border-strong bg-surface/40 text-navy placeholder:text-muted focus:border-primary w-full rounded-[10px] border py-2.5 pr-3 pl-9 text-sm focus:outline-none"
+                        className="border-border-strong dark:border-slate-600 bg-surface/40 dark:bg-slate-900/40 text-navy dark:text-white placeholder:text-muted dark:placeholder:text-slate-500 focus:border-primary w-full rounded-[10px] border py-2.5 pr-3 pl-9 text-sm focus:outline-none"
                     />
                 </div>
 
@@ -452,11 +452,11 @@ export default function Verify({ entries, workUnits = [], filters = {} }: Verify
             </div>
 
             {/* Table */}
-            <div className="border-border overflow-hidden rounded-[14px] border bg-white">
+            <div className="border-border dark:border-slate-700 overflow-hidden rounded-[14px] border bg-white dark:bg-slate-900">
                 <div className="overflow-x-auto">
                     <table className="w-full min-w-[760px] text-left text-sm">
                         <thead>
-                            <tr className="border-border bg-surface/60 text-muted border-b text-xs font-semibold tracking-wider uppercase">
+                            <tr className="border-border dark:border-slate-700 bg-surface/60 dark:bg-slate-900/60 text-muted dark:text-slate-400 border-b text-xs font-semibold tracking-wider uppercase">
                                 <th className="px-4 py-3">{t('bulkVerify.code')}</th>
                                 <th className="px-4 py-3">{t('bulkVerify.control')}</th>
                                 <th className="px-4 py-3">{t('bulkVerify.workUnit')}</th>
@@ -482,19 +482,19 @@ export default function Verify({ entries, workUnits = [], filters = {} }: Verify
                                         <tr
                                             key={entry.id}
                                             onClick={() => setActiveEntry(isActive ? null : entry)}
-                                            className={`border-border cursor-pointer border-b transition-colors last:border-0 ${
-                                                isActive ? 'bg-primary/5 ring-primary/20 ring-1 ring-inset' : 'hover:bg-surface/50'
+                                            className={`border-border dark:border-slate-700 cursor-pointer border-b transition-colors last:border-0 ${
+                                                isActive ? 'bg-primary/5 ring-primary/20 ring-1 ring-inset' : 'hover:bg-surface/50 dark:hover:bg-slate-800/50'
                                             }`}
                                         >
-                                            <td className="text-navy px-4 py-3 font-mono text-xs font-bold">{entry.control?.kode_klausul ?? '—'}</td>
+                                            <td className="text-navy dark:text-white px-4 py-3 font-mono text-xs font-bold">{entry.control?.kode_klausul ?? '—'}</td>
                                             <td className="max-w-[250px] px-4 py-3">
-                                                <p className="text-navy truncate font-semibold">{entry.control?.judul ?? t('common.noData')}</p>
+                                                <p className="text-navy dark:text-white truncate font-semibold">{entry.control?.judul ?? t('common.noData')}</p>
                                                 {entry.control?.framework && (
-                                                    <p className="text-muted truncate text-xs">{entry.control.framework.nama}</p>
+                                                    <p className="text-muted dark:text-slate-400 truncate text-xs">{entry.control.framework.nama}</p>
                                                 )}
                                             </td>
-                                            <td className="text-body px-4 py-3">{entry.unit?.nama ?? '—'}</td>
-                                            <td className="text-body px-4 py-3">{entry.pic?.name ?? '—'}</td>
+                                            <td className="text-body dark:text-slate-300 px-4 py-3">{entry.unit?.nama ?? '—'}</td>
+                                            <td className="text-body dark:text-slate-300 px-4 py-3">{entry.pic?.name ?? '—'}</td>
                                             <td className="px-4 py-3">
                                                 <StatusBadge tone={statusTone(entry.status)}>
                                                     {t(`status.${entry.status ?? 'pending'}` as never)}
@@ -502,12 +502,12 @@ export default function Verify({ entries, workUnits = [], filters = {} }: Verify
                                             </td>
                                             <td className="px-4 py-3">
                                                 {hasEvidence ? (
-                                                    <span className="border-success-border bg-success-bg text-success inline-flex items-center gap-1 rounded-[6px] border px-2 py-0.5 text-[11px] font-semibold">
+                                                    <span className="border-success-border dark:border-emerald-800 bg-success-bg text-success dark:text-emerald-400 inline-flex items-center gap-1 rounded-[6px] border px-2 py-0.5 text-[11px] font-semibold">
                                                         <FileText className="h-3 w-3" />
                                                         Ada
                                                     </span>
                                                 ) : (
-                                                    <span className="text-muted text-xs">—</span>
+                                                    <span className="text-muted dark:text-slate-400 text-xs">—</span>
                                                 )}
                                             </td>
                                             <td className="px-4 py-3">
@@ -520,7 +520,7 @@ export default function Verify({ entries, workUnits = [], filters = {} }: Verify
                                                     className={`rounded-[8px] border px-3 py-1.5 text-xs font-semibold transition-colors ${
                                                         isActive
                                                             ? 'border-primary bg-primary text-white'
-                                                            : 'border-border-strong text-body hover:bg-surface bg-white'
+                                                            : 'border-border-strong dark:border-slate-600 text-body dark:text-slate-300 hover:bg-surface dark:hover:bg-slate-800 bg-white dark:bg-slate-900'
                                                     }`}
                                                 >
                                                     {isActive ? 'Aktif' : 'Tinjau'}

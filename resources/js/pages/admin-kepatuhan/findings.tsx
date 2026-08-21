@@ -139,7 +139,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
     const deadlineChip = (f: FindingItem) => {
         if (f.status === 'closed') {
             return (
-                <span className="border-success-border bg-success-bg text-success inline-flex items-center gap-1.5 rounded-[6px] border px-2 py-1 text-[11px] font-semibold">
+                <span className="border-success-border dark:border-emerald-800 bg-success-bg text-success dark:text-emerald-400 inline-flex items-center gap-1.5 rounded-[6px] border px-2 py-1 text-[11px] font-semibold">
                     <CheckCircle2 className="h-3 w-3" />
                     {f.verified_at ? t('findings.verifiedOn', fmtDate(f.verified_at)) : t('findings.done')}
                 </span>
@@ -150,7 +150,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
 
         if (f.is_overdue) {
             return (
-                <span className="border-danger-border bg-danger-bg text-danger inline-flex items-center gap-1.5 rounded-[6px] border px-2 py-1 text-[11px] font-semibold">
+                <span className="border-danger-border dark:border-red-800 bg-danger-bg text-danger dark:text-red-400 inline-flex items-center gap-1.5 rounded-[6px] border px-2 py-1 text-[11px] font-semibold">
                     <Clock className="h-3 w-3" />
                     {t('findings.lateDays', Math.abs(f.days_remaining ?? 0))}
                 </span>
@@ -158,7 +158,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
         }
 
         const remaining = f.days_remaining ?? 0;
-        const toneClass = remaining <= 3 ? 'border-warning-border bg-warning-bg text-warning' : 'border-success-border bg-success-bg text-success';
+        const toneClass = remaining <= 3 ? 'border-warning-border dark:border-amber-800 bg-warning-bg text-warning dark:text-amber-400' : 'border-success-border dark:border-emerald-800 bg-success-bg text-success dark:text-emerald-400';
 
         return (
             <span className={`inline-flex items-center gap-1.5 rounded-[6px] border px-2 py-1 text-[11px] font-semibold ${toneClass}`}>
@@ -182,12 +182,12 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                 const columnItems = groupByStatus(col.status);
 
                 return (
-                    <div key={col.status} className="border-border bg-surface/40 flex flex-col rounded-[14px] border p-3.5">
+                    <div key={col.status} className="border-border dark:border-slate-700 bg-surface/40 dark:bg-slate-900/40 flex flex-col rounded-[14px] border p-3.5">
                         <div className="mb-3 flex items-center justify-between px-1">
                             <div className="flex items-center gap-2">
                                 <span className={`h-2 w-2 rounded-full ${col.dotClass}`} />
-                                <strong className="text-navy text-[13px] font-bold">{t(col.label as never)}</strong>
-                                <span className="border-border text-body rounded-full border bg-white px-2 py-0.5 text-[11px] font-semibold">
+                                <strong className="text-navy dark:text-white text-[13px] font-bold">{t(col.label as never)}</strong>
+                                <span className="border-border dark:border-slate-700 text-body dark:text-slate-300 rounded-full border bg-white dark:bg-slate-900 px-2 py-0.5 text-[11px] font-semibold">
                                     {columnItems.length}
                                 </span>
                             </div>
@@ -200,18 +200,18 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                                         key={f.id}
                                         type="button"
                                         onClick={() => setDetailTarget(f)}
-                                        className="hover:border-primary-300 border-border block w-full rounded-[12px] border bg-white p-3.5 text-left shadow-sm transition-colors"
+                                        className="hover:border-primary-300 border-border dark:border-slate-700 block w-full rounded-[12px] border bg-white dark:bg-slate-900 p-3.5 text-left shadow-sm transition-colors"
                                     >
                                         <div className="flex items-center justify-between gap-2">
                                             <code className="text-primary text-[12px] font-bold">FND-{findingRef(f)}</code>
                                             <StatusBadge tone={SEVERITY_TONE[f.kategori] ?? 'gray'}>{severityLabel(f.kategori)}</StatusBadge>
                                         </div>
 
-                                        <div className="text-navy mt-2 line-clamp-2 text-[13px] leading-snug font-semibold">
+                                        <div className="text-navy dark:text-white mt-2 line-clamp-2 text-[13px] leading-snug font-semibold">
                                             {f.control?.judul || t('common.noData')}
                                         </div>
 
-                                        <div className="text-faint mt-2.5 flex items-center justify-between gap-2 text-[11px]">
+                                        <div className="text-faint dark:text-slate-500 mt-2.5 flex items-center justify-between gap-2 text-[11px]">
                                             <span className="inline-flex min-w-0 items-center gap-1 truncate">
                                                 <span className="bg-primary/10 text-primary grid h-5 w-5 shrink-0 place-items-center rounded-[6px]">
                                                     <ShieldAlert className="h-3 w-3" />
@@ -229,8 +229,8 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                                     </button>
                                 ))
                             ) : (
-                                <div className="border-border rounded-[12px] border border-dashed bg-white p-6 text-center">
-                                    <span className="text-faint text-[12px]">{t('common.noData')}</span>
+                                <div className="border-border dark:border-slate-700 rounded-[12px] border border-dashed bg-white dark:bg-slate-900 p-6 text-center">
+                                    <span className="text-faint dark:text-slate-500 text-[12px]">{t('common.noData')}</span>
                                 </div>
                             )}
                         </div>
@@ -241,10 +241,10 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
     );
 
     const renderList = () => (
-        <section className="border-border overflow-hidden rounded-[14px] border bg-white shadow-sm">
+        <section className="border-border dark:border-slate-700 overflow-hidden rounded-[14px] border bg-white dark:bg-slate-900 shadow-sm">
             <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs sm:text-sm">
-                    <thead className="border-border bg-surface/60 text-muted border-b text-[11px] font-bold tracking-wider uppercase">
+                    <thead className="border-border dark:border-slate-700 bg-surface/60 dark:bg-slate-900/60 text-muted dark:text-slate-400 border-b text-[11px] font-bold tracking-wider uppercase">
                         <tr>
                             <th scope="col" className="px-5 py-3 text-left font-semibold">
                                 {t('findings.ref')}
@@ -269,10 +269,10 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                             </th>
                         </tr>
                     </thead>
-                    <tbody className="divide-border divide-y">
+                    <tbody className="divide-border dark:divide-slate-700 divide-y">
                         {items.length > 0 ? (
                             items.map((f) => (
-                                <tr key={f.id} className="hover:bg-surface/50 transition-colors">
+                                <tr key={f.id} className="hover:bg-surface/50 dark:hover:bg-slate-800/50 transition-colors">
                                     <td className="px-5 py-4 whitespace-nowrap">
                                         <code className="text-primary font-bold">FND-{findingRef(f)}</code>
                                     </td>
@@ -280,7 +280,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                                         <button
                                             type="button"
                                             onClick={() => setDetailTarget(f)}
-                                            className="text-navy hover:text-primary text-left font-semibold"
+                                            className="text-navy dark:text-white hover:text-primary text-left font-semibold"
                                         >
                                             {f.control?.judul || t('common.noData')}
                                         </button>
@@ -288,14 +288,14 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                                     <td className="px-5 py-4 whitespace-nowrap">
                                         <StatusBadge tone={SEVERITY_TONE[f.kategori] ?? 'gray'}>{severityLabel(f.kategori)}</StatusBadge>
                                     </td>
-                                    <td className="text-body px-5 py-4 whitespace-nowrap">{f.unit?.nama || '—'}</td>
-                                    <td className="text-body px-5 py-4 whitespace-nowrap">{f.pic?.name || '—'}</td>
+                                    <td className="text-body dark:text-slate-300 px-5 py-4 whitespace-nowrap">{f.unit?.nama || '—'}</td>
+                                    <td className="text-body dark:text-slate-300 px-5 py-4 whitespace-nowrap">{f.pic?.name || '—'}</td>
                                     <td className="px-5 py-4 whitespace-nowrap">
                                         <StatusBadge tone={STATUS_TONE[f.status] ?? 'gray'}>
                                             {t(`status.${f.status as 'open' | 'in_progress' | 'closed'}`)}
                                         </StatusBadge>
                                     </td>
-                                    <td className="px-5 py-4 whitespace-nowrap">{deadlineChip(f) ?? <span className="text-faint">—</span>}</td>
+                                    <td className="px-5 py-4 whitespace-nowrap">{deadlineChip(f) ?? <span className="text-faint dark:text-slate-500">—</span>}</td>
                                 </tr>
                             ))
                         ) : (
@@ -340,10 +340,10 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
             <div className="page-head flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">{t('findings.title')}</h1>
-                    <p className="text-muted mt-1 text-xs sm:text-sm">
+                    <p className="text-muted dark:text-slate-400 mt-1 text-xs sm:text-sm">
                         {t('findings.subtitle')}
                         {items.some((f) => f.is_overdue) && (
-                            <strong className="text-danger">
+                            <strong className="text-danger dark:text-red-400">
                                 {' '}
                                 · {items.filter((f) => f.is_overdue).length} {t('findings.overdue')}
                             </strong>
@@ -353,12 +353,12 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
             </div>
 
             <div className="flex flex-wrap items-center gap-2.5">
-                <div className="border-border flex items-center rounded-[10px] border bg-white p-0.5 shadow-sm">
+                <div className="border-border dark:border-slate-700 flex items-center rounded-[10px] border bg-white dark:bg-slate-900 p-0.5 shadow-sm">
                     <button
                         type="button"
                         onClick={() => setView('kanban')}
                         className={`inline-flex items-center gap-1.5 rounded-[8px] px-3 py-1.5 text-xs font-semibold transition-colors ${
-                            view === 'kanban' ? 'bg-primary text-white shadow-sm' : 'text-body hover:bg-surface'
+                            view === 'kanban' ? 'bg-primary text-white shadow-sm' : 'text-body dark:text-slate-300 hover:bg-surface dark:hover:bg-slate-800'
                         }`}
                     >
                         <LayoutGrid className="h-3.5 w-3.5" />
@@ -368,7 +368,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                         type="button"
                         onClick={() => setView('list')}
                         className={`inline-flex items-center gap-1.5 rounded-[8px] px-3 py-1.5 text-xs font-semibold transition-colors ${
-                            view === 'list' ? 'bg-primary text-white shadow-sm' : 'text-body hover:bg-surface'
+                            view === 'list' ? 'bg-primary text-white shadow-sm' : 'text-body dark:text-slate-300 hover:bg-surface dark:hover:bg-slate-800'
                         }`}
                     >
                         <ListIcon className="h-3.5 w-3.5" />
@@ -377,13 +377,13 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                 </div>
 
                 <div className="relative min-w-[220px] flex-1">
-                    <Search className="text-faint absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                    <Search className="text-faint dark:text-slate-500 absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                     <input
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder={t('findings.searchPlaceholder')}
-                        className="border-border-strong text-ink placeholder:text-faint focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white py-2 pr-4 pl-9 text-xs focus:ring-2 focus:outline-none sm:text-sm"
+                        className="border-border-strong dark:border-slate-600 text-ink dark:text-white placeholder:text-faint dark:placeholder:text-slate-500 focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white dark:bg-slate-900 py-2 pr-4 pl-9 text-xs focus:ring-2 focus:outline-none sm:text-sm"
                     />
                 </div>
 
@@ -451,7 +451,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                     <button
                         type="button"
                         onClick={() => setDetailTarget(null)}
-                        className="border-border-strong text-body hover:bg-surface rounded-[10px] border bg-white px-4 py-2 text-sm font-medium transition-colors"
+                        className="border-border-strong dark:border-slate-600 text-body dark:text-slate-300 hover:bg-surface dark:hover:bg-slate-800 rounded-[10px] border bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium transition-colors"
                     >
                         {t('findings.close')}
                     </button>
@@ -459,23 +459,23 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
             >
                 {detailTarget && (
                     <div className="space-y-4">
-                        <div className="border-border overflow-hidden rounded-[10px] border">
-                            <div className="border-border flex items-center justify-between border-b px-4 py-2.5">
-                                <span className="text-body text-[13px] font-medium">{t('findings.controlLabel')}</span>
-                                <span className="text-navy max-w-[60%] text-right text-[13px] font-semibold">
+                        <div className="border-border dark:border-slate-700 overflow-hidden rounded-[10px] border">
+                            <div className="border-border dark:border-slate-700 flex items-center justify-between border-b px-4 py-2.5">
+                                <span className="text-body dark:text-slate-300 text-[13px] font-medium">{t('findings.controlLabel')}</span>
+                                <span className="text-navy dark:text-white max-w-[60%] text-right text-[13px] font-semibold">
                                     {detailTarget.control?.kode_klausul} — {detailTarget.control?.judul}
                                 </span>
                             </div>
-                            <div className="border-border flex items-center justify-between border-b px-4 py-2.5">
-                                <span className="text-body text-[13px] font-medium">{t('findings.unitLabel')}</span>
-                                <span className="text-navy text-[13px] font-semibold">{detailTarget.unit?.nama || '—'}</span>
+                            <div className="border-border dark:border-slate-700 flex items-center justify-between border-b px-4 py-2.5">
+                                <span className="text-body dark:text-slate-300 text-[13px] font-medium">{t('findings.unitLabel')}</span>
+                                <span className="text-navy dark:text-white text-[13px] font-semibold">{detailTarget.unit?.nama || '—'}</span>
                             </div>
-                            <div className="border-border flex items-center justify-between border-b px-4 py-2.5">
-                                <span className="text-body text-[13px] font-medium">{t('findings.picLabel')}</span>
-                                <span className="text-navy text-[13px] font-semibold">{detailTarget.pic?.name || '—'}</span>
+                            <div className="border-border dark:border-slate-700 flex items-center justify-between border-b px-4 py-2.5">
+                                <span className="text-body dark:text-slate-300 text-[13px] font-medium">{t('findings.picLabel')}</span>
+                                <span className="text-navy dark:text-white text-[13px] font-semibold">{detailTarget.pic?.name || '—'}</span>
                             </div>
                             <div className="flex items-center justify-between px-4 py-2.5">
-                                <span className="text-body text-[13px] font-medium">{t('findings.status')}</span>
+                                <span className="text-body dark:text-slate-300 text-[13px] font-medium">{t('findings.status')}</span>
                                 <StatusBadge tone={STATUS_TONE[detailTarget.status] ?? 'gray'}>
                                     {t(`status.${detailTarget.status as 'open' | 'in_progress' | 'closed'}`)}
                                 </StatusBadge>
@@ -483,7 +483,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                         </div>
 
                         <div>
-                            <h4 className="text-navy text-sm font-bold">{t('findings.severity')}</h4>
+                            <h4 className="text-navy dark:text-white text-sm font-bold">{t('findings.severity')}</h4>
                             <div className="mt-2">
                                 <StatusBadge tone={SEVERITY_TONE[detailTarget.kategori] ?? 'gray'}>
                                     {severityLabel(detailTarget.kategori)}
@@ -493,16 +493,16 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
 
                         {detailTarget.admin_notes || detailTarget.catatan_admin ? (
                             <div>
-                                <h4 className="text-navy text-sm font-bold">{t('findings.notesLabel')}</h4>
-                                <p className="text-body border-border bg-surface/50 mt-2 rounded-[10px] border p-3.5 text-[13px] leading-relaxed">
+                                <h4 className="text-navy dark:text-white text-sm font-bold">{t('findings.notesLabel')}</h4>
+                                <p className="text-body dark:text-slate-300 border-border dark:border-slate-700 bg-surface/50 dark:bg-slate-900/50 mt-2 rounded-[10px] border p-3.5 text-[13px] leading-relaxed">
                                     {detailTarget.admin_notes || detailTarget.catatan_admin}
                                 </p>
                             </div>
                         ) : null}
 
                         <div className="border-info/20 bg-info-bg flex gap-3 rounded-[10px] border p-3.5">
-                            <Clock className="text-info mt-0.5 h-4 w-4 shrink-0" />
-                            <div className="text-info text-[13px] font-semibold">{deadlineChip(detailTarget) ?? t('common.noData')}</div>
+                            <Clock className="text-info dark:text-sky-400 mt-0.5 h-4 w-4 shrink-0" />
+                            <div className="text-info dark:text-sky-400 text-[13px] font-semibold">{deadlineChip(detailTarget) ?? t('common.noData')}</div>
                         </div>
                     </div>
                 )}

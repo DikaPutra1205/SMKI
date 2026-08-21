@@ -143,14 +143,14 @@ class NavigationService
             // ── LANJOOT Satuan Kerja ──────────────────────────────────────
             [
                 'label' => 'Findings',
-                'url' => '/admin/pic/findings',
+                'url' => '/admin/kepatuhan/findings',
                 'icon' => 'AlertCircle',
                 'permissions' => ['finding.view'],
                 'denies' => ['work-unit.view'],
             ],
             [
                 'label' => 'Risks',
-                'url' => '/admin/pic/risks',
+                'url' => '/admin/kepatuhan/risks',
                 'icon' => 'AlertTriangle',
                 'permissions' => ['risk.view'],
                 'denies' => ['work-unit.view'],

@@ -195,7 +195,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
             <div className="page-head flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">{t('compliance.title')}</h1>
-                    <p className="text-muted mt-1 text-xs sm:text-sm">{t('compliance.subtitle')}</p>
+                    <p className="text-muted dark:text-slate-400 mt-1 text-xs sm:text-sm">{t('compliance.subtitle')}</p>
                 </div>
 
                 {can('control.create') && (
@@ -220,14 +220,14 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                             key={fw.id}
                             type="button"
                             onClick={() => setSelectedFrameworkId(fw.id)}
-                            className={`font-body hover:border-primary-300 flex cursor-pointer flex-col items-start gap-[7px] rounded-[14px] border bg-white p-[18px_20px] text-left shadow-sm transition-all hover:shadow-md ${
-                                isActive ? 'border-primary shadow-[0_0_0_3px_#eaf3fb]' : 'border-border'
+                            className={`font-body hover:border-primary-300 flex cursor-pointer flex-col items-start gap-[7px] rounded-[14px] border bg-white dark:bg-slate-900 p-[18px_20px] text-left shadow-sm transition-all hover:shadow-md ${
+                                isActive ? 'border-primary shadow-[0_0_0_3px_#eaf3fb]' : 'border-border dark:border-slate-700'
                             }`}
                         >
                             <span className="flex w-full items-center justify-between">
                                 <span
                                     className={`grid h-[38px] w-[38px] place-items-center rounded-[10px] ${
-                                        is27001 ? 'bg-primary-50 text-primary' : 'bg-violet-bg text-violet'
+                                        is27001 ? 'bg-primary-50 dark:bg-primary/10 text-primary' : 'bg-violet-bg text-violet dark:text-violet-400'
                                     }`}
                                 >
                                     <svg
@@ -246,22 +246,22 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                                     </svg>
                                 </span>
                                 {isActive ? (
-                                    <span className="border-success-border bg-success-bg text-success inline-flex items-center gap-1.5 rounded-[6px] border px-2.5 py-1 text-xs font-semibold">
+                                    <span className="border-success-border dark:border-emerald-800 bg-success-bg text-success dark:text-emerald-400 inline-flex items-center gap-1.5 rounded-[6px] border px-2.5 py-1 text-xs font-semibold">
                                         <span className="h-1.5 w-1.5 rounded-full bg-current" />
                                         {t('common.active')}
                                     </span>
                                 ) : (
-                                    <span className="border-border-strong bg-surface-2 text-navy inline-flex items-center rounded-[6px] border px-2.5 py-1 text-xs font-semibold">
+                                    <span className="border-border-strong dark:border-slate-600 bg-surface-2 dark:bg-slate-800 text-navy dark:text-white inline-flex items-center rounded-[6px] border px-2.5 py-1 text-xs font-semibold">
                                         v{fw.versi}
                                     </span>
                                 )}
                             </span>
-                            <strong className="text-navy text-[14.5px] font-bold">{fw.nama}</strong>
-                            <span className="text-muted text-xs">
+                            <strong className="text-navy dark:text-white text-[14.5px] font-bold">{fw.nama}</strong>
+                            <span className="text-muted dark:text-slate-400 text-xs">
                                 {is27001 ? t('compliance.controlsManagement') : t('compliance.privacyManagement')} · {fw.controls_count}{' '}
                                 {t('compliance.controlsUnit')} · {fw.compliance_percentage}% {t('compliance.compliantPct')}
                             </span>
-                            <span className="bg-surface-2 h-[6px] w-full overflow-hidden rounded-full">
+                            <span className="bg-surface-2 dark:bg-slate-800 h-[6px] w-full overflow-hidden rounded-full">
                                 <span
                                     className={`block h-full rounded-full ${is27001 ? 'bg-primary' : 'bg-violet'}`}
                                     style={{ width: `${Math.min(100, fw.compliance_percentage)}%` }}
@@ -273,33 +273,33 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
             </div>
 
             {/* Controls panel */}
-            <section className="border-border overflow-hidden rounded-[14px] border bg-white shadow-sm">
-                <div className="border-border flex flex-col gap-2 border-b p-[16px_18px] sm:flex-row sm:items-center sm:justify-between">
+            <section className="border-border dark:border-slate-700 overflow-hidden rounded-[14px] border bg-white dark:bg-slate-900 shadow-sm">
+                <div className="border-border dark:border-slate-700 flex flex-col gap-2 border-b p-[16px_18px] sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h3 className="text-[15px] font-bold">{activeFramework ? activeFramework.nama : t('compliance.title')}</h3>
-                        <p className="text-faint mt-0.5 text-xs">
+                        <p className="text-faint dark:text-slate-500 mt-0.5 text-xs">
                             {activeFramework ? `${activeFramework.controls_count} ${t('compliance.controlsUnit')}` : ''} ·{' '}
                             {activeFramework?.compliance_percentage ?? 0}% {t('compliance.compliantPct')}
                         </p>
                     </div>
                 </div>
 
-                <div className="border-border flex flex-col gap-3 border-b bg-white p-[12px_16px] md:flex-row md:items-center">
+                <div className="border-border dark:border-slate-700 flex flex-col gap-3 border-b bg-white dark:bg-slate-900 p-[12px_16px] md:flex-row md:items-center">
                     <div className="relative min-w-[220px] flex-1">
-                        <Search className="text-faint absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                        <Search className="text-faint dark:text-slate-500 absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                         <input
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder={t('compliance.searchPlaceholder')}
-                            className="border-border-strong text-ink placeholder:text-faint focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white py-2 pr-4 pl-9 text-xs focus:ring-2 focus:outline-none sm:text-sm"
+                            className="border-border-strong dark:border-slate-600 text-ink dark:text-white placeholder:text-faint dark:placeholder:text-slate-500 focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white dark:bg-slate-900 py-2 pr-4 pl-9 text-xs focus:ring-2 focus:outline-none sm:text-sm"
                         />
                     </div>
                 </div>
 
                 <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs sm:text-sm">
-                        <thead className="border-border bg-surface/60 text-muted border-b text-[11px] font-bold tracking-wider uppercase">
+                        <thead className="border-border dark:border-slate-700 bg-surface/60 dark:bg-slate-900/60 text-muted dark:text-slate-400 border-b text-[11px] font-bold tracking-wider uppercase">
                             <tr>
                                 <th scope="col" className="px-5 py-3 text-left font-semibold">
                                     {t('compliance.code')}
@@ -315,17 +315,17 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                                 </th>
                             </tr>
                         </thead>
-                        <tbody className="divide-border divide-y">
+                        <tbody className="divide-border dark:divide-slate-700 divide-y">
                             {items.length > 0 ? (
                                 items.map((item) => (
-                                    <tr key={item.id} className="hover:bg-surface/50 transition-colors">
+                                    <tr key={item.id} className="hover:bg-surface/50 dark:hover:bg-slate-800/50 transition-colors">
                                         <td className="text-primary px-5 py-4 font-bold whitespace-nowrap">{item.code}</td>
                                         <td className="px-5 py-4 text-left">
-                                            <div className="text-navy font-semibold">{item.title}</div>
-                                            <div className="text-faint mt-0.5 text-xs">{item.description}</div>
+                                            <div className="text-navy dark:text-white font-semibold">{item.title}</div>
+                                            <div className="text-faint dark:text-slate-500 mt-0.5 text-xs">{item.description}</div>
                                         </td>
                                         <td className="px-5 py-4 text-left whitespace-nowrap">
-                                            <span className="border-border text-body inline-flex items-center rounded-[6px] border bg-white px-2.5 py-1 text-xs font-semibold">
+                                            <span className="border-border dark:border-slate-700 text-body dark:text-slate-300 inline-flex items-center rounded-[6px] border bg-white dark:bg-slate-900 px-2.5 py-1 text-xs font-semibold">
                                                 {item.category === 'Annex A' ? 'Annex A' : 'Klausul 4-10'}
                                             </span>
                                         </td>
@@ -334,7 +334,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                                                 <button
                                                     type="button"
                                                     onClick={() => setDetailTarget(item)}
-                                                    className="text-body hover:bg-surface-2 rounded-lg p-1.5 transition-colors"
+                                                    className="text-body dark:text-slate-300 hover:bg-surface-2 dark:hover:bg-slate-700 rounded-lg p-1.5 transition-colors"
                                                     title={t('compliance.detailRef')}
                                                 >
                                                     <Eye className="h-4 w-4" />
@@ -343,7 +343,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                                                     <button
                                                         type="button"
                                                         onClick={() => openEdit(item)}
-                                                        className="text-muted hover:bg-surface-2 rounded-lg p-1.5 transition-colors"
+                                                        className="text-muted dark:text-slate-400 hover:bg-surface-2 dark:hover:bg-slate-700 rounded-lg p-1.5 transition-colors"
                                                         title={t('compliance.editControl')}
                                                     >
                                                         <svg
@@ -364,7 +364,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                                                     <button
                                                         type="button"
                                                         onClick={() => handleDelete(item)}
-                                                        className="text-danger hover:bg-danger-bg rounded-lg p-1.5 transition-colors"
+                                                        className="text-danger dark:text-red-400 hover:bg-danger-bg dark:hover:bg-red-900/40 rounded-lg p-1.5 transition-colors"
                                                         title={t('compliance.deleteControl')}
                                                     >
                                                         <svg
@@ -432,7 +432,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                         <button
                             type="button"
                             onClick={() => setDetailTarget(null)}
-                            className="border-border-strong text-body hover:bg-surface rounded-[10px] border bg-white px-4 py-2 text-sm font-medium transition-colors"
+                            className="border-border-strong dark:border-slate-600 text-body dark:text-slate-300 hover:bg-surface dark:hover:bg-slate-800 rounded-[10px] border bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium transition-colors"
                         >
                             {t('compliance.close')}
                         </button>
@@ -451,26 +451,26 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                                 strokeWidth="2"
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
-                                className="text-info mt-0.5 shrink-0"
+                                className="text-info dark:text-sky-400 mt-0.5 shrink-0"
                             >
                                 <circle cx="12" cy="12" r="10" />
                                 <line x1="12" x2="12" y1="16" y2="12" />
                                 <line x1="12" x2="12.01" y1="8" y2="8" />
                             </svg>
                             <div>
-                                <strong className="text-ink block text-[13px]">{t('compliance.detailDescriptionLabel')}</strong>
-                                <span className="text-body mt-0.5 block text-[13px] leading-relaxed">{detailTarget.description}</span>
+                                <strong className="text-ink dark:text-white block text-[13px]">{t('compliance.detailDescriptionLabel')}</strong>
+                                <span className="text-body dark:text-slate-300 mt-0.5 block text-[13px] leading-relaxed">{detailTarget.description}</span>
                             </div>
                         </div>
 
-                        <div className="border-border overflow-hidden rounded-[10px] border">
-                            <div className="border-border flex items-center justify-between border-b px-4 py-2.5">
-                                <span className="text-body text-[13px] font-medium">{t('compliance.frameworkLabel')}</span>
-                                <span className="text-navy text-[13px] font-semibold">{detailTarget.framework_nama}</span>
+                        <div className="border-border dark:border-slate-700 overflow-hidden rounded-[10px] border">
+                            <div className="border-border dark:border-slate-700 flex items-center justify-between border-b px-4 py-2.5">
+                                <span className="text-body dark:text-slate-300 text-[13px] font-medium">{t('compliance.frameworkLabel')}</span>
+                                <span className="text-navy dark:text-white text-[13px] font-semibold">{detailTarget.framework_nama}</span>
                             </div>
                             <div className="flex items-center justify-between px-4 py-2.5">
-                                <span className="text-body text-[13px] font-medium">{t('compliance.categoryLabel')}</span>
-                                <span className="text-navy text-[13px] font-semibold">
+                                <span className="text-body dark:text-slate-300 text-[13px] font-medium">{t('compliance.categoryLabel')}</span>
+                                <span className="text-navy dark:text-white text-[13px] font-semibold">
                                     {detailTarget.category === 'Annex A' ? 'Annex A' : 'Klausul 4-10'}
                                 </span>
                             </div>
@@ -491,7 +491,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                         <button
                             type="button"
                             onClick={closeModal}
-                            className="border-border-strong text-body hover:bg-surface rounded-[10px] border bg-white px-4 py-2 text-sm font-medium transition-colors"
+                            className="border-border-strong dark:border-slate-600 text-body dark:text-slate-300 hover:bg-surface dark:hover:bg-slate-800 rounded-[10px] border bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium transition-colors"
                         >
                             {t('common.cancel')}
                         </button>
@@ -539,9 +539,9 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                             onChange={(e) => form.setData('kode_klausul', e.target.value)}
                             placeholder={t('compliance.codePlaceholder')}
                             aria-label={t('compliance.code')}
-                            className="border-border-strong text-ink placeholder:text-faint focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white px-3 text-sm focus:ring-2 focus:outline-none"
+                            className="border-border-strong dark:border-slate-600 text-ink dark:text-white placeholder:text-faint dark:placeholder:text-slate-500 focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white dark:bg-slate-900 px-3 text-sm focus:ring-2 focus:outline-none"
                         />
-                        {form.errors.kode_klausul && <p className="text-danger text-[11px] font-medium">{form.errors.kode_klausul}</p>}
+                        {form.errors.kode_klausul && <p className="text-danger dark:text-red-400 text-[11px] font-medium">{form.errors.kode_klausul}</p>}
                     </div>
 
                     <input
@@ -549,20 +549,20 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                         value={form.data.judul}
                         onChange={(e) => form.setData('judul', e.target.value)}
                         placeholder={t('compliance.titlePlaceholder')}
-                        className="border-border-strong text-ink placeholder:text-faint focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white px-3 text-sm focus:ring-2 focus:outline-none"
+                        className="border-border-strong dark:border-slate-600 text-ink dark:text-white placeholder:text-faint dark:placeholder:text-slate-500 focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white dark:bg-slate-900 px-3 text-sm focus:ring-2 focus:outline-none"
                         aria-label={t('compliance.controlTitle')}
                     />
-                    {form.errors.judul && <p className="text-danger text-[11px] font-medium">{form.errors.judul}</p>}
+                    {form.errors.judul && <p className="text-danger dark:text-red-400 text-[11px] font-medium">{form.errors.judul}</p>}
 
                     <textarea
                         value={form.data.deskripsi}
                         onChange={(e) => form.setData('deskripsi', e.target.value)}
                         rows={3}
                         placeholder={t('compliance.descriptionPlaceholder')}
-                        className="border-border-strong text-ink placeholder:text-faint focus:border-primary focus:ring-primary/20 w-full resize-none rounded-[10px] border bg-white px-3 py-2 text-sm focus:ring-2 focus:outline-none"
+                        className="border-border-strong dark:border-slate-600 text-ink dark:text-white placeholder:text-faint dark:placeholder:text-slate-500 focus:border-primary focus:ring-primary/20 w-full resize-none rounded-[10px] border bg-white dark:bg-slate-900 px-3 py-2 text-sm focus:ring-2 focus:outline-none"
                         aria-label={t('compliance.description')}
                     />
-                    {form.errors.deskripsi && <p className="text-danger text-[11px] font-medium">{form.errors.deskripsi}</p>}
+                    {form.errors.deskripsi && <p className="text-danger dark:text-red-400 text-[11px] font-medium">{form.errors.deskripsi}</p>}
                 </form>
             </Modal>
 

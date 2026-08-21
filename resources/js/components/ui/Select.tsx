@@ -14,7 +14,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         return (
             <div className="flex flex-col gap-1.5">
                 {label && (
-                    <label htmlFor={selectId} className="text-xs font-semibold text-navy">
+                    <label htmlFor={selectId} className="text-xs font-semibold text-navy dark:text-white">
                         {label}
                     </label>
                 )}
@@ -23,18 +23,18 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                         ref={ref}
                         id={selectId}
                         className={cn(
-                            'h-10 w-full appearance-none rounded-[10px] border bg-white px-3 pr-9 text-sm text-ink',
+                            'h-10 w-full appearance-none rounded-[10px] border bg-white dark:bg-slate-900 px-3 pr-9 text-sm text-ink dark:text-white',
                             'focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none',
-                            error ? 'border-danger' : 'border-border-strong',
+                            error ? 'border-danger dark:border-red-700' : 'border-border-strong dark:border-slate-600',
                             className,
                         )}
                         {...props}
                     >
                         {children}
                     </select>
-                    <ChevronDown className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-muted" />
+                    <ChevronDown className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-muted dark:text-slate-400" />
                 </div>
-                {error && <span className="text-[11px] font-medium text-danger">{error}</span>}
+                {error && <span className="text-[11px] font-medium text-danger dark:text-red-400">{error}</span>}
             </div>
         );
     },

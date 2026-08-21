@@ -208,24 +208,24 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
             <AppLayout breadcrumbs={breadcrumbs} currentPath="/admin/kepatuhan/audit-logs">
                 <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
                     <div>
-                        <h1 className="text-navy text-2xl font-bold tracking-tight">{t('audit.title')}</h1>
-                        <p className="text-muted mt-1 text-sm">{t('audit.subtitle')}</p>
+                        <h1 className="text-navy dark:text-white text-2xl font-bold tracking-tight">{t('audit.title')}</h1>
+                        <p className="text-muted dark:text-slate-400 mt-1 text-sm">{t('audit.subtitle')}</p>
                     </div>
 
-                    <section className="border-border rounded-[14px] border bg-white shadow-sm">
-                        <div className="border-border border-b px-5 py-4">
-                            <h3 className="text-navy text-[15px] font-bold">{t('audit.cardTitle')}</h3>
+                    <section className="border-border dark:border-slate-700 rounded-[14px] border bg-white dark:bg-slate-900 shadow-sm">
+                        <div className="border-border dark:border-slate-700 border-b px-5 py-4">
+                            <h3 className="text-navy dark:text-white text-[15px] font-bold">{t('audit.cardTitle')}</h3>
                         </div>
 
-                        <div className="border-border flex flex-wrap items-center gap-3 border-b px-5 py-4">
+                        <div className="border-border dark:border-slate-700 flex flex-wrap items-center gap-3 border-b px-5 py-4">
                             <div className="relative min-w-[220px] flex-1">
-                                <Search className="text-muted pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                                <Search className="text-muted dark:text-slate-400 pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                                 <input
                                     type="text"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     placeholder={t('audit.searchPlaceholder')}
-                                    className="border-border-strong text-ink focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white pr-3 pl-9 text-sm focus:ring-2 focus:outline-none"
+                                    className="border-border-strong dark:border-slate-600 text-ink dark:text-white focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white dark:bg-slate-900 pr-3 pl-9 text-sm focus:ring-2 focus:outline-none"
                                 />
                             </div>
                             <Select value={selectedAction} onChange={(e) => setSelectedAction(e.target.value)} className="w-44">
@@ -258,15 +258,15 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                                     value={dateFrom}
                                     onChange={(e) => setDateFrom(e.target.value)}
                                     aria-label={t('audit.dateFrom')}
-                                    className="border-border-strong text-ink focus:border-primary h-10 rounded-[10px] border bg-white px-3 text-sm focus:outline-none"
+                                    className="border-border-strong dark:border-slate-600 text-ink dark:text-white focus:border-primary h-10 rounded-[10px] border bg-white dark:bg-slate-900 px-3 text-sm focus:outline-none"
                                 />
-                                <span className="text-muted text-xs">→</span>
+                                <span className="text-muted dark:text-slate-400 text-xs">→</span>
                                 <input
                                     type="date"
                                     value={dateTo}
                                     onChange={(e) => setDateTo(e.target.value)}
                                     aria-label={t('audit.dateTo')}
-                                    className="border-border-strong text-ink focus:border-primary h-10 rounded-[10px] border bg-white px-3 text-sm focus:outline-none"
+                                    className="border-border-strong dark:border-slate-600 text-ink dark:text-white focus:border-primary h-10 rounded-[10px] border bg-white dark:bg-slate-900 px-3 text-sm focus:outline-none"
                                 />
                             </div>
                         </div>
@@ -274,7 +274,7 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                         <div className="overflow-x-auto">
                             <table className="w-full text-left text-sm">
                                 <thead>
-                                    <tr className="border-border text-muted border-b text-xs">
+                                    <tr className="border-border dark:border-slate-700 text-muted dark:text-slate-400 border-b text-xs">
                                         <th scope="col" className="px-5 py-3 font-semibold">
                                             {t('audit.colTime')}
                                         </th>
@@ -295,17 +295,17 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                                         </th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-border divide-y">
+                                <tbody className="divide-border dark:divide-slate-700 divide-y">
                                     {items.length > 0 ? (
                                         items.map((log) => (
-                                            <tr key={log.id} className="hover:bg-surface/50 transition-colors">
-                                                <td className="text-muted px-5 py-4 text-xs whitespace-nowrap">
+                                            <tr key={log.id} className="hover:bg-surface/50 dark:hover:bg-slate-800/50 transition-colors">
+                                                <td className="text-muted dark:text-slate-400 px-5 py-4 text-xs whitespace-nowrap">
                                                     {fmtDateTime(log.created_at, false)}
                                                 </td>
                                                 <td className="px-5 py-4">
-                                                    <span className="text-navy block text-sm font-medium">{log.actor.name}</span>
+                                                    <span className="text-navy dark:text-white block text-sm font-medium">{log.actor.name}</span>
                                                     {log.actor.role && (
-                                                        <span className="text-muted block text-xs">
+                                                        <span className="text-muted dark:text-slate-400 block text-xs">
                                                             {roleLabel(log.actor.role)}
                                                             {log.actor.unit_name && log.actor.unit_name !== 'Semua Unit'
                                                                 ? ` • ${log.actor.unit_name}`
@@ -314,18 +314,18 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                                                     )}
                                                 </td>
                                                 <td className="px-5 py-4">
-                                                    <span className="text-navy block text-sm font-medium">{log.entity_label}</span>
-                                                    <span className="text-muted block text-xs">{log.entity_type}</span>
+                                                    <span className="text-navy dark:text-white block text-sm font-medium">{log.entity_label}</span>
+                                                    <span className="text-muted dark:text-slate-400 block text-xs">{log.entity_type}</span>
                                                 </td>
                                                 <td className="px-5 py-4 whitespace-nowrap">
                                                     <StatusBadge tone={actionTone(log.action)}>{actionLabel(log.action)}</StatusBadge>
                                                 </td>
-                                                <td className="text-body px-5 py-4 text-sm">{summaryText(log.changes)}</td>
+                                                <td className="text-body dark:text-slate-300 px-5 py-4 text-sm">{summaryText(log.changes)}</td>
                                                 <td className="px-5 py-4 text-right whitespace-nowrap">
                                                     <button
                                                         type="button"
                                                         onClick={() => setDetailTarget(log)}
-                                                        className="border-border-strong text-body hover:bg-surface rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold shadow-sm transition-colors"
+                                                        className="border-border-strong dark:border-slate-600 text-body dark:text-slate-300 hover:bg-surface dark:hover:bg-slate-800 rounded-lg border bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold shadow-sm transition-colors"
                                                     >
                                                         {t('audit.detail')}
                                                     </button>
@@ -371,7 +371,7 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                         <button
                             type="button"
                             onClick={() => setDetailTarget(null)}
-                            className="border-border-strong text-body hover:bg-surface rounded-lg border bg-white px-4 py-2 text-sm font-semibold shadow-sm transition-colors"
+                            className="border-border-strong dark:border-slate-600 text-body dark:text-slate-300 hover:bg-surface dark:hover:bg-slate-800 rounded-lg border bg-white dark:bg-slate-900 px-4 py-2 text-sm font-semibold shadow-sm transition-colors"
                         >
                             {t('audit.close')}
                         </button>
@@ -381,14 +381,14 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                         <div className="space-y-4">
                             <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
                                 <div>
-                                    <span className="text-muted block text-xs">{t('audit.timeLabel')}</span>
-                                    <span className="text-navy block font-medium">{fmtDateTime(detailTarget.created_at, true)}</span>
+                                    <span className="text-muted dark:text-slate-400 block text-xs">{t('audit.timeLabel')}</span>
+                                    <span className="text-navy dark:text-white block font-medium">{fmtDateTime(detailTarget.created_at, true)}</span>
                                 </div>
                                 <div>
-                                    <span className="text-muted block text-xs">{t('audit.actorLabel')}</span>
-                                    <span className="text-navy block font-medium">{detailTarget.actor.name}</span>
+                                    <span className="text-muted dark:text-slate-400 block text-xs">{t('audit.actorLabel')}</span>
+                                    <span className="text-navy dark:text-white block font-medium">{detailTarget.actor.name}</span>
                                     {detailTarget.actor.role && (
-                                        <span className="text-muted block text-xs">
+                                        <span className="text-muted dark:text-slate-400 block text-xs">
                                             {roleLabel(detailTarget.actor.role)}
                                             {detailTarget.actor.unit_name && detailTarget.actor.unit_name !== 'Semua Unit'
                                                 ? ` • ${detailTarget.actor.unit_name}`
@@ -397,53 +397,53 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                                     )}
                                 </div>
                                 <div>
-                                    <span className="text-muted block text-xs">{t('audit.entityLabel')}</span>
-                                    <span className="text-navy block font-medium">{detailTarget.entity_label}</span>
+                                    <span className="text-muted dark:text-slate-400 block text-xs">{t('audit.entityLabel')}</span>
+                                    <span className="text-navy dark:text-white block font-medium">{detailTarget.entity_label}</span>
                                 </div>
                                 <div>
-                                    <span className="text-muted block text-xs">{t('audit.actionLabel')}</span>
+                                    <span className="text-muted dark:text-slate-400 block text-xs">{t('audit.actionLabel')}</span>
                                     <StatusBadge tone={actionTone(detailTarget.action)}>{actionLabel(detailTarget.action)}</StatusBadge>
                                 </div>
                             </div>
 
                             <div>
-                                <h4 className="text-navy mb-2 text-[13px] font-bold">{t('audit.changesLabel')}</h4>
+                                <h4 className="text-navy dark:text-white mb-2 text-[13px] font-bold">{t('audit.changesLabel')}</h4>
                                 {diff.length > 0 ? (
-                                    <div className="border-border overflow-x-auto rounded-[10px] border">
+                                    <div className="border-border dark:border-slate-700 overflow-x-auto rounded-[10px] border">
                                         <table className="w-full text-left text-sm">
                                             <thead>
-                                                <tr className="border-border bg-surface/60 border-b text-xs">
-                                                    <th scope="col" className="text-navy px-4 py-2.5 font-semibold">
+                                                <tr className="border-border dark:border-slate-700 bg-surface/60 dark:bg-slate-900/60 border-b text-xs">
+                                                    <th scope="col" className="text-navy dark:text-white px-4 py-2.5 font-semibold">
                                                         {t('audit.field')}
                                                     </th>
-                                                    <th scope="col" className="text-danger px-4 py-2.5 font-semibold">
+                                                    <th scope="col" className="text-danger dark:text-red-400 px-4 py-2.5 font-semibold">
                                                         {t('audit.before')}
                                                     </th>
-                                                    <th scope="col" className="text-success px-4 py-2.5 font-semibold">
+                                                    <th scope="col" className="text-success dark:text-emerald-400 px-4 py-2.5 font-semibold">
                                                         {t('audit.after')}
                                                     </th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-border divide-y">
+                                            <tbody className="divide-border dark:divide-slate-700 divide-y">
                                                 {diff.map((entry) => (
                                                     <tr key={entry.field}>
                                                         <td className="px-4 py-2.5">
-                                                            <code className="text-navy text-xs">{entry.field}</code>
+                                                            <code className="text-navy dark:text-white text-xs">{entry.field}</code>
                                                         </td>
-                                                        <td className="text-muted px-4 py-2.5 text-xs">{fmtValue(entry.before)}</td>
-                                                        <td className="text-body px-4 py-2.5 text-xs font-medium">{fmtValue(entry.after)}</td>
+                                                        <td className="text-muted dark:text-slate-400 px-4 py-2.5 text-xs">{fmtValue(entry.before)}</td>
+                                                        <td className="text-body dark:text-slate-300 px-4 py-2.5 text-xs font-medium">{fmtValue(entry.after)}</td>
                                                     </tr>
                                                 ))}
                                             </tbody>
                                         </table>
                                     </div>
                                 ) : (
-                                    <p className="text-muted text-sm">{t('common.noData')}</p>
+                                    <p className="text-muted dark:text-slate-400 text-sm">{t('common.noData')}</p>
                                 )}
                             </div>
 
-                            <div className="border-info/20 bg-info-bg text-ink flex items-start gap-2.5 rounded-[10px] border p-3.5 text-[13px]">
-                                <ShieldCheck className="text-info mt-0.5 h-4 w-4 shrink-0" />
+                            <div className="border-info/20 bg-info-bg text-ink dark:text-white flex items-start gap-2.5 rounded-[10px] border p-3.5 text-[13px]">
+                                <ShieldCheck className="text-info dark:text-sky-400 mt-0.5 h-4 w-4 shrink-0" />
                                 <span>{t('audit.immutable')}</span>
                             </div>
                         </div>

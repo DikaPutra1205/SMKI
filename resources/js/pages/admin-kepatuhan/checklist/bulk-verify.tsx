@@ -212,7 +212,7 @@ export default function BulkVerify({ entries, workUnits = [], filters = {} }: Bu
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">{t('bulkVerify.title')}</h1>
-                    <p className="text-muted text-sm">{t('bulkVerify.subtitle')}</p>
+                    <p className="text-muted dark:text-slate-400 text-sm">{t('bulkVerify.subtitle')}</p>
                 </div>
 
                 {/* Photo-picker style: only one button visible at a time */}
@@ -231,7 +231,7 @@ export default function BulkVerify({ entries, workUnits = [], filters = {} }: Bu
                     <button
                         type="button"
                         onClick={exitSelectionMode}
-                        className="border-border-strong hover:bg-surface text-body inline-flex items-center gap-2 self-start rounded-[10px] border bg-white px-4 py-2 text-sm font-semibold shadow-sm transition-colors sm:self-auto"
+                        className="border-border-strong dark:border-slate-600 hover:bg-surface dark:hover:bg-slate-800 text-body dark:text-slate-300 inline-flex items-center gap-2 self-start rounded-[10px] border bg-white dark:bg-slate-900 px-4 py-2 text-sm font-semibold shadow-sm transition-colors sm:self-auto"
                     >
                         <X className="h-4 w-4" />
                         Batal
@@ -243,22 +243,22 @@ export default function BulkVerify({ entries, workUnits = [], filters = {} }: Bu
             {selectionMode && (
                 <div className="border-primary/30 bg-primary/5 flex items-center gap-3 rounded-[12px] border px-4 py-3">
                     <Square className="text-primary h-4 w-4 shrink-0" />
-                    <p className="text-navy text-sm font-medium">
+                    <p className="text-navy dark:text-white text-sm font-medium">
                         Mode pilih aktif — centang baris yang ingin diverifikasi, lalu pilih tindakan di bawah.
                     </p>
                 </div>
             )}
 
             {/* ── Filter bar ── */}
-            <div className="border-border flex flex-col gap-3 rounded-[14px] border bg-white p-4 lg:flex-row lg:items-center">
+            <div className="border-border dark:border-slate-700 flex flex-col gap-3 rounded-[14px] border bg-white dark:bg-slate-900 p-4 lg:flex-row lg:items-center">
                 <div className="relative flex-1">
-                    <Search className="text-faint pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                    <Search className="text-faint dark:text-slate-500 pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                     <input
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder={t('bulkVerify.searchPlaceholder')}
-                        className="border-border-strong bg-surface/40 text-navy placeholder:text-muted focus:border-primary w-full rounded-[10px] border py-2.5 pr-3 pl-9 text-sm focus:outline-none"
+                        className="border-border-strong dark:border-slate-600 bg-surface/40 dark:bg-slate-900/40 text-navy dark:text-white placeholder:text-muted dark:placeholder:text-slate-500 focus:border-primary w-full rounded-[10px] border py-2.5 pr-3 pl-9 text-sm focus:outline-none"
                     />
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
@@ -290,7 +290,7 @@ export default function BulkVerify({ entries, workUnits = [], filters = {} }: Bu
             {selectionMode && selectedIds.size > 0 && (
                 <div className="border-primary/30 bg-primary/5 rounded-[14px] border p-4">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <span className="text-navy text-sm font-semibold">{t('bulkVerify.selected', selectedIds.size)}</span>
+                        <span className="text-navy dark:text-white text-sm font-semibold">{t('bulkVerify.selected', selectedIds.size)}</span>
                         <div className="flex items-center gap-3">
                             {can('checklist.bulk-verify') && (
                                 <>
@@ -327,11 +327,11 @@ export default function BulkVerify({ entries, workUnits = [], filters = {} }: Bu
             )}
 
             {/* ── Table ── */}
-            <div className="border-border overflow-hidden rounded-[14px] border bg-white">
+            <div className="border-border dark:border-slate-700 overflow-hidden rounded-[14px] border bg-white dark:bg-slate-900">
                 <div className="overflow-x-auto">
                     <table className="w-full min-w-[900px] text-left text-sm">
                         <thead>
-                            <tr className="border-border bg-surface/60 text-muted border-b text-xs">
+                            <tr className="border-border dark:border-slate-700 bg-surface/60 dark:bg-slate-900/60 text-muted dark:text-slate-400 border-b text-xs">
                                 {/* Checkbox col: only shown in selection mode */}
                                 {selectionMode && (
                                     <th className="w-10 px-4 py-3">
@@ -340,7 +340,7 @@ export default function BulkVerify({ entries, workUnits = [], filters = {} }: Bu
                                             checked={allSelectedOnPage}
                                             onChange={toggleAll}
                                             aria-label={t('bulkVerify.selectAll')}
-                                            className="border-border-strong accent-primary h-4 w-4 rounded"
+                                            className="border-border-strong dark:border-slate-600 accent-primary h-4 w-4 rounded"
                                         />
                                     </th>
                                 )}
@@ -374,12 +374,12 @@ export default function BulkVerify({ entries, workUnits = [], filters = {} }: Bu
                                         <tr
                                             key={entry.id}
                                             onClick={() => selectionMode && toggleOne(entry.id)}
-                                            className={`border-border border-b transition-colors last:border-0 ${
+                                            className={`border-border dark:border-slate-700 border-b transition-colors last:border-0 ${
                                                 selectionMode
                                                     ? isChecked
                                                         ? 'bg-primary/5 cursor-pointer'
-                                                        : 'hover:bg-surface/50 cursor-pointer'
-                                                    : 'hover:bg-surface/50'
+                                                        : 'hover:bg-surface/50 dark:hover:bg-slate-800/50 cursor-pointer'
+                                                    : 'hover:bg-surface/50 dark:hover:bg-slate-800/50'
                                             }`}
                                         >
                                             {/* Checkbox cell — only in selection mode */}
@@ -390,17 +390,17 @@ export default function BulkVerify({ entries, workUnits = [], filters = {} }: Bu
                                                         checked={isChecked}
                                                         onChange={() => toggleOne(entry.id)}
                                                         onClick={(e) => e.stopPropagation()}
-                                                        className="border-border-strong accent-primary h-4 w-4 rounded"
+                                                        className="border-border-strong dark:border-slate-600 accent-primary h-4 w-4 rounded"
                                                     />
                                                 </td>
                                             )}
-                                            <td className="text-navy px-4 py-3 font-mono text-xs font-semibold">{code}</td>
+                                            <td className="text-navy dark:text-white px-4 py-3 font-mono text-xs font-semibold">{code}</td>
                                             <td className="max-w-[280px] px-4 py-3">
-                                                <p className="text-navy truncate font-semibold">{title}</p>
-                                                {framework && <p className="text-muted truncate text-xs">{framework}</p>}
+                                                <p className="text-navy dark:text-white truncate font-semibold">{title}</p>
+                                                {framework && <p className="text-muted dark:text-slate-400 truncate text-xs">{framework}</p>}
                                             </td>
-                                            <td className="text-body px-4 py-3">{entry.unit?.nama ?? t('bulkVerify.none')}</td>
-                                            <td className="text-body px-4 py-3">{entry.pic?.name ?? t('bulkVerify.none')}</td>
+                                            <td className="text-body dark:text-slate-300 px-4 py-3">{entry.unit?.nama ?? t('bulkVerify.none')}</td>
+                                            <td className="text-body dark:text-slate-300 px-4 py-3">{entry.pic?.name ?? t('bulkVerify.none')}</td>
                                             <td className="px-4 py-3">
                                                 <StatusBadge tone={statusTone(entry.status)}>
                                                     {t(`status.${entry.status ?? 'pending'}` as never)}
@@ -419,17 +419,17 @@ export default function BulkVerify({ entries, workUnits = [], filters = {} }: Bu
                                                         {t('bulkVerify.openEvidence')}
                                                     </a>
                                                 ) : (
-                                                    <span className="text-muted text-xs">{t('bulkVerify.none')}</span>
+                                                    <span className="text-muted dark:text-slate-400 text-xs">{t('bulkVerify.none')}</span>
                                                 )}
                                             </td>
                                             <td className="px-4 py-3">
                                                 {entry.tanggal_verifikasi ? (
-                                                    <span className="text-muted text-xs">
+                                                    <span className="text-muted dark:text-slate-400 text-xs">
                                                         {t('bulkVerify.verifiedOn', fmtDate(entry.tanggal_verifikasi))}
                                                         {entry.admin?.name ? ` · ${entry.admin.name}` : ''}
                                                     </span>
                                                 ) : (
-                                                    <span className="text-muted text-xs">{t('bulkVerify.none')}</span>
+                                                    <span className="text-muted dark:text-slate-400 text-xs">{t('bulkVerify.none')}</span>
                                                 )}
                                             </td>
                                         </tr>
