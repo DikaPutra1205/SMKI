@@ -71,9 +71,9 @@ class NavigationServiceTest extends TestCase
         $user = User::factory()->create(['role' => User::ROLE_PIC]);
 
         $this->assertSame([
+            '/admin/pic/assessments',
             '/admin/kepatuhan/findings',
             '/admin/kepatuhan/risks',
-            '/admin/pic/assessments',
         ], $this->urlsFor($user));
     }
 
@@ -81,9 +81,9 @@ class NavigationServiceTest extends TestCase
     {
         $pic = User::factory()->create(['role' => User::ROLE_PIC]);
         $this->assertSame([
+            '/admin/pic/assessments',
             '/admin/kepatuhan/findings',
             '/admin/kepatuhan/risks',
-            '/admin/pic/assessments',
         ], $this->urlsFor($pic));
 
         // Grant the two permissions the kepatuhan dashboard entry requires.
@@ -96,9 +96,9 @@ class NavigationServiceTest extends TestCase
         $this->assertSame([
             '/admin/kepatuhan/dashboard',
             '/admin/kepatuhan/audit-logs',
+            '/admin/pic/assessments',
             '/admin/kepatuhan/findings',
             '/admin/kepatuhan/risks',
-            '/admin/pic/assessments',
         ], $this->urlsFor($pic));
     }
 }

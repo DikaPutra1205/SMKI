@@ -130,20 +130,6 @@ class NavigationService
                 'icon' => 'History',
                 'permissions' => ['audit-log.view'],
             ],
-            [
-                'label' => 'Findings',
-                'url' => '/admin/kepatuhan/findings',
-                'icon' => 'AlertCircle',
-                'permissions' => ['finding.view'],
-                'denies' => ['work-unit.view'],
-            ],
-            [
-                'label' => 'Risks',
-                'url' => '/admin/kepatuhan/risks',
-                'icon' => 'AlertTriangle',
-                'permissions' => ['risk.view'],
-                'denies' => ['work-unit.view'],
-            ],
 
             // ── PIC Satuan Kerja ──────────────────────────────────────
             [
@@ -152,6 +138,22 @@ class NavigationService
                 'icon' => 'ClipboardCheck',
                 'permissions' => ['checklist-session.create'],
                 'denies' => ['control.view'],
+            ],
+
+            // ── LANJOOT Satuan Kerja ──────────────────────────────────────
+            [
+                'label' => 'Findings',
+                'url' => '/admin/pic/findings',
+                'icon' => 'AlertCircle',
+                'permissions' => ['finding.view'],
+                'denies' => ['work-unit.view'],
+            ],
+            [
+                'label' => 'Risks',
+                'url' => '/admin/pic/risks',
+                'icon' => 'AlertTriangle',
+                'permissions' => ['risk.view'],
+                'denies' => ['work-unit.view'],
             ],
 
         ];
