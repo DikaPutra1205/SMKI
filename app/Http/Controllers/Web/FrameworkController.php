@@ -8,9 +8,9 @@ use App\Http\Requests\UpdateFrameworkRequest;
 use App\Models\Control;
 use App\Models\Framework;
 use App\Models\User;
+use App\Services\FrameworkDocumentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -56,9 +56,10 @@ class FrameworkController extends Controller
         ]);
     }
 
-    public function store(StoreFrameworkRequest $request): RedirectResponse
+    public function store(StoreFrameworkRequest $request, FrameworkDocumentService $documents): RedirectResponse
     {
         $data = $request->validated();
+        unset($data['file_dokumen']);
 
         if ($request->hasFile('file_dokumen')) {
             $file = $request->file('file_dokumen');
@@ -66,8 +67,6 @@ class FrameworkController extends Controller
             $path = $file->storeAs('', $filename, 'supabase-frameworks');
             $data['url_file'] = $path;
         }
-
-        unset($data['file_dokumen']);
 
         Framework::create($data);
 
@@ -77,9 +76,10 @@ class FrameworkController extends Controller
         ]);
     }
 
-    public function update(UpdateFrameworkRequest $request, Framework $framework): RedirectResponse
+    public function update(UpdateFrameworkRequest $request, Framework $framework, FrameworkDocumentService $documents): RedirectResponse
     {
         $data = $request->validated();
+        unset($data['file_dokumen']);
 
         if ($request->hasFile('file_dokumen')) {
             $file = $request->file('file_dokumen');
@@ -108,7 +108,7 @@ class FrameworkController extends Controller
         ]);
     }
 
-    public function destroy(Framework $framework): RedirectResponse
+    public function destroy(Framework $framework, FrameworkDocumentService $documents): RedirectResponse
     {
         $oldPath = $framework->getRawOriginal('url_file');
         if ($oldPath && ! filter_var($oldPath, FILTER_VALIDATE_URL)) {
