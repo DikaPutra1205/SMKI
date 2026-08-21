@@ -85,32 +85,32 @@ class NavigationService
 
             // ── Admin Kepatuhan & other roles ───────────────────────────
             [
-                'label'       => 'Dashboard',
-                'url'         => '/admin/kepatuhan/dashboard',
-                'icon'        => 'LayoutGrid',
+                'label' => 'Dashboard',
+                'url' => '/admin/kepatuhan/dashboard',
+                'icon' => 'LayoutGrid',
                 'permissions' => ['dashboard.read', 'audit-log.view'],
-                'denies'      => ['work-unit.view'],
+                'denies' => ['work-unit.view'],
             ],
             [
-                'label'       => 'Controls Management',
-                'url'         => '/admin/kepatuhan/compliance',
-                'icon'        => 'ShieldCheck',
+                'label' => 'Controls Management',
+                'url' => '/admin/kepatuhan/compliance',
+                'icon' => 'ShieldCheck',
                 'permissions' => ['control.view'],
-                'denies'      => ['work-unit.view'],
+                'denies' => ['work-unit.view'],
             ],
             [
-                'label'       => 'Verifikasi Entri',
-                'url'         => '/admin/kepatuhan/checklist/verify',
-                'icon'        => 'ClipboardCheck',
+                'label' => 'Verifikasi Entri',
+                'url' => '/admin/kepatuhan/checklist/verify',
+                'icon' => 'ClipboardCheck',
                 'permissions' => ['checklist.bulk-verify'],
-                'denies'      => ['work-unit.view'],
+                'denies' => ['work-unit.view'],
             ],
             [
-                'label'       => 'Bulk Verify',
-                'url'         => '/admin/kepatuhan/checklist/bulk-verify',
-                'icon'        => 'CheckSquare',
+                'label' => 'Bulk Verify',
+                'url' => '/admin/kepatuhan/checklist/bulk-verify',
+                'icon' => 'CheckSquare',
                 'permissions' => ['checklist.bulk-verify'],
-                'denies'      => ['work-unit.view'],
+                'denies' => ['work-unit.view'],
             ],
 
             [
@@ -137,11 +137,11 @@ class NavigationService
 
             // ── PIC Satuan Kerja ──────────────────────────────────────
             [
-                'label'       => 'Assessment',
-                'url'         => '/admin/pic/assessments',
-                'icon'        => 'ClipboardCheck',
+                'label' => 'Assessment',
+                'url' => '/admin/pic/assessments',
+                'icon' => 'ClipboardCheck',
                 'permissions' => ['checklist-session.create'],
-                'denies'      => ['control.view'],
+                'denies' => ['control.view'],
             ],
 
         ];

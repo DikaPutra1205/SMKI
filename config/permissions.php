@@ -96,6 +96,12 @@ return [
             'user.update',
             'user.delete',
         ],
+        'role' => [
+            'role.managementview',
+            'role.create',
+            'role.update',
+            'role.delete',
+        ],
     ],
 
     'roles' => [
@@ -171,6 +177,11 @@ return [
             'user.create',
             'user.update',
             'user.delete',
+            // role
+            'role.managementview',
+            'role.create',
+            'role.update',
+            'role.delete',
         ],
         'admin_kepatuhan' => [
             'dashboard.read',
