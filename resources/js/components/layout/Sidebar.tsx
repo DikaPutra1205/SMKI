@@ -30,7 +30,7 @@ export function Sidebar({ isOpen, onClose, currentPath }: SidebarProps) {
     const navigation: NavEntry[] = page.props.navigation || [];
 
     const pathname = currentPath || page.url;
-    const userRole = (authUser as { role?: string })?.role || 'admin_kepatuhan';
+    const userRole = (authUser as { role?: string })?.role;
 
     const userName = authUser?.name || '';
 
