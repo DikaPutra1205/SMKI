@@ -171,27 +171,23 @@ function DetailPanel({ entry, onClose }: DetailPanelProps) {
             />
 
             {/* Backdrop */}
-            <div
-                className="fixed inset-0 z-40 bg-slate-900/30 backdrop-blur-[2px] transition-opacity"
-                onClick={onClose}
-                aria-hidden="true"
-            />
+            <div className="fixed inset-0 z-40 bg-slate-900/30 backdrop-blur-[2px] transition-opacity" onClick={onClose} aria-hidden="true" />
 
             {/* Panel */}
-            <aside className="fixed inset-y-0 right-0 z-50 flex w-full max-w-[480px] flex-col border-l border-border bg-white shadow-2xl">
+            <aside className="border-border fixed inset-y-0 right-0 z-50 flex w-full max-w-[480px] flex-col border-l bg-white shadow-2xl">
                 {/* Header */}
-                <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
+                <div className="border-border flex items-start justify-between gap-4 border-b px-5 py-4">
                     <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                            <ShieldCheck className="h-4 w-4 shrink-0 text-primary" />
-                            <h2 className="text-base font-bold text-navy">Verifikasi Entri</h2>
+                            <ShieldCheck className="text-primary h-4 w-4 shrink-0" />
+                            <h2 className="text-navy text-base font-bold">Verifikasi Entri</h2>
                         </div>
-                        <p className="mt-0.5 font-mono text-xs text-muted">{code}</p>
+                        <p className="text-muted mt-0.5 font-mono text-xs">{code}</p>
                     </div>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="rounded-lg p-1.5 text-muted transition-colors hover:bg-surface hover:text-navy"
+                        className="text-muted hover:bg-surface hover:text-navy rounded-lg p-1.5 transition-colors"
                         aria-label="Tutup panel"
                     >
                         <X className="h-4 w-4" />
@@ -199,53 +195,45 @@ function DetailPanel({ entry, onClose }: DetailPanelProps) {
                 </div>
 
                 {/* Body */}
-                <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+                <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
                     {/* Control info */}
-                    <div className="rounded-[12px] border border-border bg-surface/40 overflow-hidden">
-                        <div className="border-b border-border px-4 py-2.5 flex items-center justify-between">
-                            <span className="text-xs font-semibold text-muted uppercase tracking-wide">Kontrol</span>
+                    <div className="border-border bg-surface/40 overflow-hidden rounded-[12px] border">
+                        <div className="border-border flex items-center justify-between border-b px-4 py-2.5">
+                            <span className="text-muted text-xs font-semibold tracking-wide uppercase">Kontrol</span>
                             {framework && (
-                                <span className="rounded-[6px] border border-border bg-white px-2 py-0.5 text-[11px] font-semibold text-body">
+                                <span className="border-border text-body rounded-[6px] border bg-white px-2 py-0.5 text-[11px] font-semibold">
                                     {framework}
                                 </span>
                             )}
                         </div>
                         <div className="px-4 py-3">
-                            <p className="font-bold text-navy text-sm leading-snug">{title}</p>
+                            <p className="text-navy text-sm leading-snug font-bold">{title}</p>
                             {entry.control?.deskripsi && (
-                                <p className="mt-1.5 text-xs leading-relaxed text-body line-clamp-3">
-                                    {entry.control.deskripsi}
-                                </p>
+                                <p className="text-body mt-1.5 line-clamp-3 text-xs leading-relaxed">{entry.control.deskripsi}</p>
                             )}
                             {entry.control?.kategori && (
-                                <span className="mt-2 inline-block text-[11px] font-medium text-muted">
-                                    {kategoriLabel(entry.control.kategori)}
-                                </span>
+                                <span className="text-muted mt-2 inline-block text-[11px] font-medium">{kategoriLabel(entry.control.kategori)}</span>
                             )}
                         </div>
                     </div>
 
                     {/* Meta: unit, PIC, status, dates */}
-                    <div className="rounded-[12px] border border-border overflow-hidden">
+                    <div className="border-border overflow-hidden rounded-[12px] border">
                         {[
                             { label: 'Unit Kerja', value: entry.unit?.nama || '—' },
                             { label: 'PIC', value: entry.pic?.name || '—' },
                             {
                                 label: 'Status PIC',
-                                value: (
-                                    <StatusBadge tone={statusTone(entry.status)}>
-                                        {t(`status.${entry.status ?? 'pending'}` as never)}
-                                    </StatusBadge>
-                                ),
+                                value: <StatusBadge tone={statusTone(entry.status)}>{t(`status.${entry.status ?? 'pending'}` as never)}</StatusBadge>,
                             },
                             { label: 'Tanggal Input', value: fmtDate(entry.tanggal_input) || '—' },
                         ].map(({ label, value }, i, arr) => (
                             <div
                                 key={label}
-                                className={`flex items-center justify-between gap-3 px-4 py-2.5 ${i < arr.length - 1 ? 'border-b border-border' : ''}`}
+                                className={`flex items-center justify-between gap-3 px-4 py-2.5 ${i < arr.length - 1 ? 'border-border border-b' : ''}`}
                             >
-                                <span className="text-[13px] font-medium text-body">{label}</span>
-                                <span className="text-[13px] font-semibold text-navy text-right">{value}</span>
+                                <span className="text-body text-[13px] font-medium">{label}</span>
+                                <span className="text-navy text-right text-[13px] font-semibold">{value}</span>
                             </div>
                         ))}
                     </div>
@@ -253,8 +241,8 @@ function DetailPanel({ entry, onClose }: DetailPanelProps) {
                     {/* PIC notes */}
                     {entry.catatan && (
                         <div>
-                            <h3 className="text-xs font-bold text-navy uppercase tracking-wide mb-1.5">Catatan PIC</h3>
-                            <p className="rounded-[10px] border border-border bg-surface/50 px-3.5 py-3 text-[13px] leading-relaxed text-body">
+                            <h3 className="text-navy mb-1.5 text-xs font-bold tracking-wide uppercase">Catatan PIC</h3>
+                            <p className="border-border bg-surface/50 text-body rounded-[10px] border px-3.5 py-3 text-[13px] leading-relaxed">
                                 {entry.catatan}
                             </p>
                         </div>
@@ -262,7 +250,7 @@ function DetailPanel({ entry, onClose }: DetailPanelProps) {
 
                     {/* Evidence */}
                     <div>
-                        <h3 className="text-xs font-bold text-navy uppercase tracking-wide mb-1.5">Evidence</h3>
+                        <h3 className="text-navy mb-1.5 text-xs font-bold tracking-wide uppercase">Evidence</h3>
                         {hasEvidence ? (
                             <a
                                 href={entry.active_evidence!.file_url}
@@ -271,7 +259,7 @@ function DetailPanel({ entry, onClose }: DetailPanelProps) {
                                 className="flex items-center gap-2.5 rounded-[10px] border border-emerald-200 bg-emerald-50 px-3.5 py-3 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-100"
                             >
                                 <FileText className="h-4 w-4 shrink-0" />
-                                <span className="truncate flex-1">Lihat Dokumen Evidence</span>
+                                <span className="flex-1 truncate">Lihat Dokumen Evidence</span>
                                 <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-60" />
                             </a>
                         ) : (
@@ -284,14 +272,12 @@ function DetailPanel({ entry, onClose }: DetailPanelProps) {
 
                     {/* Previous admin notes (if already verified before) */}
                     {alreadyVerified && (
-                        <div className="rounded-[10px] border border-info/20 bg-info-bg px-3.5 py-3">
-                            <p className="text-xs font-semibold text-info">
+                        <div className="border-info/20 bg-info-bg rounded-[10px] border px-3.5 py-3">
+                            <p className="text-info text-xs font-semibold">
                                 Sudah diverifikasi · {fmtDate(entry.tanggal_verifikasi)}
                                 {entry.admin?.name ? ` oleh ${entry.admin.name}` : ''}
                             </p>
-                            {entry.catatan_admin && (
-                                <p className="mt-1 text-xs text-body">{entry.catatan_admin}</p>
-                            )}
+                            {entry.catatan_admin && <p className="text-body mt-1 text-xs">{entry.catatan_admin}</p>}
                         </div>
                     )}
 
@@ -306,11 +292,11 @@ function DetailPanel({ entry, onClose }: DetailPanelProps) {
                 </div>
 
                 {/* Footer action bar */}
-                <div className="border-t border-border bg-surface/60 px-5 py-4 flex items-center gap-3">
+                <div className="border-border bg-surface/60 flex items-center gap-3 border-t px-5 py-4">
                     <button
                         type="button"
                         onClick={() => setConfirmAction('approve')}
-                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-[10px] bg-success px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-success/90"
+                        className="bg-success hover:bg-success/90 inline-flex flex-1 items-center justify-center gap-2 rounded-[10px] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors"
                     >
                         <CheckCircle2 className="h-4 w-4" />
                         Setujui (Patuh)
@@ -318,7 +304,7 @@ function DetailPanel({ entry, onClose }: DetailPanelProps) {
                     <button
                         type="button"
                         onClick={() => setConfirmAction('reject')}
-                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-[10px] bg-danger px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-danger/90"
+                        className="bg-danger hover:bg-danger/90 inline-flex flex-1 items-center justify-center gap-2 rounded-[10px] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors"
                     >
                         <XCircle className="h-4 w-4" />
                         Tolak (Tidak Patuh)
@@ -397,10 +383,7 @@ export default function Verify({ entries, workUnits = [], filters = {} }: Verify
         return () => clearTimeout(timer);
     }, [searchQuery, selectedStatus, selectedUnit, verification]);
 
-    const breadcrumbs = [
-        { label: t('common.dashboard'), href: '/admin/kepatuhan/dashboard' },
-        { label: 'Verifikasi Entri' },
-    ];
+    const breadcrumbs = [{ label: t('common.dashboard'), href: '/admin/kepatuhan/dashboard' }, { label: 'Verifikasi Entri' }];
 
     return (
         <AppLayout breadcrumbs={breadcrumbs} currentPath="/admin/kepatuhan/checklist/verify">
@@ -469,7 +452,7 @@ export default function Verify({ entries, workUnits = [], filters = {} }: Verify
                 <div className="overflow-x-auto">
                     <table className="w-full min-w-[760px] text-left text-sm">
                         <thead>
-                            <tr className="border-border bg-surface/60 text-muted border-b text-xs font-semibold uppercase tracking-wider">
+                            <tr className="border-border bg-surface/60 text-muted border-b text-xs font-semibold tracking-wider uppercase">
                                 <th className="px-4 py-3">{t('bulkVerify.code')}</th>
                                 <th className="px-4 py-3">{t('bulkVerify.control')}</th>
                                 <th className="px-4 py-3">{t('bulkVerify.workUnit')}</th>
@@ -495,23 +478,15 @@ export default function Verify({ entries, workUnits = [], filters = {} }: Verify
                                         <tr
                                             key={entry.id}
                                             onClick={() => setActiveEntry(isActive ? null : entry)}
-                                            className={`border-border border-b last:border-0 cursor-pointer transition-colors ${
-                                                isActive
-                                                    ? 'bg-primary/5 ring-1 ring-inset ring-primary/20'
-                                                    : 'hover:bg-surface/50'
+                                            className={`border-border cursor-pointer border-b transition-colors last:border-0 ${
+                                                isActive ? 'bg-primary/5 ring-primary/20 ring-1 ring-inset' : 'hover:bg-surface/50'
                                             }`}
                                         >
-                                            <td className="text-navy px-4 py-3 font-mono text-xs font-bold">
-                                                {entry.control?.kode_klausul ?? '—'}
-                                            </td>
+                                            <td className="text-navy px-4 py-3 font-mono text-xs font-bold">{entry.control?.kode_klausul ?? '—'}</td>
                                             <td className="max-w-[250px] px-4 py-3">
-                                                <p className="text-navy truncate font-semibold">
-                                                    {entry.control?.judul ?? t('common.noData')}
-                                                </p>
+                                                <p className="text-navy truncate font-semibold">{entry.control?.judul ?? t('common.noData')}</p>
                                                 {entry.control?.framework && (
-                                                    <p className="text-muted truncate text-xs">
-                                                        {entry.control.framework.nama}
-                                                    </p>
+                                                    <p className="text-muted truncate text-xs">{entry.control.framework.nama}</p>
                                                 )}
                                             </td>
                                             <td className="text-body px-4 py-3">{entry.unit?.nama ?? '—'}</td>
@@ -541,7 +516,7 @@ export default function Verify({ entries, workUnits = [], filters = {} }: Verify
                                                     className={`rounded-[8px] border px-3 py-1.5 text-xs font-semibold transition-colors ${
                                                         isActive
                                                             ? 'border-primary bg-primary text-white'
-                                                            : 'border-border-strong bg-white text-body hover:bg-surface'
+                                                            : 'border-border-strong text-body hover:bg-surface bg-white'
                                                     }`}
                                                 >
                                                     {isActive ? 'Aktif' : 'Tinjau'}
