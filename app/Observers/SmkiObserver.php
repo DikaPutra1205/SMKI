@@ -14,12 +14,18 @@ class SmkiObserver
      */
     public function created(Model $model): void
     {
+        $data = $model->toArray();
+        if (! empty($model->getHidden())) {
+            $hidden = array_flip($model->getHidden());
+            $data = array_diff_key($data, $hidden);
+        }
+
         AuditLog::catat(
             entityType: class_basename($model),
             entityId: $model->getKey(),
             aksi: 'create',
             actorId: Auth::id(),
-            detail: ['data' => $model->toArray()],
+            detail: ['data' => $data],
         );
     }
 
@@ -28,8 +34,19 @@ class SmkiObserver
         $changes = $model->getChanges();
         unset($changes['updated_at']); // abaikan perubahan timestamp saja
 
+        if (! empty($model->getHidden())) {
+            $hidden = array_flip($model->getHidden());
+            $changes = array_diff_key($changes, $hidden);
+        }
+
         if (empty($changes)) {
             return;
+        }
+
+        $original = $model->getOriginal();
+        if (! empty($model->getHidden())) {
+            $hidden = array_flip($model->getHidden());
+            $original = array_diff_key($original, $hidden);
         }
 
         AuditLog::catat(
@@ -38,7 +55,7 @@ class SmkiObserver
             aksi: 'update',
             actorId: Auth::id(),
             detail: [
-                'before' => array_intersect_key($model->getOriginal(), $changes),
+                'before' => array_intersect_key($original, $changes),
                 'after' => $changes,
             ],
         );

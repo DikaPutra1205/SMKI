@@ -80,6 +80,19 @@ const ACTION_TONE: Record<string, StatusTone> = {
     upload: 'blue',
 };
 
+const KNOWN_ENTITIES = [
+    'Framework',
+    'Control',
+    'User',
+    'Role',
+    'WorkUnit',
+    'ChecklistSession',
+    'ChecklistEntry',
+    'ComplianceEvidence',
+    'Finding',
+    'Risk',
+];
+
 const KNOWN_ROLES = ['superadmin', 'admin_kepatuhan', 'koordinator_smki', 'auditor', 'pic', 'system'] as const;
 
 function actionLabel(action: string): string {
@@ -183,8 +196,8 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
         return () => clearTimeout(timer);
     }, [searchQuery, selectedAction, selectedEntity, selectedActor, dateFrom, dateTo]);
 
-    const actionOptions = stats?.by_action ? Object.keys(stats.by_action) : FALLBACK_ACTIONS;
-    const entityOptions = stats?.by_entity ? Object.keys(stats.by_entity) : [];
+    const actionOptions = Array.from(new Set([...(stats?.by_action ? Object.keys(stats.by_action) : []), ...FALLBACK_ACTIONS]));
+    const entityOptions = Array.from(new Set([...KNOWN_ENTITIES, ...(stats?.by_entity ? Object.keys(stats.by_entity) : [])]));
     const diff = detailTarget ? diffEntries(detailTarget.changes) : [];
 
     const breadcrumbs = [{ label: t('common.dashboard'), href: '/admin/kepatuhan/dashboard' }, { label: t('audit.title') }];

@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\AuditLog;
 use App\Models\Control;
 use App\Models\Finding;
+use App\Models\Framework;
+use App\Models\Role;
 use App\Models\User;
 use App\Models\WorkUnit;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -37,6 +39,8 @@ class AuditTrailTest extends TestCase
         $this->koordinator = User::factory()->create(['role' => 'koordinator_smki', 'unit_id' => $this->unit->id]);
         $this->auditor = User::factory()->create(['role' => 'auditor', 'unit_id' => $this->unit->id]);
         $this->pic = User::factory()->create(['role' => 'pic', 'unit_id' => $this->unit->id]);
+
+        AuditLog::query()->delete();
     }
 
     public function test_superadmin_admin_and_coordinator_can_view_audit_logs(): void
@@ -222,14 +226,155 @@ class AuditTrailTest extends TestCase
         ]);
     }
 
-    public function test_master_data_models_are_not_audited(): void
+    public function test_framework_control_user_and_role_are_audited(): void
     {
-        $this->actingAs($this->admin);
+        $this->actingAs($this->superadmin);
 
-        Control::factory()->create();
-        WorkUnit::factory()->create();
+        // Framework
+        $fw = Framework::factory()->create(['nama' => 'ISO 27001:2022', 'versi' => '2022']);
+        $this->assertDatabaseHas('audit_logs', [
+            'entity_type' => 'Framework',
+            'entity_id' => $fw->id,
+            'aksi' => 'create',
+            'actor_id' => $this->superadmin->id,
+        ]);
 
-        $this->assertDatabaseCount('audit_logs', 0);
+        $fw->update(['nama' => 'ISO 27001:2022 Revisi']);
+        $this->assertDatabaseHas('audit_logs', [
+            'entity_type' => 'Framework',
+            'entity_id' => $fw->id,
+            'aksi' => 'update',
+            'actor_id' => $this->superadmin->id,
+        ]);
+
+        $fw->delete();
+        $this->assertDatabaseHas('audit_logs', [
+            'entity_type' => 'Framework',
+            'entity_id' => $fw->id,
+            'aksi' => 'delete',
+            'actor_id' => $this->superadmin->id,
+        ]);
+
+        // Control
+        $control = Control::factory()->create();
+        $this->assertDatabaseHas('audit_logs', [
+            'entity_type' => 'Control',
+            'entity_id' => $control->id,
+            'aksi' => 'create',
+        ]);
+
+        // Role
+        $role = Role::create(['name' => 'manager', 'label' => 'Manager']);
+        $this->assertDatabaseHas('audit_logs', [
+            'entity_type' => 'Role',
+            'entity_id' => $role->id,
+            'aksi' => 'create',
+        ]);
+
+        // User
+        $newUser = User::factory()->create(['unit_id' => $this->unit->id]);
+        $this->assertDatabaseHas('audit_logs', [
+            'entity_type' => 'User',
+            'entity_id' => $newUser->id,
+            'aksi' => 'create',
+        ]);
+    }
+
+    public function test_user_password_is_not_leaked_in_audit_logs(): void
+    {
+        $this->actingAs($this->superadmin);
+
+        $user = User::factory()->create([
+            'unit_id' => $this->unit->id,
+            'password' => 'secret123',
+        ]);
+
+        $createLog = AuditLog::where('entity_type', 'User')
+            ->where('entity_id', $user->id)
+            ->where('aksi', 'create')
+            ->first();
+
+        $this->assertNotNull($createLog);
+        $this->assertArrayNotHasKey('password', $createLog->detail_perubahan['data'] ?? []);
+        $this->assertArrayNotHasKey('remember_token', $createLog->detail_perubahan['data'] ?? []);
+
+        $user->update(['password' => 'new-secret-456']);
+
+        $updateLog = AuditLog::where('entity_type', 'User')
+            ->where('entity_id', $user->id)
+            ->where('aksi', 'update')
+            ->first();
+
+        $this->assertNull($updateLog); // Password was the only change and it's hidden, so no unmasked diff is recorded
+    }
+
+    public function test_audit_trail_filters_and_returns_correct_data_for_each_entity_type_using_factories(): void
+    {
+        $this->actingAs($this->superadmin);
+
+        // Buat data log untuk masing-masing entitas via factory / model creation
+        $fw = Framework::factory()->create(['nama' => 'ISO 27001:2022', 'versi' => '2022']);
+        $ctrl = Control::factory()->create(['framework_id' => $fw->id, 'kode_klausul' => 'A.5.1', 'judul' => 'Kebijakan']);
+        $role = Role::create(['name' => 'auditor_lead', 'label' => 'Lead Auditor']);
+        $user = User::factory()->create(['name' => 'Ahmad PIC', 'unit_id' => $this->unit->id]);
+        $finding = Finding::factory()->create(['unit_id' => $this->unit->id]);
+
+        $entities = [
+            'Framework' => $fw->id,
+            'Control' => $ctrl->id,
+            'Role' => $role->id,
+            'User' => $user->id,
+            'Finding' => $finding->id,
+        ];
+
+        foreach ($entities as $entityType => $expectedId) {
+            $response = $this->getJson("/api/v1/audit-logs?entity_type={$entityType}");
+            $response->assertOk();
+
+            $data = $response->json('data.data');
+            $this->assertNotEmpty($data, "Audit log untuk entitas {$entityType} harus ada.");
+
+            $matched = collect($data)->firstWhere('entity_id', $expectedId);
+            $this->assertNotNull($matched, "Audit log harus memuat entity_id {$expectedId} untuk {$entityType}.");
+            $this->assertEquals($entityType, $matched['entity_type']);
+            $this->assertEquals('create', $matched['action']);
+            $this->assertEquals($this->superadmin->name, $matched['actor']['name']);
+            $this->assertIsArray($matched['changes']);
+            $this->assertArrayHasKey('data', $matched['changes']);
+        }
+    }
+
+    public function test_audit_trail_combined_action_and_entity_filter_with_diff_verification(): void
+    {
+        $this->actingAs($this->superadmin);
+
+        $fw = Framework::factory()->create(['nama' => 'NIST CSF', 'versi' => '1.1']);
+        $fw->update(['nama' => 'NIST CSF v2.0', 'versi' => '2.0']);
+
+        $user = User::factory()->create(['name' => 'Bambang', 'unit_id' => $this->unit->id]);
+        $user->update(['name' => 'Bambang Sugiharto']);
+
+        // Filter 1: Update pada Framework saja
+        $fwUpdateRes = $this->getJson('/api/v1/audit-logs?action=update&entity_type=Framework');
+        $fwUpdateRes->assertOk()->assertJsonCount(1, 'data.data');
+
+        $fwLog = $fwUpdateRes->json('data.data.0');
+        $this->assertEquals('Framework', $fwLog['entity_type']);
+        $this->assertEquals($fw->id, $fwLog['entity_id']);
+        $this->assertEquals('update', $fwLog['action']);
+        $this->assertEquals('NIST CSF', $fwLog['changes']['before']['nama'] ?? null);
+        $this->assertEquals('NIST CSF v2.0', $fwLog['changes']['after']['nama'] ?? null);
+
+        // Filter 2: Update pada User saja
+        $userUpdateRes = $this->getJson('/api/v1/audit-logs?action=update&entity_type=User');
+        $userUpdateRes->assertOk()->assertJsonCount(1, 'data.data');
+
+        $userLog = $userUpdateRes->json('data.data.0');
+        $this->assertEquals('User', $userLog['entity_type']);
+        $this->assertEquals($user->id, $userLog['entity_id']);
+        $this->assertEquals('update', $userLog['action']);
+        $this->assertEquals('Bambang', $userLog['changes']['before']['name'] ?? null);
+        $this->assertEquals('Bambang Sugiharto', $userLog['changes']['after']['name'] ?? null);
     }
 
     public function test_audit_logs_can_be_filtered_by_entity_type(): void
@@ -342,7 +487,8 @@ class AuditTrailTest extends TestCase
             'entity_type' => 'ChecklistEntry',
         ]);
 
-        $version = hash_file('xxh128', public_path('build/manifest.json'));
+        $manifest = public_path('build/manifest.json');
+        $version = file_exists($manifest) ? hash_file('xxh128', $manifest) : '';
 
         $response = $this->actingAs($this->admin)
             ->withHeader('X-Inertia', 'true')

@@ -5,8 +5,13 @@ namespace App\Providers;
 use App\Models\ChecklistEntry;
 use App\Models\ChecklistSession;
 use App\Models\ComplianceEvidence;
+use App\Models\Control;
 use App\Models\Finding;
+use App\Models\Framework;
 use App\Models\Risk;
+use App\Models\Role;
+use App\Models\User;
+use App\Models\WorkUnit;
 use App\Observers\SmkiObserver;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
@@ -27,7 +32,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Daftarkan SmkiObserver ke semua model transaksi
+        // Daftarkan SmkiObserver ke semua model transaksi dan master data
+        Framework::observe(SmkiObserver::class);
+        Control::observe(SmkiObserver::class);
+        User::observe(SmkiObserver::class);
+        Role::observe(SmkiObserver::class);
+        WorkUnit::observe(SmkiObserver::class);
         ChecklistSession::observe(SmkiObserver::class);
         ChecklistEntry::observe(SmkiObserver::class);
         ComplianceEvidence::observe(SmkiObserver::class);

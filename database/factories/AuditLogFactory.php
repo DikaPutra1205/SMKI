@@ -18,7 +18,7 @@ class AuditLogFactory extends Factory
         return [
             'entity_type' => fake()->randomElement(['ChecklistEntry', 'Finding', 'Risk', 'ChecklistSession']),
             'entity_id' => fake()->randomNumber(3),
-            'actor_id' => User::factory(),
+            'actor_id' => fn () => User::first()?->id ?? User::factory(),
             'aksi' => fake()->randomElement(['create', 'update', 'delete', 'verify', 'upload']),
             'detail_perubahan' => [
                 'before' => ['status' => 'in_progress'],
