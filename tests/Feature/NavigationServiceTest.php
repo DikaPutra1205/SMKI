@@ -29,6 +29,8 @@ class NavigationServiceTest extends TestCase
         $this->assertSame([
             '/admin/superadmin/dashboard',
             '/admin/superadmin/frameworks',
+            '/admin/superadmin/users',
+            '/admin/superadmin/roles',
         ], $this->urlsFor($user));
     }
 
@@ -39,8 +41,8 @@ class NavigationServiceTest extends TestCase
         $this->assertSame([
             '/admin/kepatuhan/dashboard',
             '/admin/kepatuhan/compliance',
+            '/admin/kepatuhan/checklist/verify',
             '/admin/kepatuhan/checklist/bulk-verify',
-            '/admin/kepatuhan/sessions',
         ], $this->urlsFor($user));
     }
 
@@ -49,7 +51,10 @@ class NavigationServiceTest extends TestCase
         foreach ([User::ROLE_KOORDINATOR_SMKI, User::ROLE_AUDITOR] as $role) {
             $user = User::factory()->create(['role' => $role]);
 
-            $this->assertSame(['/admin/kepatuhan/dashboard'], $this->urlsFor($user));
+            $this->assertSame([
+                '/admin/superadmin/users',
+                '/admin/kepatuhan/dashboard',
+            ], $this->urlsFor($user));
         }
     }
 

@@ -149,7 +149,10 @@ export default function Assessments({ sessions, user_unit }: AssessmentsProps) {
                                     </div>
                                     <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                                         {compliantPct > 0 && (
-                                            <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${compliantPct}%` }} />
+                                            <div
+                                                className="h-full bg-emerald-500 transition-all duration-500"
+                                                style={{ width: `${compliantPct}%` }}
+                                            />
                                         )}
                                         {partialPct > 0 && (
                                             <div className="h-full bg-amber-500 transition-all duration-500" style={{ width: `${partialPct}%` }} />
@@ -158,7 +161,10 @@ export default function Assessments({ sessions, user_unit }: AssessmentsProps) {
                                             <div className="h-full bg-red-500 transition-all duration-500" style={{ width: `${nonCompliantPct}%` }} />
                                         )}
                                         {naPct > 0 && (
-                                            <div className="h-full bg-slate-300 transition-all duration-500 dark:bg-slate-600" style={{ width: `${naPct}%` }} />
+                                            <div
+                                                className="h-full bg-slate-300 transition-all duration-500 dark:bg-slate-600"
+                                                style={{ width: `${naPct}%` }}
+                                            />
                                         )}
                                     </div>
                                 </div>

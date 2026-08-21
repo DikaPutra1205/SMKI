@@ -7,7 +7,6 @@ use App\Models\ChecklistSession;
 use App\Models\ComplianceEvidence;
 use App\Models\Finding;
 use App\Models\Risk;
-use App\Models\User;
 use App\Observers\SmkiObserver;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
@@ -36,9 +35,7 @@ class AppServiceProvider extends ServiceProvider
         Risk::observe(SmkiObserver::class);
 
         // RBAC: permission keys ARE Gate abilities, granted per role in the DB
-        Gate::before(function (User $user, string $ability) {
-            return $user->hasPermissionTo($ability) ? true : null;
-        });
+        Gate::after(fn ($user, $ability) => $user->hasPermissionTo($ability));
 
         // Fail fast on N+1 of the new `role` relation in dev/test. The compat
         // accessor + $appends makes `$user->role` lazy-loadable; this surfaces any
