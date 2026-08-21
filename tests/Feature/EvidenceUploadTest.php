@@ -127,7 +127,7 @@ class EvidenceUploadTest extends TestCase
         $this->assertSame(1, $evidence->version_number);
         $this->assertTrue($evidence->is_active);
         $this->assertSame($user->id, $evidence->uploaded_by);
-        $this->assertStringContainsString("bukti/{$entry->id}/", $evidence->file_url);
+        $this->assertStringContainsString("bukti/{$entry->id}/", $evidence->getRawOriginal('file_url'));
         $this->assertCount(1, Storage::disk('supabase')->allFiles("bukti/{$entry->id}"));
         $this->assertNotNull($entry->fresh()->tanggal_input);
         $this->assertNull($entry->fresh()->tanggal_verifikasi);
