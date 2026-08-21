@@ -13,12 +13,13 @@ class RbacMatrixConfigTest extends TestCase
         $this->assertSame([
             'dashboard', 'checklist', 'checklist-session', 'control', 'framework',
             'evidence', 'finding', 'risk', 'work-unit', 'audit-log', 'report', 'user',
+            'role',
         ], array_keys($config['permissions']));
 
-        $this->assertSame(59, count($config['permissions'], COUNT_RECURSIVE) - count($config['permissions']));
+        $this->assertSame(63, count($config['permissions'], COUNT_RECURSIVE) - count($config['permissions']));
         $keys = collect($config['permissions'])->flatten()->all();
-        $this->assertCount(59, $keys);
-        $this->assertCount(59, array_unique($keys));
+        $this->assertCount(63, $keys);
+        $this->assertCount(63, array_unique($keys));
 
         foreach ($keys as $key) {
             $this->assertMatchesRegularExpression('/^[a-z-]+\.[a-z-]+$/', $key);
@@ -48,7 +49,7 @@ class RbacMatrixConfigTest extends TestCase
     {
         $config = config('permissions');
 
-        $this->assertCount(59, $config['roles']['superadmin']);
+        $this->assertCount(63, $config['roles']['superadmin']);
         $this->assertCount(50, $config['roles']['admin_kepatuhan']);
         $this->assertCount(21, $config['roles']['koordinator_smki']);
         $this->assertCount(21, $config['roles']['auditor']);
