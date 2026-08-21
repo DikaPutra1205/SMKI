@@ -80,21 +80,21 @@ function SessionCard({ session }: { session: SessionItem }) {
         <button
             type="button"
             onClick={handleClick}
-            className="group border-border hover:border-primary-200 focus-visible:ring-primary/40 relative flex flex-col rounded-[16px] border bg-white p-5 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-2 focus-visible:outline-none"
+            className="group border-border dark:border-slate-700 hover:border-primary-200 focus-visible:ring-primary/40 relative flex flex-col rounded-[16px] border bg-white dark:bg-slate-900 p-5 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-2 focus-visible:outline-none"
         >
             {/* Top: title + chevron */}
             <div className="mb-1 flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                    <h3 className="text-navy line-clamp-2 text-sm leading-snug font-bold">{session.konteks_penilaian}</h3>
-                    <p className="text-faint mt-1 text-xs font-medium">{session.periode || 'Tanpa Periode'}</p>
+                    <h3 className="text-navy dark:text-white line-clamp-2 text-sm leading-snug font-bold">{session.konteks_penilaian}</h3>
+                    <p className="text-faint dark:text-slate-500 mt-1 text-xs font-medium">{session.periode || 'Tanpa Periode'}</p>
                 </div>
-                <ChevronRight className="text-faint group-hover:text-primary mt-0.5 h-4 w-4 shrink-0 transition-transform group-hover:translate-x-0.5" />
+                <ChevronRight className="text-faint dark:text-slate-500 group-hover:text-primary mt-0.5 h-4 w-4 shrink-0 transition-transform group-hover:translate-x-0.5" />
             </div>
 
             {/* Framework badge */}
             {session.framework_nama && (
                 <div className="mb-3">
-                    <span className="border-border bg-surface text-body inline-flex items-center rounded-[6px] border px-2 py-0.5 text-[11px] font-semibold">
+                    <span className="border-border dark:border-slate-700 bg-surface dark:bg-slate-900 text-body dark:text-slate-300 inline-flex items-center rounded-[6px] border px-2 py-0.5 text-[11px] font-semibold">
                         {session.framework_nama}
                     </span>
                 </div>
@@ -103,7 +103,7 @@ function SessionCard({ session }: { session: SessionItem }) {
             {/* Progress bar + percentage */}
             <div className="mb-3">
                 <div className="mb-1.5 flex items-baseline justify-between">
-                    <span className="text-muted text-xs">
+                    <span className="text-muted dark:text-slate-400 text-xs">
                         {session.compliant_entries}/{session.total_entries} Kontrol Patuh
                     </span>
                     <span className={`text-sm font-bold ${complianceColor(pct)}`}>{pct}%</span>
@@ -112,7 +112,7 @@ function SessionCard({ session }: { session: SessionItem }) {
             </div>
 
             {/* Footer meta */}
-            <div className="border-border text-faint mt-auto flex items-center justify-between gap-2 border-t pt-3 text-[11px]">
+            <div className="border-border dark:border-slate-700 text-faint dark:text-slate-500 mt-auto flex items-center justify-between gap-2 border-t pt-3 text-[11px]">
                 <span className="inline-flex items-center gap-1">
                     <ShieldCheck className="h-3.5 w-3.5" />
                     {session.verified_entries}/{session.total_entries} terverifikasi
@@ -180,21 +180,21 @@ export default function BulkVerifyLanding({ sessions, workUnits, frameworks, per
             <div className="page-head flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">{t('bulkVerify.title')}</h1>
-                    <p className="text-muted mt-1 text-xs sm:text-sm">Pilih sesi penilaian yang ingin diverifikasi secara massal.</p>
+                    <p className="text-muted dark:text-slate-400 mt-1 text-xs sm:text-sm">Pilih sesi penilaian yang ingin diverifikasi secara massal.</p>
                 </div>
-                <div className="text-muted text-xs">{totalItems} sesi ditemukan</div>
+                <div className="text-muted dark:text-slate-400 text-xs">{totalItems} sesi ditemukan</div>
             </div>
 
             {/* Filter toolbar */}
-            <div className="border-border flex flex-col gap-3 rounded-[14px] border bg-white p-3 shadow-sm md:flex-row md:items-center">
+            <div className="border-border dark:border-slate-700 flex flex-col gap-3 rounded-[14px] border bg-white dark:bg-slate-900 p-3 shadow-sm md:flex-row md:items-center">
                 <div className="relative min-w-[220px] flex-1">
-                    <Search className="text-faint absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                    <Search className="text-faint dark:text-slate-500 absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                     <input
                         type="text"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Cari konteks, unit, atau PIC..."
-                        className="border-border-strong text-ink placeholder:text-faint focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white py-2 pr-4 pl-9 text-xs focus:ring-2 focus:outline-none sm:text-sm"
+                        className="border-border-strong dark:border-slate-600 text-ink dark:text-white placeholder:text-faint dark:placeholder:text-slate-500 focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white dark:bg-slate-900 py-2 pr-4 pl-9 text-xs focus:ring-2 focus:outline-none sm:text-sm"
                     />
                 </div>
 

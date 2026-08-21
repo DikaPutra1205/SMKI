@@ -43,6 +43,7 @@ export const id = {
         new: 'baru',
         toggleSidebar: 'Buka/tutup menu',
         closeSidebar: 'Tutup menu',
+        toggleTheme: 'Ganti tema terang/gelap',
     },
     role: {
         superadmin: 'Super Admin',

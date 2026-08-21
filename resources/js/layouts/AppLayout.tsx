@@ -10,7 +10,7 @@ interface AppLayoutProps {
 
 export default function AppLayout({ children, breadcrumbs, currentPath }: AppLayoutProps) {
     return (
-        <div className="bg-surface text-body flex min-h-screen flex-col font-sans">
+        <div className="bg-surface dark:bg-[#00101f] text-body dark:text-slate-300 flex min-h-screen flex-col font-sans">
             <Sidebar isOpen onClose={() => undefined} currentPath={currentPath} />
 
             <div className="flex flex-1 flex-col transition-all duration-300 lg:pl-64">

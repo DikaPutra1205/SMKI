@@ -99,8 +99,8 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">Dashboard Admin</h1>
-                    <p className="text-muted text-sm">
-                        {t('dashboard.welcomeBack')}, <span className="text-navy font-semibold">{userName}</span>. {t('dashboard.subtitle')}.
+                    <p className="text-muted dark:text-slate-400 text-sm">
+                        {t('dashboard.welcomeBack')}, <span className="text-navy dark:text-white font-semibold">{userName}</span>. {t('dashboard.subtitle')}.
                     </p>
                 </div>
 
@@ -117,69 +117,69 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
 
             {/* Row 1: KPI */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="border-border rounded-[14px] border bg-white p-5 shadow-sm">
+                <div className="border-border dark:border-slate-700 rounded-[14px] border bg-white dark:bg-slate-900 p-5 shadow-sm">
                     <div className="flex items-center justify-between">
-                        <span className="text-muted text-xs font-semibold tracking-wider uppercase">{t('dashboard.overallCompliance')}</span>
-                        <div className="bg-success-bg text-success flex h-9 w-9 items-center justify-center rounded-[10px]">
+                        <span className="text-muted dark:text-slate-400 text-xs font-semibold tracking-wider uppercase">{t('dashboard.overallCompliance')}</span>
+                        <div className="bg-success-bg text-success dark:text-emerald-400 flex h-9 w-9 items-center justify-center rounded-[10px]">
                             <TrendingUp className="h-5 w-5" />
                         </div>
                     </div>
                     <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-navy text-3xl font-bold">{overallRate.toFixed(1)}%</span>
+                        <span className="text-navy dark:text-white text-3xl font-bold">{overallRate.toFixed(1)}%</span>
                         {growth !== 0 && (
-                            <span className={`flex items-center text-xs font-medium ${growth >= 0 ? 'text-success' : 'text-danger'}`}>
+                            <span className={`flex items-center text-xs font-medium ${growth >= 0 ? 'text-success dark:text-emerald-400' : 'text-danger dark:text-red-400'}`}>
                                 {growth >= 0 ? '+' : ''}
                                 {growth.toFixed(1)}% {t('dashboard.thisMonth')}
                             </span>
                         )}
                     </div>
-                    <div className="bg-surface-2 mt-3 h-1.5 w-full overflow-hidden rounded-full">
+                    <div className="bg-surface-2 dark:bg-slate-800 mt-3 h-1.5 w-full overflow-hidden rounded-full">
                         <div className="bg-success h-full rounded-full" style={{ width: `${overallRate}%` }} />
                     </div>
                 </div>
 
-                <div className="border-border rounded-[14px] border bg-white p-5 shadow-sm">
+                <div className="border-border dark:border-slate-700 rounded-[14px] border bg-white dark:bg-slate-900 p-5 shadow-sm">
                     <div className="flex items-center justify-between">
-                        <span className="text-muted text-xs font-semibold tracking-wider uppercase">{t('dashboard.activeStandards')}</span>
-                        <div className="bg-primary-50 text-primary flex h-9 w-9 items-center justify-center rounded-[10px]">
+                        <span className="text-muted dark:text-slate-400 text-xs font-semibold tracking-wider uppercase">{t('dashboard.activeStandards')}</span>
+                        <div className="bg-primary-50 dark:bg-primary/10 text-primary flex h-9 w-9 items-center justify-center rounded-[10px]">
                             <ShieldCheck className="h-5 w-5" />
                         </div>
                     </div>
                     <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-navy text-3xl font-bold">{frameworks.length}</span>
-                        <span className="border-success-border bg-success-bg text-success rounded-[6px] border px-2 py-0.5 text-[11px] font-semibold">
+                        <span className="text-navy dark:text-white text-3xl font-bold">{frameworks.length}</span>
+                        <span className="border-success-border dark:border-emerald-800 bg-success-bg text-success dark:text-emerald-400 rounded-[6px] border px-2 py-0.5 text-[11px] font-semibold">
                             {t('common.active')}
                         </span>
                     </div>
-                    <p className="text-muted mt-3 text-xs">{frameworks.map((f) => f.nama).join(' · ')}</p>
+                    <p className="text-muted dark:text-slate-400 mt-3 text-xs">{frameworks.map((f) => f.nama).join(' · ')}</p>
                 </div>
 
-                <div className="border-border rounded-[14px] border bg-white p-5 shadow-sm">
+                <div className="border-border dark:border-slate-700 rounded-[14px] border bg-white dark:bg-slate-900 p-5 shadow-sm">
                     <div className="flex items-center justify-between">
-                        <span className="text-muted text-xs font-semibold tracking-wider uppercase">{t('dashboard.pendingActions')}</span>
-                        <div className="bg-warning-bg text-warning flex h-9 w-9 items-center justify-center rounded-[10px]">
+                        <span className="text-muted dark:text-slate-400 text-xs font-semibold tracking-wider uppercase">{t('dashboard.pendingActions')}</span>
+                        <div className="bg-warning-bg text-warning dark:text-amber-400 flex h-9 w-9 items-center justify-center rounded-[10px]">
                             <ClipboardList className="h-5 w-5" />
                         </div>
                     </div>
                     <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-navy text-3xl font-bold">{findings.total_active + risks.total_active}</span>
-                        <span className="text-warning text-xs font-medium">{t('dashboard.needsAction')}</span>
+                        <span className="text-navy dark:text-white text-3xl font-bold">{findings.total_active + risks.total_active}</span>
+                        <span className="text-warning dark:text-amber-400 text-xs font-medium">{t('dashboard.needsAction')}</span>
                     </div>
-                    <p className="text-muted mt-3 text-xs">{findings.overdue} overdue</p>
+                    <p className="text-muted dark:text-slate-400 mt-3 text-xs">{findings.overdue} overdue</p>
                 </div>
 
-                <div className="border-border rounded-[14px] border bg-white p-5 shadow-sm">
+                <div className="border-border dark:border-slate-700 rounded-[14px] border bg-white dark:bg-slate-900 p-5 shadow-sm">
                     <div className="flex items-center justify-between">
-                        <span className="text-muted text-xs font-semibold tracking-wider uppercase">{t('dashboard.nonCompliances')}</span>
-                        <div className="bg-danger-bg text-danger flex h-9 w-9 items-center justify-center rounded-[10px]">
+                        <span className="text-muted dark:text-slate-400 text-xs font-semibold tracking-wider uppercase">{t('dashboard.nonCompliances')}</span>
+                        <div className="bg-danger-bg text-danger dark:text-red-400 flex h-9 w-9 items-center justify-center rounded-[10px]">
                             <ShieldAlert className="h-5 w-5" />
                         </div>
                     </div>
                     <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-navy text-3xl font-bold">{findings.total_active}</span>
-                        <span className="text-danger text-xs font-medium">{t('status.open')}</span>
+                        <span className="text-navy dark:text-white text-3xl font-bold">{findings.total_active}</span>
+                        <span className="text-danger dark:text-red-400 text-xs font-medium">{t('status.open')}</span>
                     </div>
-                    <p className="text-muted mt-3 text-xs">
+                    <p className="text-muted dark:text-slate-400 mt-3 text-xs">
                         {findings.major} {t('status.major')} · {findings.minor} {t('status.minor')} · {findings.observasi} {t('status.observation')}
                     </p>
                 </div>
@@ -187,40 +187,40 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
 
             {/* Row 2: Standar Kepatuhan */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="border-border rounded-[14px] border bg-white p-5 shadow-sm">
-                    <div className="border-border flex items-center justify-between border-b pb-3">
+                <div className="border-border dark:border-slate-700 rounded-[14px] border bg-white dark:bg-slate-900 p-5 shadow-sm">
+                    <div className="border-border dark:border-slate-700 flex items-center justify-between border-b pb-3">
                         <h3 className="text-[15px] font-bold">{iso27001?.nama ?? 'ISO/IEC 27001:2022'}</h3>
-                        <span className="border-success-border bg-success-bg text-success rounded-[6px] border px-2 py-0.5 text-xs font-semibold">
+                        <span className="border-success-border dark:border-emerald-800 bg-success-bg text-success dark:text-emerald-400 rounded-[6px] border px-2 py-0.5 text-xs font-semibold">
                             {t('common.active')}
                         </span>
                     </div>
                     <div className="flex items-center justify-between pt-4">
-                        <strong className="text-navy text-[13.5px]">{t('dashboard.compliance')}</strong>
-                        <span className="text-navy text-xs font-bold">
+                        <strong className="text-navy dark:text-white text-[13.5px]">{t('dashboard.compliance')}</strong>
+                        <span className="text-navy dark:text-white text-xs font-bold">
                             {iso27001?.compliance_rate ?? 0}% · {iso27001?.compliant_count ?? 0}/{iso27001?.total_controls ?? 0}{' '}
                             {t('dashboard.controls')}
                         </span>
                     </div>
-                    <div className="bg-surface-2 mt-2 h-2 w-full overflow-hidden rounded-full">
+                    <div className="bg-surface-2 dark:bg-slate-800 mt-2 h-2 w-full overflow-hidden rounded-full">
                         <div className="bg-primary h-full rounded-full" style={{ width: `${iso27001?.compliance_rate ?? 0}%` }} />
                     </div>
                 </div>
 
-                <div className="border-border rounded-[14px] border bg-white p-5 shadow-sm">
-                    <div className="border-border flex items-center justify-between border-b pb-3">
+                <div className="border-border dark:border-slate-700 rounded-[14px] border bg-white dark:bg-slate-900 p-5 shadow-sm">
+                    <div className="border-border dark:border-slate-700 flex items-center justify-between border-b pb-3">
                         <h3 className="text-[15px] font-bold">{iso27701?.nama ?? 'ISO/IEC 27701:2019'}</h3>
-                        <span className="border-navy/15 bg-navy/5 text-navy rounded-[6px] border px-2 py-0.5 text-xs font-semibold">
+                        <span className="border-navy/15 dark:border-white/10 bg-navy/5 dark:bg-white/5 text-navy dark:text-white rounded-[6px] border px-2 py-0.5 text-xs font-semibold">
                             v{iso27701?.versi ?? '2019'}
                         </span>
                     </div>
                     <div className="flex items-center justify-between pt-4">
-                        <strong className="text-navy text-[13.5px]">{t('dashboard.compliance')}</strong>
-                        <span className="text-navy text-xs font-bold">
+                        <strong className="text-navy dark:text-white text-[13.5px]">{t('dashboard.compliance')}</strong>
+                        <span className="text-navy dark:text-white text-xs font-bold">
                             {iso27701?.compliance_rate ?? 0}% · {iso27701?.compliant_count ?? 0}/{iso27701?.total_controls ?? 0}{' '}
                             {t('dashboard.controls')}
                         </span>
                     </div>
-                    <div className="bg-surface-2 mt-2 h-2 w-full overflow-hidden rounded-full">
+                    <div className="bg-surface-2 dark:bg-slate-800 mt-2 h-2 w-full overflow-hidden rounded-full">
                         <div className="bg-warning h-full rounded-full" style={{ width: `${iso27701?.compliance_rate ?? 0}%` }} />
                     </div>
                 </div>
@@ -228,11 +228,11 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
 
             {/* Row 3: Tren + Asesmen Risiko */}
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-7">
-                <div className="border-border rounded-[14px] border bg-white shadow-sm lg:col-span-4">
-                    <div className="border-border flex items-center justify-between border-b px-5 py-4">
+                <div className="border-border dark:border-slate-700 rounded-[14px] border bg-white dark:bg-slate-900 shadow-sm lg:col-span-4">
+                    <div className="border-border dark:border-slate-700 flex items-center justify-between border-b px-5 py-4">
                         <h3>{t('dashboard.trend')}</h3>
                         <div className="flex items-center gap-4">
-                            <span className="text-body flex items-center gap-1.5 text-xs">
+                            <span className="text-body dark:text-slate-300 flex items-center gap-1.5 text-xs">
                                 <span className="bg-primary h-2.5 w-2.5 rounded-full" /> {t('dashboard.compliance')}
                             </span>
                         </div>
@@ -254,9 +254,9 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                                 </defs>
                                 {[0, 1, 2, 3].map((g) => {
                                     const y = chartPadT + (chartInnerH * g) / 4;
-                                    return <line key={g} x1={chartPadL} y1={y} x2={chartW - chartPadR} y2={y} stroke="#E3E9F0" strokeWidth="1" />;
+                                    return <line key={g} x1={chartPadL} y1={y} x2={chartW - chartPadR} y2={y} stroke="#E3E9F0" className="dark:stroke-slate-800" strokeWidth="1" />;
                                 })}
-                                <line x1={chartPadL} y1={chartPadT} x2={chartPadL} y2={chartPadT + chartInnerH} stroke="#E3E9F0" strokeWidth="1" />
+                                <line x1={chartPadL} y1={chartPadT} x2={chartPadL} y2={chartPadT + chartInnerH} stroke="#E3E9F0" className="dark:stroke-slate-800" strokeWidth="1" />
                                 {areaPath && <path d={areaPath} fill="url(#areaFill)" />}
                                 {linePoints && (
                                     <polyline
@@ -269,18 +269,18 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                                     />
                                 )}
                                 {trendValues.map((v, i) => (
-                                    <g key={i} fill="#fff" stroke="#196ECD" strokeWidth="2.5">
+                                    <g key={i} fill="#fff" className="dark:fill-slate-900" stroke="#196ECD" strokeWidth="2.5">
                                         <circle cx={chartX(i)} cy={chartY(v)} r="4" />
                                     </g>
                                 ))}
-                                <g fill="#8798AB" fontFamily="Inter, sans-serif" fontSize="10.5" textAnchor="middle">
+                                <g fill="#8798AB" className="dark:fill-slate-500" fontFamily="Inter, sans-serif" fontSize="10.5" textAnchor="middle">
                                     {trendLabels.map((label, i) => (
                                         <text key={label + i} x={chartX(i)} y={chartH - 8}>
                                             {label}
                                         </text>
                                     ))}
                                 </g>
-                                <g fill="#8798AB" fontFamily="Inter, sans-serif" fontSize="10" textAnchor="end">
+                                <g fill="#8798AB" className="dark:fill-slate-500" fontFamily="Inter, sans-serif" fontSize="10" textAnchor="end">
                                     {[100, 80, 60, 40, 20, 0].map((p) => (
                                         <text key={p} x={chartPadL - 8} y={chartY(p) + 3}>
                                             {p}%
@@ -289,15 +289,15 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                                 </g>
                             </svg>
                         ) : (
-                            <div className="text-muted flex h-[230px] items-center justify-center text-sm">{t('common.noData')}</div>
+                            <div className="text-muted dark:text-slate-400 flex h-[230px] items-center justify-center text-sm">{t('common.noData')}</div>
                         )}
                     </div>
                 </div>
 
-                <div className="border-border rounded-[14px] border bg-white shadow-sm lg:col-span-3">
-                    <div className="border-border flex items-center justify-between border-b px-5 py-4">
+                <div className="border-border dark:border-slate-700 rounded-[14px] border bg-white dark:bg-slate-900 shadow-sm lg:col-span-3">
+                    <div className="border-border dark:border-slate-700 flex items-center justify-between border-b px-5 py-4">
                         <h3>{t('dashboard.riskAssessment')}</h3>
-                        <a href="#" className="text-primary hover:text-primary-700 text-xs font-semibold">
+                        <a href="#" className="text-primary hover:text-primary-700 dark:hover:text-primary-200 text-xs font-semibold">
                             {t('dashboard.riskRegister')}
                         </a>
                     </div>
@@ -309,19 +309,19 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                                 { label: t('status.high'), value: risks.high, color: 'linear-gradient(180deg,#D15A4A,#E8947A)' },
                             ].map((b) => (
                                 <div key={b.label} className="flex w-12 flex-col items-center gap-1">
-                                    <span className="text-navy text-xs font-bold">{b.value}</span>
+                                    <span className="text-navy dark:text-white text-xs font-bold">{b.value}</span>
                                     <div
                                         className="w-full rounded-t-[8px]"
                                         style={{ height: `${Math.max(6, b.value * 18)}px`, background: b.color }}
                                     />
-                                    <span className="text-muted text-[11px]">{b.label}</span>
+                                    <span className="text-muted dark:text-slate-400 text-[11px]">{b.label}</span>
                                 </div>
                             ))}
                         </div>
                         {risks.critical > 0 && (
-                            <div className="border-danger-border bg-danger-bg mt-3.5 rounded-[10px] border px-3.5 py-2.5 text-xs">
-                                <strong className="text-danger">RISK-CRITICAL</strong>{' '}
-                                <span className="text-danger/80">
+                            <div className="border-danger-border dark:border-red-800 bg-danger-bg mt-3.5 rounded-[10px] border px-3.5 py-2.5 text-xs">
+                                <strong className="text-danger dark:text-red-400">RISK-CRITICAL</strong>{' '}
+                                <span className="text-danger/80 dark:text-red-400/80">
                                     {risks.critical} {t('status.critical').toLowerCase()} — {t('dashboard.mitigationInProgress')}.
                                 </span>
                             </div>
@@ -331,16 +331,16 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
             </div>
 
             {/* Row 4: Audit Terbaru */}
-            <div className="border-border overflow-hidden rounded-[14px] border bg-white shadow-sm">
-                <div className="border-border flex items-center justify-between border-b px-5 py-4">
+            <div className="border-border dark:border-slate-700 overflow-hidden rounded-[14px] border bg-white dark:bg-slate-900 shadow-sm">
+                <div className="border-border dark:border-slate-700 flex items-center justify-between border-b px-5 py-4">
                     <h3>{t('dashboard.recentAudit')}</h3>
-                    <a href="#" className="text-primary hover:text-primary-700 text-xs font-semibold">
+                    <a href="#" className="text-primary hover:text-primary-700 dark:hover:text-primary-200 text-xs font-semibold">
                         {t('common.viewAll')}
                     </a>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm">
-                        <thead className="border-border bg-surface/60 text-muted border-b text-[11px] font-bold tracking-wider uppercase">
+                        <thead className="border-border dark:border-slate-700 bg-surface/60 dark:bg-slate-900/60 text-muted dark:text-slate-400 border-b text-[11px] font-bold tracking-wider uppercase">
                             <tr>
                                 <th scope="col" className="px-5 py-3 font-semibold">
                                     {t('dashboard.time')}
@@ -359,19 +359,19 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                                 </th>
                             </tr>
                         </thead>
-                        <tbody className="divide-border divide-y">
+                        <tbody className="divide-border dark:divide-slate-700 divide-y">
                             {recent_activities.length > 0 ? (
                                 recent_activities.map((act) => (
-                                    <tr key={act.id} className="hover:bg-surface/50 transition-colors">
-                                        <td className="text-muted px-5 py-3.5 text-xs whitespace-nowrap">{act.time_ago}</td>
-                                        <td className="text-navy px-5 py-3.5 text-sm font-medium whitespace-nowrap">{act.actor_name}</td>
+                                    <tr key={act.id} className="hover:bg-surface/50 dark:hover:bg-slate-800/50 transition-colors">
+                                        <td className="text-muted dark:text-slate-400 px-5 py-3.5 text-xs whitespace-nowrap">{act.time_ago}</td>
+                                        <td className="text-navy dark:text-white px-5 py-3.5 text-sm font-medium whitespace-nowrap">{act.actor_name}</td>
                                         <td className="px-5 py-3.5">
-                                            <span className="text-navy block text-sm font-semibold">{act.action}</span>
-                                            <span className="text-muted block text-xs">{act.entity_name}</span>
+                                            <span className="text-navy dark:text-white block text-sm font-semibold">{act.action}</span>
+                                            <span className="text-muted dark:text-slate-400 block text-xs">{act.entity_name}</span>
                                         </td>
-                                        <td className="text-body px-5 py-3.5 text-sm whitespace-nowrap">{act.actor_role}</td>
+                                        <td className="text-body dark:text-slate-300 px-5 py-3.5 text-sm whitespace-nowrap">{act.actor_role}</td>
                                         <td className="px-5 py-3.5">
-                                            <span className="border-info/20 bg-info-bg text-info inline-flex items-center rounded-[6px] border px-2 py-0.5 text-xs font-semibold">
+                                            <span className="border-info/20 bg-info-bg text-info dark:text-sky-400 inline-flex items-center rounded-[6px] border px-2 py-0.5 text-xs font-semibold">
                                                 {t('dashboard.pending')}
                                             </span>
                                         </td>
@@ -379,7 +379,7 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={5} className="text-muted px-5 py-10 text-center text-sm">
+                                    <td colSpan={5} className="text-muted dark:text-slate-400 px-5 py-10 text-center text-sm">
                                         {t('common.noData')}
                                     </td>
                                 </tr>
@@ -390,42 +390,42 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
             </div>
 
             {/* Row 5: Tindakan yang Harus Dilakukan */}
-            <div className="border-border rounded-[14px] border bg-white shadow-sm">
-                <div className="border-border flex items-center justify-between border-b px-5 py-4">
+            <div className="border-border dark:border-slate-700 rounded-[14px] border bg-white dark:bg-slate-900 shadow-sm">
+                <div className="border-border dark:border-slate-700 flex items-center justify-between border-b px-5 py-4">
                     <h3>{t('dashboard.todo')}</h3>
-                    <span className="bg-surface-2 text-muted rounded-full px-2.5 py-0.5 text-xs font-semibold">
+                    <span className="bg-surface-2 dark:bg-slate-800 text-muted dark:text-slate-400 rounded-full px-2.5 py-0.5 text-xs font-semibold">
                         {findings.total_active + risks.total_active} {t('dashboard.actionsPending')}
                     </span>
                 </div>
-                <div className="divide-border divide-y">
+                <div className="divide-border dark:divide-slate-700 divide-y">
                     <div className="flex items-center gap-3 px-5 py-3.5">
-                        <div className="bg-primary-50 text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]">
+                        <div className="bg-primary-50 dark:bg-primary/10 text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]">
                             <CheckCircle2 className="h-[18px] w-[18px]" />
                         </div>
                         <div className="min-w-0 flex-1">
-                            <strong className="text-navy block text-sm">
+                            <strong className="text-navy dark:text-white block text-sm">
                                 {findings.total_active} {t('status.open')} {t('status.observation').toLowerCase()}
                             </strong>
-                            <span className="text-muted block text-xs">{findings.overdue} overdue</span>
+                            <span className="text-muted dark:text-slate-400 block text-xs">{findings.overdue} overdue</span>
                         </div>
-                        <span className="border-warning-border bg-warning-bg text-warning rounded-[6px] border px-2 py-0.5 text-xs font-semibold">
+                        <span className="border-warning-border dark:border-amber-800 bg-warning-bg text-warning dark:text-amber-400 rounded-[6px] border px-2 py-0.5 text-xs font-semibold">
                             {t('dashboard.pending')}
                         </span>
                     </div>
                     <div className="flex items-center gap-3 px-5 py-3.5">
-                        <div className="bg-danger-bg text-danger flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]">
+                        <div className="bg-danger-bg text-danger dark:text-red-400 flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]">
                             <ShieldAlert className="h-[18px] w-[18px]" />
                         </div>
                         <div className="min-w-0 flex-1">
-                            <strong className="text-navy block text-sm">
+                            <strong className="text-navy dark:text-white block text-sm">
                                 {risks.total_active} {t('dashboard.riskAssessment').toLowerCase()}
                             </strong>
-                            <span className="text-muted block text-xs">
+                            <span className="text-muted dark:text-slate-400 block text-xs">
                                 {risks.critical} {t('status.critical').toLowerCase()} · {risks.high} {t('status.high').toLowerCase()} · {risks.medium}{' '}
                                 {t('status.medium').toLowerCase()}
                             </span>
                         </div>
-                        <span className="border-danger-border bg-danger-bg text-danger rounded-[6px] border px-2 py-0.5 text-xs font-semibold">
+                        <span className="border-danger-border dark:border-red-800 bg-danger-bg text-danger dark:text-red-400 rounded-[6px] border px-2 py-0.5 text-xs font-semibold">
                             {t('status.open')}
                         </span>
                     </div>

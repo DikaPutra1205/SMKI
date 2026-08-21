@@ -3,6 +3,8 @@
 
 @plugin 'tailwindcss-animate';
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 
 @theme {
@@ -84,9 +86,13 @@
     h6 {
         font-family: var(--font-heading);
         color: var(--color-navy);
+
+        .dark & {
+            color: var(--color-primary-200);
+        }
     }
 
     body {
-        @apply text-body bg-white antialiased;
+        @apply text-body bg-white antialiased dark:bg-[#00101f] dark:text-slate-300;
     }
 }
