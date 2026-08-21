@@ -113,6 +113,28 @@ class NavigationService
                 'denies'      => ['work-unit.view'],
             ],
 
+            [
+                'label'       => 'Audit Log',
+                'url'         => '/admin/kepatuhan/audit-logs',
+                'icon'        => 'History',
+                'permissions' => ['audit-log.view'],
+                'denies'      => ['work-unit.view'],
+            ],
+            [
+                'label'       => 'Findings',
+                'url'         => '/admin/kepatuhan/findings',
+                'icon'        => 'AlertCircle',
+                'permissions' => ['finding.view'],
+                'denies'      => ['work-unit.view'],
+            ],
+            [
+                'label'       => 'Risks',
+                'url'         => '/admin/kepatuhan/risks',
+                'icon'        => 'AlertTriangle',
+                'permissions' => ['risk.view'],
+                'denies'      => ['work-unit.view'],
+            ],
+
             // ── PIC Satuan Kerja ──────────────────────────────────────
             [
                 'label'       => 'Assessment',
