@@ -6,6 +6,8 @@ use App\Models\Framework;
 use App\Models\User;
 use App\Models\WorkUnit;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class FrameworkApiTest extends TestCase
@@ -58,8 +60,9 @@ class FrameworkApiTest extends TestCase
         $this->assertDatabaseHas('frameworks', ['nama' => 'ISO 27701:2019', 'versi' => '2019']);
     }
 
-    // url_file is nullable|url — valid URL must persist.
-    public function test_store_accepts_and_persists_valid_url_file(): void
+    // Manual url_file paste was replaced by document upload — the field must be
+    // ignored (not validated, not persisted) on both Web and API surfaces.
+    public function test_store_ignores_manual_url_file_field(): void
     {
         $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
 
@@ -70,9 +73,27 @@ class FrameworkApiTest extends TestCase
                 'url_file' => 'https://example.com/iso27001.pdf',
             ])
             ->assertCreated()
-            ->assertJsonPath('data.url_file', 'https://example.com/iso27001.pdf');
+            ->assertJsonPath('data.url_file', null);
 
-        $this->assertDatabaseHas('frameworks', ['nama' => 'ISO 27001:2022', 'url_file' => 'https://example.com/iso27001.pdf']);
+        $this->assertDatabaseHas('frameworks', ['nama' => 'ISO 27001:2022', 'url_file' => null]);
+    }
+
+    public function test_store_accepts_document_upload(): void
+    {
+        Storage::fake('frameworks');
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+
+        $this->actingAs($admin)
+            ->postJson('/api/frameworks', [
+                'nama' => 'ISO 27001:2022',
+                'versi' => '2022',
+                'file_dokumen' => UploadedFile::fake()->createWithContent('iso-27001.pdf', "%PDF-1.4\ncontent"),
+            ])
+            ->assertCreated();
+
+        $framework = Framework::query()->where('nama', 'ISO 27001:2022')->firstOrFail();
+        $this->assertStringStartsWith('frameworks/', $framework->getRawOriginal('url_file'));
+        Storage::disk('frameworks')->assertExists($framework->getRawOriginal('url_file'));
     }
 
     public function test_store_rejects_missing_nama(): void
@@ -90,19 +111,6 @@ class FrameworkApiTest extends TestCase
 
         $this->actingAs($admin)
             ->postJson('/api/frameworks', ['nama' => 'ISO 27001:2022'])
-            ->assertStatus(422);
-    }
-
-    public function test_store_rejects_invalid_url_file(): void
-    {
-        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
-
-        $this->actingAs($admin)
-            ->postJson('/api/frameworks', [
-                'nama' => 'ISO 27001:2022',
-                'versi' => '2022',
-                'url_file' => 'not-a-url',
-            ])
             ->assertStatus(422);
     }
 
@@ -183,15 +191,17 @@ class FrameworkApiTest extends TestCase
         ]);
     }
 
-    // sometimes|url — update must reject a non-URL url_file.
-    public function test_update_rejects_invalid_url_file(): void
+    // Manual url_file paste is ignored on update — existing document must be kept.
+    public function test_update_ignores_manual_url_file_field(): void
     {
         $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
         $framework = Framework::create(['nama' => 'ISO 27001:2022', 'versi' => '2022']);
 
         $this->actingAs($admin)
             ->patchJson("/api/frameworks/{$framework->id}", ['url_file' => 'broken'])
-            ->assertStatus(422);
+            ->assertOk();
+
+        $this->assertDatabaseHas('frameworks', ['id' => $framework->id, 'url_file' => null]);
     }
 
     public function test_destroy_soft_deletes_framework(): void

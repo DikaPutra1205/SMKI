@@ -41,7 +41,7 @@ class FrameworksSheet implements Export, FromCollection, ShouldAutoSize, WithHea
         return [
             $framework->nama,
             $framework->versi,
-            $framework->url_file ?? '',
+            $framework->getRawOriginal('url_file') ?? '',
         ];
     }
 

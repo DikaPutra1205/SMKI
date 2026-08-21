@@ -6,7 +6,7 @@ import { Toast } from '@/components/ui/Toast';
 import AppLayout from '@/layouts/AppLayout';
 import { t } from '@/lib/i18n';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { Database, ExternalLink, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { Database, ExternalLink, Pencil, Plus, Search, Trash2, Upload } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 interface FrameworkItem {
@@ -14,6 +14,7 @@ interface FrameworkItem {
     nama: string;
     versi: string;
     url_file: string | null;
+    nama_file: string | null;
     controls_count: number;
 }
 
@@ -24,12 +25,11 @@ interface FrameworksProps {
 
 type ModalMode = 'create' | 'edit' | null;
 
-interface FrameworkFormData {
+type FrameworkFormData = {
     nama: string;
     versi: string;
-    url_file: string;
-    [key: string]: string;
-}
+    file_dokumen: File | null;
+};
 
 export default function Frameworks({ frameworks = [], filters = {} }: FrameworksProps) {
     const [searchQuery, setSearchQuery] = useState(filters.search || '');
@@ -49,6 +49,8 @@ export default function Frameworks({ frameworks = [], filters = {} }: Frameworks
 
     const [modalMode, setModalMode] = useState<ModalMode>(null);
     const [editingId, setEditingId] = useState<number | null>(null);
+    const [selectedFileName, setSelectedFileName] = useState('');
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<FrameworkItem | null>(null);
@@ -57,12 +59,13 @@ export default function Frameworks({ frameworks = [], filters = {} }: Frameworks
     const form = useForm<FrameworkFormData>({
         nama: '',
         versi: '',
-        url_file: '',
+        file_dokumen: null,
     });
 
     function openCreate() {
         form.reset();
         form.clearErrors();
+        setSelectedFileName('');
         setEditingId(null);
         setModalMode('create');
     }
@@ -71,8 +74,9 @@ export default function Frameworks({ frameworks = [], filters = {} }: Frameworks
         form.setData({
             nama: item.nama,
             versi: item.versi,
-            url_file: item.url_file ?? '',
+            file_dokumen: null,
         });
+        setSelectedFileName(item.nama_file ?? '');
         form.clearErrors();
         setEditingId(item.id);
         setModalMode('edit');
@@ -81,6 +85,8 @@ export default function Frameworks({ frameworks = [], filters = {} }: Frameworks
     function closeModal() {
         setModalMode(null);
         setEditingId(null);
+        setSelectedFileName('');
+        if (fileInputRef.current) fileInputRef.current.value = '';
         form.reset();
         form.clearErrors();
     }
@@ -207,10 +213,10 @@ export default function Frameworks({ frameworks = [], filters = {} }: Frameworks
                                         href={item.url_file}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-primary mt-2 inline-flex items-center gap-1 text-xs hover:underline"
+                                        className="text-primary mt-2 inline-flex max-w-full items-center gap-1 text-xs hover:underline"
                                     >
-                                        {item.url_file.length > 36 ? item.url_file.slice(0, 36) + '...' : item.url_file}
-                                        <ExternalLink className="h-3 w-3" />
+                                        <span className="truncate">{item.nama_file ?? t('frameworks.viewDocument')}</span>
+                                        <ExternalLink className="h-3 w-3 shrink-0" />
                                     </a>
                                 )}
 
@@ -304,15 +310,34 @@ export default function Frameworks({ frameworks = [], filters = {} }: Frameworks
                     />
                     {form.errors.versi && <p className="text-danger text-[11px] font-medium">{form.errors.versi}</p>}
 
-                    <input
-                        type="url"
-                        value={form.data.url_file}
-                        onChange={(e) => form.setData('url_file', e.target.value)}
-                        placeholder={t('frameworks.urlPlaceholder')}
-                        aria-label={`${t('frameworks.urlLabel')} (${t('common.optional')})`}
-                        className="border-border-strong text-ink placeholder:text-faint focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white px-3 text-sm focus:ring-2 focus:outline-none"
-                    />
-                    {form.errors.url_file && <p className="text-danger text-[11px] font-medium">{form.errors.url_file}</p>}
+                    <div>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept=".pdf,.docx,.csv,.xlsx"
+                            className="hidden"
+                            onChange={(e) => {
+                                const file = e.target.files?.[0] ?? null;
+                                form.setData('file_dokumen', file);
+                                setSelectedFileName(file?.name ?? '');
+                            }}
+                        />
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="border-border-strong text-navy hover:bg-surface inline-flex items-center gap-1.5 rounded-[10px] border bg-white px-3 py-2 text-xs font-semibold transition-colors"
+                            >
+                                <Upload className="h-3.5 w-3.5" />
+                                {t('frameworks.chooseFile')}
+                            </button>
+                            <span className={`truncate text-xs ${selectedFileName ? 'text-body' : 'text-faint'}`}>
+                                {selectedFileName || t('frameworks.noFileSelected')}
+                            </span>
+                        </div>
+                        <p className="text-muted mt-1.5 text-[11px]">{t('frameworks.dokumenHint')}</p>
+                    </div>
+                    {form.errors.file_dokumen && <p className="text-danger text-[11px] font-medium">{form.errors.file_dokumen}</p>}
                 </form>
             </Modal>
 
