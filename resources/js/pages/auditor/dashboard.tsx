@@ -3,7 +3,7 @@ import RiskAssessment from '@/components/dashboards/RiskAssessment';
 import AppLayout from '@/layouts/AppLayout';
 import { t } from '@/lib/i18n';
 import { type SharedData } from '@/types';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import { CheckCircle2, ClipboardList, ShieldAlert, ShieldCheck, TrendingUp } from 'lucide-react';
 
 interface RecentActivity {
@@ -61,23 +61,11 @@ export default function AuditorDashboard({ summary, trends = [], recent_activiti
         <AppLayout breadcrumbs={breadcrumbs} currentPath="/admin/auditor/dashboard">
             <Head title="Dashboard Auditor" />
 
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">{t('dashboard.title')}</h1>
-                    <p className="text-muted dark:text-slate-400 text-sm">
-                        {t('dashboard.welcomeBack')}, <span className="text-navy dark:text-white font-semibold">{userName}</span>. {t('dashboard.subtitle')}.
-                    </p>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    <Link
-                        href="/admin/kepatuhan/compliance"
-                        className="bg-primary shadow-blue hover:bg-primary-700 inline-flex items-center gap-2 rounded-[10px] px-4 py-2 text-sm font-semibold text-white transition-colors"
-                    >
-                        <ShieldCheck className="h-4 w-4" />
-                        <span>{t('compliance.title')}</span>
-                    </Link>
-                </div>
+            <div>
+                <h1 className="text-2xl font-bold tracking-tight">{t('dashboard.title')}</h1>
+                <p className="text-muted dark:text-slate-400 text-sm">
+                    {t('dashboard.welcomeBack')}, <span className="text-navy dark:text-white font-semibold">{userName}</span>. {t('dashboard.subtitle')}.
+                </p>
             </div>
 
             {/* Row 1: KPI */}
