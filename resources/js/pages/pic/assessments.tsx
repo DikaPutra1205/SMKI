@@ -81,19 +81,9 @@ export default function Assessments({ sessions, user_unit }: AssessmentsProps) {
                 </div>
             )}
 
-            <div className="mb-6 flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Daftar Assessment</h1>
-                    <p className="mt-1 text-sm text-slate-500">Pengecekan Mandiri Kepatuhan &middot; {user_unit?.nama}</p>
-                </div>
-                <button
-                    type="button"
-                    onClick={() => setShowModal(true)}
-                    className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
-                >
-                    <Plus className="h-4 w-4" />
-                    Buat Assessment Baru
-                </button>
+            <div className="mb-6">
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Daftar Assessment</h1>
+                <p className="mt-1 text-sm text-slate-500">Pengecekan Mandiri Kepatuhan &middot; {user_unit?.nama}</p>
             </div>
 
             {sorted.length === 0 ? (
