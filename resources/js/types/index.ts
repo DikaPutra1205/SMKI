@@ -49,6 +49,8 @@ export interface User {
     email: string;
     avatar?: string;
     role?: string;
+    unit_id?: number | null;
+    unit?: { id: number; nama: string } | null;
     email_verified_at: string | null;
     created_at: string;
     updated_at: string;
