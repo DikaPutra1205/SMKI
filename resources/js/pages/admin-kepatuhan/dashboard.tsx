@@ -1,7 +1,9 @@
+import { ActivitySkeleton } from '@/components/skeletons/ActivitySkeleton';
+import { ChartSkeleton } from '@/components/skeletons/ChartSkeleton';
 import AppLayout from '@/layouts/AppLayout';
 import { formatDateIndonesian, formatDateTimeIndonesian } from '@/lib/utils';
 import { type SharedData } from '@/types';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Deferred, Head, Link, usePage } from '@inertiajs/react';
 import { AlertCircle, ArrowUpRight, Clock, FileCheck, Layers, Shield, ShieldAlert, ShieldCheck, TrendingUp } from 'lucide-react';
 import { useMemo } from 'react';
 
@@ -325,66 +327,68 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                     </div>
 
                     <div className="pt-4">
-                        <svg className="h-[200px] w-full" viewBox={`0 0 ${chartW} ${chartH}`} preserveAspectRatio="none" role="img">
-                            <defs>
-                                <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stopColor="#2563eb" stopOpacity="0.25" />
-                                    <stop offset="100%" stopColor="#2563eb" stopOpacity="0.0" />
-                                </linearGradient>
-                            </defs>
-                            {[0, 1, 2, 3].map((g) => {
-                                const y = chartPadT + (chartInnerH * g) / 3;
-                                return (
-                                    <line
-                                        key={g}
-                                        x1={chartPadL}
-                                        y1={y}
-                                        x2={chartW - chartPadR}
-                                        y2={y}
-                                        stroke="#f1f5f9"
-                                        className="dark:stroke-slate-800"
-                                        strokeWidth="1"
+                        <Deferred data="trends" fallback={<ChartSkeleton height="h-[200px]" />}>
+                            <svg className="h-[200px] w-full" viewBox={`0 0 ${chartW} ${chartH}`} preserveAspectRatio="none" role="img">
+                                <defs>
+                                    <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stopColor="#2563eb" stopOpacity="0.25" />
+                                        <stop offset="100%" stopColor="#2563eb" stopOpacity="0.0" />
+                                    </linearGradient>
+                                </defs>
+                                {[0, 1, 2, 3].map((g) => {
+                                    const y = chartPadT + (chartInnerH * g) / 3;
+                                    return (
+                                        <line
+                                            key={g}
+                                            x1={chartPadL}
+                                            y1={y}
+                                            x2={chartW - chartPadR}
+                                            y2={y}
+                                            stroke="#f1f5f9"
+                                            className="dark:stroke-slate-800"
+                                            strokeWidth="1"
+                                        />
+                                    );
+                                })}
+                                {areaPath && <path d={areaPath} fill="url(#areaGradient)" />}
+                                {linePoints && (
+                                    <polyline
+                                        points={linePoints}
+                                        fill="none"
+                                        stroke="#2563eb"
+                                        strokeWidth="2.5"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
                                     />
-                                );
-                            })}
-                            {areaPath && <path d={areaPath} fill="url(#areaGradient)" />}
-                            {linePoints && (
-                                <polyline
-                                    points={linePoints}
-                                    fill="none"
-                                    stroke="#2563eb"
-                                    strokeWidth="2.5"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                />
-                            )}
-                            {trendValues.map((v, i) => (
-                                <circle
-                                    key={i}
-                                    cx={chartX(i)}
-                                    cy={chartY(v)}
-                                    r="4"
-                                    className="fill-white stroke-blue-600 dark:fill-slate-900"
-                                    strokeWidth="2"
-                                />
-                            ))}
-                            {/* X-axis Labels */}
-                            <g fill="#94a3b8" className="dark:fill-slate-500" fontSize="10.5" fontWeight="500" textAnchor="middle">
-                                {trendLabels.map((label, i) => (
-                                    <text key={label + i} x={chartX(i)} y={chartH - 8}>
-                                        {label}
-                                    </text>
+                                )}
+                                {trendValues.map((v, i) => (
+                                    <circle
+                                        key={i}
+                                        cx={chartX(i)}
+                                        cy={chartY(v)}
+                                        r="4"
+                                        className="fill-white stroke-blue-600 dark:fill-slate-900"
+                                        strokeWidth="2"
+                                    />
                                 ))}
-                            </g>
-                            {/* Y-axis Labels */}
-                            <g fill="#94a3b8" className="dark:fill-slate-500" fontSize="10" fontWeight="500" textAnchor="end">
-                                {[100, 75, 50, 25, 0].map((p) => (
-                                    <text key={p} x={chartPadL - 8} y={chartY(p) + 3}>
-                                        {p}%
-                                    </text>
-                                ))}
-                            </g>
-                        </svg>
+                                {/* X-axis Labels */}
+                                <g fill="#94a3b8" className="dark:fill-slate-500" fontSize="10.5" fontWeight="500" textAnchor="middle">
+                                    {trendLabels.map((label, i) => (
+                                        <text key={label + i} x={chartX(i)} y={chartH - 8}>
+                                            {label}
+                                        </text>
+                                    ))}
+                                </g>
+                                {/* Y-axis Labels */}
+                                <g fill="#94a3b8" className="dark:fill-slate-500" fontSize="10" fontWeight="500" textAnchor="end">
+                                    {[100, 75, 50, 25, 0].map((p) => (
+                                        <text key={p} x={chartPadL - 8} y={chartY(p) + 3}>
+                                            {p}%
+                                        </text>
+                                    ))}
+                                </g>
+                            </svg>
+                        </Deferred>
                     </div>
                 </div>
 
@@ -554,47 +558,49 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                     </div>
 
                     <div className="mt-3 flex-1 overflow-x-auto">
-                        <table className="w-full text-left text-xs">
-                            <thead className="border-b border-slate-100 text-[11px] font-bold tracking-wider text-slate-500 uppercase dark:border-slate-800 dark:text-slate-400">
-                                <tr>
-                                    <th className="py-2.5 pr-3">Waktu</th>
-                                    <th className="px-3 py-2.5">Pengguna</th>
-                                    <th className="px-3 py-2.5">Aktivitas</th>
-                                    <th className="py-2.5 pl-3 text-right">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                                {recent_activities.length > 0 ? (
-                                    recent_activities.slice(0, 5).map((act) => (
-                                        <tr key={act.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
-                                            <td className="py-3 pr-3 whitespace-nowrap text-slate-500 dark:text-slate-400">
-                                                {act.created_at ? formatDateTimeIndonesian(act.created_at) : act.time_ago}
-                                            </td>
-                                            <td className="px-3 py-3 font-semibold whitespace-nowrap text-slate-900 dark:text-white">
-                                                {act.actor_name}
-                                            </td>
-                                            <td className="px-3 py-3 text-slate-700 dark:text-slate-300">
-                                                <span className="font-medium">{act.action}</span>
-                                                {act.entity_name && (
-                                                    <span className="block text-[11px] text-slate-400 dark:text-slate-500">{act.entity_name}</span>
-                                                )}
-                                            </td>
-                                            <td className="py-3 pl-3 text-right whitespace-nowrap">
-                                                <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
-                                                    Tercatat
-                                                </span>
+                        <Deferred data="recent_activities" fallback={<ActivitySkeleton count={5} />}>
+                            <table className="w-full text-left text-xs">
+                                <thead className="border-b border-slate-100 text-[11px] font-bold tracking-wider text-slate-500 uppercase dark:border-slate-800 dark:text-slate-400">
+                                    <tr>
+                                        <th className="py-2.5 pr-3">Waktu</th>
+                                        <th className="px-3 py-2.5">Pengguna</th>
+                                        <th className="px-3 py-2.5">Aktivitas</th>
+                                        <th className="py-2.5 pl-3 text-right">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                                    {recent_activities.length > 0 ? (
+                                        recent_activities.slice(0, 5).map((act) => (
+                                            <tr key={act.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
+                                                <td className="py-3 pr-3 whitespace-nowrap text-slate-500 dark:text-slate-400">
+                                                    {act.created_at ? formatDateTimeIndonesian(act.created_at) : act.time_ago}
+                                                </td>
+                                                <td className="px-3 py-3 font-semibold whitespace-nowrap text-slate-900 dark:text-white">
+                                                    {act.actor_name}
+                                                </td>
+                                                <td className="px-3 py-3 text-slate-700 dark:text-slate-300">
+                                                    <span className="font-medium">{act.action}</span>
+                                                    {act.entity_name && (
+                                                        <span className="block text-[11px] text-slate-400 dark:text-slate-500">{act.entity_name}</span>
+                                                    )}
+                                                </td>
+                                                <td className="py-3 pl-3 text-right whitespace-nowrap">
+                                                    <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
+                                                        Tercatat
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan={4} className="py-8 text-center text-xs text-slate-500 dark:text-slate-400">
+                                                Belum ada log aktivitas baru.
                                             </td>
                                         </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan={4} className="py-8 text-center text-xs text-slate-500 dark:text-slate-400">
-                                            Belum ada log aktivitas baru.
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
+                                    )}
+                                </tbody>
+                            </table>
+                        </Deferred>
                     </div>
                 </div>
             </div>
