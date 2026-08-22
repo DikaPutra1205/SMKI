@@ -15,7 +15,7 @@ export default function RiskAssessment({ risks, riskRegisterLabel = 'Buka regist
             <div className="border-border flex items-center justify-between border-b px-5 py-4 dark:border-slate-700">
                 <h3>{t('dashboard.riskAssessment')}</h3>
                 <a
-                    href={`/admin/kepatuhan/findings?status=${riskRegisterLabel}`}
+                    href={`/admin/kepatuhan/temuan?status=${riskRegisterLabel}`}
                     className="text-primary hover:text-primary-700 dark:hover:text-primary-200 text-xs font-semibold"
                 >
                     {t('dashboard.riskRegister')}

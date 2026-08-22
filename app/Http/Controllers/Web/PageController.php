@@ -32,9 +32,9 @@ class PageController extends Controller
         return $this->render($request, 'roles');
     }
 
-    public function assessments(Request $request)
+    public function checklist(Request $request)
     {
-        return $this->render($request, 'assessments');
+        return $this->render($request, 'checklist');
     }
 
     public function compliance(Request $request)
@@ -42,9 +42,9 @@ class PageController extends Controller
         return $this->render($request, 'compliance');
     }
 
-    public function findings(Request $request)
+    public function temuan(Request $request)
     {
-        return $this->render($request, 'findings');
+        return $this->render($request, 'temuan');
     }
 
     public function risks(Request $request)
@@ -74,9 +74,9 @@ class PageController extends Controller
             'frameworks' => app(FrameworkController::class)->index($request),
             'users' => app(UserController::class)->index($request),
             'roles' => app(RoleController::class)->index($request),
-            'assessments' => app(ChecklistSessionController::class)->index($request),
+            'checklist' => app(ChecklistSessionController::class)->index($request),
             'compliance' => app(ComplianceController::class)->index($request),
-            'findings' => app(ComplianceOfficerController::class)->findings($request),
+            'temuan' => app(ComplianceOfficerController::class)->temuan($request),
             'risks' => app(ComplianceOfficerController::class)->risks($request),
             'audit-logs' => app(AuditLogController::class)->index($request),
             default => Inertia::render($resolution->component ?? 'welcome'),

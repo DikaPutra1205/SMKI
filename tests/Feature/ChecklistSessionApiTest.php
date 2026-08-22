@@ -277,9 +277,9 @@ class ChecklistSessionApiTest extends TestCase
         ]);
 
         $this->actingAs($pic)
-            ->from('/admin/pic/assessments')
-            ->post("/admin/pic/assessments/{$session->id}/submit")
-            ->assertRedirect('/admin/pic/assessments')
+            ->from('/admin/pic/checklist')
+            ->post("/admin/pic/checklist/{$session->id}/submit")
+            ->assertRedirect('/admin/pic/checklist')
             ->assertSessionHas('flash.type', 'error');
 
         // Filling the catatan lets the submit pass
@@ -287,9 +287,9 @@ class ChecklistSessionApiTest extends TestCase
         $entry->update(['catatan' => 'Terpenuhi sebagian, perbaikan berjalan.']);
 
         $this->actingAs($pic)
-            ->from('/admin/pic/assessments')
-            ->post("/admin/pic/assessments/{$session->id}/submit")
-            ->assertRedirect('/admin/pic/assessments')
+            ->from('/admin/pic/checklist')
+            ->post("/admin/pic/checklist/{$session->id}/submit")
+            ->assertRedirect('/admin/pic/checklist')
             ->assertSessionHas('flash.type', 'success');
     }
 
@@ -533,10 +533,10 @@ class ChecklistSessionApiTest extends TestCase
         ChecklistSession::create(['konteks_penilaian' => 'Sesi unit lain', 'unit_id' => $otherUnit->id, 'framework_id' => $fw->id]);
 
         $this->actingAs($pic)
-            ->get('/admin/pic/assessments')
+            ->get('/admin/pic/checklist')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('pic/assessments')
+                ->component('pic/checklist')
                 ->has('sessions', 1)
                 ->where('sessions.0.unit_id', $unit->id));
     }
@@ -547,7 +547,7 @@ class ChecklistSessionApiTest extends TestCase
         $otherUnit = WorkUnit::create(['nama' => 'Biro Keuangan']);
         $session = ChecklistSession::create(['konteks_penilaian' => 'Sesi unit lain', 'unit_id' => $otherUnit->id, 'framework_id' => $fw->id]);
 
-        $this->actingAs($pic)->get("/admin/pic/assessments/{$session->id}")->assertStatus(403);
+        $this->actingAs($pic)->get("/admin/pic/checklist/{$session->id}")->assertStatus(403);
     }
 
     // D-gap — web assessments.store validates unit_id as "exists" only: a PIC can
@@ -557,7 +557,7 @@ class ChecklistSessionApiTest extends TestCase
         extract($this->setupData());
         $otherUnit = WorkUnit::create(['nama' => 'Biro Keuangan']);
 
-        $res = $this->actingAs($pic)->post('/admin/pic/assessments', [
+        $res = $this->actingAs($pic)->post('/admin/pic/checklist', [
             'konteks_penilaian' => 'Sesi silang unit',
             'periode' => '2026-08',
             'unit_id' => $otherUnit->id,
@@ -579,8 +579,8 @@ class ChecklistSessionApiTest extends TestCase
         $session = ChecklistSession::create(['konteks_penilaian' => 'Sesi unit lain', 'unit_id' => $otherUnit->id, 'framework_id' => $fw->id]);
 
         $this->actingAs($pic)
-            ->from('/admin/pic/assessments')
-            ->patch("/admin/pic/assessments/{$session->id}", ['konteks_penilaian' => 'Diedit PIC luar'])
+            ->from('/admin/pic/checklist')
+            ->patch("/admin/pic/checklist/{$session->id}", ['konteks_penilaian' => 'Diedit PIC luar'])
             ->assertForbidden();
 
         $this->assertNotSame('Diedit PIC luar', $session->fresh()->konteks_penilaian);

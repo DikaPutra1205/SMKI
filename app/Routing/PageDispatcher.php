@@ -56,16 +56,16 @@ class PageDispatcher
             ],
             'default' => 'superadmin/roles',
         ],
-        'assessments' => [
+        'checklist' => [
             'permissions' => ['checklist-session.view'],
             'destinations' => [
-                'pic' => 'pic/assessments',
-                'superadmin' => 'pic/assessments',
-                'admin_kepatuhan' => 'pic/assessments',
-                'auditor' => 'pic/assessments',
-                'koordinator_smki' => 'pic/assessments',
+                'pic' => 'pic/checklist',
+                'superadmin' => 'pic/checklist',
+                'admin_kepatuhan' => 'pic/checklist',
+                'auditor' => 'pic/checklist',
+                'koordinator_smki' => 'pic/checklist',
             ],
-            'default' => 'pic/assessments',
+            'default' => 'pic/checklist',
         ],
         'compliance' => [
             'permissions' => ['control.view'],
@@ -75,13 +75,13 @@ class PageDispatcher
             ],
             'default' => 'kepatuhan/compliance',
         ],
-        'findings' => [
+        'temuan' => [
             'permissions' => ['finding.view'],
             'destinations' => [
-                'admin_kepatuhan' => 'kepatuhan/findings',
-                'superadmin' => 'kepatuhan/findings',
+                'admin_kepatuhan' => 'kepatuhan/temuan',
+                'superadmin' => 'kepatuhan/temuan',
             ],
-            'default' => 'kepatuhan/findings',
+            'default' => 'kepatuhan/temuan',
         ],
         'risks' => [
             'permissions' => ['risk.view'],

@@ -63,9 +63,9 @@ const SEVERITY_OPTIONS = ['major', 'minor', 'observasi'] as const;
 const STATUS_OPTIONS = ['open', 'in_progress', 'closed'] as const;
 
 const KANBAN_COLUMNS: Array<{ status: string; label: string; dotClass: string }> = [
-    { status: 'open', label: 'findings.open', dotClass: 'bg-danger' },
-    { status: 'in_progress', label: 'findings.inProgress', dotClass: 'bg-warning' },
-    { status: 'closed', label: 'findings.closed', dotClass: 'bg-success' },
+    { status: 'open', label: 'temuan.open', dotClass: 'bg-danger' },
+    { status: 'in_progress', label: 'temuan.inProgress', dotClass: 'bg-warning' },
+    { status: 'closed', label: 'temuan.closed', dotClass: 'bg-success' },
 ];
 
 const SEVERITY_TONE: Record<string, 'red' | 'amber' | 'blue'> = {
@@ -132,7 +132,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
         return () => clearTimeout(timer);
     }, [searchQuery, selectedSeverity, selectedStatus, selectedUnit]);
 
-    const breadcrumbs = [{ label: t('common.dashboard'), href: '/admin/kepatuhan/dashboard' }, { label: t('findings.title') }];
+    const breadcrumbs = [{ label: t('common.dashboard'), href: '/admin/kepatuhan/dashboard' }, { label: t('temuan.title') }];
 
     const groupByStatus = (status: string) => items.filter((f) => f.status === status);
 
@@ -141,7 +141,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
             return (
                 <span className="border-success-border bg-success-bg text-success inline-flex items-center gap-1.5 rounded-[6px] border px-2 py-1 text-[11px] font-semibold dark:border-emerald-800 dark:text-emerald-400">
                     <CheckCircle2 className="h-3 w-3" />
-                    {f.verified_at ? t('findings.verifiedOn', fmtDate(f.verified_at)) : t('findings.done')}
+                    {f.verified_at ? t('temuan.verifiedOn', fmtDate(f.verified_at)) : t('temuan.done')}
                 </span>
             );
         }
@@ -152,7 +152,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
             return (
                 <span className="border-danger-border bg-danger-bg text-danger inline-flex items-center gap-1.5 rounded-[6px] border px-2 py-1 text-[11px] font-semibold dark:border-red-800 dark:text-red-400">
                     <Clock className="h-3 w-3" />
-                    {t('findings.lateDays', Math.abs(f.days_remaining ?? 0))}
+                    {t('temuan.lateDays', Math.abs(f.days_remaining ?? 0))}
                 </span>
             );
         }
@@ -166,7 +166,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
         return (
             <span className={`inline-flex items-center gap-1.5 rounded-[6px] border px-2 py-1 text-[11px] font-semibold ${toneClass}`}>
                 <Clock className="h-3 w-3" />
-                {remaining === 0 ? t('findings.deadlineToday') : t('findings.leftDays', remaining)}
+                {remaining === 0 ? t('temuan.deadlineToday') : t('temuan.leftDays', remaining)}
             </span>
         );
     };
@@ -253,25 +253,25 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                     <thead className="border-border bg-surface/60 text-muted border-b text-[11px] font-bold tracking-wider uppercase dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-400">
                         <tr>
                             <th scope="col" className="px-5 py-3 text-left font-semibold">
-                                {t('findings.ref')}
+                                {t('temuan.ref')}
                             </th>
                             <th scope="col" className="px-5 py-3 text-left font-semibold">
-                                {t('findings.judul')}
+                                {t('temuan.judul')}
                             </th>
                             <th scope="col" className="px-5 py-3 text-left font-semibold">
-                                {t('findings.severity')}
+                                {t('temuan.severity')}
                             </th>
                             <th scope="col" className="px-5 py-3 text-left font-semibold">
-                                {t('findings.workUnit')}
+                                {t('temuan.workUnit')}
                             </th>
                             <th scope="col" className="px-5 py-3 text-left font-semibold">
-                                {t('findings.assignee')}
+                                {t('temuan.assignee')}
                             </th>
                             <th scope="col" className="px-5 py-3 text-left font-semibold">
-                                {t('findings.status')}
+                                {t('temuan.status')}
                             </th>
                             <th scope="col" className="px-5 py-3 text-left font-semibold">
-                                {t('findings.deadline')}
+                                {t('temuan.deadline')}
                             </th>
                         </tr>
                     </thead>
@@ -309,7 +309,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                         ) : (
                             <tr>
                                 <td colSpan={7}>
-                                    <EmptyState message={t('findings.noFindings')} />
+                                    <EmptyState message={t('temuan.noFindings')} />
                                 </td>
                             </tr>
                         )}
@@ -343,17 +343,17 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
 
     return (
         <AppLayout breadcrumbs={breadcrumbs} currentPath="/admin/kepatuhan/findings">
-            <Head title={`${t('findings.title')} - Admin Kepatuhan`} />
+            <Head title={`${t('temuan.title')} - Admin Kepatuhan`} />
 
             <div className="page-head flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">{t('findings.title')}</h1>
+                    <h1 className="text-2xl font-bold tracking-tight">{t('temuan.title')}</h1>
                     <p className="text-muted mt-1 text-xs sm:text-sm dark:text-slate-400">
-                        {t('findings.subtitle')}
+                        {t('temuan.subtitle')}
                         {items.some((f) => f.is_overdue) && (
                             <strong className="text-danger dark:text-red-400">
                                 {' '}
-                                · {items.filter((f) => f.is_overdue).length} {t('findings.overdue')}
+                                · {items.filter((f) => f.is_overdue).length} {t('temuan.overdue')}
                             </strong>
                         )}
                     </p>
@@ -372,7 +372,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                         }`}
                     >
                         <LayoutGrid className="h-3.5 w-3.5" />
-                        {t('findings.kanban')}
+                        {t('temuan.kanban')}
                     </button>
                     <button
                         type="button"
@@ -384,7 +384,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                         }`}
                     >
                         <ListIcon className="h-3.5 w-3.5" />
-                        {t('findings.list')}
+                        {t('temuan.list')}
                     </button>
                 </div>
 
@@ -394,13 +394,13 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder={t('findings.searchPlaceholder')}
+                        placeholder={t('temuan.searchPlaceholder')}
                         className="border-border-strong text-ink placeholder:text-faint focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white py-2 pr-4 pl-9 text-xs focus:ring-2 focus:outline-none sm:text-sm dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
                     />
                 </div>
 
                 <Select value={selectedSeverity} onChange={(e) => setSelectedSeverity(e.target.value)} className="min-w-[160px]">
-                    <option value="all">{t('findings.allSeverity')}</option>
+                    <option value="all">{t('temuan.allSeverity')}</option>
                     {SEVERITY_OPTIONS.map((s) => (
                         <option key={s} value={s}>
                             {severityLabel(s)}
@@ -409,7 +409,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                 </Select>
 
                 <Select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className="min-w-[170px]">
-                    <option value="all">{t('findings.allStatus')}</option>
+                    <option value="all">{t('temuan.allStatus')}</option>
                     {STATUS_OPTIONS.map((s) => (
                         <option key={s} value={s}>
                             {t(`status.${s}`)}
@@ -418,7 +418,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                 </Select>
 
                 <Select value={selectedUnit} onChange={(e) => setSelectedUnit(e.target.value)} className="min-w-[170px]">
-                    <option value="all">{t('findings.allUnits')}</option>
+                    <option value="all">{t('temuan.allUnits')}</option>
                     {workUnits.map((u) => (
                         <option key={u.id} value={String(u.id)}>
                             {u.nama}
@@ -455,7 +455,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
 
             <Modal
                 open={detailTarget !== null}
-                title={t('findings.detailTitle')}
+                title={t('temuan.detailTitle')}
                 description={detailTarget ? `FND-${findingRef(detailTarget)}` : undefined}
                 onClose={() => setDetailTarget(null)}
                 maxWidth="lg"
@@ -465,7 +465,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                         onClick={() => setDetailTarget(null)}
                         className="border-border-strong text-body hover:bg-surface rounded-[10px] border bg-white px-4 py-2 text-sm font-medium transition-colors dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
                     >
-                        {t('findings.close')}
+                        {t('temuan.close')}
                     </button>
                 }
             >
@@ -473,21 +473,21 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                     <div className="space-y-4">
                         <div className="border-border overflow-hidden rounded-[10px] border dark:border-slate-700">
                             <div className="border-border flex items-center justify-between border-b px-4 py-2.5 dark:border-slate-700">
-                                <span className="text-body text-[13px] font-medium dark:text-slate-300">{t('findings.controlLabel')}</span>
+                                <span className="text-body text-[13px] font-medium dark:text-slate-300">{t('temuan.controlLabel')}</span>
                                 <span className="text-navy max-w-[60%] text-right text-[13px] font-semibold dark:text-white">
                                     {detailTarget.control?.kode_klausul} — {detailTarget.control?.judul}
                                 </span>
                             </div>
                             <div className="border-border flex items-center justify-between border-b px-4 py-2.5 dark:border-slate-700">
-                                <span className="text-body text-[13px] font-medium dark:text-slate-300">{t('findings.unitLabel')}</span>
+                                <span className="text-body text-[13px] font-medium dark:text-slate-300">{t('temuan.unitLabel')}</span>
                                 <span className="text-navy text-[13px] font-semibold dark:text-white">{detailTarget.unit?.nama || '—'}</span>
                             </div>
                             <div className="border-border flex items-center justify-between border-b px-4 py-2.5 dark:border-slate-700">
-                                <span className="text-body text-[13px] font-medium dark:text-slate-300">{t('findings.picLabel')}</span>
+                                <span className="text-body text-[13px] font-medium dark:text-slate-300">{t('temuan.picLabel')}</span>
                                 <span className="text-navy text-[13px] font-semibold dark:text-white">{detailTarget.pic?.name || '—'}</span>
                             </div>
                             <div className="flex items-center justify-between px-4 py-2.5">
-                                <span className="text-body text-[13px] font-medium dark:text-slate-300">{t('findings.status')}</span>
+                                <span className="text-body text-[13px] font-medium dark:text-slate-300">{t('temuan.status')}</span>
                                 <StatusBadge tone={STATUS_TONE[detailTarget.status] ?? 'gray'}>
                                     {t(`status.${detailTarget.status as 'open' | 'in_progress' | 'closed'}`)}
                                 </StatusBadge>
@@ -495,7 +495,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                         </div>
 
                         <div>
-                            <h4 className="text-navy text-sm font-bold dark:text-white">{t('findings.severity')}</h4>
+                            <h4 className="text-navy text-sm font-bold dark:text-white">{t('temuan.severity')}</h4>
                             <div className="mt-2">
                                 <StatusBadge tone={SEVERITY_TONE[detailTarget.kategori] ?? 'gray'}>
                                     {severityLabel(detailTarget.kategori)}
@@ -505,7 +505,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
 
                         {detailTarget.admin_notes || detailTarget.catatan_admin ? (
                             <div>
-                                <h4 className="text-navy text-sm font-bold dark:text-white">{t('findings.notesLabel')}</h4>
+                                <h4 className="text-navy text-sm font-bold dark:text-white">{t('temuan.notesLabel')}</h4>
                                 <p className="text-body border-border bg-surface/50 mt-2 rounded-[10px] border p-3.5 text-[13px] leading-relaxed dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-300">
                                     {detailTarget.admin_notes || detailTarget.catatan_admin}
                                 </p>

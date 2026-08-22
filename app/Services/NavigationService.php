@@ -134,8 +134,8 @@ class NavigationService
 
             // ── PIC Satuan Kerja ──────────────────────────────────────
             [
-                'label' => 'Assessment',
-                'url' => '/assessments',
+                'label' => 'Checklist',
+                'url' => '/checklist',
                 'icon' => 'ClipboardCheck',
                 'permissions' => ['checklist-session.create'],
                 'denies' => ['control.view'],
@@ -144,7 +144,7 @@ class NavigationService
             // ── LANJOOT Satuan Kerja ──────────────────────────────────────
             [
                 'label' => 'Temuan',
-                'url' => '/findings',
+                'url' => '/temuan',
                 'icon' => 'AlertCircle',
                 'permissions' => ['finding.view'],
                 'denies' => ['work-unit.view'],

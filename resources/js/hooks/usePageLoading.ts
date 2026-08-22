@@ -9,11 +9,11 @@ import { useEffect, useRef, useState } from 'react';
  * and flash its own skeleton layout during the transition — the user saw the wrong
  * skeleton (source page's) instead of the destination page's.
  *
- * Now each page passes its own canonical path (e.g. "/admin/pic/assessments") so the
+ * Now each page passes its own canonical path (e.g. "/admin/pic/checklist") so the
  * skeleton only activates when this page IS the destination, never when navigating away.
  *
  * @param forPath  - The pathname (or prefix) this page lives at.
- *                   e.g. "/admin/pic/assessments"
+ *                   e.g. "/admin/pic/checklist"
  *                   Pass nothing (or "") to get the old global behaviour (avoid this).
  */
 export function usePageLoading(forPath?: string): boolean {
