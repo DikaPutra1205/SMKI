@@ -1,12 +1,25 @@
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
 import { Select } from '@/components/ui/Select';
+import { SlideOver } from '@/components/ui/SlideOver';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import AppLayout from '@/layouts/AppLayout';
 import { t } from '@/lib/i18n';
+import { formatDateIndonesian, formatDateTimeIndonesian } from '@/lib/utils';
 import { Head, router } from '@inertiajs/react';
-import { CheckCircle2, Clock, LayoutGrid, List as ListIcon, Search, ShieldAlert } from 'lucide-react';
+import {
+    Calendar,
+    CheckCircle2,
+    Clock,
+    Eye,
+    FileText,
+    LayoutGrid,
+    List as ListIcon,
+    Search,
+    Shield,
+    ShieldAlert,
+    UserCheck,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 export interface FindingItem {
@@ -62,10 +75,10 @@ interface FindingsProps {
 const SEVERITY_OPTIONS = ['major', 'minor', 'observasi'] as const;
 const STATUS_OPTIONS = ['open', 'in_progress', 'closed'] as const;
 
-const KANBAN_COLUMNS: Array<{ status: string; label: string; dotClass: string }> = [
-    { status: 'open', label: 'findings.open', dotClass: 'bg-danger' },
-    { status: 'in_progress', label: 'findings.inProgress', dotClass: 'bg-warning' },
-    { status: 'closed', label: 'findings.closed', dotClass: 'bg-success' },
+const KANBAN_COLUMNS: Array<{ status: string; label: string; dotClass: string; borderTone: string }> = [
+    { status: 'open', label: 'findings.open', dotClass: 'bg-rose-500', borderTone: 'border-rose-200 dark:border-rose-900/40' },
+    { status: 'in_progress', label: 'findings.inProgress', dotClass: 'bg-amber-500', borderTone: 'border-amber-200 dark:border-amber-900/40' },
+    { status: 'closed', label: 'findings.closed', dotClass: 'bg-emerald-500', borderTone: 'border-emerald-200 dark:border-emerald-900/40' },
 ];
 
 const SEVERITY_TONE: Record<string, 'red' | 'amber' | 'blue'> = {
@@ -91,13 +104,6 @@ function findingRef(f: FindingItem): string {
     return `${year}-${String(f.id).padStart(3, '0')}`;
 }
 
-function fmtDate(value: string | null): string {
-    if (!value) return '';
-    const d = new Date(value);
-    if (Number.isNaN(d.getTime())) return '';
-    return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
-}
-
 export default function Findings({ findings, workUnits = [], filters = {} }: FindingsProps) {
     const page = findings ?? { data: [], current_page: 1, last_page: 1, per_page: 20, total: 0, from: null, to: null };
     const items = page.data;
@@ -110,6 +116,8 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
     const [detailTarget, setDetailTarget] = useState<FindingItem | null>(null);
     const isFirstRender = useRef(true);
 
+    const getBasePath = () => (typeof window !== 'undefined' ? window.location.pathname : '/admin/kepatuhan/findings');
+
     useEffect(() => {
         if (isFirstRender.current) {
             isFirstRender.current = false;
@@ -118,7 +126,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
 
         const timer = setTimeout(() => {
             router.get(
-                '/admin/kepatuhan/findings',
+                getBasePath(),
                 {
                     search: searchQuery || undefined,
                     category: selectedSeverity !== 'all' ? selectedSeverity : undefined,
@@ -132,41 +140,53 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
         return () => clearTimeout(timer);
     }, [searchQuery, selectedSeverity, selectedStatus, selectedUnit]);
 
-    const breadcrumbs = [{ label: t('common.dashboard'), href: '/admin/kepatuhan/dashboard' }, { label: t('findings.title') }];
+    const breadcrumbs = [{ label: t('common.dashboard'), href: '/dashboard' }, { label: t('findings.title') }];
 
     const groupByStatus = (status: string) => items.filter((f) => f.status === status);
 
     const deadlineChip = (f: FindingItem) => {
         if (f.status === 'closed') {
             return (
-                <span className="border-success-border bg-success-bg text-success inline-flex items-center gap-1.5 rounded-[6px] border px-2 py-1 text-[11px] font-semibold dark:border-emerald-800 dark:text-emerald-400">
-                    <CheckCircle2 className="h-3 w-3" />
-                    {f.verified_at ? t('findings.verifiedOn', fmtDate(f.verified_at)) : t('findings.done')}
+                <span className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:border-emerald-800/60 dark:bg-emerald-950/40 dark:text-emerald-400">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                    {f.verified_at ? `Selesai ${formatDateIndonesian(f.verified_at)}` : 'Selesai'}
                 </span>
             );
         }
 
-        if (!f.deadline) return null;
+        if (!f.deadline) {
+            return (
+                <span className="inline-flex items-center gap-1 text-[11px] text-slate-400 dark:text-slate-500">
+                    <Calendar className="h-3 w-3" />
+                    Belum ada deadline
+                </span>
+            );
+        }
 
         if (f.is_overdue) {
+            const days = Math.abs(f.days_remaining ?? 0);
             return (
-                <span className="border-danger-border bg-danger-bg text-danger inline-flex items-center gap-1.5 rounded-[6px] border px-2 py-1 text-[11px] font-semibold dark:border-red-800 dark:text-red-400">
-                    <Clock className="h-3 w-3" />
-                    {t('findings.lateDays', Math.abs(f.days_remaining ?? 0))}
+                <span className="inline-flex items-center gap-1.5 rounded-lg border border-rose-300 bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-700 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-400">
+                    <Clock className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
+                    Terlambat {days} Hari
                 </span>
             );
         }
 
         const remaining = f.days_remaining ?? 0;
-        const toneClass =
-            remaining <= 3
-                ? 'border-warning-border dark:border-amber-800 bg-warning-bg text-warning dark:text-amber-400'
-                : 'border-success-border dark:border-emerald-800 bg-success-bg text-success dark:text-emerald-400';
+        if (remaining <= 3) {
+            return (
+                <span className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-800 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                    <Clock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                    {remaining === 0 ? 'Hari Ini Jatuh Tempo' : `${remaining} Hari Tersisa`}
+                </span>
+            );
+        }
 
         return (
-            <span className={`inline-flex items-center gap-1.5 rounded-[6px] border px-2 py-1 text-[11px] font-semibold ${toneClass}`}>
-                <Clock className="h-3 w-3" />
-                {remaining === 0 ? t('findings.deadlineToday') : t('findings.leftDays', remaining)}
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700 dark:border-blue-800/60 dark:bg-blue-950/40 dark:text-blue-400">
+                <Calendar className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                {remaining} Hari Tersisa
             </span>
         );
     };
@@ -179,21 +199,83 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
             .substring(0, 2)
             .toUpperCase();
 
+    const renderStatusSteps = (status: string) => {
+        const steps = [
+            { id: 'open', label: 'Terbuka', desc: 'Gap teridentifikasi' },
+            { id: 'in_progress', label: 'Dalam Penanganan', desc: 'PIC melakukan perbaikan' },
+            { id: 'closed', label: 'Selesai / Terverifikasi', desc: 'Telah diverifikasi Admin' },
+        ];
+
+        const currentIndex = steps.findIndex((s) => s.id === status);
+
+        return (
+            <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-900/60">
+                <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
+                    Tahapan Progres Temuan
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                    {steps.map((step, idx) => {
+                        const isDone = idx < currentIndex;
+                        const isCurrent = idx === currentIndex;
+                        return (
+                            <div
+                                key={step.id}
+                                className={`flex flex-col p-2.5 rounded-lg border text-left transition-all ${
+                                    isCurrent
+                                        ? 'border-blue-500 bg-blue-50/80 dark:border-blue-600 dark:bg-blue-950/50 shadow-sm'
+                                        : isDone
+                                          ? 'border-emerald-200 bg-emerald-50/60 dark:border-emerald-900/40 dark:bg-emerald-950/30'
+                                          : 'border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 opacity-60'
+                                }`}
+                            >
+                                <div className="flex items-center gap-1.5">
+                                    {isDone ? (
+                                        <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                    ) : isCurrent ? (
+                                        <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                                    ) : (
+                                        <div className="h-3.5 w-3.5 rounded-full border-2 border-slate-300 dark:border-slate-600 shrink-0" />
+                                    )}
+                                    <span
+                                        className={`text-xs font-bold ${
+                                            isCurrent
+                                                ? 'text-blue-900 dark:text-blue-200'
+                                                : isDone
+                                                  ? 'text-emerald-900 dark:text-emerald-200'
+                                                  : 'text-slate-600 dark:text-slate-400'
+                                        }`}
+                                    >
+                                        {step.label}
+                                    </span>
+                                </div>
+                                <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 line-clamp-1">
+                                    {step.desc}
+                                </span>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        );
+    };
+
     const renderKanban = () => (
-        <div className="grid grid-cols-1 gap-[18px] md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
             {KANBAN_COLUMNS.map((col) => {
                 const columnItems = groupByStatus(col.status);
 
                 return (
                     <div
                         key={col.status}
-                        className="border-border bg-surface/40 flex flex-col rounded-[14px] border p-3.5 dark:border-slate-700 dark:bg-slate-900/40"
+                        className="flex flex-col rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/40"
                     >
-                        <div className="mb-3 flex items-center justify-between px-1">
+                        <div className="mb-3.5 flex items-center justify-between px-1">
                             <div className="flex items-center gap-2">
-                                <span className={`h-2 w-2 rounded-full ${col.dotClass}`} />
-                                <strong className="text-navy text-[13px] font-bold dark:text-white">{t(col.label as never)}</strong>
-                                <span className="border-border text-body rounded-full border bg-white px-2 py-0.5 text-[11px] font-semibold dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                                <span className={`h-2.5 w-2.5 rounded-full ${col.dotClass}`} />
+                                <strong className="text-sm font-bold text-slate-900 dark:text-white">
+                                    {t(col.label as never)}
+                                </strong>
+                                <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-bold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
                                     {columnItems.length}
                                 </span>
                             </div>
@@ -206,26 +288,41 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                                         key={f.id}
                                         type="button"
                                         onClick={() => setDetailTarget(f)}
-                                        className="hover:border-primary-300 border-border block w-full rounded-[12px] border bg-white p-3.5 text-left shadow-sm transition-colors dark:border-slate-700 dark:bg-slate-900"
+                                        className="group block w-full rounded-xl border border-slate-200/80 bg-white p-4 text-left shadow-sm transition-all hover:border-blue-400 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-blue-600"
                                     >
                                         <div className="flex items-center justify-between gap-2">
-                                            <code className="text-primary text-[12px] font-bold">FND-{findingRef(f)}</code>
-                                            <StatusBadge tone={SEVERITY_TONE[f.kategori] ?? 'gray'}>{severityLabel(f.kategori)}</StatusBadge>
+                                            <code className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                                                FND-{findingRef(f)}
+                                            </code>
+                                            <StatusBadge tone={SEVERITY_TONE[f.kategori] ?? 'gray'}>
+                                                {severityLabel(f.kategori)}
+                                            </StatusBadge>
                                         </div>
 
-                                        <div className="text-navy mt-2 line-clamp-2 text-[13px] leading-snug font-semibold dark:text-white">
+                                        <div className="mt-2.5 text-[13px] font-semibold leading-snug text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 dark:text-white dark:group-hover:text-blue-400">
                                             {f.control?.judul || t('common.noData')}
                                         </div>
 
-                                        <div className="text-faint mt-2.5 flex items-center justify-between gap-2 text-[11px] dark:text-slate-500">
-                                            <span className="inline-flex min-w-0 items-center gap-1 truncate">
-                                                <span className="bg-primary/10 text-primary grid h-5 w-5 shrink-0 place-items-center rounded-[6px]">
+                                        <div className="mt-2 text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                                            <Shield className="h-3 w-3 text-slate-400" />
+                                            <span>{f.control?.kode_klausul}</span>
+                                            {f.control?.framework && (
+                                                <span className="text-slate-400">· {f.control.framework.nama}</span>
+                                            )}
+                                        </div>
+
+                                        <div className="mt-3 flex items-center justify-between gap-2 border-t border-slate-100 pt-2.5 text-[11px] dark:border-slate-800/80">
+                                            <span className="inline-flex min-w-0 items-center gap-1.5 truncate text-slate-600 dark:text-slate-400">
+                                                <span className="grid h-5 w-5 shrink-0 place-items-center rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                                                     <ShieldAlert className="h-3 w-3" />
                                                 </span>
                                                 {f.unit?.nama || '—'}
                                             </span>
                                             {f.pic?.name && (
-                                                <span className="bg-primary grid h-5 w-5 shrink-0 place-items-center rounded-full text-[9px] font-bold text-white">
+                                                <span
+                                                    title={f.pic.name}
+                                                    className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-blue-600 text-[10px] font-bold text-white shadow-sm"
+                                                >
                                                     {initials(f.pic.name)}
                                                 </span>
                                             )}
@@ -235,8 +332,10 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                                     </button>
                                 ))
                             ) : (
-                                <div className="border-border rounded-[12px] border border-dashed bg-white p-6 text-center dark:border-slate-700 dark:bg-slate-900">
-                                    <span className="text-faint text-[12px] dark:text-slate-500">{t('common.noData')}</span>
+                                <div className="rounded-xl border border-dashed border-slate-200 bg-white/50 p-6 text-center dark:border-slate-800 dark:bg-slate-900/50">
+                                    <span className="text-xs text-slate-400 dark:text-slate-500">
+                                        Tidak ada temuan pada kolom ini
+                                    </span>
                                 </div>
                             )}
                         </div>
@@ -247,69 +346,98 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
     );
 
     const renderList = () => (
-        <section className="border-border overflow-hidden rounded-[14px] border bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs sm:text-sm">
-                    <thead className="border-border bg-surface/60 text-muted border-b text-[11px] font-bold tracking-wider uppercase dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-400">
+                    <thead className="border-b border-slate-100 bg-slate-50/70 text-[11px] font-bold tracking-wider uppercase text-slate-500 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400">
                         <tr>
-                            <th scope="col" className="px-5 py-3 text-left font-semibold">
+                            <th scope="col" className="px-5 py-3.5">
                                 {t('findings.ref')}
                             </th>
-                            <th scope="col" className="px-5 py-3 text-left font-semibold">
+                            <th scope="col" className="px-5 py-3.5">
                                 {t('findings.judul')}
                             </th>
-                            <th scope="col" className="px-5 py-3 text-left font-semibold">
+                            <th scope="col" className="px-5 py-3.5">
                                 {t('findings.severity')}
                             </th>
-                            <th scope="col" className="px-5 py-3 text-left font-semibold">
+                            <th scope="col" className="px-5 py-3.5">
                                 {t('findings.workUnit')}
                             </th>
-                            <th scope="col" className="px-5 py-3 text-left font-semibold">
+                            <th scope="col" className="px-5 py-3.5">
                                 {t('findings.assignee')}
                             </th>
-                            <th scope="col" className="px-5 py-3 text-left font-semibold">
+                            <th scope="col" className="px-5 py-3.5">
                                 {t('findings.status')}
                             </th>
-                            <th scope="col" className="px-5 py-3 text-left font-semibold">
+                            <th scope="col" className="px-5 py-3.5">
                                 {t('findings.deadline')}
+                            </th>
+                            <th scope="col" className="px-5 py-3.5 text-right">
+                                Aksi
                             </th>
                         </tr>
                     </thead>
-                    <tbody className="divide-border divide-y dark:divide-slate-700">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                         {items.length > 0 ? (
                             items.map((f) => (
-                                <tr key={f.id} className="hover:bg-surface/50 transition-colors dark:hover:bg-slate-800/50">
+                                <tr key={f.id} className="hover:bg-slate-50/60 transition-colors dark:hover:bg-slate-800/40">
                                     <td className="px-5 py-4 whitespace-nowrap">
-                                        <code className="text-primary font-bold">FND-{findingRef(f)}</code>
+                                        <code className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                                            FND-{findingRef(f)}
+                                        </code>
                                     </td>
                                     <td className="px-5 py-4">
-                                        <button
-                                            type="button"
-                                            onClick={() => setDetailTarget(f)}
-                                            className="text-navy hover:text-primary text-left font-semibold dark:text-white"
-                                        >
+                                        <div className="font-semibold text-slate-900 dark:text-white line-clamp-1">
                                             {f.control?.judul || t('common.noData')}
-                                        </button>
+                                        </div>
+                                        <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                                            {f.control?.kode_klausul} {f.control?.framework ? `· ${f.control.framework.nama}` : ''}
+                                        </div>
                                     </td>
                                     <td className="px-5 py-4 whitespace-nowrap">
-                                        <StatusBadge tone={SEVERITY_TONE[f.kategori] ?? 'gray'}>{severityLabel(f.kategori)}</StatusBadge>
+                                        <StatusBadge tone={SEVERITY_TONE[f.kategori] ?? 'gray'}>
+                                            {severityLabel(f.kategori)}
+                                        </StatusBadge>
                                     </td>
-                                    <td className="text-body px-5 py-4 whitespace-nowrap dark:text-slate-300">{f.unit?.nama || '—'}</td>
-                                    <td className="text-body px-5 py-4 whitespace-nowrap dark:text-slate-300">{f.pic?.name || '—'}</td>
+                                    <td className="px-5 py-4 whitespace-nowrap text-slate-700 dark:text-slate-300">
+                                        {f.unit?.nama || '—'}
+                                    </td>
+                                    <td className="px-5 py-4 whitespace-nowrap text-slate-700 dark:text-slate-300">
+                                        {f.pic?.name ? (
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="grid h-5 w-5 place-items-center rounded-full bg-blue-600 text-[9px] font-bold text-white">
+                                                    {initials(f.pic.name)}
+                                                </span>
+                                                <span>{f.pic.name}</span>
+                                            </div>
+                                        ) : (
+                                            '—'
+                                        )}
+                                    </td>
                                     <td className="px-5 py-4 whitespace-nowrap">
                                         <StatusBadge tone={STATUS_TONE[f.status] ?? 'gray'}>
                                             {t(`status.${f.status as 'open' | 'in_progress' | 'closed'}`)}
                                         </StatusBadge>
                                     </td>
                                     <td className="px-5 py-4 whitespace-nowrap">
-                                        {deadlineChip(f) ?? <span className="text-faint dark:text-slate-500">—</span>}
+                                        {deadlineChip(f)}
+                                    </td>
+                                    <td className="px-5 py-4 whitespace-nowrap text-right">
+                                        <button
+                                            type="button"
+                                            onClick={() => setDetailTarget(f)}
+                                            className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                                        >
+                                            <Eye className="h-3.5 w-3.5" />
+                                            Detail
+                                        </button>
                                     </td>
                                 </tr>
                             ))
                         ) : (
                             <tr>
-                                <td colSpan={7}>
-                                    <EmptyState message={t('findings.noFindings')} />
+                                <td colSpan={8}>
+                                    <EmptyState message="Belum ada data temuan audit yang sesuai dengan filter pencarian." />
                                 </td>
                             </tr>
                         )}
@@ -326,7 +454,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                 endIndex={page.to ?? page.total}
                 onPageChange={(p) =>
                     router.get(
-                        '/admin/kepatuhan/findings',
+                        getBasePath(),
                         {
                             search: searchQuery || undefined,
                             category: selectedSeverity !== 'all' ? selectedSeverity : undefined,
@@ -342,185 +470,267 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
     );
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs} currentPath="/admin/kepatuhan/findings">
-            <Head title={`${t('findings.title')} - Admin Kepatuhan`} />
+        <AppLayout breadcrumbs={breadcrumbs} currentPath="/findings">
+            <Head title={`${t('findings.title')} - SMKI`} />
 
-            <div className="page-head flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">{t('findings.title')}</h1>
-                    <p className="text-muted mt-1 text-xs sm:text-sm dark:text-slate-400">
-                        {t('findings.subtitle')}
-                        {items.some((f) => f.is_overdue) && (
-                            <strong className="text-danger dark:text-red-400">
-                                {' '}
-                                · {items.filter((f) => f.is_overdue).length} {t('findings.overdue')}
-                            </strong>
-                        )}
-                    </p>
+            <div className="space-y-6">
+                {/* Header Banner */}
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between border-b border-slate-200/80 pb-5 dark:border-slate-800">
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                                {t('findings.title')}
+                            </h1>
+                            <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-700 border border-blue-200 dark:bg-blue-950/60 dark:border-blue-800 dark:text-blue-300">
+                                {page.total} Total
+                            </span>
+                        </div>
+                        <p className="mt-1 text-xs text-slate-500 sm:text-sm dark:text-slate-400">
+                            {t('findings.subtitle')}
+                            {items.some((f) => f.is_overdue) && (
+                                <span className="font-bold text-rose-600 dark:text-rose-400">
+                                    {' '}
+                                    · {items.filter((f) => f.is_overdue).length} Temuan Melewati Batas SLA
+                                </span>
+                            )}
+                        </p>
+                    </div>
+
+                    {/* View Switcher */}
+                    <div className="flex items-center rounded-xl border border-slate-200/80 bg-white p-1 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                        <button
+                            type="button"
+                            onClick={() => setView('kanban')}
+                            className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all ${
+                                view === 'kanban'
+                                    ? 'bg-blue-600 text-white shadow-sm'
+                                    : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
+                            }`}
+                        >
+                            <LayoutGrid className="h-3.5 w-3.5" />
+                            {t('findings.kanban')}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setView('list')}
+                            className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all ${
+                                view === 'list'
+                                    ? 'bg-blue-600 text-white shadow-sm'
+                                    : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
+                            }`}
+                        >
+                            <ListIcon className="h-3.5 w-3.5" />
+                            {t('findings.list')}
+                        </button>
+                    </div>
                 </div>
-            </div>
 
-            <div className="flex flex-wrap items-center gap-2.5">
-                <div className="border-border flex items-center rounded-[10px] border bg-white p-0.5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-                    <button
-                        type="button"
-                        onClick={() => setView('kanban')}
-                        className={`inline-flex items-center gap-1.5 rounded-[8px] px-3 py-1.5 text-xs font-semibold transition-colors ${
-                            view === 'kanban'
-                                ? 'bg-primary text-white shadow-sm'
-                                : 'text-body hover:bg-surface dark:text-slate-300 dark:hover:bg-slate-800'
-                        }`}
-                    >
-                        <LayoutGrid className="h-3.5 w-3.5" />
-                        {t('findings.kanban')}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setView('list')}
-                        className={`inline-flex items-center gap-1.5 rounded-[8px] px-3 py-1.5 text-xs font-semibold transition-colors ${
-                            view === 'list'
-                                ? 'bg-primary text-white shadow-sm'
-                                : 'text-body hover:bg-surface dark:text-slate-300 dark:hover:bg-slate-800'
-                        }`}
-                    >
-                        <ListIcon className="h-3.5 w-3.5" />
-                        {t('findings.list')}
-                    </button>
+                {/* Filters */}
+                <div className="flex flex-wrap items-center gap-3">
+                    <div className="relative min-w-[240px] flex-1">
+                        <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Cari temuan, nomor klausul, atau judul kontrol..."
+                            className="h-10 w-full rounded-xl border border-slate-200 bg-white py-2 pr-4 pl-9 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
+                        />
+                    </div>
+
+                    <Select value={selectedSeverity} onChange={(e) => setSelectedSeverity(e.target.value)} className="min-w-[160px]">
+                        <option value="all">Semua Tingkat Keparahan</option>
+                        {SEVERITY_OPTIONS.map((s) => (
+                            <option key={s} value={s}>
+                                {severityLabel(s)}
+                            </option>
+                        ))}
+                    </Select>
+
+                    <Select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className="min-w-[160px]">
+                        <option value="all">Semua Status</option>
+                        {STATUS_OPTIONS.map((s) => (
+                            <option key={s} value={s}>
+                                {t(`status.${s}`)}
+                            </option>
+                        ))}
+                    </Select>
+
+                    <Select value={selectedUnit} onChange={(e) => setSelectedUnit(e.target.value)} className="min-w-[170px]">
+                        <option value="all">Semua Unit Kerja</option>
+                        {workUnits.map((u) => (
+                            <option key={u.id} value={String(u.id)}>
+                                {u.nama}
+                            </option>
+                        ))}
+                    </Select>
                 </div>
 
-                <div className="relative min-w-[220px] flex-1">
-                    <Search className="text-faint absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 dark:text-slate-500" />
-                    <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder={t('findings.searchPlaceholder')}
-                        className="border-border-strong text-ink placeholder:text-faint focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white py-2 pr-4 pl-9 text-xs focus:ring-2 focus:outline-none sm:text-sm dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
+                {/* Content View */}
+                {view === 'kanban' ? renderKanban() : renderList()}
+
+                {view === 'kanban' && page.last_page > 1 && (
+                    <Pagination
+                        currentPage={page.current_page}
+                        totalPages={page.last_page}
+                        perPage={page.per_page}
+                        totalItems={page.total}
+                        startIndex={(page.from ?? 1) - 1}
+                        endIndex={page.to ?? page.total}
+                        onPageChange={(p) =>
+                            router.get(
+                                getBasePath(),
+                                {
+                                    search: searchQuery || undefined,
+                                    category: selectedSeverity !== 'all' ? selectedSeverity : undefined,
+                                    status: selectedStatus !== 'all' ? selectedStatus : undefined,
+                                    unit_id: selectedUnit !== 'all' ? selectedUnit : undefined,
+                                    page: p,
+                                },
+                                { preserveState: true, replace: true },
+                            )
+                        }
                     />
-                </div>
-
-                <Select value={selectedSeverity} onChange={(e) => setSelectedSeverity(e.target.value)} className="min-w-[160px]">
-                    <option value="all">{t('findings.allSeverity')}</option>
-                    {SEVERITY_OPTIONS.map((s) => (
-                        <option key={s} value={s}>
-                            {severityLabel(s)}
-                        </option>
-                    ))}
-                </Select>
-
-                <Select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className="min-w-[170px]">
-                    <option value="all">{t('findings.allStatus')}</option>
-                    {STATUS_OPTIONS.map((s) => (
-                        <option key={s} value={s}>
-                            {t(`status.${s}`)}
-                        </option>
-                    ))}
-                </Select>
-
-                <Select value={selectedUnit} onChange={(e) => setSelectedUnit(e.target.value)} className="min-w-[170px]">
-                    <option value="all">{t('findings.allUnits')}</option>
-                    {workUnits.map((u) => (
-                        <option key={u.id} value={String(u.id)}>
-                            {u.nama}
-                        </option>
-                    ))}
-                </Select>
+                )}
             </div>
 
-            {view === 'kanban' ? renderKanban() : renderList()}
-
-            {view === 'kanban' && page.last_page > 1 && (
-                <Pagination
-                    currentPage={page.current_page}
-                    totalPages={page.last_page}
-                    perPage={page.per_page}
-                    totalItems={page.total}
-                    startIndex={(page.from ?? 1) - 1}
-                    endIndex={page.to ?? page.total}
-                    onPageChange={(p) =>
-                        router.get(
-                            '/admin/kepatuhan/findings',
-                            {
-                                search: searchQuery || undefined,
-                                category: selectedSeverity !== 'all' ? selectedSeverity : undefined,
-                                status: selectedStatus !== 'all' ? selectedStatus : undefined,
-                                unit_id: selectedUnit !== 'all' ? selectedUnit : undefined,
-                                page: p,
-                            },
-                            { preserveState: true, replace: true },
-                        )
-                    }
-                />
-            )}
-
-            <Modal
+            {/* Detail Slide-Over Drawer */}
+            <SlideOver
                 open={detailTarget !== null}
-                title={t('findings.detailTitle')}
-                description={detailTarget ? `FND-${findingRef(detailTarget)}` : undefined}
+                title={
+                    detailTarget ? (
+                        <div className="flex items-center gap-2.5">
+                            <span>Detail Temuan</span>
+                            <code className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-400">
+                                FND-{findingRef(detailTarget)}
+                            </code>
+                        </div>
+                    ) : (
+                        'Detail Temuan'
+                    )
+                }
+                description={detailTarget?.control?.judul || 'Informasi lengkap temuan audit ketidaksesuaian'}
                 onClose={() => setDetailTarget(null)}
-                maxWidth="lg"
+                maxWidth="xl"
                 footer={
                     <button
                         type="button"
                         onClick={() => setDetailTarget(null)}
-                        className="border-border-strong text-body hover:bg-surface rounded-[10px] border bg-white px-4 py-2 text-sm font-medium transition-colors dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                        className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 transition-colors"
                     >
-                        {t('findings.close')}
+                        Tutup Panel
                     </button>
                 }
             >
                 {detailTarget && (
-                    <div className="space-y-4">
-                        <div className="border-border overflow-hidden rounded-[10px] border dark:border-slate-700">
-                            <div className="border-border flex items-center justify-between border-b px-4 py-2.5 dark:border-slate-700">
-                                <span className="text-body text-[13px] font-medium dark:text-slate-300">{t('findings.controlLabel')}</span>
-                                <span className="text-navy max-w-[60%] text-right text-[13px] font-semibold dark:text-white">
-                                    {detailTarget.control?.kode_klausul} — {detailTarget.control?.judul}
-                                </span>
+                    <div className="space-y-6">
+                        {/* Status Progression Tracker */}
+                        {renderStatusSteps(detailTarget.status)}
+
+                        {/* Top Information Cards */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="rounded-xl border border-slate-200/80 bg-white p-3.5 dark:border-slate-800 dark:bg-slate-900">
+                                <span className="text-[11px] font-medium text-slate-400">Tingkat Keparahan</span>
+                                <div className="mt-1.5 flex items-center gap-2">
+                                    <StatusBadge tone={SEVERITY_TONE[detailTarget.kategori] ?? 'gray'}>
+                                        {severityLabel(detailTarget.kategori)}
+                                    </StatusBadge>
+                                </div>
                             </div>
-                            <div className="border-border flex items-center justify-between border-b px-4 py-2.5 dark:border-slate-700">
-                                <span className="text-body text-[13px] font-medium dark:text-slate-300">{t('findings.unitLabel')}</span>
-                                <span className="text-navy text-[13px] font-semibold dark:text-white">{detailTarget.unit?.nama || '—'}</span>
-                            </div>
-                            <div className="border-border flex items-center justify-between border-b px-4 py-2.5 dark:border-slate-700">
-                                <span className="text-body text-[13px] font-medium dark:text-slate-300">{t('findings.picLabel')}</span>
-                                <span className="text-navy text-[13px] font-semibold dark:text-white">{detailTarget.pic?.name || '—'}</span>
-                            </div>
-                            <div className="flex items-center justify-between px-4 py-2.5">
-                                <span className="text-body text-[13px] font-medium dark:text-slate-300">{t('findings.status')}</span>
-                                <StatusBadge tone={STATUS_TONE[detailTarget.status] ?? 'gray'}>
-                                    {t(`status.${detailTarget.status as 'open' | 'in_progress' | 'closed'}`)}
-                                </StatusBadge>
+
+                            <div className="rounded-xl border border-slate-200/80 bg-white p-3.5 dark:border-slate-800 dark:bg-slate-900">
+                                <span className="text-[11px] font-medium text-slate-400">Status Penyelesaian</span>
+                                <div className="mt-1.5 flex items-center gap-2">
+                                    <StatusBadge tone={STATUS_TONE[detailTarget.status] ?? 'gray'}>
+                                        {t(`status.${detailTarget.status as 'open' | 'in_progress' | 'closed'}`)}
+                                    </StatusBadge>
+                                </div>
                             </div>
                         </div>
 
-                        <div>
-                            <h4 className="text-navy text-sm font-bold dark:text-white">{t('findings.severity')}</h4>
-                            <div className="mt-2">
-                                <StatusBadge tone={SEVERITY_TONE[detailTarget.kategori] ?? 'gray'}>
-                                    {severityLabel(detailTarget.kategori)}
-                                </StatusBadge>
+                        {/* SLA & Deadline Information */}
+                        <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-900/60">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <Clock className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                                    <span className="text-xs font-bold text-slate-900 dark:text-white">
+                                        Batas Waktu Penyelesaian (SLA)
+                                    </span>
+                                </div>
+                                <div>{deadlineChip(detailTarget)}</div>
+                            </div>
+                            {detailTarget.deadline && (
+                                <div className="mt-2.5 text-xs text-slate-600 dark:text-slate-400">
+                                    Target Deadline: <strong className="text-slate-900 dark:text-white">{formatDateIndonesian(detailTarget.deadline)}</strong>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Control Klausul Details */}
+                        <div className="rounded-xl border border-slate-200/80 bg-white p-4 space-y-3 dark:border-slate-800 dark:bg-slate-900">
+                            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                <Shield className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                <span>Kontrol SMKI Terkait</span>
+                            </div>
+                            <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-800/60">
+                                <div className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                                    {detailTarget.control?.kode_klausul}
+                                    {detailTarget.control?.framework && (
+                                        <span className="text-slate-500 font-normal"> · {detailTarget.control.framework.nama} ({detailTarget.control.framework.versi})</span>
+                                    )}
+                                </div>
+                                <div className="mt-1 text-sm font-semibold text-slate-900 dark:text-white leading-relaxed">
+                                    {detailTarget.control?.judul || '—'}
+                                </div>
                             </div>
                         </div>
 
-                        {detailTarget.admin_notes || detailTarget.catatan_admin ? (
-                            <div>
-                                <h4 className="text-navy text-sm font-bold dark:text-white">{t('findings.notesLabel')}</h4>
-                                <p className="text-body border-border bg-surface/50 mt-2 rounded-[10px] border p-3.5 text-[13px] leading-relaxed dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-300">
+                        {/* Unit & Stakeholder Assignment */}
+                        <div className="rounded-xl border border-slate-200/80 bg-white p-4 space-y-3 dark:border-slate-800 dark:bg-slate-900">
+                            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                <UserCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                                <span>Penanggung Jawab & Unit Kerja</span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3 text-xs">
+                                <div className="rounded-lg border border-slate-100 p-2.5 dark:border-slate-800">
+                                    <span className="text-[11px] text-slate-400">Unit Kerja / Satuan Kerja</span>
+                                    <p className="mt-1 font-semibold text-slate-900 dark:text-white">
+                                        {detailTarget.unit?.nama || '—'}
+                                    </p>
+                                </div>
+                                <div className="rounded-lg border border-slate-100 p-2.5 dark:border-slate-800">
+                                    <span className="text-[11px] text-slate-400">PIC Penanggung Jawab</span>
+                                    <p className="mt-1 font-semibold text-slate-900 dark:text-white">
+                                        {detailTarget.pic?.name || '—'}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Admin / Auditor Notes */}
+                        {(detailTarget.admin_notes || detailTarget.catatan_admin) && (
+                            <div className="rounded-xl border border-slate-200/80 bg-white p-4 space-y-2 dark:border-slate-800 dark:bg-slate-900">
+                                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                    <FileText className="h-4 w-4 text-amber-500" />
+                                    <span>Catatan Auditor / Admin Kepatuhan</span>
+                                </div>
+                                <p className="text-xs leading-relaxed text-slate-700 bg-slate-50 p-3 rounded-lg dark:bg-slate-800/60 dark:text-slate-300">
                                     {detailTarget.admin_notes || detailTarget.catatan_admin}
                                 </p>
                             </div>
-                        ) : null}
+                        )}
 
-                        <div className="border-info/20 bg-info-bg flex gap-3 rounded-[10px] border p-3.5">
-                            <Clock className="text-info mt-0.5 h-4 w-4 shrink-0 dark:text-sky-400" />
-                            <div className="text-info text-[13px] font-semibold dark:text-sky-400">
-                                {deadlineChip(detailTarget) ?? t('common.noData')}
-                            </div>
+                        {/* Audit Metadata Timeline */}
+                        <div className="border-t border-slate-100 pt-3 text-[11px] text-slate-400 flex items-center justify-between dark:border-slate-800">
+                            <span>Dibuat: {detailTarget.created_at ? formatDateTimeIndonesian(detailTarget.created_at) : '—'}</span>
+                            {detailTarget.verified_at && (
+                                <span>Diverifikasi: {formatDateTimeIndonesian(detailTarget.verified_at)}</span>
+                            )}
                         </div>
                     </div>
                 )}
-            </Modal>
+            </SlideOver>
         </AppLayout>
     );
 }
+
