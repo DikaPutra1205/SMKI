@@ -47,7 +47,12 @@ export function Sidebar({ isOpen, onClose, currentPath }: SidebarProps) {
         setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }));
     };
 
-    const isUrlActive = (url: string) => pathname === url || pathname.startsWith(url + '/');
+    const normalize = (p: string) => p.replace(/^\/admin\/kepatuhan/, '') || '/';
+    const isUrlActive = (url: string) => {
+        const pn = normalize(pathname);
+        const u = normalize(url);
+        return pn === u || pn.startsWith(u + '/');
+    };
 
     const resolveIcon = (iconName?: string) => (iconName ? ICON_MAP[iconName] || LayoutGrid : LayoutGrid);
 

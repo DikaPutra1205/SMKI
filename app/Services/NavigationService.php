@@ -150,7 +150,7 @@ class NavigationService
 
             // ── LANJOOT Satuan Kerja ──────────────────────────────────────
             [
-                'label' => 'Findings',
+                'label' => 'Temuan',
                 'url' => '/findings',
                 'icon' => 'AlertCircle',
                 'permissions' => ['finding.view'],
