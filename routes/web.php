@@ -49,9 +49,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/frameworks', [PageController::class, 'frameworks'])->name('frameworks.index');
     Route::get('/users', [PageController::class, 'users'])->name('users.index');
     Route::get('/roles', [PageController::class, 'roles'])->name('roles.index');
-    Route::get('/assessments', [PageController::class, 'assessments'])->name('assessments');
+    Route::get('/checklist', [PageController::class, 'checklist'])->name('checklist');
     Route::get('/compliance', [PageController::class, 'compliance'])->name('compliance');
-    Route::get('/findings', [PageController::class, 'findings'])->name('findings.index');
+    Route::get('/temuan', [PageController::class, 'temuan'])->name('temuan.index');
     Route::get('/risks', [PageController::class, 'risks'])->name('risks.index');
     Route::get('/audit-logs', [PageController::class, 'auditLogs'])->name('audit-logs.index');
 
@@ -80,9 +80,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/master-data/import/preview', [AdminControlController::class, 'previewMasterDataImport'])->name('master-data.import.preview');
         Route::post('/master-data/import', [AdminControlController::class, 'importMasterData'])->name('master-data.import');
 
-        // ── Compliance Officer (Findings, Risks & Verification) ────────────────────
-        Route::get('/findings', [ComplianceOfficerController::class, 'findings'])->name('findings.index');
-        Route::put('/findings/{finding}', [ComplianceOfficerController::class, 'updateFinding'])->name('findings.update');
+        // ── Compliance Officer (Temuan, Risks & Verification) ────────────────────
+        Route::get('/temuan', [ComplianceOfficerController::class, 'temuan'])->name('temuan.index');
+        Route::put('/temuan/{finding}', [ComplianceOfficerController::class, 'updateFinding'])->name('temuan.update');
         Route::get('/risks', [ComplianceOfficerController::class, 'risks'])->name('risks.index');
         Route::put('/risks/{risk}', [ComplianceOfficerController::class, 'updateRisk'])->name('risks.update');
         Route::get('/checklist/bulk-verify', [ComplianceOfficerController::class, 'bulkVerifyPage'])->name('checklist.bulk-verify');
@@ -125,13 +125,13 @@ Route::middleware('auth')->group(function () {
 
     Route::prefix('admin/pic')->name('admin.pic.')->group(function () {
         Route::get('/dashboard', [PicDashboardController::class, 'index'])->name('dashboard');
-        Route::get('/assessments', [ChecklistSessionController::class, 'index'])->name('assessments');
-        Route::post('/assessments', [ChecklistSessionController::class, 'store'])->name('assessments.store');
-        Route::get('/assessments/{checklistSession}', [ChecklistSessionController::class, 'show'])->name('assessments.show');
-        Route::get('/assessments/{checklistSession}/checklist-page', [ChecklistSessionController::class, 'checklistPage'])->name('assessments.checklist-page');
-        Route::patch('/assessments/{checklistSession}', [ChecklistSessionController::class, 'update'])->name('assessments.update');
-        Route::get('/assessments/{checklistSession}/summary', [ChecklistSessionController::class, 'summary'])->name('assessments.summary');
-        Route::post('/assessments/{checklistSession}/submit', [ChecklistSessionController::class, 'submitAssessment'])->name('assessments.submit');
+        Route::get('/checklist', [ChecklistSessionController::class, 'index'])->name('checklist');
+        Route::post('/checklist', [ChecklistSessionController::class, 'store'])->name('checklist.store');
+        Route::get('/checklist/{checklistSession}', [ChecklistSessionController::class, 'show'])->name('checklist.show');
+        Route::get('/checklist/{checklistSession}/checklist-page', [ChecklistSessionController::class, 'checklistPage'])->name('checklist.checklist-page');
+        Route::patch('/checklist/{checklistSession}', [ChecklistSessionController::class, 'update'])->name('checklist.update');
+        Route::get('/checklist/{checklistSession}/summary', [ChecklistSessionController::class, 'summary'])->name('checklist.summary');
+        Route::post('/checklist/{checklistSession}/submit', [ChecklistSessionController::class, 'submitAssessment'])->name('checklist.submit');
 
         Route::patch('/checklist-entries/{id}', [ChecklistEntryController::class, 'update'])->name('entries.update');
         Route::post('/checklist-entries/batch', [ChecklistEntryController::class, 'batchUpdate'])->name('entries.batch');

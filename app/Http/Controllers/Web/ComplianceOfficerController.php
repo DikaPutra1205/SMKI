@@ -25,16 +25,16 @@ class ComplianceOfficerController extends Controller
     ) {}
 
     /**
-     * Findings / Temuan SLA Tracker Page.
+     * Temuan SLA Tracker Page.
      */
-    public function findings(Request $request): Response
+    public function temuan(Request $request): Response
     {
         $user = $request->user();
         $filters = $request->only(['status', 'category', 'kategori', 'unit_id', 'is_overdue', 'search']);
         $findings = $this->complianceOfficerService->getFindings($user, $filters, 20);
         $workUnits = $this->complianceService->getWorkUnits();
 
-        return Inertia::render('admin-kepatuhan/findings', [
+        return Inertia::render('admin-kepatuhan/temuan', [
             'findings' => $findings,
             'workUnits' => $workUnits,
             'filters' => $filters,

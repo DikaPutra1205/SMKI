@@ -956,10 +956,10 @@ class ComplianceOfficerTest extends TestCase
         ]);
 
         $this->actingAs($this->admin)
-            ->get('/admin/kepatuhan/findings')
+            ->get('/admin/kepatuhan/temuan')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('admin-kepatuhan/findings', false)
+                ->component('admin-kepatuhan/temuan', false)
                 ->has('findings.data')
                 ->has('workUnits')
                 ->has('filters'));
@@ -995,12 +995,12 @@ class ComplianceOfficerTest extends TestCase
         ]);
 
         $this->actingAs($this->admin)
-            ->from('/admin/kepatuhan/findings')
-            ->put("/admin/kepatuhan/findings/{$finding->id}", [
+            ->from('/admin/kepatuhan/temuan')
+            ->put("/admin/kepatuhan/temuan/{$finding->id}", [
                 'status' => Finding::STATUS_CLOSED,
                 'admin_notes' => 'Diverifikasi lewat halaman web',
             ])
-            ->assertRedirect('/admin/kepatuhan/findings')
+            ->assertRedirect('/admin/kepatuhan/temuan')
             ->assertSessionHas('flash.type', 'success');
 
         $fresh = $finding->fresh();
@@ -1051,7 +1051,7 @@ class ComplianceOfficerTest extends TestCase
 
     public function test_web_guest_is_redirected_to_login_for_compliance_officer_pages(): void
     {
-        $this->get('/admin/kepatuhan/findings')->assertRedirect(route('login'));
+        $this->get('/admin/kepatuhan/temuan')->assertRedirect(route('login'));
         $this->get('/admin/kepatuhan/risks')->assertRedirect(route('login'));
     }
 
@@ -1065,7 +1065,7 @@ class ComplianceOfficerTest extends TestCase
         ]);
 
         $this->actingAs($this->picA)
-            ->put("/admin/kepatuhan/findings/{$findingB->id}", [
+            ->put("/admin/kepatuhan/temuan/{$findingB->id}", [
                 'status' => Finding::STATUS_CLOSED,
             ])
             ->assertForbidden();

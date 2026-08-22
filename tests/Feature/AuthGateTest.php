@@ -136,10 +136,10 @@ class AuthGateTest extends TestCase
             'password' => bcrypt('secret12'),
         ]);
 
-        $this->get('/admin/pic/assessments')->assertRedirect('/login');
+        $this->get('/admin/pic/checklist')->assertRedirect('/login');
 
         $this->post('/login', ['email' => 'sa@smki.test', 'password' => 'secret12'])
-            ->assertRedirect('/admin/pic/assessments');
+            ->assertRedirect('/admin/pic/checklist');
     }
 
     public function test_authenticated_user_hitting_login_is_redirected_to_root(): void
@@ -151,7 +151,7 @@ class AuthGateTest extends TestCase
         $resp = $this->actingAs($user)->get('/login');
         $this->assertTrue(in_array($resp->status(), [302, 301]));
         $location = $resp->headers->get('Location');
-        $this->assertTrue(str_contains($location, '/dashboard') || str_ends_with($location, '/') || str_contains($location, '/assessments'));
+        $this->assertTrue(str_contains($location, '/dashboard') || str_ends_with($location, '/') || str_contains($location, '/checklist'));
     }
 
     public function test_anonymous_post_to_data_route_is_blocked(): void

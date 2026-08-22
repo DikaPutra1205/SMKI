@@ -20,7 +20,7 @@ class FlatRouteTenantIsolationTest extends TestCase
         ChecklistSession::factory()->create(['unit_id' => $unitA->id, 'created_by' => $picA->id]);
         ChecklistSession::factory()->create(['unit_id' => $unitB->id, 'created_by' => $picB->id]);
 
-        $response = $this->actingAs($picA)->get('/assessments');
+        $response = $this->actingAs($picA)->get('/checklist');
         $response->assertOk();
         $page = $response->getOriginalContent()->getData()['page'] ?? null;
         // Inertia page props contain sessions; assert via json fragment or session count on DB path fallback.
@@ -38,7 +38,7 @@ class FlatRouteTenantIsolationTest extends TestCase
         $picB = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unitB->id]);
         $sessionB = ChecklistSession::factory()->create(['unit_id' => $unitB->id, 'created_by' => $picB->id]);
 
-        $this->actingAs($picA)->patch("/admin/pic/assessments/{$sessionB->id}", ['konteks_penilaian' => 'hijack'])->assertForbidden();
+        $this->actingAs($picA)->patch("/admin/pic/checklist/{$sessionB->id}", ['konteks_penilaian' => 'hijack'])->assertForbidden();
     }
 
     public function test_pic_cannot_create_session_for_other_unit_via_flat_route(): void
@@ -49,7 +49,7 @@ class FlatRouteTenantIsolationTest extends TestCase
         $fw = Framework::factory()->create();
 
         // Attempt to create session for other unit via the assessments store (inertia route)
-        $resp = $this->actingAs($picA)->post('/admin/pic/assessments', [
+        $resp = $this->actingAs($picA)->post('/admin/pic/checklist', [
             'konteks_penilaian' => 'test',
             'unit_id' => $unitB->id,
             'framework_id' => $fw->id,

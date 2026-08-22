@@ -649,19 +649,19 @@ class ChecklistEntryApiTest extends TestCase
 
         // non_compliant/partial status without catatan is now allowed (catatan is optional for PIC)
         $this->actingAs($pic)
-            ->from('/admin/pic/assessments')
+            ->from('/admin/pic/checklist')
             ->patch("/admin/pic/checklist-entries/{$entry->id}", ['status' => 'non_compliant'])
             ->assertOk()
             ->assertJson(['ok' => true]);
 
         $this->actingAs($pic)
-            ->from('/admin/pic/assessments')
+            ->from('/admin/pic/checklist')
             ->patch("/admin/pic/checklist-entries/{$entry->id}", ['status' => 'partial'])
             ->assertOk()
             ->assertJson(['ok' => true]);
 
         $this->actingAs($pic)
-            ->from('/admin/pic/assessments')
+            ->from('/admin/pic/checklist')
             ->patch("/admin/pic/checklist-entries/{$entry->id}", [
                 'status' => 'partial', 'catatan' => 'Baru terpenuhi sebagian',
             ])
@@ -673,7 +673,7 @@ class ChecklistEntryApiTest extends TestCase
         ]);
 
         $this->actingAs($pic)
-            ->from('/admin/pic/assessments')
+            ->from('/admin/pic/checklist')
             ->patch("/admin/pic/checklist-entries/{$entry->id}", [
                 'status' => 'compliant', 'catatan' => 'Dokumen SOP tersedia',
             ])
@@ -686,7 +686,7 @@ class ChecklistEntryApiTest extends TestCase
 
         // another PIC cannot touch the entry (scoped via pic_id)
         $this->actingAs($otherPic)
-            ->from('/admin/pic/assessments')
+            ->from('/admin/pic/checklist')
             ->patch("/admin/pic/checklist-entries/{$entry->id}", ['status' => 'partial', 'catatan' => 'x'])
             ->assertStatus(404);
     }
@@ -707,11 +707,11 @@ class ChecklistEntryApiTest extends TestCase
         ]);
 
         $this->actingAs($pic)
-            ->from('/admin/pic/assessments')
+            ->from('/admin/pic/checklist')
             ->post("/admin/pic/checklist-entries/{$entry->id}/evidence", [
                 'bukti_file' => UploadedFile::fake()->create('sop.pdf', 100, 'application/pdf'),
             ])
-            ->assertRedirect('/admin/pic/assessments');
+            ->assertRedirect('/admin/pic/checklist');
 
         $this->assertDatabaseHas('compliance_evidences', [
             'checklist_entry_id' => $entry->id, 'uploaded_by' => $pic->id, 'version_number' => 1,

@@ -46,7 +46,7 @@ export default function Assessments({ sessions, user_unit }: AssessmentsProps) {
     const { flash } = usePage<{ flash?: { type: string; message: string } }>().props;
     const [flashVisible, setFlashVisible] = useState(false);
     const [showModal, setShowModal] = useState(false);
-    const isLoading = usePageLoading('/admin/pic/assessments');
+    const isLoading = usePageLoading('/admin/pic/checklist');
 
     useEffect(() => {
         if (flash?.message) {
@@ -120,7 +120,7 @@ export default function Assessments({ sessions, user_unit }: AssessmentsProps) {
                             <button
                                 key={s.id}
                                 type="button"
-                                onClick={() => router.get(`/admin/pic/assessments/${s.id}`)}
+                                onClick={() => router.get(`/admin/pic/checklist/${s.id}`)}
                                 className="group flex flex-col rounded-xl border border-slate-200 bg-white p-5 text-left shadow-sm transition-all hover:border-blue-200 hover:shadow-md dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-800"
                             >
                                 <div className="mb-3 flex items-start justify-between">
@@ -213,7 +213,7 @@ function CreateModal({ onClose, userUnit }: { onClose: () => void; userUnit: Wor
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post('/admin/pic/assessments', {
+        post('/admin/pic/checklist', {
             onSuccess: () => onClose(),
         });
     };

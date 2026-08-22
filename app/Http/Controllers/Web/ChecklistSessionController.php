@@ -40,7 +40,7 @@ class ChecklistSessionController extends Controller
             ->orderByDesc('id')
             ->get();
 
-        return Inertia::render('pic/assessments', [
+        return Inertia::render('pic/checklist', [
             'sessions' => $sessions,
             'user_unit' => $user->unit,
         ]);
@@ -92,7 +92,7 @@ class ChecklistSessionController extends Controller
             }
         }
 
-        return redirect()->route('admin.pic.assessments.show', $session)
+        return redirect()->route('admin.pic.checklist.show', $session)
             ->with('flash', ['type' => 'success', 'message' => 'Assessment berhasil dibuat.']);
     }
 
@@ -219,7 +219,7 @@ class ChecklistSessionController extends Controller
 
         $summary = $checklistSession->summary;
 
-        return Inertia::render('pic/assessment-summary', [
+        return Inertia::render('pic/checklist-summary', [
             'session' => $checklistSession,
             'entries' => $checklistSession->entries,
             'summary' => $summary,
@@ -257,7 +257,7 @@ class ChecklistSessionController extends Controller
             'updated_by' => $user->id,
         ]);
 
-        return redirect()->route('admin.pic.assessments')
+        return redirect()->route('admin.pic.checklist')
             ->with('flash', ['type' => 'success', 'message' => 'Assessment berhasil dikirim untuk verifikasi.']);
     }
 

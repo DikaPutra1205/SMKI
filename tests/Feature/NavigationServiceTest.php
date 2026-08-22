@@ -44,7 +44,7 @@ class NavigationServiceTest extends TestCase
         $this->assertContains('/dashboard', $urls);
         $this->assertContains('/compliance', $urls);
         $this->assertContains('/audit-logs', $urls);
-        $this->assertContains('/findings', $urls);
+        $this->assertContains('/temuan', $urls);
         $this->assertContains('/risks', $urls);
     }
 
@@ -65,8 +65,8 @@ class NavigationServiceTest extends TestCase
 
         $urls = $this->urlsFor($user);
         $this->assertContains('/dashboard', $urls);
-        $this->assertContains('/assessments', $urls);
-        $this->assertContains('/findings', $urls);
+        $this->assertContains('/checklist', $urls);
+        $this->assertContains('/temuan', $urls);
         $this->assertContains('/risks', $urls);
         $this->assertNotContains('/frameworks', $urls);
         $this->assertNotContains('/users', $urls);
@@ -77,7 +77,7 @@ class NavigationServiceTest extends TestCase
         $pic = User::factory()->create(['role' => User::ROLE_PIC]);
         $urls = $this->urlsFor($pic);
         $this->assertContains('/dashboard', $urls, 'PIC should see Dashboard after wiring pic/dashboard');
-        $this->assertContains('/assessments', $urls);
+        $this->assertContains('/checklist', $urls);
     }
 
     public function test_pic_still_lacks_admin_pages(): void
@@ -92,7 +92,7 @@ class NavigationServiceTest extends TestCase
     {
         $pic = User::factory()->create(['role' => User::ROLE_PIC]);
         $before = $this->urlsFor($pic);
-        $this->assertContains('/assessments', $before);
+        $this->assertContains('/checklist', $before);
         $this->assertContains('/dashboard', $before);
 
         // Grant audit-log.view — PIC should now also match the admin_kepatuhan
@@ -106,7 +106,7 @@ class NavigationServiceTest extends TestCase
 
         $after = $this->urlsFor($pic);
         $this->assertContains('/dashboard', $after);
-        $this->assertContains('/assessments', $after);
+        $this->assertContains('/checklist', $after);
     }
 
     public function test_nav_urls_point_at_flat_routes(): void
