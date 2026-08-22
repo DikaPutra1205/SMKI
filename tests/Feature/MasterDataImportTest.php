@@ -103,7 +103,7 @@ class MasterDataImportTest extends TestCase
         $this->assertDatabaseCount('frameworks', 0);
     }
 
-    public function test_any_authenticated_role_can_import_no_role_gate(): void
+    public function test_pic_cannot_import_without_permission(): void
     {
         $user = User::factory()->create(['role' => User::ROLE_PIC]);
 
@@ -113,14 +113,14 @@ class MasterDataImportTest extends TestCase
                     'Frameworks' => [['nama', 'versi', 'url_file'], ['ISO 27001', '2022', null]],
                 ]),
             ])
-            ->assertRedirect();
+            ->assertForbidden();
 
-        $this->assertDatabaseHas('frameworks', ['nama' => 'ISO 27001', 'versi' => '2022']);
+        $this->assertDatabaseMissing('frameworks', ['nama' => 'ISO 27001', 'versi' => '2022']);
     }
 
     public function test_missing_file_rejected(): void
     {
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
             ->post('/admin/kepatuhan/master-data/import')
             ->assertSessionHasErrors('file');
     }
@@ -129,7 +129,7 @@ class MasterDataImportTest extends TestCase
     {
         $csv = UploadedFile::fake()->create('data.csv', 10, 'text/csv');
 
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
             ->post('/admin/kepatuhan/master-data/import', ['file' => $csv])
             ->assertSessionHasErrors('file');
     }
@@ -142,14 +142,14 @@ class MasterDataImportTest extends TestCase
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         );
 
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
             ->post('/admin/kepatuhan/master-data/import', ['file' => $big])
             ->assertSessionHasErrors('file');
     }
 
     public function test_creates_frameworks(): void
     {
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
             ->post('/admin/kepatuhan/master-data/import', [
                 'file' => $this->uploadXlsx([
                     'Frameworks' => [
@@ -170,7 +170,7 @@ class MasterDataImportTest extends TestCase
     {
         Framework::create(['nama' => 'Legacy', 'versi' => '2005']);
 
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
             ->post('/admin/kepatuhan/master-data/import', [
                 'file' => $this->uploadXlsx([
                     'Frameworks' => [['nama', 'versi', 'url_file'], ['ISO 27001', '2022', null]],
@@ -185,7 +185,7 @@ class MasterDataImportTest extends TestCase
     {
         Framework::create(['nama' => 'ISO 27001', 'versi' => '2022', 'url_file' => 'https://old.test/a.pdf']);
 
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
             ->post('/admin/kepatuhan/master-data/import', [
                 'file' => $this->uploadXlsx([
                     'Frameworks' => [['nama', 'versi', 'url_file'], ['ISO 27001', '2022', 'https://new.test/a.pdf']],
@@ -197,11 +197,11 @@ class MasterDataImportTest extends TestCase
 
     public function test_reimport_is_idempotent(): void
     {
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
             ->post('/admin/kepatuhan/master-data/import', [
                 'file' => $this->uploadXlsx(['Frameworks' => [['nama', 'versi', 'url_file'], ['ISO 27001', '2022', null]]]),
             ]);
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
             ->post('/admin/kepatuhan/master-data/import', [
                 'file' => $this->uploadXlsx(['Frameworks' => [['nama', 'versi', 'url_file'], ['ISO 27001', '2022', null]]]),
             ]);
@@ -218,7 +218,7 @@ class MasterDataImportTest extends TestCase
     {
         $this->seedFramework();
 
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
             ->post('/admin/kepatuhan/master-data/import', [
                 'file' => $this->uploadXlsx([
                     'Controls' => [
@@ -235,7 +235,7 @@ class MasterDataImportTest extends TestCase
     {
         $this->seedFramework();
 
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
             ->post('/admin/kepatuhan/master-data/import', [
                 'file' => $this->uploadXlsx([
                     'Controls' => [
@@ -254,7 +254,7 @@ class MasterDataImportTest extends TestCase
     {
         $this->seedFramework();
 
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
             ->post('/admin/kepatuhan/master-data/import', [
                 'file' => $this->uploadXlsx([
                     'Controls' => [
@@ -274,7 +274,7 @@ class MasterDataImportTest extends TestCase
     {
         $this->seedFramework();
 
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
             ->post('/admin/kepatuhan/master-data/import', [
                 'file' => $this->uploadXlsx([
                     'Controls' => [
@@ -293,7 +293,7 @@ class MasterDataImportTest extends TestCase
     {
         $this->seedFramework();
 
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
             ->post('/admin/kepatuhan/master-data/import', [
                 'file' => $this->uploadXlsx([
                     'Controls' => [
@@ -310,7 +310,7 @@ class MasterDataImportTest extends TestCase
     {
         Framework::create(['nama' => 'ISO 27001', 'versi' => '2022']);
 
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
             ->post('/admin/kepatuhan/master-data/import/preview', [
                 'file' => $this->uploadXlsx([
                     'Frameworks' => [['nama', 'versi', 'url_file'], ['ISO 27001', '2022', 'https://new.test/a.pdf']],
@@ -363,7 +363,7 @@ class MasterDataImportTest extends TestCase
             true
         );
 
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
             ->post('/admin/kepatuhan/master-data/import', ['file' => $file])
             ->assertRedirect();
 
@@ -372,7 +372,7 @@ class MasterDataImportTest extends TestCase
 
     public function test_ignores_sheets_with_wrong_title_case(): void
     {
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
             ->post('/admin/kepatuhan/master-data/import', [
                 'file' => $this->uploadXlsx([
                     'frameworks' => [['nama', 'versi', 'url_file'], ['ISO 27001', '2022', null]],
@@ -390,13 +390,13 @@ class MasterDataImportTest extends TestCase
             ->assertRedirect('/login');
     }
 
-    public function test_any_authenticated_role_can_export_no_role_gate(): void
+    public function test_pic_cannot_export_without_permission(): void
     {
         $user = User::factory()->create(['role' => User::ROLE_PIC]);
 
         $this->actingAs($user)
             ->get('/admin/kepatuhan/master-data/export')
-            ->assertOk();
+            ->assertForbidden();
     }
 
     public function test_export_returns_two_sheets_with_headers_and_data(): void
@@ -411,7 +411,7 @@ class MasterDataImportTest extends TestCase
             'deskripsi' => 'desc',
         ]);
 
-        $response = $this->actingAs(User::factory()->create())
+        $response = $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
             ->get('/admin/kepatuhan/master-data/export')
             ->assertOk();
 
@@ -436,7 +436,7 @@ class MasterDataImportTest extends TestCase
 
     public function test_export_with_empty_database_has_headers_only(): void
     {
-        $response = $this->actingAs(User::factory()->create())
+        $response = $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
             ->get('/admin/kepatuhan/master-data/export')
             ->assertOk();
 
@@ -472,7 +472,7 @@ class MasterDataImportTest extends TestCase
             'deskripsi' => 'old',
         ]);
 
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
             ->post('/admin/kepatuhan/master-data/import', [
                 'file' => $this->uploadXlsx([
                     'Frameworks' => [['nama', 'versi', 'url_file'], ['ISO 27001', '2022', null]],
@@ -504,7 +504,7 @@ class MasterDataImportTest extends TestCase
             'kategori' => 'annex_a',
         ]);
 
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
             ->post('/admin/kepatuhan/master-data/import', [
                 'file' => $this->uploadXlsx([
                     'Frameworks' => [['nama', 'versi', 'url_file'], ['ISO 27001', '2022', null]],
@@ -533,7 +533,7 @@ class MasterDataImportTest extends TestCase
 
         // FIX VERIFIED: When framework is absent from Excel, controls referencing it
         // are skipped instead of crashing with a cascading unique violation.
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
             ->post('/admin/kepatuhan/master-data/import', [
                 'file' => $this->uploadXlsx([
                     'Controls' => [
@@ -552,7 +552,7 @@ class MasterDataImportTest extends TestCase
 
     public function test_import_duplicate_kode_klausul_in_file_rolls_back_entire_import(): void
     {
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
             ->post('/admin/kepatuhan/master-data/import', [
                 'file' => $this->uploadXlsx([
                     'Frameworks' => [['nama', 'versi', 'url_file'], ['ISO 27001', '2022', null]],
@@ -578,7 +578,7 @@ class MasterDataImportTest extends TestCase
         Control::create(['framework_id' => $fw->id, 'kode_klausul' => 'A.5.1', 'judul' => 'Kept', 'kategori' => 'annex_a']);
         Control::create(['framework_id' => $fw->id, 'kode_klausul' => 'A.5.2', 'judul' => 'Absent', 'kategori' => 'annex_a']);
 
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
             ->post('/admin/kepatuhan/master-data/import', [
                 'file' => $this->uploadXlsx([
                     'Frameworks' => [['nama', 'versi', 'url_file'], ['ISO 27001', '2022', null]],
@@ -600,7 +600,7 @@ class MasterDataImportTest extends TestCase
         $legacy = Framework::create(['nama' => 'Legacy', 'versi' => '2005']);
         Control::create(['framework_id' => $legacy->id, 'kode_klausul' => 'L.1', 'judul' => 'Old', 'kategori' => 'annex_a']);
 
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
             ->post('/admin/kepatuhan/master-data/import', [
                 'file' => $this->uploadXlsx([
                     'Frameworks' => [['nama', 'versi', 'url_file'], ['ISO 27001', '2022', null]],
@@ -621,7 +621,7 @@ class MasterDataImportTest extends TestCase
     {
         $solo = $this->soloControlsFile();
 
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
             ->post('/admin/kepatuhan/master-data/import', ['file' => $solo])
             ->assertRedirect()
             ->assertSessionHasErrors('file');
@@ -634,7 +634,7 @@ class MasterDataImportTest extends TestCase
     {
         $solo = $this->soloControlsFile();
 
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
             ->post('/admin/kepatuhan/master-data/import/preview', ['file' => $solo])
             ->assertRedirect()
             ->assertSessionHasErrors('file');
@@ -651,7 +651,7 @@ class MasterDataImportTest extends TestCase
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         );
 
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
             ->post('/admin/kepatuhan/master-data/import', ['file' => $garbage])
             ->assertSessionHasErrors('file');
 
@@ -662,7 +662,7 @@ class MasterDataImportTest extends TestCase
     {
         $csv = UploadedFile::fake()->create('data.csv', 10, 'text/csv');
 
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
             ->post('/admin/kepatuhan/master-data/import/preview', ['file' => $csv])
             ->assertSessionHasErrors('file');
     }
@@ -680,7 +680,7 @@ class MasterDataImportTest extends TestCase
             'deskripsi' => 'old',
         ]);
 
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
             ->post('/admin/kepatuhan/master-data/import/preview', [
                 'file' => $this->uploadXlsx([
                     'Frameworks' => [['nama', 'versi', 'url_file'], ['ISO 27001', '2022', 'https://new.test/a.pdf']],

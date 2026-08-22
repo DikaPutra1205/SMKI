@@ -228,33 +228,28 @@ class FrameworkApiTest extends TestCase
         $this->assertDatabaseHas('frameworks', ['nama' => 'AK Framework']);
     }
 
-    // D6/D8 — auditor role also mutates master data (no policy/gate). Verify, don't fix.
-    public function test_auditor_role_can_create_framework(): void
+    // framework.create is gated — an auditor (no framework.create) must be denied.
+    public function test_auditor_role_cannot_create_framework(): void
     {
         $user = User::factory()->create(['role' => User::ROLE_AUDITOR]);
 
         $this->actingAs($user)
             ->postJson('/api/frameworks', ['nama' => 'Auditor Framework', 'versi' => '1'])
-            ->assertCreated();
+            ->assertForbidden();
 
-        $this->assertDatabaseHas('frameworks', ['nama' => 'Auditor Framework']);
+        $this->assertDatabaseMissing('frameworks', ['nama' => 'Auditor Framework']);
     }
 
-    // D6/D8 — any authenticated role can write master data (no policy/gate). Verify, don't fix.
-    public function test_pic_role_can_crud_framework(): void
+    // framework.create is gated — a pic (no framework.create) must be denied.
+    public function test_pic_role_cannot_create_framework(): void
     {
         $pic = User::factory()->create(['role' => User::ROLE_PIC]);
 
-        $created = $this->actingAs($pic)
-            ->postJson('/api/frameworks', ['nama' => 'PIC Framework', 'versi' => '1'])
-            ->assertCreated()
-            ->json('data.id');
-
         $this->actingAs($pic)
-            ->deleteJson("/api/frameworks/{$created}")
-            ->assertOk();
+            ->postJson('/api/frameworks', ['nama' => 'PIC Framework', 'versi' => '1'])
+            ->assertForbidden();
 
-        $this->assertSoftDeleted('frameworks', ['id' => $created]);
+        $this->assertDatabaseMissing('frameworks', ['nama' => 'PIC Framework']);
     }
 
     // API store now uses StoreFrameworkRequest which enforces unique:frameworks,nama.

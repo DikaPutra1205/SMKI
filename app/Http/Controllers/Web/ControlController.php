@@ -12,6 +12,7 @@ use App\Models\Control;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Maatwebsite\Excel\Exceptions\SheetNotFoundException;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -25,6 +26,8 @@ class ControlController extends Controller
      */
     public function store(StoreControlRequest $request): RedirectResponse
     {
+        Gate::authorize('control.create');
+
         Control::create($request->validated());
 
         return redirect()->back()->with('flash', [
@@ -38,6 +41,8 @@ class ControlController extends Controller
      */
     public function update(UpdateControlRequest $request, Control $control): RedirectResponse
     {
+        Gate::authorize('control.update');
+
         $control->update($request->validated());
 
         return redirect()->back()->with('flash', [
@@ -51,6 +56,8 @@ class ControlController extends Controller
      */
     public function destroy(Control $control): RedirectResponse
     {
+        Gate::authorize('control.delete');
+
         $control->delete();
 
         return redirect()->back()->with('flash', [
@@ -65,6 +72,8 @@ class ControlController extends Controller
      */
     public function exportMasterData(): BinaryFileResponse
     {
+        Gate::authorize('control.export');
+
         $filename = 'smki-master-data-'.now()->format('Ymd-His').'.xlsx';
 
         return Excel::download(new SmkiMasterDataExport, $filename);
@@ -78,6 +87,8 @@ class ControlController extends Controller
      */
     public function previewMasterDataImport(ImportMasterDataRequest $request): JsonResponse
     {
+        Gate::authorize('control.import');
+
         set_time_limit(180);
 
         $import = new SmkiMasterDataImport(dryRun: true);
@@ -99,6 +110,8 @@ class ControlController extends Controller
      */
     public function importMasterData(ImportMasterDataRequest $request): RedirectResponse
     {
+        Gate::authorize('control.import');
+
         set_time_limit(180);
 
         $import = new SmkiMasterDataImport(dryRun: false);

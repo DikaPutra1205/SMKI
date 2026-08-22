@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Routing\PageDispatcher;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -29,11 +30,16 @@ class AuthController extends Controller
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
 
-            $target = match (Auth::user()->role) {
-                'superadmin' => '/admin/superadmin/dashboard',
-                'pic' => '/admin/pic/assessments',
-                default => '/admin/kepatuhan/dashboard',
-            };
+            $user = Auth::user();
+            $dispatcher = app(PageDispatcher::class);
+            $res = $dispatcher->resolve($user, '/');
+            $map = [
+                'superadmin/dashboard' => '/dashboard',
+                'kepatuhan/dashboard' => '/dashboard',
+                'auditor/dashboard' => '/dashboard',
+                'pic/assessments' => '/assessments',
+            ];
+            $target = $map[$res->component] ?? '/dashboard';
 
             return redirect()->intended($target);
         }
