@@ -24,7 +24,7 @@ class FlatRouteAuthzTest extends TestCase
     public function test_login_redirect_uses_role_id_dispatcher(): void
     {
         $pic = User::factory()->create(['email' => 'pic@smki.test', 'password' => bcrypt('secret12'), 'role' => User::ROLE_PIC]);
-        $this->post('/login', ['email' => 'pic@smki.test', 'password' => 'secret12'])->assertRedirect('/assessments');
+        $this->post('/login', ['email' => 'pic@smki.test', 'password' => 'secret12'])->assertRedirect('/dashboard');
 
         $this->post('/logout');
 
@@ -35,7 +35,7 @@ class FlatRouteAuthzTest extends TestCase
     public function test_root_redirect_uses_role_id_dispatcher(): void
     {
         $pic = User::factory()->create(['role' => User::ROLE_PIC]);
-        $this->actingAs($pic)->get('/')->assertRedirect('/assessments');
+        $this->actingAs($pic)->get('/')->assertRedirect('/dashboard');
 
         $sa = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
         $this->actingAs($sa)->get('/')->assertRedirect('/dashboard');

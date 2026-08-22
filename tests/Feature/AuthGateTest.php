@@ -45,7 +45,7 @@ class AuthGateTest extends TestCase
         $this->post('/login', [
             'email' => 'pic@smki.test',
             'password' => 'secret12',
-        ])->assertRedirect('/assessments');
+        ])->assertRedirect('/dashboard');
 
         $this->assertAuthenticatedAs($user);
     }
@@ -123,7 +123,7 @@ class AuthGateTest extends TestCase
         $before = $this->app['session']->getId();
 
         $this->post('/login', ['email' => 'pic@smki.test', 'password' => 'secret12'])
-            ->assertRedirect('/assessments');
+            ->assertRedirect('/dashboard');
 
         $this->assertNotEquals($before, $this->app['session']->getId());
     }
