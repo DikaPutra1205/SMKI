@@ -56,12 +56,17 @@ export function useTheme() {
     }, [mode]);
 
     const setMode = useCallback((next: ThemeMode) => {
+        const nextResolved = resolve(next);
         localStorage.setItem(STORAGE_KEY, next);
         setModeState(next);
+        setResolvedTheme(nextResolved);
+        applyToDocument(nextResolved);
     }, []);
 
     const toggle = useCallback(() => {
-        setMode(resolve(mode) === 'dark' ? 'light' : 'dark');
+        const current = resolve(mode);
+        const next: ThemeMode = current === 'dark' ? 'light' : 'dark';
+        setMode(next);
     }, [mode, setMode]);
 
     return { mode, resolvedTheme, setMode, toggle };

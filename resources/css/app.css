@@ -96,3 +96,28 @@
         @apply text-body bg-white antialiased dark:bg-[#00101f] dark:text-slate-300;
     }
 }
+
+/* View Transitions API bidirectional circular ripple */
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+}
+
+/* Default stack: new expands on top */
+::view-transition-old(root) {
+    z-index: 1;
+}
+
+::view-transition-new(root) {
+    z-index: 9999;
+}
+
+/* When shrinking back: old layer collapses on top */
+html.theme-transition-shrink::view-transition-old(root) {
+    z-index: 9999;
+}
+
+html.theme-transition-shrink::view-transition-new(root) {
+    z-index: 1;
+}
