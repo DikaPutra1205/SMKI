@@ -1040,6 +1040,7 @@ class ComplianceOfficerTest extends TestCase
             ->post('/admin/kepatuhan/bulk-verify', [
                 'entry_ids' => [$entry->id],
                 'status' => ChecklistEntry::STATUS_COMPLIANT,
+                'admin_notes' => 'Telah diverifikasi sesuai standar SMKI',
             ])
             ->assertRedirect('/admin/kepatuhan/risks')
             ->assertSessionHas('flash.type', 'success');
@@ -1163,5 +1164,100 @@ class ComplianceOfficerTest extends TestCase
     public function test_pic_cannot_access_bulk_verify_page(): void
     {
         $this->actingAs($this->picA)->get('/admin/kepatuhan/checklist/bulk-verify')->assertForbidden();
+    }
+
+    public function test_single_verify_requires_catatan_when_status_changes(): void
+    {
+        $entry = ChecklistEntry::factory()->create(['status' => ChecklistEntry::STATUS_NON_COMPLIANT]);
+
+        // Attempting to change status to compliant without notes should fail with validation error
+        $this->actingAs($this->admin)
+            ->from('/admin/kepatuhan/checklist/verify')
+            ->post("/admin/kepatuhan/checklist/verify/{$entry->id}", [
+                'status' => 'compliant',
+                'admin_notes' => '',
+            ])
+            ->assertRedirect('/admin/kepatuhan/checklist/verify')
+            ->assertSessionHasErrors('admin_notes');
+
+        // With notes, it must succeed
+        $this->actingAs($this->admin)
+            ->from('/admin/kepatuhan/checklist/verify')
+            ->post("/admin/kepatuhan/checklist/verify/{$entry->id}", [
+                'status' => 'compliant',
+                'admin_notes' => 'Telah diverifikasi sesuai standar',
+            ])
+            ->assertRedirect('/admin/kepatuhan/checklist/verify')
+            ->assertSessionHas('flash.type', 'success');
+
+        $this->assertEquals(ChecklistEntry::STATUS_COMPLIANT, $entry->fresh()->status);
+        $this->assertEquals('Telah diverifikasi sesuai standar', $entry->fresh()->catatan_admin);
+    }
+
+    public function test_single_verify_allows_nullable_catatan_when_status_unchanged(): void
+    {
+        $entry = ChecklistEntry::factory()->create([
+            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'catatan_admin' => 'Catatan lama',
+        ]);
+
+        $this->actingAs($this->admin)
+            ->from('/admin/kepatuhan/checklist/verify')
+            ->post("/admin/kepatuhan/checklist/verify/{$entry->id}", [
+                'status' => 'compliant',
+                'admin_notes' => '',
+            ])
+            ->assertRedirect('/admin/kepatuhan/checklist/verify')
+            ->assertSessionHas('flash.type', 'success');
+
+        $this->assertEquals(ChecklistEntry::STATUS_COMPLIANT, $entry->fresh()->status);
+        $this->assertNotNull($entry->fresh()->tanggal_verifikasi);
+    }
+
+    public function test_bulk_verify_requires_catatan_when_status_changes(): void
+    {
+        $entry = ChecklistEntry::factory()->create(['status' => ChecklistEntry::STATUS_NON_COMPLIANT]);
+
+        // Changing status in bulk verify without admin_notes fails
+        $this->actingAs($this->admin)
+            ->from('/admin/kepatuhan/checklist/verify')
+            ->post('/admin/kepatuhan/bulk-verify', [
+                'entry_ids' => [$entry->id],
+                'status' => 'compliant',
+                'admin_notes' => '',
+            ])
+            ->assertRedirect('/admin/kepatuhan/checklist/verify')
+            ->assertSessionHasErrors('admin_notes');
+
+        // Providing admin_notes succeeds
+        $this->actingAs($this->admin)
+            ->from('/admin/kepatuhan/checklist/verify')
+            ->post('/admin/kepatuhan/bulk-verify', [
+                'entry_ids' => [$entry->id],
+                'status' => 'compliant',
+                'admin_notes' => 'Catatan verifikasi kepatuhan massal',
+            ])
+            ->assertRedirect('/admin/kepatuhan/checklist/verify')
+            ->assertSessionHas('flash.type', 'success');
+
+        $this->assertEquals(ChecklistEntry::STATUS_COMPLIANT, $entry->fresh()->status);
+    }
+
+    public function test_bulk_verify_allows_nullable_catatan_when_status_unchanged(): void
+    {
+        $entry = ChecklistEntry::factory()->create(['status' => ChecklistEntry::STATUS_COMPLIANT]);
+
+        $this->actingAs($this->admin)
+            ->from('/admin/kepatuhan/checklist/verify')
+            ->post('/admin/kepatuhan/bulk-verify', [
+                'entry_ids' => [$entry->id],
+                'status' => 'compliant',
+                'admin_notes' => '',
+            ])
+            ->assertRedirect('/admin/kepatuhan/checklist/verify')
+            ->assertSessionHas('flash.type', 'success');
+
+        $this->assertEquals(ChecklistEntry::STATUS_COMPLIANT, $entry->fresh()->status);
+        $this->assertNotNull($entry->fresh()->tanggal_verifikasi);
     }
 }

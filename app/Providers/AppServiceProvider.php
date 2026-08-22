@@ -13,6 +13,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\WorkUnit;
 use App\Observers\SmkiObserver;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -32,6 +33,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Carbon::setLocale('id');
+
         // Daftarkan SmkiObserver ke semua model transaksi dan master data
         Framework::observe(SmkiObserver::class);
         Control::observe(SmkiObserver::class);

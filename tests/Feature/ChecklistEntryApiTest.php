@@ -635,7 +635,7 @@ class ChecklistEntryApiTest extends TestCase
         $this->assertSame($sessionsAfterFirstRun, ChecklistSession::count(), 'Duplicate prevention: second run must not duplicate session.');
     }
 
-    public function test_web_pic_entry_update_scoped_to_own_pic_and_requires_catatan(): void
+    public function test_web_pic_entry_update_scoped_to_own_pic_and_allows_nullable_catatan(): void
     {
         $unit = WorkUnit::create(['nama' => 'Unit PIC Web']);
         $fw = Framework::create(['nama' => 'ISO 27001', 'versi' => '2022']);
@@ -647,17 +647,18 @@ class ChecklistEntryApiTest extends TestCase
             'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
         ]);
 
-        // non_compliant/na statuses require catatan
+        // non_compliant/partial status without catatan is now allowed (catatan is optional for PIC)
         $this->actingAs($pic)
             ->from('/admin/pic/assessments')
             ->patch("/admin/pic/checklist-entries/{$entry->id}", ['status' => 'non_compliant'])
-            ->assertSessionHasErrors('catatan');
+            ->assertOk()
+            ->assertJson(['ok' => true]);
 
-        // partial also requires catatan
         $this->actingAs($pic)
             ->from('/admin/pic/assessments')
             ->patch("/admin/pic/checklist-entries/{$entry->id}", ['status' => 'partial'])
-            ->assertSessionHasErrors('catatan');
+            ->assertOk()
+            ->assertJson(['ok' => true]);
 
         $this->actingAs($pic)
             ->from('/admin/pic/assessments')

@@ -507,5 +507,13 @@ class AuditTrailTest extends TestCase
     public function test_pic_cannot_access_audit_logs_web_page(): void
     {
         $this->actingAs($this->pic)->get('/admin/kepatuhan/audit-logs')->assertForbidden();
+        $this->actingAs($this->pic)->get('/audit-logs')->assertForbidden();
+    }
+
+    public function test_superadmin_and_admin_can_access_flat_and_prefixed_audit_logs_routes(): void
+    {
+        $this->actingAs($this->superadmin)->get('/audit-logs')->assertOk();
+        $this->actingAs($this->superadmin)->get('/admin/superadmin/audit-logs')->assertOk();
+        $this->actingAs($this->admin)->get('/audit-logs')->assertOk();
     }
 }
