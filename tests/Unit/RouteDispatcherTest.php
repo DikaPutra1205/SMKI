@@ -40,7 +40,7 @@ class RouteDispatcherTest extends TestCase
         $this->assertTrue($d->resolve($superadmin, 'dashboard')->allowed);
         $this->assertTrue($d->resolve($auditor, 'dashboard')->allowed);
 
-        $this->assertSame('pic/assessments', $d->resolve($pic, 'dashboard')->component);
+        $this->assertSame('pic/dashboard', $d->resolve($pic, 'dashboard')->component);
         $this->assertSame('kepatuhan/dashboard', $d->resolve($kepatuhan, 'dashboard')->component);
         $this->assertSame('superadmin/dashboard', $d->resolve($superadmin, 'dashboard')->component);
         $this->assertSame('auditor/dashboard', $d->resolve($auditor, 'dashboard')->component);
@@ -68,7 +68,7 @@ class RouteDispatcherTest extends TestCase
             $this->assertTrue($d->resolve($u, '/')->allowed);
         }
 
-        $this->assertSame('pic/assessments', $d->resolve($pic, '/')->component);
+        $this->assertSame('pic/dashboard', $d->resolve($pic, '/')->component);
         $this->assertSame('superadmin/dashboard', $d->resolve($superadmin, '/')->component);
         $this->assertSame('kepatuhan/dashboard', $d->resolve($kepatuhan, '/')->component);
     }

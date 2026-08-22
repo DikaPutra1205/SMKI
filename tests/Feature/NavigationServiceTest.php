@@ -64,9 +64,26 @@ class NavigationServiceTest extends TestCase
         $user = User::factory()->create(['role' => User::ROLE_PIC]);
 
         $urls = $this->urlsFor($user);
+        $this->assertContains('/dashboard', $urls);
         $this->assertContains('/assessments', $urls);
         $this->assertContains('/findings', $urls);
         $this->assertContains('/risks', $urls);
+        $this->assertNotContains('/frameworks', $urls);
+        $this->assertNotContains('/users', $urls);
+    }
+
+    public function test_pic_gets_dashboard_and_assessments(): void
+    {
+        $pic = User::factory()->create(['role' => User::ROLE_PIC]);
+        $urls = $this->urlsFor($pic);
+        $this->assertContains('/dashboard', $urls, 'PIC should see Dashboard after wiring pic/dashboard');
+        $this->assertContains('/assessments', $urls);
+    }
+
+    public function test_pic_still_lacks_admin_pages(): void
+    {
+        $pic = User::factory()->create(['role' => User::ROLE_PIC]);
+        $urls = $this->urlsFor($pic);
         $this->assertNotContains('/frameworks', $urls);
         $this->assertNotContains('/users', $urls);
     }
@@ -76,9 +93,11 @@ class NavigationServiceTest extends TestCase
         $pic = User::factory()->create(['role' => User::ROLE_PIC]);
         $before = $this->urlsFor($pic);
         $this->assertContains('/assessments', $before);
-        $this->assertNotContains('/dashboard', $before);
+        $this->assertContains('/dashboard', $before);
 
-        // Grant the two permissions the kepatuhan dashboard entry requires.
+        // Grant audit-log.view — PIC should now also match the admin_kepatuhan
+        // dashboard entry (no change in visible URLs since PIC dashboard entry
+        // already covers dashboard.read).
         $role = $pic->role()->first();
         $role->permissions()->attach(
             Permission::whereIn('key', ['dashboard.recent-activities', 'audit-log.view'])->pluck('id')

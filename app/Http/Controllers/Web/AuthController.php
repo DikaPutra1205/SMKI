@@ -37,7 +37,7 @@ class AuthController extends Controller
                 'superadmin/dashboard' => '/dashboard',
                 'kepatuhan/dashboard' => '/dashboard',
                 'auditor/dashboard' => '/dashboard',
-                'pic/assessments' => '/assessments',
+                'pic/dashboard' => '/dashboard',
             ];
             $target = $map[$res->component] ?? '/dashboard';
 

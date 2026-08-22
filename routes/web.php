@@ -11,6 +11,7 @@ use App\Http\Controllers\Web\ComplianceOfficerController;
 use App\Http\Controllers\Web\ControlController as AdminControlController;
 use App\Http\Controllers\Web\FrameworkController;
 use App\Http\Controllers\Web\PageController;
+use App\Http\Controllers\Web\PicDashboardController;
 use App\Http\Controllers\Web\ReportExportController;
 use App\Http\Controllers\Web\RoleController;
 use App\Http\Controllers\Web\UserController;
@@ -33,7 +34,7 @@ Route::middleware('auth')->group(function () {
             'superadmin/dashboard' => '/dashboard',
             'kepatuhan/dashboard' => '/dashboard',
             'auditor/dashboard' => '/dashboard',
-            'pic/assessments' => '/assessments',
+            'pic/dashboard' => '/dashboard',
         ];
 
         return redirect($map[$res->component] ?? '/dashboard');
@@ -120,6 +121,7 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::prefix('admin/pic')->name('admin.pic.')->group(function () {
+        Route::get('/dashboard', [PicDashboardController::class, 'index'])->name('dashboard');
         Route::get('/assessments', [ChecklistSessionController::class, 'index'])->name('assessments');
         Route::post('/assessments', [ChecklistSessionController::class, 'store'])->name('assessments.store');
         Route::get('/assessments/{checklistSession}', [ChecklistSessionController::class, 'show'])->name('assessments.show');
