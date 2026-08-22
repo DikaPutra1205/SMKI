@@ -95,6 +95,14 @@ class NavigationService
                 'permissions' => ['role.managementview'],
             ],
 
+            // ── PIC / generic dashboard (requires only dashboard.read) ──
+            [
+                'label' => 'Dashboard',
+                'url' => '/dashboard',
+                'icon' => 'LayoutGrid',
+                'permissions' => ['dashboard.read'],
+                'denies' => ['work-unit.view', 'audit-log.view'],
+            ],
             // ── Admin Kepatuhan & other roles ───────────────────────────
             [
                 'label' => 'Dashboard',

@@ -90,6 +90,7 @@ class PageController extends Controller
         return match ($roleName) {
             'superadmin' => app(FrameworkController::class)->dashboard(),
             'auditor' => app(AuditorDashboardController::class)->index($request),
+            'pic' => app(PicDashboardController::class)->index($request),
             default => app(ComplianceController::class)->dashboard($request),
         };
     }

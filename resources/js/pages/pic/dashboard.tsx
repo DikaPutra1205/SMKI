@@ -62,7 +62,7 @@ export default function PicDashboard({ summary, recent_sessions = [] }: PicDashb
     const iso27701 = frameworks.find((f) => f.id === 2);
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs} currentPath="/admin/pic/dashboard">
+        <AppLayout breadcrumbs={breadcrumbs} currentPath="/dashboard">
             <Head title="Dashboard PIC" />
 
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
