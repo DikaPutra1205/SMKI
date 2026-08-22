@@ -183,6 +183,7 @@ function EntryItemRow({
 
     const isVerified = entry.tanggal_verifikasi !== null;
     const missingStatus = !entry.status;
+    const isCatatanMissing = entry.status !== null && entry.status !== 'compliant' && !entry.catatan;
     const isEvidenceMissing = !entry.active_evidence;
     const isIncomplete = missingStatus || isEvidenceMissing;
     const showErrorLabels = highlight && isIncomplete;
