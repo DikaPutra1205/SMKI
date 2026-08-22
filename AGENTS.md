@@ -22,7 +22,10 @@ sync when you change a rule. Rules here are tool-agnostic on purpose.
 ## Rules every assistant must follow
 
 1. **Tests required for backend changes.** New backend behavior (controller, service, action,
-   job) ships with a Pest test. Run `composer test` before pushing.
+   job) ships with a Pest test. Run `composer test` before pushing. `composer test` runs the
+   suite **in parallel by default** (Paratest, per-worker DB clone) and falls back to sequential
+   automatically if Paratest is unavailable — always invoke it via `composer test` (never
+   `php artisan test` directly) so that default applies.
 2. **Frontend testing — layered, not mandatory-by-count** (empirically: integration/behavior
    tests catch more user-visible bugs than unit; TypeScript+ESLint already remove a fault class):
    - **Static gate (mandatory):** TypeScript strict + ESLint on every PR (`npm run lint`).
