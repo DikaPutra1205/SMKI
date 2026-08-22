@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\ChecklistEntry;
+use App\Models\ComplianceEvidence;
 use App\Models\Framework;
 use App\Models\User;
 use App\Models\WorkUnit;
@@ -350,9 +351,11 @@ class ComplianceEvidenceApiTest extends TestCase
             ['bukti_file' => UploadedFile::fake()->create('bukti.pdf', 500, 'application/pdf'), 'uploaded_by' => $pic->id])
             ->assertCreated();
 
-        $path = $response->json('data.file_url');
-        $this->assertIsString($path);
-        $this->assertStringContainsString("bukti/{$entry->id}/", $path);
+        $evidenceId = $response->json('data.id');
+        $evidence = ComplianceEvidence::find($evidenceId);
+        $rawPath = $evidence->getRawOriginal('file_url');
+        $this->assertIsString($rawPath);
+        $this->assertStringContainsString("bukti/{$entry->id}/", $rawPath);
         $this->assertDatabaseHas('compliance_evidences', [
             'checklist_entry_id' => $entry->id,
             'version_number' => 1,

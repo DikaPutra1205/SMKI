@@ -10,9 +10,11 @@ use App\Http\Controllers\Web\ComplianceController;
 use App\Http\Controllers\Web\ComplianceOfficerController;
 use App\Http\Controllers\Web\ControlController as AdminControlController;
 use App\Http\Controllers\Web\FrameworkController;
+use App\Http\Controllers\Web\PageController;
 use App\Http\Controllers\Web\ReportExportController;
 use App\Http\Controllers\Web\RoleController;
 use App\Http\Controllers\Web\UserController;
+use App\Routing\PageDispatcher;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -25,19 +27,32 @@ use Inertia\Inertia;
 Route::middleware('auth')->group(function () {
     Route::get('/evidences/{id}/download', [ComplianceEvidenceController::class, 'download'])->name('evidences.download');
 
-    Route::get('/', function () {
-        $target = match (auth()->user()->role) {
-            'superadmin' => '/admin/superadmin/dashboard',
-            'pic' => '/admin/pic/assessments',
-            default => '/admin/kepatuhan/dashboard',
-        };
+    Route::get('/', function (PageDispatcher $dispatcher) {
+        $res = $dispatcher->resolve(auth()->user(), '/');
+        $map = [
+            'superadmin/dashboard' => '/dashboard',
+            'kepatuhan/dashboard' => '/dashboard',
+            'auditor/dashboard' => '/dashboard',
+            'pic/assessments' => '/assessments',
+        ];
 
-        return redirect($target);
+        return redirect($map[$res->component] ?? '/dashboard');
     });
 
     Route::get('/welcome', function () {
         return Inertia::render('welcome');
     })->name('welcome');
+
+    // ── Flat page routes (permission-gated, role_id-dispatched) ─────────────
+    Route::get('/dashboard', [PageController::class, 'dashboard'])->name('dashboard');
+    Route::get('/frameworks', [PageController::class, 'frameworks'])->name('frameworks.index');
+    Route::get('/users', [PageController::class, 'users'])->name('users.index');
+    Route::get('/roles', [PageController::class, 'roles'])->name('roles.index');
+    Route::get('/assessments', [PageController::class, 'assessments'])->name('assessments');
+    Route::get('/compliance', [PageController::class, 'compliance'])->name('compliance');
+    Route::get('/findings', [PageController::class, 'findings'])->name('findings.index');
+    Route::get('/risks', [PageController::class, 'risks'])->name('risks.index');
+    Route::get('/audit-logs', [PageController::class, 'auditLogs'])->name('audit-logs.index');
 
     Route::prefix('admin/kepatuhan')->name('admin.kepatuhan.')->group(function () {
         Route::get('/', function () {

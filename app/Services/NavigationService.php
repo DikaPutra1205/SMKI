@@ -72,25 +72,25 @@ class NavigationService
             // ── Superadmin ──────────────────────────────────────────────
             [
                 'label' => 'Dashboard',
-                'url' => '/admin/superadmin/dashboard',
+                'url' => '/dashboard',
                 'icon' => 'LayoutGrid',
                 'permissions' => ['work-unit.view'],
             ],
             [
                 'label' => 'Manajemen Framework',
-                'url' => '/admin/superadmin/frameworks',
+                'url' => '/frameworks',
                 'icon' => 'Database',
                 'permissions' => ['framework.view', 'work-unit.view'],
             ],
             [
                 'label' => 'Manajemen User',
-                'url' => '/admin/superadmin/users',
+                'url' => '/users',
                 'icon' => 'Users',
                 'permissions' => ['user.managementview'],
             ],
             [
                 'label' => 'Manajemen Role',
-                'url' => '/admin/superadmin/roles',
+                'url' => '/roles',
                 'icon' => 'Shield',
                 'permissions' => ['role.managementview'],
             ],
@@ -98,14 +98,14 @@ class NavigationService
             // ── Admin Kepatuhan & other roles ───────────────────────────
             [
                 'label' => 'Dashboard',
-                'url' => '/admin/kepatuhan/dashboard',
+                'url' => '/dashboard',
                 'icon' => 'LayoutGrid',
                 'permissions' => ['dashboard.read', 'audit-log.view'],
                 'denies' => ['work-unit.view'],
             ],
             [
                 'label' => 'Manajemen Kontrol',
-                'url' => '/admin/kepatuhan/compliance',
+                'url' => '/compliance',
                 'icon' => 'ShieldCheck',
                 'permissions' => ['control.view'],
             ],
@@ -126,7 +126,7 @@ class NavigationService
 
             [
                 'label' => 'Audit Log',
-                'url' => '/admin/kepatuhan/audit-logs',
+                'url' => '/audit-logs',
                 'icon' => 'History',
                 'permissions' => ['audit-log.view'],
             ],
@@ -134,7 +134,7 @@ class NavigationService
             // ── PIC Satuan Kerja ──────────────────────────────────────
             [
                 'label' => 'Assessment',
-                'url' => '/admin/pic/assessments',
+                'url' => '/assessments',
                 'icon' => 'ClipboardCheck',
                 'permissions' => ['checklist-session.create'],
                 'denies' => ['control.view'],
@@ -143,19 +143,18 @@ class NavigationService
             // ── LANJOOT Satuan Kerja ──────────────────────────────────────
             [
                 'label' => 'Findings',
-                'url' => '/admin/kepatuhan/findings',
+                'url' => '/findings',
                 'icon' => 'AlertCircle',
                 'permissions' => ['finding.view'],
                 'denies' => ['work-unit.view'],
             ],
             [
                 'label' => 'Risks',
-                'url' => '/admin/kepatuhan/risks',
+                'url' => '/risks',
                 'icon' => 'AlertTriangle',
                 'permissions' => ['risk.view'],
                 'denies' => ['work-unit.view'],
             ],
-
         ];
     }
 }

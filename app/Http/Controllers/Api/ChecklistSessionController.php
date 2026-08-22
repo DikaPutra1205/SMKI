@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class ChecklistSessionController extends Controller
 {
@@ -74,6 +75,8 @@ class ChecklistSessionController extends Controller
 
     public function store(StoreChecklistSessionRequest $request): JsonResponse
     {
+        Gate::authorize('checklist-session.create');
+
         $data = $request->validated();
         $data['created_by'] = $data['created_by'] ?? auth()->id();
         $data['updated_by'] = $data['updated_by'] ?? auth()->id();
@@ -118,6 +121,13 @@ class ChecklistSessionController extends Controller
 
     public function update(UpdateChecklistSessionRequest $request, ChecklistSession $checklistSession): JsonResponse
     {
+        Gate::authorize('checklist-session.update');
+
+        // Cross-unit tamper guard: a user may only mutate sessions in their own unit.
+        if ((int) $checklistSession->unit_id !== (int) auth()->user()->unit_id) {
+            abort(403);
+        }
+
         $data = $request->validated();
         $data['updated_by'] = auth()->id();
 
@@ -131,6 +141,8 @@ class ChecklistSessionController extends Controller
 
     public function destroy(ChecklistSession $checklistSession): JsonResponse
     {
+        Gate::authorize('checklist-session.delete');
+
         $checklistSession->entries()->delete();
         $checklistSession->delete();
 
@@ -139,6 +151,8 @@ class ChecklistSessionController extends Controller
 
     public function restore(int $id): JsonResponse
     {
+        Gate::authorize('checklist-session.restore');
+
         $session = ChecklistSession::withTrashed()->findOrFail($id);
         $session->restore();
         $session->entries()->withTrashed()->restore();

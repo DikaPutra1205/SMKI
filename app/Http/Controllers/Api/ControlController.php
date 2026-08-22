@@ -10,6 +10,7 @@ use App\Models\Framework;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class ControlController extends Controller
 {
@@ -49,6 +50,8 @@ class ControlController extends Controller
 
     public function store(StoreControlRequest $request): JsonResponse
     {
+        Gate::authorize('control.create');
+
         $control = Control::create($request->validated());
 
         return $this->created($control->load('framework'));
@@ -61,6 +64,8 @@ class ControlController extends Controller
 
     public function update(UpdateControlRequest $request, Control $control): JsonResponse
     {
+        Gate::authorize('control.update');
+
         $control->update($request->validated());
 
         return $this->success($control, 'Kontrol berhasil diperbarui');
@@ -68,6 +73,8 @@ class ControlController extends Controller
 
     public function destroy(Control $control): JsonResponse
     {
+        Gate::authorize('control.delete');
+
         $control->delete();
 
         return $this->success(null, 'Kontrol berhasil dihapus');
