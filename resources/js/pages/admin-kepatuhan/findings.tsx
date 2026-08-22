@@ -3,18 +3,22 @@ import { Pagination } from '@/components/ui/Pagination';
 import { Select } from '@/components/ui/Select';
 import { SlideOver } from '@/components/ui/SlideOver';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { Toast } from '@/components/ui/Toast';
 import AppLayout from '@/layouts/AppLayout';
+import { useCan } from '@/lib/can';
 import { t } from '@/lib/i18n';
 import { formatDateIndonesian, formatDateTimeIndonesian } from '@/lib/utils';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import {
     Calendar,
     CheckCircle2,
     Clock,
+    Edit3,
     Eye,
     FileText,
     LayoutGrid,
     List as ListIcon,
+    Save,
     Search,
     Shield,
     ShieldAlert,
@@ -105,6 +109,10 @@ function findingRef(f: FindingItem): string {
 }
 
 export default function Findings({ findings, workUnits = [], filters = {} }: FindingsProps) {
+    const can = useCan();
+    const { flash } = usePage<{ flash?: { type: string; message: string } }>().props;
+    const [flashVisible, setFlashVisible] = useState(false);
+
     const page = findings ?? { data: [], current_page: 1, last_page: 1, per_page: 20, total: 0, from: null, to: null };
     const items = page.data;
 
@@ -115,6 +123,43 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
     const [selectedUnit, setSelectedUnit] = useState<string>(filters.unit_id || 'all');
     const [detailTarget, setDetailTarget] = useState<FindingItem | null>(null);
     const isFirstRender = useRef(true);
+
+    const { data: updateData, setData: setUpdateData, put: submitUpdate, processing: updateProcessing } = useForm({
+        status: '',
+        category: '',
+        deadline: '',
+        admin_notes: '',
+    });
+
+    useEffect(() => {
+        if (flash?.message) {
+            setFlashVisible(true);
+            const timer = setTimeout(() => setFlashVisible(false), 4000);
+            return () => clearTimeout(timer);
+        }
+    }, [flash]);
+
+    useEffect(() => {
+        if (detailTarget) {
+            setUpdateData({
+                status: detailTarget.status || 'open',
+                category: detailTarget.kategori || 'minor',
+                deadline: detailTarget.deadline ? detailTarget.deadline.substring(0, 10) : '',
+                admin_notes: detailTarget.admin_notes || detailTarget.catatan_admin || '',
+            });
+        }
+    }, [detailTarget, setUpdateData]);
+
+    function handleUpdateFinding(e: React.FormEvent) {
+        e.preventDefault();
+        if (!detailTarget) return;
+        submitUpdate(`/findings/${detailTarget.id}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setDetailTarget(null);
+            },
+        });
+    }
 
     const getBasePath = () => (typeof window !== 'undefined' ? window.location.pathname : '/admin/kepatuhan/findings');
 
@@ -473,6 +518,13 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
         <AppLayout breadcrumbs={breadcrumbs} currentPath="/findings">
             <Head title={`${t('findings.title')} - SMKI`} />
 
+            <Toast
+                visible={flashVisible}
+                tone={flash?.type === 'error' ? 'error' : 'success'}
+                message={flash?.message}
+                onDismiss={() => setFlashVisible(false)}
+            />
+
             <div className="space-y-6">
                 {/* Header Banner */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between border-b border-slate-200/80 pb-5 dark:border-slate-800">
@@ -666,6 +718,72 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                             )}
                         </div>
 
+                        {/* Interactive Status & Action Update Form for Authorized Users */}
+                        {can('finding.update-status') && (
+                            <form
+                                onSubmit={handleUpdateFinding}
+                                className="rounded-2xl border border-blue-200/80 bg-blue-50/50 p-4 space-y-3.5 dark:border-blue-900/50 dark:bg-blue-950/20"
+                            >
+                                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-900 dark:text-blue-300">
+                                    <Edit3 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                    <span>Perbarui Status & Tindak Lanjut</span>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                            Ubah Status Temuan
+                                        </label>
+                                        <select
+                                            value={updateData.status}
+                                            onChange={(e) => setUpdateData('status', e.target.value)}
+                                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 focus:border-blue-400 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                                        >
+                                            <option value="open">Terbuka (Open)</option>
+                                            <option value="in_progress">Dalam Penanganan (In Progress)</option>
+                                            <option value="closed">Selesai / Diverifikasi (Closed)</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                            Target Deadline SLA
+                                        </label>
+                                        <input
+                                            type="date"
+                                            value={updateData.deadline}
+                                            onChange={(e) => setUpdateData('deadline', e.target.value)}
+                                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:border-blue-400 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                        Catatan Verifikasi / Tindak Lanjut
+                                    </label>
+                                    <textarea
+                                        value={updateData.admin_notes}
+                                        onChange={(e) => setUpdateData('admin_notes', e.target.value)}
+                                        rows={2}
+                                        placeholder="Tuliskan catatan perbaikan atau progres penanganan..."
+                                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:border-blue-400 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                                    />
+                                </div>
+
+                                <div className="flex justify-end pt-1">
+                                    <button
+                                        type="submit"
+                                        disabled={updateProcessing}
+                                        className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                                    >
+                                        <Save className="h-3.5 w-3.5" />
+                                        <span>{updateProcessing ? 'Menyimpan…' : 'Simpan Perubahan'}</span>
+                                    </button>
+                                </div>
+                            </form>
+                        )}
+
                         {/* Control Klausul Details */}
                         <div className="rounded-xl border border-slate-200/80 bg-white p-4 space-y-3 dark:border-slate-800 dark:bg-slate-900">
                             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -733,4 +851,3 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
         </AppLayout>
     );
 }
-
