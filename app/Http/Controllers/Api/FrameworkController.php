@@ -9,6 +9,7 @@ use App\Models\Framework;
 use App\Services\FrameworkDocumentService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Gate;
 
 class FrameworkController extends Controller
 {
@@ -29,6 +30,8 @@ class FrameworkController extends Controller
     {
         $data = $request->validated();
         unset($data['file_dokumen']);
+
+        Gate::authorize('framework.create');
 
         if ($request->hasFile('file_dokumen')) {
             $data['url_file'] = $documents->store($request->file('file_dokumen'));
@@ -55,6 +58,8 @@ class FrameworkController extends Controller
         $data = $request->validated();
         unset($data['file_dokumen']);
 
+        Gate::authorize('framework.update');
+
         if ($request->hasFile('file_dokumen')) {
             $documents->deleteExisting($framework->getRawOriginal('url_file'));
             $data['url_file'] = $documents->store($request->file('file_dokumen'));
@@ -68,6 +73,8 @@ class FrameworkController extends Controller
     public function destroy(Framework $framework, FrameworkDocumentService $documents): JsonResponse
     {
         $documents->deleteExisting($framework->getRawOriginal('url_file'));
+
+        Gate::authorize('framework.delete');
 
         $framework->delete();
 

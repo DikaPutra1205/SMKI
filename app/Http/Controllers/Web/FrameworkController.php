@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\FrameworkDocumentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -61,6 +62,8 @@ class FrameworkController extends Controller
         $data = $request->validated();
         unset($data['file_dokumen']);
 
+        Gate::authorize('framework.create');
+
         if ($request->hasFile('file_dokumen')) {
             $data['url_file'] = $documents->store($request->file('file_dokumen'));
         }
@@ -78,6 +81,8 @@ class FrameworkController extends Controller
         $data = $request->validated();
         unset($data['file_dokumen']);
 
+        Gate::authorize('framework.update');
+
         if ($request->hasFile('file_dokumen')) {
             $documents->deleteExisting($framework->getRawOriginal('url_file'));
             $data['url_file'] = $documents->store($request->file('file_dokumen'));
@@ -94,6 +99,8 @@ class FrameworkController extends Controller
     public function destroy(Framework $framework, FrameworkDocumentService $documents): RedirectResponse
     {
         $documents->deleteExisting($framework->getRawOriginal('url_file'));
+
+        Gate::authorize('framework.delete');
 
         $framework->delete();
 

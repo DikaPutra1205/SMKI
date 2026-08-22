@@ -9,6 +9,7 @@ use App\Models\Control;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -47,6 +48,8 @@ class ChecklistSessionController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        Gate::authorize('checklist-session.create');
+
         $validated = $request->validate([
             'konteks_penilaian' => 'required|string|max:255',
             'periode' => 'nullable|string|max:100',
@@ -225,6 +228,8 @@ class ChecklistSessionController extends Controller
 
     public function submitAssessment(Request $request, ChecklistSession $checklistSession): RedirectResponse
     {
+        Gate::authorize('checklist-session.update');
+
         $user = $request->user();
 
         if ($checklistSession->unit_id !== $user->unit_id) {
@@ -258,6 +263,12 @@ class ChecklistSessionController extends Controller
 
     public function update(Request $request, ChecklistSession $checklistSession): RedirectResponse
     {
+        Gate::authorize('checklist-session.update');
+
+        if ($checklistSession->unit_id !== $request->user()->unit_id) {
+            abort(403);
+        }
+
         $validated = $request->validate([
             'konteks_penilaian' => 'sometimes|required|string|max:255',
             'periode' => 'nullable|string|max:100',

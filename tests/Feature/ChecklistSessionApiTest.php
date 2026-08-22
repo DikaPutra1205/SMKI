@@ -44,6 +44,7 @@ class ChecklistSessionApiTest extends TestCase
         $admin = User::factory()->create([
             'name' => 'Admin Kepatuhan',
             'role' => User::ROLE_ADMIN_KEPATUHAN,
+            'unit_id' => $unit->id,
         ]);
 
         return compact('unit', 'fw', 'control1', 'control2', 'pic', 'auditor', 'admin');
@@ -570,7 +571,7 @@ class ChecklistSessionApiTest extends TestCase
         $this->assertDatabaseHas('checklist_entries', ['session_id' => $session->id, 'unit_id' => $otherUnit->id]);
     }
 
-    // D-gap — web assessments.update has no unit scoping (unlike show() which 403s).
+    // Fixed: web assessments.update now enforces unit scoping (403 cross-unit).
     public function test_web_pic_assessments_update_not_scoped_to_unit(): void
     {
         extract($this->setupData());
@@ -580,9 +581,9 @@ class ChecklistSessionApiTest extends TestCase
         $this->actingAs($pic)
             ->from('/admin/pic/assessments')
             ->patch("/admin/pic/assessments/{$session->id}", ['konteks_penilaian' => 'Diedit PIC luar'])
-            ->assertRedirect('/admin/pic/assessments');
+            ->assertForbidden();
 
-        $this->assertSame('Diedit PIC luar', $session->fresh()->konteks_penilaian);
+        $this->assertNotSame('Diedit PIC luar', $session->fresh()->konteks_penilaian);
     }
 
     // routes/web.php:58-59 point to Web\ChecklistSessionController@destroy/@restore,

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AuditLog;
 use App\Models\ChecklistEntry;
+use App\Models\ChecklistSession;
 use App\Models\Control;
 use App\Models\Finding;
 use App\Models\Framework;
@@ -1113,14 +1114,16 @@ class ComplianceOfficerTest extends TestCase
 
     public function test_admin_can_view_bulk_verify_page_with_review_queue_entries(): void
     {
+        $session = ChecklistSession::factory()->create(['unit_id' => $this->unitA->id]);
         ChecklistEntry::factory()->create([
+            'session_id' => $session->id,
             'control_id' => $this->control->id,
             'unit_id' => $this->unitA->id,
             'pic_id' => $this->picA->id,
             'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
         ]);
 
-        $response = $this->actingAs($this->admin)->get('/admin/kepatuhan/checklist/bulk-verify');
+        $response = $this->actingAs($this->admin)->get("/admin/kepatuhan/checklist/bulk-verify?session_id={$session->id}");
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
@@ -1136,7 +1139,9 @@ class ComplianceOfficerTest extends TestCase
 
     public function test_bulk_verify_page_filters_unverified_entries_by_default_filter(): void
     {
+        $session = ChecklistSession::factory()->create(['unit_id' => $this->unitA->id]);
         ChecklistEntry::factory()->create([
+            'session_id' => $session->id,
             'control_id' => $this->control->id,
             'unit_id' => $this->unitA->id,
             'pic_id' => $this->picA->id,
@@ -1146,7 +1151,7 @@ class ComplianceOfficerTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->admin)
-            ->get('/admin/kepatuhan/checklist/bulk-verify?is_verified=0');
+            ->get("/admin/kepatuhan/checklist/bulk-verify?session_id={$session->id}&is_verified=0");
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page

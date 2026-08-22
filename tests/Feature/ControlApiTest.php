@@ -109,8 +109,8 @@ class ControlApiTest extends TestCase
         $this->assertSoftDeleted('controls', ['id' => $control->id]);
     }
 
-    // D6/D8 — any authenticated role can write master data. Verify, don't fix.
-    public function test_pic_can_create_control(): void
+    // control.create is gated — a pic (no control.create) must be denied.
+    public function test_pic_cannot_create_control(): void
     {
         $pic = User::factory()->create(['role' => User::ROLE_PIC]);
         $fw = $this->framework();
@@ -122,9 +122,9 @@ class ControlApiTest extends TestCase
                 'judul' => 'Inventory of information and other assets',
                 'kategori' => 'annex_a',
             ])
-            ->assertCreated();
+            ->assertForbidden();
 
-        $this->assertDatabaseHas('controls', ['kode_klausul' => 'A.5.9']);
+        $this->assertDatabaseMissing('controls', ['kode_klausul' => 'A.5.9']);
     }
 
     public function test_index_search_matches_kode_klausul(): void
