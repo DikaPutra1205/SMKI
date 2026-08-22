@@ -34,7 +34,7 @@ interface UserRow {
     email: string;
     role_id: number;
     unit_id: number | null;
-    role: { id: number; name: string; label: string } | null;
+    role?: { id: number; name: string; label: string } | string | null;
     unit: { id: number; nama: string } | null;
 }
 interface Props {
@@ -52,6 +52,22 @@ function getInitials(name: string): string {
     return (parts[0][0] + parts[1][0]).toUpperCase();
 }
 
+function resolveRoleInfo(u: UserRow, roles: RoleOpt[]) {
+    if (u.role_id) {
+        const found = roles.find((r) => r.id === u.role_id);
+        if (found) return { name: found.name, label: found.label };
+    }
+    if (typeof u.role === 'object' && u.role?.name) {
+        return { name: u.role.name, label: u.role.label || u.role.name };
+    }
+    if (typeof u.role === 'string') {
+        const found = roles.find((r) => r.name.toLowerCase() === (u.role as string).toLowerCase());
+        if (found) return { name: found.name, label: found.label };
+        return { name: u.role, label: t(`role.${u.role}` as never) || u.role };
+    }
+    return { name: 'pic', label: 'PIC Unit' };
+}
+
 function getRoleBadge(roleName?: string, roleLabel?: string) {
     const role = (roleName || '').toLowerCase();
     if (role.includes('superadmin')) {
@@ -61,7 +77,7 @@ function getRoleBadge(roleName?: string, roleLabel?: string) {
             dot: 'bg-purple-500',
         };
     }
-    if (role.includes('compliance') || role.includes('kepatuhan')) {
+    if (role.includes('compliance') || role.includes('kepatuhan') || role.includes('koordinator')) {
         return {
             label: roleLabel || 'Admin Kepatuhan',
             classes: 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-400',
@@ -107,6 +123,14 @@ export default function Users({ users, roles, units }: Props) {
 
     const form = useForm<FormData>({ name: '', email: '', role_id: '', unit_id: '' });
 
+    const userRoleInfoMap = useMemo(() => {
+        const map = new Map<number, { name: string; label: string }>();
+        users.forEach((u) => {
+            map.set(u.id, resolveRoleInfo(u, roles));
+        });
+        return map;
+    }, [users, roles]);
+
     const filteredUsers = useMemo(() => {
         return users.filter((u) => {
             if (searchQuery.trim()) {
@@ -128,9 +152,22 @@ export default function Users({ users, roles, units }: Props) {
     }, [users, searchQuery, selectedRole, selectedUnit]);
 
     // Statistics counts
-    const superadminCount = users.filter((u) => u.role?.name?.toLowerCase().includes('superadmin')).length;
-    const complianceCount = users.filter((u) => u.role?.name?.toLowerCase().includes('compliance') || u.role?.name?.toLowerCase().includes('kepatuhan')).length;
-    const picCount = users.filter((u) => u.role?.name?.toLowerCase().includes('pic')).length;
+    const superadminCount = useMemo(
+        () => users.filter((u) => userRoleInfoMap.get(u.id)?.name.toLowerCase().includes('superadmin')).length,
+        [users, userRoleInfoMap],
+    );
+    const complianceCount = useMemo(
+        () =>
+            users.filter((u) => {
+                const n = userRoleInfoMap.get(u.id)?.name.toLowerCase() || '';
+                return n.includes('compliance') || n.includes('kepatuhan') || n.includes('koordinator');
+            }).length,
+        [users, userRoleInfoMap],
+    );
+    const picCount = useMemo(
+        () => users.filter((u) => userRoleInfoMap.get(u.id)?.name.toLowerCase().includes('pic')).length,
+        [users, userRoleInfoMap],
+    );
 
     function openCreate() {
         form.reset();
@@ -337,7 +374,8 @@ export default function Users({ users, roles, units }: Props) {
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                             {filteredUsers.length ? (
                                 filteredUsers.map((u) => {
-                                    const badge = getRoleBadge(u.role?.name, u.role?.label);
+                                    const roleInfo = userRoleInfoMap.get(u.id) || resolveRoleInfo(u, roles);
+                                    const badge = getRoleBadge(roleInfo.name, roleInfo.label);
                                     const initials = getInitials(u.name);
                                     return (
                                         <tr key={u.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
