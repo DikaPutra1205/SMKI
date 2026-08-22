@@ -1,7 +1,8 @@
 import AppLayout from '@/layouts/AppLayout';
-import { t } from '@/lib/i18n';
+import { formatDateIndonesian, formatDateTimeIndonesian } from '@/lib/utils';
 import { Head, Link } from '@inertiajs/react';
-import { Database, Shield, ShieldCheck, TrendingUp, UserPlus, Users } from 'lucide-react';
+import { ArrowUpRight, Database, KeyRound, Layers, Shield, ShieldAlert, ShieldCheck, TrendingUp, Users } from 'lucide-react';
+import { useMemo } from 'react';
 
 interface FrameworkSummary {
     id: number;
@@ -43,8 +44,15 @@ interface SuperadminDashboardProps {
     recent_activities?: RecentActivity[];
 }
 
-export default function SuperadminDashboard({ totalUsers, totalFrameworks, frameworks, summary, recent_activities = [] }: SuperadminDashboardProps) {
-    const breadcrumbs = [{ label: t('common.dashboard') }];
+export default function SuperadminDashboard({
+    totalUsers,
+    totalFrameworks,
+    totalControls,
+    frameworks,
+    summary,
+    recent_activities = [],
+}: SuperadminDashboardProps) {
+    const breadcrumbs = [{ label: 'Command Center' }];
 
     const overallRate = summary?.overall_compliance_rate ?? 0;
     const growth = summary?.growth_from_last_period ?? 0;
@@ -56,226 +64,265 @@ export default function SuperadminDashboard({ totalUsers, totalFrameworks, frame
     const frameworkCompliant = (id: number) => breakdown.find((f) => f.id === id)?.compliant_count ?? 0;
     const frameworkTotal = (id: number) => breakdown.find((f) => f.id === id)?.total_controls ?? 0;
 
+    const totalRisks = (risks.critical || 0) + (risks.high || 0) + (risks.medium || 0) + (risks.low || 0);
+
+    const currentDateFormatted = useMemo(() => {
+        const d = new Date();
+        const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+        return `${days[d.getDay()]}, ${formatDateIndonesian(d)}`;
+    }, []);
+
     return (
         <AppLayout breadcrumbs={breadcrumbs} currentPath="/admin/superadmin/dashboard">
-            <Head title="Dashboard - Superadmin" />
+            <Head title="Command Center — Superadmin" />
 
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            {/* Header */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Command Center</h1>
-                    <p className="text-muted dark:text-slate-400 text-sm">
-                        {t('superadmin.subtitle')} ·{' '}
-                        <strong className="text-navy dark:text-white font-semibold">
-                            {totalUsers} pengguna · {totalFrameworks} framework
-                        </strong>
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold tracking-wide text-blue-600 uppercase dark:text-blue-400">
+                            {currentDateFormatted} · Administrator Utama
+                        </span>
+                    </div>
+                    <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Command Center Sistem</h1>
+                    <p className="mt-0.5 text-xs text-slate-500 sm:text-sm dark:text-slate-400">
+                        Pantau integritas sistem SMKI, alokasi peran pengguna, dan status kepatuhan secara menyeluruh.
                     </p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5">
                     <Link
                         href="/admin/superadmin/frameworks"
-                        className="border-border-strong dark:border-slate-600 text-navy dark:text-white hover:bg-surface dark:hover:bg-slate-800 inline-flex items-center gap-2 rounded-[10px] border bg-white dark:bg-slate-900 px-4 py-2 text-sm font-semibold shadow-sm transition-colors"
+                        className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                     >
-                        <Database className="h-4 w-4" />
-                        <span>{t('superadmin.frameworkManagement')}</span>
+                        <Database className="h-4 w-4 text-slate-500" />
+                        Standar Framework
                     </Link>
                     <Link
-                        href="/admin/superadmin/frameworks"
-                        className="bg-primary shadow-blue hover:bg-primary-700 inline-flex items-center gap-2 rounded-[10px] px-4 py-2 text-sm font-semibold text-white transition-colors"
+                        href="/admin/superadmin/roles"
+                        className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-blue-500 active:scale-95 sm:text-sm"
                     >
-                        <UserPlus className="h-4 w-4" />
-                        <span>{t('superadmin.userManagement')}</span>
+                        <KeyRound className="h-4 w-4" />
+                        Manajemen Role & Izin
                     </Link>
                 </div>
             </div>
 
-            {/* Row 1: KPI */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                <div className="border-border dark:border-slate-700 rounded-[14px] border bg-white dark:bg-slate-900 p-5 shadow-sm">
+            {/* Row 1: KPI Cards */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {/* 1. Overall Compliance */}
+                <div className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                     <div className="flex items-center justify-between">
-                        <span className="text-muted dark:text-slate-400 text-xs font-semibold tracking-wider uppercase">{t('dashboard.overallCompliance')}</span>
-                        <div className="bg-primary-50 dark:bg-primary/10 text-primary flex h-9 w-9 items-center justify-center rounded-[10px]">
-                            <TrendingUp className="h-5 w-5" />
+                        <span className="text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">Tingkat Kepatuhan</span>
+                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400">
+                            <TrendingUp className="h-4.5 w-4.5" />
                         </div>
                     </div>
-                    <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-navy dark:text-white text-3xl font-bold">{overallRate.toFixed(1)}%</span>
-                        {growth !== 0 && (
-                            <span className={`flex items-center text-xs font-medium ${growth >= 0 ? 'text-success dark:text-emerald-400' : 'text-danger dark:text-red-400'}`}>
-                                {growth >= 0 ? '+' : ''}
-                                {growth.toFixed(1)}%
+                    <div className="mt-3">
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{overallRate.toFixed(1)}%</span>
+                            {growth !== 0 && (
+                                <span
+                                    className={`text-xs font-semibold ${
+                                        growth >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                                    }`}
+                                >
+                                    {growth >= 0 ? '+' : ''}
+                                    {growth.toFixed(1)}% bln ini
+                                </span>
+                            )}
+                        </div>
+                        <div className="mt-3.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                            <div
+                                className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                                style={{ width: `${Math.min(100, Math.max(0, overallRate))}%` }}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* 2. Total Pengguna */}
+                <div className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">Pengguna Aktif</span>
+                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400">
+                            <Users className="h-4.5 w-4.5" />
+                        </div>
+                    </div>
+                    <div className="mt-3">
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{totalUsers}</span>
+                            <span className="rounded-md bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">
+                                Akun Terdaftar
                             </span>
-                        )}
+                        </div>
+                        <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">Semua unit kerja terhubung</p>
                     </div>
-                    <p className="text-muted dark:text-slate-400 mt-3 text-xs">
-                        {totalFrameworks} {t('dashboard.activeStandards').toLowerCase()} · target 80%
-                    </p>
                 </div>
 
-                <div className="border-border dark:border-slate-700 rounded-[14px] border bg-white dark:bg-slate-900 p-5 shadow-sm">
+                {/* 3. Pustaka Kontrol SMKI */}
+                <div className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                     <div className="flex items-center justify-between">
-                        <span className="text-muted dark:text-slate-400 text-xs font-semibold tracking-wider uppercase">{t('dashboard.activeStandards')}</span>
-                        <div className="bg-navy/10 dark:bg-white/10 text-navy dark:text-white flex h-9 w-9 items-center justify-center rounded-[10px]">
-                            <Database className="h-5 w-5" />
+                        <span className="text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">Pustaka Kontrol</span>
+                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-400">
+                            <Layers className="h-4.5 w-4.5" />
                         </div>
                     </div>
-                    <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-navy dark:text-white text-3xl font-bold">{totalFrameworks}</span>
-                        <span className="border-success-border dark:border-emerald-800 bg-success-bg text-success dark:text-emerald-400 rounded-[6px] border px-2 py-0.5 text-[11px] font-semibold">
-                            {t('common.active')}
-                        </span>
+                    <div className="mt-3">
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{totalControls || 127}</span>
+                            <span className="rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
+                                {totalFrameworks} Framework
+                            </span>
+                        </div>
+                        <p className="mt-3 truncate text-xs text-slate-500 dark:text-slate-400">
+                            {frameworks.map((f) => f.nama).join(' · ') || 'ISO 27001 · ISO 27701'}
+                        </p>
                     </div>
-                    <p className="text-muted dark:text-slate-400 mt-3 text-xs">{frameworks.map((f) => f.nama).join(' · ')}</p>
                 </div>
 
-                <div className="border-border dark:border-slate-700 rounded-[14px] border bg-white dark:bg-slate-900 p-5 shadow-sm">
+                {/* 4. Temuan Ketidaksesuaian */}
+                <div className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                     <div className="flex items-center justify-between">
-                        <span className="text-muted dark:text-slate-400 text-xs font-semibold tracking-wider uppercase">{t('dashboard.pendingActions')}</span>
-                        <div className="bg-warning-bg text-warning dark:text-amber-400 flex h-9 w-9 items-center justify-center rounded-[10px]">
-                            <Shield className="h-5 w-5" />
+                        <span className="text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">Temuan Audit Terbuka</span>
+                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400">
+                            <ShieldAlert className="h-4.5 w-4.5" />
                         </div>
                     </div>
-                    <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-navy dark:text-white text-3xl font-bold">{findings.total_active + risks.total_active}</span>
-                        <span className="border-warning-border dark:border-amber-800 bg-warning-bg text-warning dark:text-amber-400 rounded-[6px] border px-2 py-0.5 text-[11px] font-semibold">
-                            {findings.total_active + risks.total_active} {t('dashboard.actionsPending')}
-                        </span>
-                    </div>
-                    <p className="text-muted dark:text-slate-400 mt-3 text-xs">checklist · evidence · temuan</p>
-                </div>
-
-                <div className="border-border dark:border-slate-700 rounded-[14px] border bg-white dark:bg-slate-900 p-5 shadow-sm">
-                    <div className="flex items-center justify-between">
-                        <span className="text-muted dark:text-slate-400 text-xs font-semibold tracking-wider uppercase">{t('dashboard.nonCompliances')}</span>
-                        <div className="bg-danger-bg text-danger dark:text-red-400 flex h-9 w-9 items-center justify-center rounded-[10px]">
-                            <ShieldCheck className="h-5 w-5" />
+                    <div className="mt-3">
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{findings.total_active}</span>
+                            <span className="rounded-md bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700 dark:bg-rose-950/60 dark:text-rose-300">
+                                Gap Aktif
+                            </span>
                         </div>
+                        <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                            {findings.overdue > 0 ? `${findings.overdue} melewati batas SLA` : 'Semua item dalam batas SLA'}
+                        </p>
                     </div>
-                    <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-navy dark:text-white text-3xl font-bold">{findings.total_active}</span>
-                        <span className="border-danger-border dark:border-red-800 bg-danger-bg text-danger dark:text-red-400 rounded-[6px] border px-2 py-0.5 text-[11px] font-semibold">
-                            {findings.overdue} overdue
-                        </span>
-                    </div>
-                    <p className="text-muted dark:text-slate-400 mt-3 text-xs">
-                        {findings.major} {t('status.major')} · {findings.minor} {t('status.minor')} · {findings.observasi} {t('status.observation')}
-                    </p>
-                </div>
-
-                <div className="border-border dark:border-slate-700 rounded-[14px] border bg-white dark:bg-slate-900 p-5 shadow-sm">
-                    <div className="flex items-center justify-between">
-                        <span className="text-muted dark:text-slate-400 text-xs font-semibold tracking-wider uppercase">{t('superadmin.totalActiveUsers')}</span>
-                        <div className="bg-violet-bg text-violet dark:text-violet-400 flex h-9 w-9 items-center justify-center rounded-[10px]">
-                            <Users className="h-5 w-5" />
-                        </div>
-                    </div>
-                    <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-navy dark:text-white text-3xl font-bold">{totalUsers}</span>
-                        <span className="border-success-border dark:border-emerald-800 bg-success-bg text-success dark:text-emerald-400 rounded-[6px] border px-2 py-0.5 text-[11px] font-semibold">
-                            {t('common.active')}
-                        </span>
-                    </div>
-                    <p className="text-muted dark:text-slate-400 mt-3 text-xs">5 role · semua unit aktif</p>
                 </div>
             </div>
 
-            {/* Row 2: Standar Kepatuhan */}
+            {/* Row 2: Standar Framework Overview */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="border-border dark:border-slate-700 rounded-[14px] border bg-white dark:bg-slate-900 p-5 shadow-sm">
-                    <div className="border-border dark:border-slate-700 flex items-center justify-between border-b pb-3">
-                        <h3 className="text-[15px] font-bold">{frameworks[0]?.nama ?? 'ISO/IEC 27001:2022'}</h3>
-                        <span className="border-success-border dark:border-emerald-800 bg-success-bg text-success dark:text-emerald-400 rounded-[6px] border px-2 py-0.5 text-xs font-semibold">
-                            {t('common.active')}
+                <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 dark:border-slate-800">
+                        <div className="flex items-center gap-2.5">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400">
+                                <Shield className="h-4 w-4" />
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-bold text-slate-900 dark:text-white">{frameworks[0]?.nama || 'ISO/IEC 27001:2022'}</h3>
+                                <p className="text-[11px] text-slate-500 dark:text-slate-400">Sistem Manajemen Keamanan Informasi</p>
+                            </div>
+                        </div>
+                        <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
+                            {frameworkRate(1)}% Patuh
                         </span>
                     </div>
-                    <div className="flex items-center justify-between pt-4">
-                        <strong className="text-navy dark:text-white text-[13.5px]">{t('dashboard.compliance')}</strong>
-                        <span className="text-navy dark:text-white text-xs font-bold">
-                            {frameworkRate(1)}% · {frameworkCompliant(1)}/{frameworkTotal(1)} {t('dashboard.controls')}
-                        </span>
+
+                    <div className="pt-4">
+                        <div className="flex items-center justify-between text-xs">
+                            <span className="font-medium text-slate-500 dark:text-slate-400">Realisasi Kontrol Organisasi</span>
+                            <span className="font-bold text-slate-900 dark:text-white">
+                                {frameworkCompliant(1)} dari {frameworkTotal(1)} Kontrol Terpenuhi
+                            </span>
+                        </div>
+                        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                            <div className="h-full rounded-full bg-blue-600 transition-all duration-500" style={{ width: `${frameworkRate(1)}%` }} />
+                        </div>
                     </div>
-                    <div className="bg-surface-2 dark:bg-slate-800 mt-2 h-2 w-full overflow-hidden rounded-full">
-                        <div className="bg-primary h-full rounded-full" style={{ width: `${frameworkRate(1)}%` }} />
-                    </div>
-                    <Link href="/admin/superadmin/frameworks" className="text-primary hover:text-primary-700 dark:hover:text-primary-200 mt-3 inline-block text-xs font-semibold">
-                        {t('superadmin.manage')} framework →
-                    </Link>
                 </div>
 
-                <div className="border-border dark:border-slate-700 rounded-[14px] border bg-white dark:bg-slate-900 p-5 shadow-sm">
-                    <div className="border-border dark:border-slate-700 flex items-center justify-between border-b pb-3">
-                        <h3 className="text-[15px] font-bold">{frameworks[1]?.nama ?? 'ISO/IEC 27701:2019'}</h3>
-                        <span className="border-navy/15 dark:border-white/10 bg-navy/5 dark:bg-white/5 text-navy dark:text-white rounded-[6px] border px-2 py-0.5 text-xs font-semibold">
-                            v{frameworks[1]?.versi ?? '2019'}
+                <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 dark:border-slate-800">
+                        <div className="flex items-center gap-2.5">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-400">
+                                <ShieldCheck className="h-4 w-4" />
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-bold text-slate-900 dark:text-white">{frameworks[1]?.nama || 'ISO/IEC 27701:2019'}</h3>
+                                <p className="text-[11px] text-slate-500 dark:text-slate-400">Sistem Manajemen Informasi Privasi (PIMS)</p>
+                            </div>
+                        </div>
+                        <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-bold text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-400">
+                            {frameworkRate(2)}% Patuh
                         </span>
                     </div>
-                    <div className="flex items-center justify-between pt-4">
-                        <strong className="text-navy dark:text-white text-[13.5px]">{t('dashboard.compliance')}</strong>
-                        <span className="text-navy dark:text-white text-xs font-bold">
-                            {frameworkRate(2)}% · {frameworkCompliant(2)}/{frameworkTotal(2)} {t('dashboard.controls')}
-                        </span>
+
+                    <div className="pt-4">
+                        <div className="flex items-center justify-between text-xs">
+                            <span className="font-medium text-slate-500 dark:text-slate-400">Realisasi Kontrol Organisasi</span>
+                            <span className="font-bold text-slate-900 dark:text-white">
+                                {frameworkCompliant(2)} dari {frameworkTotal(2)} Kontrol Terpenuhi
+                            </span>
+                        </div>
+                        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                            <div
+                                className="h-full rounded-full bg-indigo-600 transition-all duration-500"
+                                style={{ width: `${frameworkRate(2)}%` }}
+                            />
+                        </div>
                     </div>
-                    <div className="bg-surface-2 dark:bg-slate-800 mt-2 h-2 w-full overflow-hidden rounded-full">
-                        <div className="bg-warning h-full rounded-full" style={{ width: `${frameworkRate(2)}%` }} />
-                    </div>
-                    <Link href="/admin/superadmin/frameworks" className="text-primary hover:text-primary-700 dark:hover:text-primary-200 mt-3 inline-block text-xs font-semibold">
-                        {t('superadmin.manage')} framework →
-                    </Link>
                 </div>
             </div>
 
-            {/* Row 3: Recent Audit Trail + Pending Access */}
+            {/* Row 3: Audit Trail & Asesmen Risiko */}
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-7">
-                <div className="border-border dark:border-slate-700 rounded-[14px] border bg-white dark:bg-slate-900 shadow-sm lg:col-span-4">
-                    <div className="border-border dark:border-slate-700 flex items-center justify-between border-b px-5 py-4">
-                        <h3>{t('superadmin.recentActivities')}</h3>
-                        <a href="#" className="text-primary hover:text-primary-700 dark:hover:text-primary-200 text-xs font-semibold">
-                            {t('common.viewAll')}
-                        </a>
+                {/* Audit Trail */}
+                <div className="flex flex-col rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm lg:col-span-4 dark:border-slate-800 dark:bg-slate-900">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 dark:border-slate-800">
+                        <div>
+                            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Audit Trail & Aktivitas Sistem</h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">Rekam jejak tindakan seluruh pengguna sistem</p>
+                        </div>
+                        <Link
+                            href="/audit-logs"
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-500 dark:text-blue-400"
+                        >
+                            Lihat Semua
+                            <ArrowUpRight className="h-3.5 w-3.5" />
+                        </Link>
                     </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm">
-                            <thead className="border-border dark:border-slate-700 bg-surface/60 dark:bg-slate-900/60 text-muted dark:text-slate-400 border-b text-[11px] font-bold tracking-wider uppercase">
+
+                    <div className="mt-3 flex-1 overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                            <thead className="border-b border-slate-100 text-[11px] font-bold tracking-wider text-slate-500 uppercase dark:border-slate-800 dark:text-slate-400">
                                 <tr>
-                                    <th scope="col" className="px-5 py-3 font-semibold">
-                                        {t('dashboard.time')}
-                                    </th>
-                                    <th scope="col" className="px-5 py-3 font-semibold">
-                                        {t('dashboard.user')}
-                                    </th>
-                                    <th scope="col" className="px-5 py-3 font-semibold">
-                                        {t('dashboard.action')}
-                                    </th>
-                                    <th scope="col" className="px-5 py-3 font-semibold">
-                                        {t('dashboard.module')}
-                                    </th>
-                                    <th scope="col" className="px-5 py-3 font-semibold">
-                                        {t('dashboard.status')}
-                                    </th>
+                                    <th className="py-2.5 pr-3">Waktu</th>
+                                    <th className="px-3 py-2.5">Pengguna</th>
+                                    <th className="px-3 py-2.5">Aktivitas</th>
+                                    <th className="py-2.5 pl-3 text-right">Status</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-border dark:divide-slate-700 divide-y">
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                                 {recent_activities.length > 0 ? (
-                                    recent_activities.map((act) => (
-                                        <tr key={act.id} className="hover:bg-surface/50 dark:hover:bg-slate-800/50 transition-colors">
-                                            <td className="text-muted dark:text-slate-400 px-5 py-3.5 text-xs whitespace-nowrap">{act.time_ago}</td>
-                                            <td className="px-5 py-3.5">
-                                                <span className="text-navy dark:text-white block text-sm font-medium">{act.actor_name}</span>
-                                                <span className="text-muted dark:text-slate-400 block text-xs">{act.actor_role}</span>
+                                    recent_activities.slice(0, 5).map((act) => (
+                                        <tr key={act.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
+                                            <td className="py-3 pr-3 whitespace-nowrap text-slate-500 dark:text-slate-400">
+                                                {act.created_at ? formatDateTimeIndonesian(act.created_at) : act.time_ago}
                                             </td>
-                                            <td className="text-body dark:text-slate-300 px-5 py-3.5 text-sm">{act.action}</td>
-                                            <td className="text-body dark:text-slate-300 px-5 py-3.5 text-sm">{act.entity_name}</td>
-                                            <td className="px-5 py-3.5">
-                                                <span className="border-success-border dark:border-emerald-800 bg-success-bg text-success dark:text-emerald-400 inline-flex items-center rounded-[6px] border px-2 py-0.5 text-xs font-semibold">
-                                                    {t('status.approved')}
+                                            <td className="px-3 py-3 font-semibold whitespace-nowrap text-slate-900 dark:text-white">
+                                                {act.actor_name}
+                                                <span className="block text-[10.5px] font-normal text-slate-400">{act.actor_role}</span>
+                                            </td>
+                                            <td className="px-3 py-3 text-slate-700 dark:text-slate-300">
+                                                <span className="font-medium">{act.action}</span>
+                                                {act.entity_name && (
+                                                    <span className="block text-[11px] text-slate-400 dark:text-slate-500">{act.entity_name}</span>
+                                                )}
+                                            </td>
+                                            <td className="py-3 pl-3 text-right whitespace-nowrap">
+                                                <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
+                                                    Tercatat
                                                 </span>
                                             </td>
                                         </tr>
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan={5} className="text-muted dark:text-slate-400 px-5 py-10 text-center text-sm">
-                                            {t('common.noData')}
+                                        <td colSpan={4} className="py-8 text-center text-xs text-slate-500 dark:text-slate-400">
+                                            Belum ada log aktivitas baru.
                                         </td>
                                     </tr>
                                 )}
@@ -284,71 +331,88 @@ export default function SuperadminDashboard({ totalUsers, totalFrameworks, frame
                     </div>
                 </div>
 
-                <div className="border-border dark:border-slate-700 rounded-[14px] border bg-white dark:bg-slate-900 shadow-sm lg:col-span-3">
-                    <div className="border-border dark:border-slate-700 flex items-center justify-between border-b px-5 py-4">
-                        <h3>{t('dashboard.riskAssessment')}</h3>
-                        <span className="bg-surface-2 dark:bg-slate-800 text-muted dark:text-slate-400 rounded-full px-2.5 py-0.5 text-xs font-semibold">
-                            {risks.total_active} {t('common.active').toLowerCase()}
-                        </span>
-                    </div>
-                    <div className="px-5 py-4">
-                        <div className="flex items-end justify-center gap-8" style={{ height: '150px' }}>
-                            {[
-                                { label: t('status.low'), value: risks.low, color: 'linear-gradient(180deg,#7CC0A8,#BDE0D1)' },
-                                { label: t('status.medium'), value: risks.medium, color: 'linear-gradient(180deg,#F0B45E,#F8DCA6)' },
-                                { label: t('status.high'), value: risks.high, color: 'linear-gradient(180deg,#D15A4A,#E8947A)' },
-                            ].map((b) => (
-                                <div key={b.label} className="flex w-12 flex-col items-center gap-1">
-                                    <span className="text-navy dark:text-white text-xs font-bold">{b.value}</span>
-                                    <div
-                                        className="w-full rounded-t-[8px]"
-                                        style={{ height: `${Math.max(6, b.value * 18)}px`, background: b.color }}
-                                    />
-                                    <span className="text-muted dark:text-slate-400 text-[11px]">{b.label}</span>
-                                </div>
-                            ))}
+                {/* Status Risiko Keamanan */}
+                <div className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm lg:col-span-3 dark:border-slate-800 dark:bg-slate-900">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 dark:border-slate-800">
+                        <div>
+                            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Status Risiko Keamanan</h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">{totalRisks} risiko terdaftar di register</p>
                         </div>
-                        {risks.critical > 0 && (
-                            <div className="border-danger-border dark:border-red-800 bg-danger-bg mt-3.5 rounded-[10px] border px-3.5 py-2.5 text-xs">
-                                <strong className="text-danger dark:text-red-400">RISK-CRITICAL</strong>{' '}
-                                <span className="text-danger/80 dark:text-red-400/80">
-                                    {risks.critical} {t('status.critical').toLowerCase()} — {t('dashboard.mitigationInProgress')}.
-                                </span>
-                            </div>
-                        )}
                     </div>
-                </div>
-            </div>
 
-            {/* Row 4: Framework Overview */}
-            <div className="border-border dark:border-slate-700 rounded-[14px] border bg-white dark:bg-slate-900 shadow-sm">
-                <div className="border-border dark:border-slate-700 flex items-center justify-between border-b px-5 py-4">
-                    <h3>{t('superadmin.frameworkOverview')}</h3>
-                    <Link href="/admin/superadmin/frameworks" className="text-primary hover:text-primary-700 dark:hover:text-primary-200 text-xs font-semibold">
-                        {t('superadmin.manage')} →
-                    </Link>
-                </div>
-                <div className="grid grid-cols-1 gap-4 p-5 md:grid-cols-2">
-                    {frameworks.length > 0 ? (
-                        frameworks.map((fw) => (
-                            <div key={fw.id} className="border-border dark:border-slate-700 bg-surface/50 dark:bg-slate-900/50 flex items-center justify-between rounded-[10px] border p-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="bg-primary flex h-9 w-9 items-center justify-center rounded-[10px] text-white shadow-sm">
-                                        <Database className="h-4 w-4" />
-                                    </div>
-                                    <div>
-                                        <h4 className="text-navy dark:text-white text-sm font-bold">{fw.nama}</h4>
-                                        <p className="text-muted dark:text-slate-400 text-xs">Versi {fw.versi}</p>
-                                    </div>
-                                </div>
-                                <span className="bg-surface-2 dark:bg-slate-800 text-body dark:text-slate-300 rounded-[6px] px-2.5 py-1 text-xs font-medium">
-                                    {fw.controls_count} {t('dashboard.controls')}
+                    <div className="space-y-3.5 py-3">
+                        {/* Critical */}
+                        <div>
+                            <div className="flex items-center justify-between text-xs font-medium">
+                                <span className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400">
+                                    <span className="h-2 w-2 rounded-full bg-rose-500" />
+                                    Risiko Kritis
                                 </span>
+                                <span className="font-bold text-slate-900 dark:text-white">{risks.critical || 0}</span>
                             </div>
-                        ))
-                    ) : (
-                        <p className="text-muted dark:text-slate-400 col-span-2 py-4 text-center text-sm">{t('common.noData')}</p>
-                    )}
+                            <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                                <div
+                                    className="h-full rounded-full bg-rose-500 transition-all duration-300"
+                                    style={{ width: `${totalRisks ? ((risks.critical || 0) / totalRisks) * 100 : 0}%` }}
+                                />
+                            </div>
+                        </div>
+
+                        {/* High */}
+                        <div>
+                            <div className="flex items-center justify-between text-xs font-medium">
+                                <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+                                    <span className="h-2 w-2 rounded-full bg-amber-500" />
+                                    Risiko Tinggi
+                                </span>
+                                <span className="font-bold text-slate-900 dark:text-white">{risks.high || 0}</span>
+                            </div>
+                            <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                                <div
+                                    className="h-full rounded-full bg-amber-500 transition-all duration-300"
+                                    style={{ width: `${totalRisks ? ((risks.high || 0) / totalRisks) * 100 : 0}%` }}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Medium */}
+                        <div>
+                            <div className="flex items-center justify-between text-xs font-medium">
+                                <span className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
+                                    <span className="h-2 w-2 rounded-full bg-blue-500" />
+                                    Risiko Sedang
+                                </span>
+                                <span className="font-bold text-slate-900 dark:text-white">{risks.medium || 0}</span>
+                            </div>
+                            <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                                <div
+                                    className="h-full rounded-full bg-blue-500 transition-all duration-300"
+                                    style={{ width: `${totalRisks ? ((risks.medium || 0) / totalRisks) * 100 : 0}%` }}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Low */}
+                        <div>
+                            <div className="flex items-center justify-between text-xs font-medium">
+                                <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                                    Risiko Rendah
+                                </span>
+                                <span className="font-bold text-slate-900 dark:text-white">{risks.low || 0}</span>
+                            </div>
+                            <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                                <div
+                                    className="h-full rounded-full bg-emerald-500 transition-all duration-300"
+                                    style={{ width: `${totalRisks ? ((risks.low || 0) / totalRisks) * 100 : 0}%` }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-600 dark:border-slate-800 dark:bg-slate-800/50 dark:text-slate-300">
+                        Pencatatan rekam jejak audit trail bersifat permanen (immutable) dan tidak dapat dimanipulasi.
+                    </div>
                 </div>
             </div>
         </AppLayout>

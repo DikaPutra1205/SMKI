@@ -118,16 +118,9 @@ class NavigationService
                 'permissions' => ['control.view'],
             ],
             [
-                'label' => 'Verifikasi Entri',
+                'label' => 'Verifikasi Penilaian',
                 'url' => '/admin/kepatuhan/checklist/verify',
                 'icon' => 'ClipboardCheck',
-                'permissions' => ['checklist.bulk-verify'],
-                'denies' => ['work-unit.view'],
-            ],
-            [
-                'label' => 'Bulk Verify',
-                'url' => '/admin/kepatuhan/checklist/bulk-verify',
-                'icon' => 'CheckSquare',
                 'permissions' => ['checklist.bulk-verify'],
                 'denies' => ['work-unit.view'],
             ],
@@ -157,7 +150,7 @@ class NavigationService
                 'denies' => ['work-unit.view'],
             ],
             [
-                'label' => 'Risks',
+                'label' => 'Register Risiko',
                 'url' => '/risks',
                 'icon' => 'AlertTriangle',
                 'permissions' => ['risk.view'],

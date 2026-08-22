@@ -1,6 +1,7 @@
 import AssessmentsListSkeleton from '@/components/skeletons/AssessmentsListSkeleton';
 import { usePageLoading } from '@/hooks/usePageLoading';
 import AppLayout from '@/layouts/AppLayout';
+import { formatDateIndonesian, formatPeriodeIndonesian } from '@/lib/utils';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { AlertTriangle, CheckCircle2, ChevronRight, ClipboardCheck, Plus, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -125,7 +126,9 @@ export default function Assessments({ sessions, user_unit }: AssessmentsProps) {
                                 <div className="mb-3 flex items-start justify-between">
                                     <div className="min-w-0 flex-1">
                                         <h3 className="truncate text-sm font-bold text-slate-900 dark:text-white">{s.konteks_penilaian}</h3>
-                                        <p className="mt-0.5 text-xs text-slate-400">{s.periode || 'Tanpa Periode'}</p>
+                                        <p className="mt-0.5 text-xs text-slate-400">
+                                            {s.periode ? formatPeriodeIndonesian(s.periode) : 'Tanpa Periode'}
+                                        </p>
                                     </div>
                                     <ChevronRight className="h-4 w-4 shrink-0 text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-blue-500" />
                                 </div>
@@ -145,7 +148,7 @@ export default function Assessments({ sessions, user_unit }: AssessmentsProps) {
                                             />
                                         )}
                                         {partialPct > 0 && (
-                                            <div className="h-full bg-amber-500 transition-all duration-500" style={{ width: `${partialPct}%` }} />
+                                            <div className="h-full bg-amber-400 transition-all duration-500" style={{ width: `${partialPct}%` }} />
                                         )}
                                         {nonCompliantPct > 0 && (
                                             <div className="h-full bg-red-500 transition-all duration-500" style={{ width: `${nonCompliantPct}%` }} />
@@ -161,9 +164,7 @@ export default function Assessments({ sessions, user_unit }: AssessmentsProps) {
 
                                 <div className="mt-auto flex items-center justify-between text-[11px] text-slate-400">
                                     <span>{s.framework?.nama || 'Semua Kerangka'}</span>
-                                    <span>
-                                        {new Date(s.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                    </span>
+                                    <span>{formatDateIndonesian(s.created_at, { shortMonth: true })}</span>
                                 </div>
                             </button>
                         );

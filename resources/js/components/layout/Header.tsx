@@ -1,9 +1,9 @@
+import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { t } from '@/lib/i18n';
 import { SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { Bell, ChevronDown, ChevronRight } from 'lucide-react';
+import { Bell, ChevronDown, ChevronRight, Menu } from 'lucide-react';
 import { useState } from 'react';
-import { ThemeToggle } from '@/components/layout/ThemeToggle';
 
 export interface BreadcrumbItem {
     label: string;
@@ -12,9 +12,11 @@ export interface BreadcrumbItem {
 
 interface HeaderProps {
     breadcrumbs?: BreadcrumbItem[];
+    onToggleSidebar?: () => void;
+    isSidebarCollapsed?: boolean;
 }
 
-export function Header({ breadcrumbs = [] }: HeaderProps) {
+export function Header({ breadcrumbs = [], onToggleSidebar }: HeaderProps) {
     const page = usePage<SharedData>();
     const authUser = page.props.auth?.user;
 
@@ -36,8 +38,20 @@ export function Header({ breadcrumbs = [] }: HeaderProps) {
     const roleLabel = t(`role.${userRole}` as never);
 
     return (
-        <header className="border-border dark:border-white/10 sticky top-0 z-30 flex h-[68px] items-center justify-between border-b bg-white/90 px-4 backdrop-blur-md transition-colors sm:px-6 dark:bg-[#001a30]/90">
+        <header className="border-border sticky top-0 z-30 flex h-[68px] items-center justify-between border-b bg-white/90 px-4 backdrop-blur-md transition-colors sm:px-6 dark:border-white/10 dark:bg-[#001a30]/90">
             <div className="flex items-center gap-3">
+                {onToggleSidebar && (
+                    <button
+                        type="button"
+                        onClick={onToggleSidebar}
+                        className="border-border text-body hover:bg-surface hover:text-navy flex h-9 w-9 items-center justify-center rounded-[10px] border bg-white shadow-sm transition-colors dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+                        title={t('layout.toggleSidebar')}
+                        aria-label={t('layout.toggleSidebar')}
+                    >
+                        <Menu className="h-4.5 w-4.5" />
+                    </button>
+                )}
+
                 <nav className="flex items-center gap-1.5 text-xs font-medium sm:text-sm">
                     {activeBreadcrumbs.map((item, index) => {
                         const isLast = index === activeBreadcrumbs.length - 1;
@@ -48,7 +62,10 @@ export function Header({ breadcrumbs = [] }: HeaderProps) {
                                 {isLast ? (
                                     <span className="text-navy dark:text-primary-200 font-semibold">{item.label}</span>
                                 ) : (
-                                    <Link href={item.href || '#'} className="text-muted hover:text-navy dark:text-slate-400 dark:hover:text-primary-200 transition-colors">
+                                    <Link
+                                        href={item.href || '#'}
+                                        className="text-muted hover:text-navy dark:hover:text-primary-200 transition-colors dark:text-slate-400"
+                                    >
                                         {item.label}
                                     </Link>
                                 )}
@@ -63,7 +80,7 @@ export function Header({ breadcrumbs = [] }: HeaderProps) {
 
                 <button
                     type="button"
-                    className="border-border text-body hover:bg-surface hover:text-navy dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white relative flex h-9 w-9 items-center justify-center rounded-[10px] border bg-white shadow-sm transition-colors dark:bg-white/5"
+                    className="border-border text-body hover:bg-surface hover:text-navy relative flex h-9 w-9 items-center justify-center rounded-[10px] border bg-white shadow-sm transition-colors dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
                     aria-label={t('layout.notifications')}
                 >
                     <Bell className="h-4.5 w-4.5" />
@@ -82,36 +99,36 @@ export function Header({ breadcrumbs = [] }: HeaderProps) {
                             {initials}
                         </div>
                         <div className="hidden flex-col md:flex">
-                            <span className="text-navy dark:text-white text-xs leading-tight font-semibold">{userName}</span>
-                            <span className="text-muted dark:text-slate-400 mt-0.5 text-[11px] leading-none">{roleLabel}</span>
+                            <span className="text-navy text-xs leading-tight font-semibold dark:text-white">{userName}</span>
+                            <span className="text-muted mt-0.5 text-[11px] leading-none dark:text-slate-400">{roleLabel}</span>
                         </div>
                         <ChevronDown className="text-muted h-4 w-4" />
                     </button>
 
                     {isUserMenuOpen && (
-                        <div className="animate-in fade-in slide-in-from-top-2 border-border dark:border-white/10 absolute right-0 z-[1000] mt-2 w-48 rounded-[14px] border bg-white p-1.5 shadow-lg duration-150 dark:bg-[#002745]">
-                            <div className="border-border dark:border-white/10 border-b px-3 py-2 md:hidden">
-                                <p className="text-navy dark:text-white text-xs font-semibold">{userName}</p>
-                                <p className="text-muted dark:text-slate-400 text-[11px]">{roleLabel}</p>
+                        <div className="animate-in fade-in slide-in-from-top-2 border-border absolute right-0 z-[1000] mt-2 w-48 rounded-[14px] border bg-white p-1.5 shadow-lg duration-150 dark:border-white/10 dark:bg-[#002745]">
+                            <div className="border-border border-b px-3 py-2 md:hidden dark:border-white/10">
+                                <p className="text-navy text-xs font-semibold dark:text-white">{userName}</p>
+                                <p className="text-muted text-[11px] dark:text-slate-400">{roleLabel}</p>
                             </div>
                             <button
                                 type="button"
-                                className="text-body hover:bg-surface dark:text-slate-300 dark:hover:bg-white/10 w-full rounded-[10px] px-3 py-2 text-left text-xs font-medium transition-colors"
+                                className="text-body hover:bg-surface w-full rounded-[10px] px-3 py-2 text-left text-xs font-medium transition-colors dark:text-slate-300 dark:hover:bg-white/10"
                             >
                                 {t('layout.profile')}
                             </button>
                             <button
                                 type="button"
-                                className="text-body hover:bg-surface dark:text-slate-300 dark:hover:bg-white/10 w-full rounded-[10px] px-3 py-2 text-left text-xs font-medium transition-colors"
+                                className="text-body hover:bg-surface w-full rounded-[10px] px-3 py-2 text-left text-xs font-medium transition-colors dark:text-slate-300 dark:hover:bg-white/10"
                             >
                                 {t('layout.changePassword')}
                             </button>
-                            <div className="border-border dark:border-white/10 my-1 border-t" />
+                            <div className="border-border my-1 border-t dark:border-white/10" />
                             <Link
                                 href="/logout"
                                 method="post"
                                 as="button"
-                                className="text-danger hover:bg-danger-bg dark:hover:bg-red-950/40 block w-full rounded-[10px] px-3 py-2 text-left text-xs font-medium transition-colors"
+                                className="text-danger hover:bg-danger-bg block w-full rounded-[10px] px-3 py-2 text-left text-xs font-medium transition-colors dark:hover:bg-red-950/40"
                             >
                                 {t('layout.logout')}
                             </Link>

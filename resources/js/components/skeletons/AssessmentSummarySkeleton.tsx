@@ -13,7 +13,7 @@ export default function AssessmentSummarySkeleton() {
                 <Skeleton className="h-4 w-40" />
             </div>
 
-            <div className="mb-8 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-sm">
+            <div className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
                 <div className="flex flex-col items-center gap-8 lg:flex-row">
                     <div className="flex items-center gap-8">
                         <Skeleton className="h-[150px] w-[150px] rounded-full" />
@@ -50,7 +50,10 @@ export default function AssessmentSummarySkeleton() {
                     </div>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         {Array.from({ length: 3 }).map((_, i) => (
-                            <div key={i} className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 shadow-sm">
+                            <div
+                                key={i}
+                                className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900"
+                            >
                                 <div className="mb-2 flex items-center justify-between">
                                     <Skeleton className="h-7 w-7 rounded-full" />
                                     <Skeleton className="h-6 w-24 rounded-lg" />

@@ -29,7 +29,13 @@ export default function ComplianceAreaChart({ labels, values }: TrendChartProps)
                 {effectiveValues.length > 0 &&
                     effectiveValues.map((v, i) => (
                         <g key={i}>
-                            <circle cx={40 + (600 * i) / (effectiveValues.length - 1)} cy={240 - (210 * v) / 100} r="4" fill="#fff" className="dark:fill-slate-900" />
+                            <circle
+                                cx={40 + (600 * i) / (effectiveValues.length - 1)}
+                                cy={240 - (210 * v) / 100}
+                                r="4"
+                                fill="#fff"
+                                className="dark:fill-slate-900"
+                            />
                         </g>
                     ))}
             </g>

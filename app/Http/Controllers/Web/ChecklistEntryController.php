@@ -20,7 +20,7 @@ class ChecklistEntryController extends Controller
 
         $validated = $request->validate([
             'status' => 'sometimes|nullable|string|in:compliant,partial,non_compliant,na',
-            'catatan' => 'required_if:status,non_compliant,na,partial|nullable|string|max:2000',
+            'catatan' => 'nullable|string|max:2000',
         ]);
 
         $updateData = array_merge(

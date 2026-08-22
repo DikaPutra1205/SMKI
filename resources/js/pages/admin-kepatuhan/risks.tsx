@@ -170,13 +170,13 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
             <div className="page-head flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">{t('risks.title')}</h1>
-                    <p className="text-muted dark:text-slate-400 mt-1 text-xs sm:text-sm">{t('risks.subtitle')}</p>
+                    <p className="text-muted mt-1 text-xs sm:text-sm dark:text-slate-400">{t('risks.subtitle')}</p>
                 </div>
 
                 <button
                     type="button"
                     disabled
-                    className="bg-surface-2 dark:bg-slate-800 border-border dark:border-slate-700 text-faint dark:text-slate-500 inline-flex items-center gap-2 rounded-[10px] border px-4 py-2 text-xs font-semibold sm:text-sm"
+                    className="bg-surface-2 border-border text-faint inline-flex items-center gap-2 rounded-[10px] border px-4 py-2 text-xs font-semibold sm:text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-500"
                     title={t('risks.comingSoon')}
                 >
                     <Plus className="h-4 w-4" />
@@ -187,32 +187,35 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
 
             <div className="grid grid-cols-2 gap-[14px] xl:grid-cols-4">
                 {kpiCards.map((kpi) => (
-                    <div key={kpi.label} className="border-border dark:border-slate-700 rounded-[14px] border bg-white dark:bg-slate-900 p-[18px_20px] shadow-sm">
+                    <div
+                        key={kpi.label}
+                        className="border-border rounded-[14px] border bg-white p-[18px_20px] shadow-sm dark:border-slate-700 dark:bg-slate-900"
+                    >
                         <div className="flex items-center justify-between">
                             <div className={`grid h-9 w-9 place-items-center rounded-[10px] ${kpi.iconClass}`}>
                                 <kpi.Icon className="h-[18px] w-[18px]" />
                             </div>
                         </div>
-                        <div className="text-navy dark:text-white mt-3 text-[26px] leading-none font-bold">{kpi.value}</div>
-                        <div className="text-muted dark:text-slate-400 mt-1.5 text-xs font-semibold">{kpi.label}</div>
+                        <div className="text-navy mt-3 text-[26px] leading-none font-bold dark:text-white">{kpi.value}</div>
+                        <div className="text-muted mt-1.5 text-xs font-semibold dark:text-slate-400">{kpi.label}</div>
                     </div>
                 ))}
             </div>
 
-            <section className="border-border dark:border-slate-700 overflow-hidden rounded-[14px] border bg-white dark:bg-slate-900 shadow-sm">
-                <div className="border-border dark:border-slate-700 border-b px-5 py-4">
+            <section className="border-border overflow-hidden rounded-[14px] border bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+                <div className="border-border border-b px-5 py-4 dark:border-slate-700">
                     <h3 className="text-[15px] font-bold">{t('risks.title')}</h3>
                 </div>
 
-                <div className="border-border dark:border-slate-700 flex flex-col gap-3 border-b bg-white dark:bg-slate-900 p-[12px_16px] md:flex-row md:items-center">
+                <div className="border-border flex flex-col gap-3 border-b bg-white p-[12px_16px] md:flex-row md:items-center dark:border-slate-700 dark:bg-slate-900">
                     <div className="relative min-w-[220px] flex-1">
-                        <Search className="text-faint dark:text-slate-500 absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                        <Search className="text-faint absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 dark:text-slate-500" />
                         <input
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder={t('risks.searchPlaceholder')}
-                            className="border-border-strong dark:border-slate-600 text-ink dark:text-white placeholder:text-faint dark:placeholder:text-slate-500 focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white dark:bg-slate-900 py-2 pr-4 pl-9 text-xs focus:ring-2 focus:outline-none sm:text-sm"
+                            className="border-border-strong text-ink placeholder:text-faint focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white py-2 pr-4 pl-9 text-xs focus:ring-2 focus:outline-none sm:text-sm dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
                         />
                     </div>
 
@@ -246,7 +249,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
 
                 <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs sm:text-sm">
-                        <thead className="border-border dark:border-slate-700 bg-surface/60 dark:bg-slate-900/60 text-muted dark:text-slate-400 border-b text-[11px] font-bold tracking-wider uppercase">
+                        <thead className="border-border bg-surface/60 text-muted border-b text-[11px] font-bold tracking-wider uppercase dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-400">
                             <tr>
                                 <th scope="col" className="px-5 py-3 text-left font-semibold">
                                     {t('risks.code')}
@@ -271,10 +274,10 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
                                 </th>
                             </tr>
                         </thead>
-                        <tbody className="divide-border dark:divide-slate-700 divide-y">
+                        <tbody className="divide-border divide-y dark:divide-slate-700">
                             {items.length > 0 ? (
                                 items.map((r) => (
-                                    <tr key={r.id} className="hover:bg-surface/50 dark:hover:bg-slate-800/50 transition-colors">
+                                    <tr key={r.id} className="hover:bg-surface/50 transition-colors dark:hover:bg-slate-800/50">
                                         <td className="px-5 py-4 whitespace-nowrap">
                                             <code className="text-primary font-bold">RSK-{riskRef(r)}</code>
                                         </td>
@@ -282,32 +285,36 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
                                             <button
                                                 type="button"
                                                 onClick={() => setDetailTarget(r)}
-                                                className="text-navy dark:text-white hover:text-primary text-left font-semibold"
+                                                className="text-navy hover:text-primary text-left font-semibold dark:text-white"
                                             >
                                                 {r.control?.judul || t('common.noData')}
                                             </button>
                                             {r.mitigation_plan || r.rencana_mitigasi ? (
-                                                <div className="text-faint dark:text-slate-500 mt-0.5 line-clamp-1 text-xs">
+                                                <div className="text-faint mt-0.5 line-clamp-1 text-xs dark:text-slate-500">
                                                     {r.mitigation_plan || r.rencana_mitigasi}
                                                 </div>
                                             ) : null}
                                         </td>
-                                        <td className="text-body dark:text-slate-300 px-5 py-4 whitespace-nowrap">
-                                            <span className="text-navy dark:text-white font-medium">{r.control?.kode_klausul || '—'}</span>
-                                            {r.control?.framework ? <div className="text-faint dark:text-slate-500 text-xs">{r.control.framework.nama}</div> : null}
+                                        <td className="text-body px-5 py-4 whitespace-nowrap dark:text-slate-300">
+                                            <span className="text-navy font-medium dark:text-white">{r.control?.kode_klausul || '—'}</span>
+                                            {r.control?.framework ? (
+                                                <div className="text-faint text-xs dark:text-slate-500">{r.control.framework.nama}</div>
+                                            ) : null}
                                         </td>
                                         <td className="px-5 py-4 whitespace-nowrap">
                                             <StatusBadge tone={LEVEL_TONE[r.risk_level || r.level_risiko] ?? 'gray'}>
                                                 {t(`status.${(r.risk_level || r.level_risiko) as 'critical' | 'high' | 'medium' | 'low'}`)}
                                             </StatusBadge>
                                         </td>
-                                        <td className="text-body dark:text-slate-300 px-5 py-4 whitespace-nowrap">{r.risk_owner || r.pemilik_risiko || '—'}</td>
+                                        <td className="text-body px-5 py-4 whitespace-nowrap dark:text-slate-300">
+                                            {r.risk_owner || r.pemilik_risiko || '—'}
+                                        </td>
                                         <td className="px-5 py-4 whitespace-nowrap">
                                             <StatusBadge tone={STATUS_TONE[r.status] ?? 'gray'}>
                                                 {t(`status.${r.status as 'open' | 'mitigated' | 'accepted'}`)}
                                             </StatusBadge>
                                         </td>
-                                        <td className="text-faint dark:text-slate-500 px-5 py-4 whitespace-nowrap">{t('risks.noTarget')}</td>
+                                        <td className="text-faint px-5 py-4 whitespace-nowrap dark:text-slate-500">{t('risks.noTarget')}</td>
                                     </tr>
                                 ))
                             ) : (
@@ -342,7 +349,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
                     <button
                         type="button"
                         onClick={() => setDetailTarget(null)}
-                        className="border-border-strong dark:border-slate-600 text-body dark:text-slate-300 hover:bg-surface dark:hover:bg-slate-800 rounded-[10px] border bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium transition-colors"
+                        className="border-border-strong text-body hover:bg-surface rounded-[10px] border bg-white px-4 py-2 text-sm font-medium transition-colors dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
                     >
                         {t('risks.close')}
                     </button>
@@ -350,25 +357,29 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
             >
                 {detailTarget && (
                     <div className="space-y-4">
-                        <div className="border-border dark:border-slate-700 overflow-hidden rounded-[10px] border">
-                            <div className="border-border dark:border-slate-700 flex items-center justify-between border-b px-4 py-2.5">
-                                <span className="text-body dark:text-slate-300 text-[13px] font-medium">{t('risks.risk')}</span>
-                                <span className="text-navy dark:text-white max-w-[60%] text-right text-[13px] font-semibold">{detailTarget.control?.judul}</span>
+                        <div className="border-border overflow-hidden rounded-[10px] border dark:border-slate-700">
+                            <div className="border-border flex items-center justify-between border-b px-4 py-2.5 dark:border-slate-700">
+                                <span className="text-body text-[13px] font-medium dark:text-slate-300">{t('risks.risk')}</span>
+                                <span className="text-navy max-w-[60%] text-right text-[13px] font-semibold dark:text-white">
+                                    {detailTarget.control?.judul}
+                                </span>
                             </div>
-                            <div className="border-border dark:border-slate-700 flex items-center justify-between border-b px-4 py-2.5">
-                                <span className="text-body dark:text-slate-300 text-[13px] font-medium">{t('risks.unitControl')}</span>
-                                <span className="text-navy dark:text-white text-[13px] font-semibold">
+                            <div className="border-border flex items-center justify-between border-b px-4 py-2.5 dark:border-slate-700">
+                                <span className="text-body text-[13px] font-medium dark:text-slate-300">{t('risks.unitControl')}</span>
+                                <span className="text-navy text-[13px] font-semibold dark:text-white">
                                     {detailTarget.control?.kode_klausul || '—'}
                                     {detailTarget.control?.framework ? ` · ${detailTarget.control.framework.nama}` : ''}
                                 </span>
                             </div>
-                            <div className="border-border dark:border-slate-700 flex items-center justify-between border-b px-4 py-2.5">
-                                <span className="text-body dark:text-slate-300 text-[13px] font-medium">{t('risks.frameworkLabel')}</span>
-                                <span className="text-navy dark:text-white text-[13px] font-semibold">{detailTarget.control?.framework?.nama || '—'}</span>
+                            <div className="border-border flex items-center justify-between border-b px-4 py-2.5 dark:border-slate-700">
+                                <span className="text-body text-[13px] font-medium dark:text-slate-300">{t('risks.frameworkLabel')}</span>
+                                <span className="text-navy text-[13px] font-semibold dark:text-white">
+                                    {detailTarget.control?.framework?.nama || '—'}
+                                </span>
                             </div>
                             <div className="flex items-center justify-between px-4 py-2.5">
-                                <span className="text-body dark:text-slate-300 text-[13px] font-medium">{t('risks.owner')}</span>
-                                <span className="text-navy dark:text-white text-[13px] font-semibold">
+                                <span className="text-body text-[13px] font-medium dark:text-slate-300">{t('risks.owner')}</span>
+                                <span className="text-navy text-[13px] font-semibold dark:text-white">
                                     {detailTarget.risk_owner || detailTarget.pemilik_risiko || '—'}
                                 </span>
                             </div>
@@ -376,7 +387,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
 
                         <div className="flex flex-wrap gap-4">
                             <div>
-                                <h4 className="text-navy dark:text-white text-sm font-bold">{t('risks.level')}</h4>
+                                <h4 className="text-navy text-sm font-bold dark:text-white">{t('risks.level')}</h4>
                                 <div className="mt-2">
                                     <StatusBadge tone={LEVEL_TONE[detailTarget.risk_level || detailTarget.level_risiko] ?? 'gray'}>
                                         {t(
@@ -386,7 +397,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
                                 </div>
                             </div>
                             <div>
-                                <h4 className="text-navy dark:text-white text-sm font-bold">{t('risks.status')}</h4>
+                                <h4 className="text-navy text-sm font-bold dark:text-white">{t('risks.status')}</h4>
                                 <div className="mt-2">
                                     <StatusBadge tone={STATUS_TONE[detailTarget.status] ?? 'gray'}>
                                         {t(`status.${detailTarget.status as 'open' | 'mitigated' | 'accepted'}`)}
@@ -397,8 +408,8 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
 
                         {detailTarget.mitigation_plan || detailTarget.rencana_mitigasi ? (
                             <div>
-                                <h4 className="text-navy dark:text-white text-sm font-bold">{t('risks.mitigationLabel')}</h4>
-                                <p className="text-body dark:text-slate-300 border-border dark:border-slate-700 bg-surface/50 dark:bg-slate-900/50 mt-2 rounded-[10px] border p-3.5 text-[13px] leading-relaxed">
+                                <h4 className="text-navy text-sm font-bold dark:text-white">{t('risks.mitigationLabel')}</h4>
+                                <p className="text-body border-border bg-surface/50 mt-2 rounded-[10px] border p-3.5 text-[13px] leading-relaxed dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-300">
                                     {detailTarget.mitigation_plan || detailTarget.rencana_mitigasi}
                                 </p>
                             </div>

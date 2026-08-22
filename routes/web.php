@@ -114,10 +114,13 @@ Route::middleware('auth')->group(function () {
         Route::post('/roles', [RoleController::class, 'store'])->name('roles.store');
         Route::patch('/roles/{role}', [RoleController::class, 'update'])->name('roles.update');
         Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
+
+        Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
     });
 
     Route::prefix('admin/auditor')->name('admin.auditor.')->group(function () {
         Route::get('/dashboard', [AuditorDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
     });
 
     Route::prefix('admin/pic')->name('admin.pic.')->group(function () {

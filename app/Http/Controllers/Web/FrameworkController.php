@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateFrameworkRequest;
 use App\Models\Control;
 use App\Models\Framework;
 use App\Models\User;
+use App\Services\DashboardAnalyticsService;
 use App\Services\FrameworkDocumentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,13 +18,23 @@ use Inertia\Response;
 
 class FrameworkController extends Controller
 {
-    public function dashboard(): Response
+    public function __construct(
+        protected ?DashboardAnalyticsService $analyticsService = null
+    ) {
+        $this->analyticsService = $analyticsService ?? app(DashboardAnalyticsService::class);
+    }
+
+    public function dashboard(Request $request): Response
     {
+        $user = $request->user();
+
         return Inertia::render('superadmin/dashboard', [
             'totalUsers' => User::count(),
             'totalFrameworks' => Framework::count(),
             'totalControls' => Control::count(),
             'frameworks' => Framework::withCount('controls')->orderBy('id')->get(),
+            'summary' => $user ? $this->analyticsService->getSummary($user) : null,
+            'recent_activities' => $user ? $this->analyticsService->getRecentActivities($user, 6) : [],
         ]);
     }
 
