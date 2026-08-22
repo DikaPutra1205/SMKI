@@ -84,7 +84,7 @@ export default function PicDashboard({ summary, recent_sessions = [] }: PicDashb
 
                 <div className="flex items-center gap-2.5">
                     <Link
-                        href="/assessments"
+                        href="/checklist"
                         className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-blue-500 active:scale-95 sm:text-sm"
                     >
                         <ClipboardCheck className="h-4 w-4" />
@@ -261,7 +261,7 @@ export default function PicDashboard({ summary, recent_sessions = [] }: PicDashb
                             <p className="text-xs text-slate-500 dark:text-slate-400">Daftar asesmen kepatuhan yang sedang berlangsung</p>
                         </div>
                         <Link
-                            href="/assessments"
+                            href="/checklist"
                             className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-500 dark:text-blue-400"
                         >
                             Lihat Semua
@@ -298,7 +298,7 @@ export default function PicDashboard({ summary, recent_sessions = [] }: PicDashb
                                         </div>
 
                                         <Link
-                                            href={`/assessments/${s.id}`}
+                                            href={`/checklist/${s.id}`}
                                             className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-xs transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                                         >
                                             <FileEdit className="h-3.5 w-3.5 text-slate-500" />
@@ -327,7 +327,7 @@ export default function PicDashboard({ summary, recent_sessions = [] }: PicDashb
 
                     <div className="mt-3 space-y-3">
                         <Link
-                            href="/assessments"
+                            href="/checklist"
                             className="group flex items-start gap-3 rounded-xl border border-slate-200/70 p-3.5 transition-colors hover:border-blue-300 hover:bg-blue-50/30 dark:border-slate-800 dark:hover:border-slate-700 dark:hover:bg-slate-800/40"
                         >
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400">

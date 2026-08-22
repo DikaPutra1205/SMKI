@@ -358,8 +358,8 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
     const submittingRef = useRef(false);
     const [frameworkFilter, setFrameworkFilter] = useState('');
     const [kategoriFilter, setKategoriFilter] = useState('');
-    // Summary URLs are /admin/pic/assessments/{id}/summary
-    const isLoading = usePageLoading('/admin/pic/assessments/');
+    // Summary URLs are /admin/pic/checklist/{id}/summary
+    const isLoading = usePageLoading('/admin/pic/checklist/');
 
     const frameworks = useMemo(() => {
         const map = new Map<string, string>();
@@ -405,7 +405,7 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
             // continue anyway
         }
         router.post(
-            `/admin/pic/assessments/${session.id}/submit`,
+            `/admin/pic/checklist/${session.id}/submit`,
             {},
             {
                 onFinish: () => {
@@ -432,7 +432,7 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
                 <div>
                     <button
                         type="button"
-                        onClick={() => router.get(`/admin/pic/assessments/${session.id}`)}
+                        onClick={() => router.get(`/admin/pic/checklist/${session.id}`)}
                         className="mb-2 inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 transition-colors hover:text-blue-700"
                     >
                         <ArrowLeft className="h-4 w-4" />
@@ -641,7 +641,7 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
                 <div className="flex items-center gap-3">
                     <button
                         type="button"
-                        onClick={() => router.get(`/admin/pic/assessments/${session.id}`)}
+                        onClick={() => router.get(`/admin/pic/checklist/${session.id}`)}
                         className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
                     >
                         <ArrowLeft className="h-4 w-4" />

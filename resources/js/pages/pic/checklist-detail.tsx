@@ -110,7 +110,7 @@ function formatKategori(kategori: string): string {
 function fetchChecklistPage(sessionId: number, page: number): Promise<ChecklistPageResponse> {
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        xhr.open('GET', `/admin/pic/assessments/${sessionId}/checklist-page?page=${page}`);
+        xhr.open('GET', `/admin/pic/checklist/${sessionId}/checklist-page?page=${page}`);
         xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
         xhr.setRequestHeader('Accept', 'application/json');
         xhr.onload = () => {
@@ -354,8 +354,8 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
     const [atBottom, setAtBottom] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [highlightIncomplete, setHighlightIncomplete] = useState(false);
-    // Checklist detail URLs are /admin/pic/assessments/{id} — use prefix matching
-    const isLoading = usePageLoading('/admin/pic/assessments/');
+    // Checklist detail URLs are /admin/pic/checklist/{id} — use prefix matching
+    const isLoading = usePageLoading('/admin/pic/checklist/');
 
     const {
         initialize,
@@ -542,7 +542,7 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
                 </div>
                 <button
                     type="button"
-                    onClick={() => router.get('/admin/pic/assessments')}
+                    onClick={() => router.get('/admin/pic/checklist')}
                     className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
                 >
                     Kembali
@@ -707,7 +707,7 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
                         } catch {
                             /* continue */
                         }
-                        router.get(`/admin/pic/assessments/${session.id}/summary`);
+                        router.get(`/admin/pic/checklist/${session.id}/summary`);
                     }}
                     className={`inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold shadow-sm transition-all ${
                         progress.invalidCount === 0
