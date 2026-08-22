@@ -197,15 +197,9 @@ class AssessmentStore {
         const nonCompliantCount = entries.filter((e) => e.status === 'non_compliant').length;
         const naCount = entries.filter((e) => e.status === 'na').length;
         const pendingCount = total - compliantCount - partialCount - nonCompliantCount - naCount;
-        const completed = entries.filter(
-            (e) =>
-                e.status === 'compliant' ||
-                ((e.status === 'partial' || e.status === 'non_compliant' || e.status === 'na') && e.catatan && e.catatan.trim()),
-        ).length;
+        const completed = entries.filter((e) => Boolean(e.status)).length;
         const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-        const invalidCount = entries
-            .filter((e) => !e.status || e.status === 'partial' || e.status === 'non_compliant' || e.status === 'na')
-            .filter((e) => !e.catatan || !e.catatan.trim()).length;
+        const invalidCount = entries.filter((e) => !e.status).length;
 
         return { completed, total, percentage, invalidCount, compliantCount, partialCount, nonCompliantCount, naCount, pendingCount };
     }

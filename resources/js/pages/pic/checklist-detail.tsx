@@ -146,9 +146,7 @@ function EntryItemRow({
     const savedTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
     useEffect(() => {
-        if (entry?.catatan !== undefined && entry.catatan !== localCatatan) {
-            setLocalCatatan(entry.catatan || '');
-        }
+        setLocalCatatan(entry?.catatan || '');
     }, [entry?.catatan]);
 
     useEffect(
@@ -185,10 +183,8 @@ function EntryItemRow({
 
     const isVerified = entry.tanggal_verifikasi !== null;
     const missingStatus = !entry.status;
-    const isCatatanRequired = entry.status === 'partial' || entry.status === 'non_compliant' || entry.status === 'na';
-    const isCatatanMissing = isCatatanRequired && !localCatatan.trim();
     const isEvidenceMissing = !entry.active_evidence;
-    const isIncomplete = missingStatus || isCatatanMissing || isEvidenceMissing;
+    const isIncomplete = missingStatus || isEvidenceMissing;
     const showErrorLabels = highlight && isIncomplete;
 
     return (
@@ -265,12 +261,8 @@ function EntryItemRow({
                         type="text"
                         value={localCatatan}
                         onChange={(e) => handleCatatanInput(e.target.value)}
-                        placeholder={isCatatanRequired ? 'Catatan wajib diisi...' : 'Catatan...'}
-                        className={`flex-1 rounded-lg border bg-white px-3 py-2 text-xs text-slate-700 placeholder-slate-400 transition-colors focus:ring-1 dark:bg-slate-900 dark:text-slate-300 ${
-                            isCatatanMissing
-                                ? 'border-red-300 focus:border-red-400 focus:ring-red-400'
-                                : 'border-slate-200 focus:border-blue-400 focus:ring-blue-400 dark:border-slate-700'
-                        }`}
+                        placeholder="Catatan tindak lanjut (opsional)..."
+                        className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 placeholder-slate-400 transition-colors focus:border-blue-400 focus:ring-1 focus:ring-blue-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
                     />
                     <label
                         className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
@@ -437,8 +429,7 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
     const currentPageMeta = pageMeta[currentPageIndex];
 
     const isEntryIncomplete = (e: EntryInput): boolean => {
-        const needsCatatan = e.status === 'partial' || e.status === 'non_compliant' || e.status === 'na';
-        return !e.status || !e.active_evidence || (needsCatatan && !(e.catatan ?? '').trim());
+        return !e.status || !e.active_evidence;
     };
 
     const isCurrentPageComplete = useMemo(() => {

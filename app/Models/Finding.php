@@ -24,7 +24,7 @@ class Finding extends Model
     ];
 
     protected $casts = [
-        'deadline' => 'date',
+        'deadline' => 'date:Y-m-d',
         'tanggal_verifikasi' => 'datetime',
     ];
 

@@ -5,14 +5,15 @@ import AppLayout from '@/layouts/AppLayout';
 import { useCan } from '@/lib/can';
 import { t } from '@/lib/i18n';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { ChevronDown, Pencil, Plus, Search, Trash2 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { ChevronDown, KeyRound, Pencil, Plus, Search, Shield, ShieldCheck, Trash2 } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 interface RolePerm {
     id: number;
     key: string;
     module: string;
 }
+
 interface RoleRow {
     id: number;
     name: string;
@@ -20,6 +21,7 @@ interface RoleRow {
     description: string | null;
     permissions: RolePerm[];
 }
+
 interface Props {
     roles: RoleRow[];
     permissionCatalog: Record<string, string[]>;
@@ -27,10 +29,90 @@ interface Props {
 
 type ModalMode = 'create' | 'edit' | null;
 
+const MODULE_METADATA: Record<string, { label: string; desc: string }> = {
+    checklist: {
+        label: 'Penilaian & Sesi Checklist',
+        desc: 'Pengisian, pengajuan, dan verifikasi asesmen kepatuhan kontrol.',
+    },
+    evidence: {
+        label: 'Dokumen Bukti (Evidence)',
+        desc: 'Pengunggahan, pengelolaan, dan validasi berkas pendukung.',
+    },
+    controls: {
+        label: 'Pustaka Kontrol SMKI',
+        desc: 'Master daftar klausul dan kontrol standar kepatuhan.',
+    },
+    frameworks: {
+        label: 'Standar Framework',
+        desc: 'Pengelolaan master framework seperti ISO/IEC 27001 & 27701.',
+    },
+    findings: {
+        label: 'Temuan Audit (Findings)',
+        desc: 'Pencatatan ketidaksesuaian (gap), observasi, dan rencana tindak lanjut.',
+    },
+    risks: {
+        label: 'Register Risiko Keamanan',
+        desc: 'Identifikasi risiko, evaluasi dampak, dan rencana mitigasi.',
+    },
+    reports: {
+        label: 'Laporan & Rekapitulasi',
+        desc: 'Pembuatan dan pengunduhan laporan kepatuhan eksekutif.',
+    },
+    'audit-logs': {
+        label: 'Audit Trail Sistem',
+        desc: 'Pencatatan rekam jejak aktivitas yang bersifat permanen (immutable).',
+    },
+    users: {
+        label: 'Manajemen Pengguna',
+        desc: 'Pengelolaan akun pengguna (PIC, Auditor, dan Administrator).',
+    },
+    roles: {
+        label: 'Manajemen Role & Izin',
+        desc: 'Konfigurasi peran dan alokasi hak akses sistem.',
+    },
+    'work-units': {
+        label: 'Unit Kerja Organisasi',
+        desc: 'Pengelolaan daftar divisi, direktorat, dan unit kerja.',
+    },
+    dashboard: {
+        label: 'Dashboard & Analitik',
+        desc: 'Akses ke dashboard analisis, KPI kepatuhan, dan ringkasan eksekutif.',
+    },
+};
+
+const ACTION_DESCRIPTIONS: Record<string, string> = {
+    view: 'Melihat data dan daftar pada modul ini',
+    create: 'Menambahkan data atau dokumen baru',
+    update: 'Mengubah dan memperbarui data yang ada',
+    delete: 'Menghapus data dari sistem',
+    'bulk-verify': 'Memverifikasi penilaian (satuan & massal)',
+    upload: 'Mengunggah berkas dokumen bukti',
+    export: 'Mengekspor laporan ke format PDF / CSV',
+};
+
+function getPermissionLabel(key: string): { actionName: string; actionDesc: string } {
+    const parts = key.split('.');
+    const actionKey = parts[parts.length - 1];
+
+    let actionName = actionKey;
+    if (actionKey === 'view') actionName = 'Melihat Data';
+    else if (actionKey === 'create') actionName = 'Tambah Data';
+    else if (actionKey === 'update') actionName = 'Ubah / Edit';
+    else if (actionKey === 'delete') actionName = 'Hapus Data';
+    else if (actionKey === 'bulk-verify') actionName = 'Verifikasi Penilaian';
+    else if (actionKey === 'upload') actionName = 'Unggah Bukti';
+    else if (actionKey === 'export') actionName = 'Ekspor Laporan';
+
+    const actionDesc = ACTION_DESCRIPTIONS[actionKey] || `Hak akses untuk ${key}`;
+
+    return { actionName, actionDesc };
+}
+
 export default function Roles({ roles, permissionCatalog }: Props) {
     const can = useCan();
     const { flash } = usePage<{ flash?: { type: string; message: string } }>().props;
     const [visible, setVisible] = useState(false);
+
     useEffect(() => {
         if (flash?.message) {
             setVisible(true);
@@ -46,6 +128,10 @@ export default function Roles({ roles, permissionCatalog }: Props) {
     const [delBusy, setDelBusy] = useState(false);
     const [selectedPerms, setSelectedPerms] = useState<Set<string>>(new Set());
 
+    // Search and filter inside modal
+    const [query, setQuery] = useState('');
+    const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+
     const form = useForm<{ name: string; label: string }>({ name: '', label: '' });
 
     function openCreate() {
@@ -53,30 +139,38 @@ export default function Roles({ roles, permissionCatalog }: Props) {
         form.clearErrors();
         setEditingId(null);
         setSelectedPerms(new Set());
+        setQuery('');
         setMode('create');
     }
+
     function openEdit(r: RoleRow) {
         form.setData({ name: r.name, label: r.label });
         form.clearErrors();
         setEditingId(r.id);
         setSelectedPerms(new Set(r.permissions.map((p) => p.key)));
+        setQuery('');
         setMode('edit');
     }
+
     function close() {
         setMode(null);
         setEditingId(null);
         setSelectedPerms(new Set());
         form.reset();
         form.clearErrors();
+        setQuery('');
     }
+
     function submit(e: React.FormEvent) {
         e.preventDefault();
-        if (mode === 'create') form.post('/admin/superadmin/roles', { onSuccess: close });
-        else if (mode === 'edit' && editingId) {
+        if (mode === 'create') {
+            form.post('/admin/superadmin/roles', { onSuccess: close });
+        } else if (mode === 'edit' && editingId) {
             form.transform((data) => ({ ...data, permissions: Array.from(selectedPerms) }));
             form.patch(`/admin/superadmin/roles/${editingId}`, { onSuccess: close });
         }
     }
+
     function togglePerm(key: string) {
         setSelectedPerms((prev) => {
             const next = new Set(prev);
@@ -85,6 +179,7 @@ export default function Roles({ roles, permissionCatalog }: Props) {
             return next;
         });
     }
+
     function confirmDelete() {
         if (!delTarget) return;
         setDelBusy(true);
@@ -97,116 +192,54 @@ export default function Roles({ roles, permissionCatalog }: Props) {
         });
     }
 
-    const [query, setQuery] = useState('');
-    const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+    const breadcrumbs = [{ label: t('common.dashboard'), href: '/admin/superadmin/dashboard' }, { label: 'Manajemen Role & Hak Akses' }];
 
-    const breadcrumbs = [{ label: t('common.dashboard'), href: '/admin/superadmin/dashboard' }, { label: t('admin.roles.title') }];
+    const totalAvailablePermissions = useMemo(() => Object.values(permissionCatalog).flat().length, [permissionCatalog]);
+
     const modules = useMemo(
         () =>
-            Object.keys(permissionCatalog).filter(
-                (m) =>
-                    !query ||
-                    m.toLowerCase().includes(query.toLowerCase()) ||
-                    permissionCatalog[m].some((k) => k.toLowerCase().includes(query.toLowerCase())),
-            ),
+            Object.keys(permissionCatalog).filter((m) => {
+                if (!query) return true;
+                const q = query.toLowerCase();
+                const modMeta = MODULE_METADATA[m];
+                const modLabel = modMeta?.label?.toLowerCase() ?? m.toLowerCase();
+                return (
+                    m.toLowerCase().includes(q) ||
+                    modLabel.includes(q) ||
+                    permissionCatalog[m].some((k) => {
+                        const { actionName, actionDesc } = getPermissionLabel(k);
+                        return k.toLowerCase().includes(q) || actionName.toLowerCase().includes(q) || actionDesc.toLowerCase().includes(q);
+                    })
+                );
+            }),
         [permissionCatalog, query],
     );
 
-    function allChecked(mod: string) {
+    function isModuleAllChecked(mod: string) {
         return permissionCatalog[mod].every((k) => selectedPerms.has(k));
     }
+
+    function isModulePartialChecked(mod: string) {
+        const checkedCount = permissionCatalog[mod].filter((k) => selectedPerms.has(k)).length;
+        return checkedCount > 0 && checkedCount < permissionCatalog[mod].length;
+    }
+
     function toggleGroup(mod: string) {
         const keys = permissionCatalog[mod];
-        const on = allChecked(mod);
+        const allOn = isModuleAllChecked(mod);
         setSelectedPerms((prev) => {
-            const n = new Set(prev);
-            keys.forEach((k) => (on ? n.delete(k) : n.add(k)));
-            return n;
+            const next = new Set(prev);
+            keys.forEach((k) => {
+                if (allOn) next.delete(k);
+                else next.add(k);
+            });
+            return next;
         });
     }
 
     return (
         <AppLayout breadcrumbs={breadcrumbs} currentPath="/admin/superadmin/roles">
-            <Head title={t('admin.roles.title')} />
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">{t('admin.roles.title')}</h1>
-                    <p className="text-muted dark:text-slate-400 mt-1 text-xs sm:text-sm">{t('admin.roles.subtitle')}</p>
-                </div>
-                {can('role.create') && (
-                    <button
-                        type="button"
-                        onClick={openCreate}
-                        className="bg-primary shadow-blue hover:bg-primary-700 inline-flex items-center gap-2 rounded-[10px] px-4 py-2 text-xs font-semibold text-white transition-colors sm:text-sm"
-                    >
-                        <Plus className="h-4 w-4" />
-                        {t('admin.roles.addRole')}
-                    </button>
-                )}
-            </div>
-
-            <div className="border-border dark:border-slate-700 overflow-hidden rounded-[14px] border bg-white dark:bg-slate-900 shadow-sm">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                        <thead className="border-border dark:border-slate-700 bg-surface/60 dark:bg-slate-900/60 text-muted dark:text-slate-400 border-b text-[11px] font-bold tracking-wider uppercase">
-                            <tr>
-                                <th className="px-5 py-3">{t('admin.roles.label')}</th>
-                                <th className="px-5 py-3">{t('admin.roles.name')}</th>
-                                <th className="px-5 py-3">{t('admin.roles.grants')}</th>
-                                <th className="px-5 py-3 text-right">{t('common.actions')}</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-border dark:divide-slate-700 divide-y">
-                            {roles.length ? (
-                                roles.map((r) => (
-                                    <tr key={r.id} className="hover:bg-surface/50 dark:hover:bg-slate-800/50">
-                                        <td className="text-navy dark:text-white px-5 py-3 font-medium">{r.label}</td>
-                                        <td className="text-body dark:text-slate-300 px-5 py-3 text-xs">{r.name}</td>
-                                        <td className="px-5 py-3">
-                                            <span className="bg-primary-50 dark:bg-primary/10 text-primary rounded-[6px] px-2 py-0.5 text-xs font-semibold">
-                                                {r.permissions.length} {t('admin.roles.grants')}
-                                            </span>
-                                        </td>
-                                        <td className="px-5 py-3 text-right">
-                                            <div className="flex justify-end gap-1">
-                                                {can('role.update') && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => openEdit(r)}
-                                                        className="border-border-strong dark:border-slate-600 text-navy dark:text-white hover:bg-surface dark:hover:bg-slate-800 inline-flex items-center gap-1 rounded-[8px] border bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs font-semibold"
-                                                    >
-                                                        <Pencil className="h-3 w-3" />
-                                                        {t('common.edit')}
-                                                    </button>
-                                                )}
-                                                {can('role.delete') && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setDelTarget(r);
-                                                            setDelOpen(true);
-                                                        }}
-                                                        className="border-danger-border dark:border-red-800 bg-danger-bg text-danger dark:text-red-400 hover:bg-danger/10 inline-flex items-center gap-1 rounded-[8px] border px-2.5 py-1.5 text-xs font-semibold"
-                                                    >
-                                                        <Trash2 className="h-3 w-3" />
-                                                        {t('common.delete')}
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan={4} className="text-muted dark:text-slate-400 px-5 py-10 text-center text-sm">
-                                        {t('admin.roles.noRoles')}
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            <Head title="Manajemen Role & Hak Akses" />
 
             <Toast
                 visible={visible}
@@ -215,136 +248,341 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                 onDismiss={() => setVisible(false)}
             />
 
+            {/* Header */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Manajemen Role & Hak Akses</h1>
+                    <p className="mt-1 text-xs text-slate-500 sm:text-sm dark:text-slate-400">
+                        Atur peran pengguna dan alokasikan izin akses modul kepatuhan secara granular.
+                    </p>
+                </div>
+                {can('role.create') && (
+                    <button
+                        type="button"
+                        onClick={openCreate}
+                        className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-blue-500 active:scale-95 sm:text-sm"
+                    >
+                        <Plus className="h-4 w-4" />
+                        Tambah Role Baru
+                    </button>
+                )}
+            </div>
+
+            {/* KPI / Quick Metric Row */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400">
+                            <Shield className="h-5 w-5" />
+                        </div>
+                        <div>
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Role Terdaftar</p>
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white">{roles.length} Role</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400">
+                            <KeyRound className="h-5 w-5" />
+                        </div>
+                        <div>
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Hak Akses Sistem</p>
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white">{totalAvailablePermissions} Hak Akses</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-400">
+                            <ShieldCheck className="h-5 w-5" />
+                        </div>
+                        <div>
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Modul Fungsional</p>
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white">{Object.keys(permissionCatalog).length} Modul</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Role List Cards */}
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                {roles.length > 0 ? (
+                    roles.map((r) => {
+                        const permCount = r.permissions.length;
+                        const pct = Math.round((permCount / totalAvailablePermissions) * 100);
+
+                        return (
+                            <div
+                                key={r.id}
+                                className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition-all hover:border-blue-200 hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
+                            >
+                                <div>
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <h3 className="text-base font-bold text-slate-900 dark:text-white">{r.label}</h3>
+                                                <span className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-[11px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                                                    {r.name}
+                                                </span>
+                                            </div>
+                                            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                                {r.description || `Role ${r.label} untuk pengelolaan modul kepatuhan sistem.`}
+                                            </p>
+                                        </div>
+
+                                        <span className="inline-flex shrink-0 items-center rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700 dark:bg-blue-950/60 dark:text-blue-400">
+                                            {permCount} Hak Akses
+                                        </span>
+                                    </div>
+
+                                    {/* Permission coverage bar */}
+                                    <div className="mt-4">
+                                        <div className="mb-1.5 flex items-center justify-between text-[11px]">
+                                            <span className="font-medium text-slate-500 dark:text-slate-400">Cakupan Hak Akses</span>
+                                            <span className="font-bold text-slate-700 dark:text-slate-300">
+                                                {pct}% ({permCount}/{totalAvailablePermissions})
+                                            </span>
+                                        </div>
+                                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                                            <div
+                                                className="h-full rounded-full bg-blue-600 transition-all duration-300"
+                                                style={{ width: `${pct}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Actions Footer */}
+                                <div className="mt-5 flex items-center justify-end gap-2 border-t border-slate-100 pt-3.5 dark:border-slate-800">
+                                    {can('role.update') && (
+                                        <button
+                                            type="button"
+                                            onClick={() => openEdit(r)}
+                                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                                        >
+                                            <Pencil className="h-3.5 w-3.5" />
+                                            Kelola Hak Akses
+                                        </button>
+                                    )}
+                                    {can('role.delete') && r.name !== 'superadmin' && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setDelTarget(r);
+                                                setDelOpen(true);
+                                            }}
+                                            className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50/50 px-3 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400 dark:hover:bg-red-950/50"
+                                        >
+                                            <Trash2 className="h-3.5 w-3.5" />
+                                            Hapus
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })
+                ) : (
+                    <div className="col-span-2 rounded-2xl border border-slate-200 bg-white p-12 text-center dark:border-slate-800 dark:bg-slate-900">
+                        <Shield className="mx-auto h-10 w-10 text-slate-300 dark:text-slate-600" />
+                        <h4 className="mt-3 text-sm font-bold text-slate-700 dark:text-slate-300">Belum ada role terdaftar</h4>
+                        <p className="mt-1 text-xs text-slate-500">Klik tombol "Tambah Role Baru" untuk membuat peran baru.</p>
+                    </div>
+                )}
+            </div>
+
+            {/* Modal Form: Create / Edit Role */}
             <Modal
                 open={mode !== null}
-                title={mode === 'create' ? t('admin.roles.createTitle') : t('admin.roles.editTitle')}
+                title={mode === 'create' ? 'Tambah Role Baru' : `Kelola Hak Akses: ${form.data.label || 'Role'}`}
                 onClose={close}
-                maxWidth={mode === 'edit' ? 'xl' : 'lg'}
+                maxWidth="xl"
                 footer={
                     <>
                         <button
                             type="button"
                             onClick={close}
-                            className="border-border-strong dark:border-slate-600 text-body dark:text-slate-300 hover:bg-surface dark:hover:bg-slate-800 rounded-[10px] border bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium"
+                            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                         >
-                            {t('common.cancel')}
+                            Batal
                         </button>
                         <button
                             type="submit"
                             form="role-form"
                             disabled={form.processing}
-                            className="bg-primary hover:bg-primary-700 rounded-[10px] px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-5 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-blue-500 active:scale-95 disabled:opacity-50"
                         >
-                            {form.processing ? t('common.saving') : mode === 'create' ? t('common.add') : t('common.save')}
+                            {form.processing ? 'Menyimpan…' : mode === 'create' ? 'Simpan Role' : 'Perbarui Hak Akses'}
                         </button>
                     </>
                 }
             >
-                <form id="role-form" onSubmit={submit} className="space-y-3">
-                    <div>
-                        <input
-                            value={form.data.name}
-                            onChange={(e) => form.setData('name', e.target.value)}
-                            placeholder={t('admin.roles.name')}
-                            className="border-border-strong dark:border-slate-600 text-ink dark:text-white placeholder:text-faint dark:placeholder:text-slate-500 focus:border-primary h-10 w-full rounded-[10px] border bg-white dark:bg-slate-900 px-3 text-sm focus:ring-2 focus:outline-none"
-                        />
-                        {form.errors.name && <p className="text-danger dark:text-red-400 mt-1 text-[11px]">{form.errors.name}</p>}
-                    </div>
-                    <div>
-                        <input
-                            value={form.data.label}
-                            onChange={(e) => form.setData('label', e.target.value)}
-                            placeholder={t('admin.roles.label')}
-                            className="border-border-strong dark:border-slate-600 text-ink dark:text-white placeholder:text-faint dark:placeholder:text-slate-500 focus:border-primary h-10 w-full rounded-[10px] border bg-white dark:bg-slate-900 px-3 text-sm focus:ring-2 focus:outline-none"
-                        />
-                        {form.errors.label && <p className="text-danger dark:text-red-400 mt-1 text-[11px]">{form.errors.label}</p>}
+                <form id="role-form" onSubmit={submit} className="space-y-4">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div>
+                            <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                Label Role Resmi <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                value={form.data.label}
+                                onChange={(e) => form.setData('label', e.target.value)}
+                                placeholder="Contoh: Administrator Kepatuhan"
+                                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                            />
+                            {form.errors.label && <p className="mt-1 text-[11px] font-medium text-red-500">{form.errors.label}</p>}
+                        </div>
+
+                        <div>
+                            <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                Nama Identifikasi Sistem <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                value={form.data.name}
+                                onChange={(e) => form.setData('name', e.target.value)}
+                                placeholder="Contoh: admin_kepatuhan"
+                                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 font-mono text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                            />
+                            {form.errors.name && <p className="mt-1 text-[11px] font-medium text-red-500">{form.errors.name}</p>}
+                        </div>
                     </div>
 
                     {mode === 'edit' && (
-                        <div className="border-border dark:border-slate-700 mt-2 overflow-hidden rounded-[10px] border">
-                            <div className="bg-surface/60 dark:bg-slate-900/60 flex items-center justify-between border-b px-4 py-3">
-                                <p className="text-navy dark:text-white text-xs font-bold tracking-wider uppercase">
-                                    {t('admin.roles.grants')} · {selectedPerms.size}/{Object.values(permissionCatalog).flat().length}
-                                </p>
+                        <div className="rounded-2xl border border-slate-200/90 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+                            {/* Permissions Header & Global Actions */}
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Alokasi Hak Akses Modul</h4>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                                        Pilih izin yang diizinkan untuk peran ini ({selectedPerms.size} dari {totalAvailablePermissions} aktif).
+                                    </p>
+                                </div>
                                 <div className="flex items-center gap-2">
                                     <button
                                         type="button"
                                         onClick={() => setSelectedPerms(new Set(Object.values(permissionCatalog).flat()))}
-                                        className="text-primary text-[11px] font-semibold hover:underline"
+                                        className="text-xs font-semibold text-blue-600 hover:text-blue-500 dark:text-blue-400"
                                     >
-                                        Select all
+                                        Pilih Semua Izin
                                     </button>
-                                    <span className="text-muted dark:text-slate-400 text-[11px]">·</span>
+                                    <span className="text-slate-300 dark:text-slate-600">·</span>
                                     <button
                                         type="button"
                                         onClick={() => setSelectedPerms(new Set())}
-                                        className="text-muted dark:text-slate-400 text-[11px] font-semibold hover:underline"
+                                        className="text-xs font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
                                     >
-                                        Clear
+                                        Kosongkan
                                     </button>
                                 </div>
                             </div>
-                            <div className="bg-surface/40 dark:bg-slate-900/40 relative border-b px-3 py-2">
-                                <Search className="text-faint dark:text-slate-500 pointer-events-none absolute top-1/2 left-6 h-3.5 w-3.5 -translate-y-1/2" />
+
+                            {/* Search Filter */}
+                            <div className="relative mt-3">
+                                <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
                                 <input
                                     value={query}
                                     onChange={(e) => setQuery(e.target.value)}
-                                    placeholder="Filter module / permission…"
-                                    className="border-border-strong dark:border-slate-600 text-ink dark:text-white placeholder:text-faint dark:placeholder:text-slate-500 focus:border-primary h-8 w-full rounded-[8px] border bg-white dark:bg-slate-900 py-1.5 pr-3 pl-8 text-xs focus:ring-1 focus:outline-none"
+                                    placeholder="Cari modul atau hak akses..."
+                                    className="h-9 w-full rounded-xl border border-slate-200 bg-white py-1.5 pr-3 pl-9 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                                 />
                             </div>
-                            <div className="max-h-[50vh] overflow-y-auto">
-                                {modules.length ? (
+
+                            {/* Structured Module Accordion List */}
+                            <div className="mt-3 max-h-[48vh] space-y-2.5 overflow-y-auto pr-1">
+                                {modules.length > 0 ? (
                                     modules.map((mod) => {
-                                        const keys = permissionCatalog[mod].filter((k) => !query || k.toLowerCase().includes(query.toLowerCase()));
-                                        const checked = permissionCatalog[mod].every((k) => selectedPerms.has(k));
-                                        const partial = !checked && permissionCatalog[mod].some((k) => selectedPerms.has(k));
+                                        const meta = MODULE_METADATA[mod] || { label: mod, desc: `Modul ${mod}` };
+                                        const keys = permissionCatalog[mod].filter((k) => {
+                                            if (!query) return true;
+                                            const q = query.toLowerCase();
+                                            const { actionName, actionDesc } = getPermissionLabel(k);
+                                            return (
+                                                k.toLowerCase().includes(q) ||
+                                                actionName.toLowerCase().includes(q) ||
+                                                actionDesc.toLowerCase().includes(q)
+                                            );
+                                        });
+
+                                        const allChecked = isModuleAllChecked(mod);
+                                        const partialChecked = isModulePartialChecked(mod);
                                         const isCollapsed = !!collapsed[mod];
+                                        const activeCount = permissionCatalog[mod].filter((k) => selectedPerms.has(k)).length;
+
                                         return (
-                                            <div key={mod} className="border-border dark:border-slate-700 border-b last:border-0">
-                                                <div className="flex items-center gap-2 px-3 py-2">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={checked}
-                                                        ref={(el) => {
-                                                            if (el) el.indeterminate = partial;
-                                                        }}
-                                                        onChange={() => toggleGroup(mod)}
-                                                        className="accent-primary h-3.5 w-3.5"
-                                                    />
+                                            <div
+                                                key={mod}
+                                                className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900"
+                                            >
+                                                {/* Module Group Header */}
+                                                <div className="flex items-center justify-between gap-3 bg-slate-50/70 px-4 py-2.5 dark:bg-slate-800/40">
+                                                    <div className="flex items-center gap-3">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={allChecked}
+                                                            ref={(el) => {
+                                                                if (el) el.indeterminate = partialChecked;
+                                                            }}
+                                                            onChange={() => toggleGroup(mod)}
+                                                            className="h-4 w-4 rounded-md border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900"
+                                                        />
+                                                        <div>
+                                                            <div className="flex items-center gap-2">
+                                                                <h5 className="text-xs font-bold text-slate-900 dark:text-white">{meta.label}</h5>
+                                                                <span className="py-0.2 rounded-full bg-slate-200/80 px-2 text-[10px] font-bold text-slate-700 dark:bg-slate-700 dark:text-slate-300">
+                                                                    {activeCount}/{permissionCatalog[mod].length} Aktif
+                                                                </span>
+                                                            </div>
+                                                            <p className="text-[11px] text-slate-500 dark:text-slate-400">{meta.desc}</p>
+                                                        </div>
+                                                    </div>
+
                                                     <button
                                                         type="button"
                                                         onClick={() => setCollapsed((p) => ({ ...p, [mod]: !p[mod] }))}
-                                                        className="flex flex-1 items-center justify-between text-left"
+                                                        className="rounded-lg p-1 text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 dark:hover:bg-slate-700 dark:hover:text-white"
                                                     >
-                                                        <span className="text-navy dark:text-white text-xs font-bold tracking-wider uppercase">
-                                                            {mod}{' '}
-                                                            <span className="text-muted dark:text-slate-400 ml-1 text-[11px] font-medium normal-case">
-                                                                {permissionCatalog[mod].filter((k) => selectedPerms.has(k)).length}/
-                                                                {permissionCatalog[mod].length}
-                                                            </span>
-                                                        </span>
                                                         <ChevronDown
-                                                            className={`text-muted dark:text-slate-400 h-3.5 w-3.5 transition-transform ${isCollapsed ? '-rotate-90' : ''}`}
+                                                            className={`h-4 w-4 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`}
                                                         />
                                                     </button>
                                                 </div>
+
+                                                {/* Permission Items */}
                                                 {!isCollapsed && (
-                                                    <div className="flex flex-wrap gap-1.5 px-3 pt-0 pb-2.5">
+                                                    <div className="grid grid-cols-1 gap-2 p-3 sm:grid-cols-2">
                                                         {keys.map((key) => {
                                                             const on = selectedPerms.has(key);
+                                                            const { actionName, actionDesc } = getPermissionLabel(key);
+
                                                             return (
                                                                 <label
                                                                     key={key}
-                                                                    className={`inline-flex cursor-pointer items-center gap-1.5 rounded-[8px] border px-2.5 py-1.5 text-xs transition-colors ${on ? 'border-primary/30 bg-primary-50 dark:bg-primary/10 text-primary font-medium' : 'border-border-strong dark:border-slate-600 hover:bg-surface dark:hover:bg-slate-800 text-body dark:text-slate-300 bg-white dark:bg-slate-900'}`}
+                                                                    className={`flex cursor-pointer items-start gap-2.5 rounded-xl border p-2.5 transition-all ${
+                                                                        on
+                                                                            ? 'border-blue-300 bg-blue-50/60 ring-1 ring-blue-400/20 dark:border-blue-800 dark:bg-blue-950/30'
+                                                                            : 'border-slate-200/80 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700'
+                                                                    }`}
                                                                 >
                                                                     <input
                                                                         type="checkbox"
                                                                         checked={on}
                                                                         onChange={() => togglePerm(key)}
-                                                                        className="accent-primary h-3 w-3"
+                                                                        className="mt-0.5 h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900"
                                                                     />
-                                                                    <span>{key.split('.')[1] ?? key}</span>
+                                                                    <div className="min-w-0 flex-1">
+                                                                        <div className="flex items-center justify-between gap-1">
+                                                                            <span
+                                                                                className={`text-xs font-bold ${on ? 'text-blue-900 dark:text-blue-300' : 'text-slate-900 dark:text-white'}`}
+                                                                            >
+                                                                                {actionName}
+                                                                            </span>
+                                                                            <span className="font-mono text-[9.5px] text-slate-400">{key}</span>
+                                                                        </div>
+                                                                        <p className="mt-0.5 text-[11px] leading-tight text-slate-500 dark:text-slate-400">
+                                                                            {actionDesc}
+                                                                        </p>
+                                                                    </div>
                                                                 </label>
                                                             );
                                                         })}
@@ -354,7 +592,9 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                                         );
                                     })
                                 ) : (
-                                    <p className="text-muted dark:text-slate-400 py-8 text-center text-xs">No permissions match filter.</p>
+                                    <div className="py-8 text-center text-xs text-slate-500 dark:text-slate-400">
+                                        Tidak ada hak akses yang sesuai dengan pencarian "{query}".
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -362,12 +602,17 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                 </form>
             </Modal>
 
+            {/* Confirm Delete Dialog */}
             <ConfirmDialog
                 open={delOpen}
-                title={t('admin.roles.deleteTitle')}
-                description={delTarget ? t('admin.roles.deleteConfirm', delTarget.label) : ''}
-                confirmLabel={t('common.delete')}
-                cancelLabel={t('common.cancel')}
+                title="Hapus Role Ini?"
+                description={
+                    delTarget
+                        ? `Apakah Anda yakin ingin menghapus role "${delTarget.label}" (${delTarget.name})? Tindakan ini tidak dapat dibatalkan.`
+                        : ''
+                }
+                confirmLabel="Hapus Role"
+                cancelLabel="Batal"
                 variant="danger"
                 busy={delBusy}
                 onCancel={() => {

@@ -7,6 +7,7 @@ use App\Http\Requests\BulkVerifyChecklistRequest;
 use App\Http\Requests\UpdateFindingRequest;
 use App\Http\Requests\UpdateRiskRequest;
 use App\Models\ChecklistEntry;
+use App\Models\ChecklistSession;
 use App\Models\Finding;
 use App\Models\Risk;
 use App\Services\ComplianceOfficerService;
@@ -97,6 +98,18 @@ class ComplianceOfficerController extends Controller
         $status = $request->input('status');
         $adminNotes = $request->input('admin_notes');
 
+        $entries = ChecklistEntry::whereIn('id', $entryIds)->get();
+        $hasStatusChange = $entries->contains(fn ($entry) => $entry->status !== $status);
+
+        if ($hasStatusChange && empty(trim($adminNotes ?? ''))) {
+            return back()->withErrors([
+                'admin_notes' => 'Catatan verifikasi admin wajib diisi karena terdapat perubahan status kepatuhan pada entri terpilih.',
+            ])->with('flash', [
+                'type' => 'error',
+                'message' => 'Catatan verifikasi admin wajib diisi karena terdapat perubahan status kepatuhan pada entri terpilih.',
+            ]);
+        }
+
         $verifiedCount = $this->complianceOfficerService->bulkVerifyChecklistEntries($user, $entryIds, $status, $adminNotes);
 
         return back()->with('flash', [
@@ -109,7 +122,7 @@ class ComplianceOfficerController extends Controller
      * Compliance Officer Checklist Review / Bulk Verify page.
      *
      * - No session_id  → render the session-card landing grid so the user picks a session first.
-     * - session_id set → render the per-session entry table/filter view (existing bulk-verify).
+     * - session_id set → render the per-session entry table/filter view with unified verification (single + bulk).
      */
     public function bulkVerifyPage(Request $request): Response
     {
@@ -140,17 +153,20 @@ class ComplianceOfficerController extends Controller
         $filters = $request->only(['status', 'unit_id', 'framework_id', 'session_id', 'is_verified', 'search']);
 
         $entries = $this->complianceOfficerService->getReviewQueueEntries($user, $filters, 20);
+        $selectedSession = ChecklistSession::with(['unit:id,nama', 'framework:id,nama,versi'])->find($sessionId);
 
         return Inertia::render('admin-kepatuhan/checklist/bulk-verify', [
             'entries' => $entries,
+            'session' => $selectedSession,
             'workUnits' => $this->complianceService->getWorkUnits(),
             'filters' => $filters,
         ]);
     }
 
     /**
-     * Single-entry verify page — browse pending entries one at a time.
-     * Reuses the same getReviewQueueEntries data source as bulk-verify.
+     * Single and unified checklist verify page.
+     * When no session_id is given, lists assessment sessions grouped by unit.
+     * When session_id is provided, shows review table with single & bulk verification capability.
      */
     public function verifyPage(Request $request): Response
     {
@@ -160,17 +176,30 @@ class ComplianceOfficerController extends Controller
             abort(403);
         }
 
-        $filters = $request->only(['status', 'unit_id', 'framework_id', 'is_verified', 'search']);
+        $sessionId = $request->filled('session_id') ? (int) $request->input('session_id') : null;
 
-        // Default to showing unverified entries (pending verification)
-        if (! array_key_exists('is_verified', $filters)) {
-            $filters['is_verified'] = '0';
+        if ($sessionId === null) {
+            $filters = $request->only(['search', 'unit_id', 'framework_id', 'periode']);
+            $sessions = $this->complianceService->getAdminSessions($filters);
+
+            return Inertia::render('admin-kepatuhan/checklist/bulk-verify-landing', [
+                'sessions' => $sessions,
+                'workUnits' => $this->complianceService->getWorkUnits(),
+                'frameworks' => $this->complianceService->getFrameworkSummaries(),
+                'periodeOptions' => $this->complianceService->getSessionPeriodeOptions(),
+                'filters' => $filters,
+            ]);
         }
 
+        $filters = $request->only(['status', 'unit_id', 'framework_id', 'session_id', 'is_verified', 'search']);
+
+        // Default to showing all or filter as provided
         $entries = $this->complianceOfficerService->getReviewQueueEntries($user, $filters, 20);
+        $selectedSession = ChecklistSession::with(['unit:id,nama', 'framework:id,nama,versi'])->find($sessionId);
 
         return Inertia::render('admin-kepatuhan/checklist/verify', [
             'entries' => $entries,
+            'session' => $selectedSession,
             'workUnits' => $this->complianceService->getWorkUnits(),
             'filters' => $filters,
         ]);
@@ -200,9 +229,18 @@ class ComplianceOfficerController extends Controller
             'admin_notes' => 'nullable|string|max:2000',
         ]);
 
+        if ($entry->status !== $validated['status'] && empty(trim($validated['admin_notes'] ?? ''))) {
+            return back()->withErrors([
+                'admin_notes' => 'Catatan verifikasi admin wajib diisi jika mengubah status kepatuhan.',
+            ])->with('flash', [
+                'type' => 'error',
+                'message' => 'Catatan verifikasi admin wajib diisi jika mengubah status kepatuhan.',
+            ]);
+        }
+
         $entry->update([
             'status' => $validated['status'],
-            'catatan_admin' => $validated['admin_notes'] ?? null,
+            'catatan_admin' => ! empty(trim($validated['admin_notes'] ?? '')) ? $validated['admin_notes'] : $entry->catatan_admin,
             'tanggal_verifikasi' => now(),
             'admin_id' => $user->id,
         ]);

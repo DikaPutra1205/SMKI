@@ -162,7 +162,7 @@ export default function Frameworks({ frameworks = [], filters = {} }: Frameworks
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">{t('frameworks.title')}</h1>
-                    <p className="text-muted dark:text-slate-400 mt-1 text-xs sm:text-sm">{t('frameworks.subtitle')}</p>
+                    <p className="text-muted mt-1 text-xs sm:text-sm dark:text-slate-400">{t('frameworks.subtitle')}</p>
                 </div>
                 {can('framework.create') && (
                     <button
@@ -176,16 +176,16 @@ export default function Frameworks({ frameworks = [], filters = {} }: Frameworks
                 )}
             </div>
 
-            <div className="border-border dark:border-slate-700 overflow-hidden rounded-[14px] border bg-white dark:bg-slate-900 shadow-sm">
-                <div className="border-border dark:border-slate-700 bg-surface/50 dark:bg-slate-900/50 border-b p-4 sm:p-5">
+            <div className="border-border overflow-hidden rounded-[14px] border bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+                <div className="border-border bg-surface/50 border-b p-4 sm:p-5 dark:border-slate-700 dark:bg-slate-900/50">
                     <div className="relative min-w-[280px]">
-                        <Search className="text-faint dark:text-slate-500 absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                        <Search className="text-faint absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 dark:text-slate-500" />
                         <input
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder={t('frameworks.searchPlaceholder')}
-                            className="border-border-strong dark:border-slate-600 text-ink dark:text-white placeholder:text-faint dark:placeholder:text-slate-500 focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white dark:bg-slate-900 py-2 pr-4 pl-9 text-xs focus:ring-2 focus:outline-none sm:text-sm"
+                            className="border-border-strong text-ink placeholder:text-faint focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white py-2 pr-4 pl-9 text-xs focus:ring-2 focus:outline-none sm:text-sm dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
                         />
                     </div>
                 </div>
@@ -195,19 +195,21 @@ export default function Frameworks({ frameworks = [], filters = {} }: Frameworks
                         {paginatedFrameworks.map((item) => (
                             <div
                                 key={item.id}
-                                className="border-border dark:border-slate-700 bg-surface/40 dark:bg-slate-900/40 hover:border-primary/40 flex flex-col rounded-[14px] border p-5 transition-all hover:shadow-md"
+                                className="border-border bg-surface/40 hover:border-primary/40 flex flex-col rounded-[14px] border p-5 transition-all hover:shadow-md dark:border-slate-700 dark:bg-slate-900/40"
                             >
                                 <div className="flex items-start justify-between gap-3">
                                     <div className="bg-primary shadow-blue flex h-11 w-11 items-center justify-center rounded-[12px] text-white">
                                         <Database className="h-5 w-5" />
                                     </div>
-                                    <span className="bg-primary-50 dark:bg-primary/10 text-primary rounded-[6px] px-2.5 py-1 text-xs font-semibold">v{item.versi}</span>
+                                    <span className="bg-primary-50 dark:bg-primary/10 text-primary rounded-[6px] px-2.5 py-1 text-xs font-semibold">
+                                        v{item.versi}
+                                    </span>
                                 </div>
 
-                                <h3 className="text-navy dark:text-white mt-4 text-base font-bold">{item.nama}</h3>
+                                <h3 className="text-navy mt-4 text-base font-bold dark:text-white">{item.nama}</h3>
 
                                 <div className="mt-3 flex items-center justify-between">
-                                    <span className="text-muted dark:text-slate-400 text-xs">
+                                    <span className="text-muted text-xs dark:text-slate-400">
                                         {item.controls_count} {t('dashboard.controls')}
                                     </span>
                                 </div>
@@ -224,12 +226,12 @@ export default function Frameworks({ frameworks = [], filters = {} }: Frameworks
                                     </a>
                                 )}
 
-                                <div className="border-border dark:border-slate-700 mt-4 flex items-center justify-end gap-1.5 border-t pt-3">
+                                <div className="border-border mt-4 flex items-center justify-end gap-1.5 border-t pt-3 dark:border-slate-700">
                                     {can('framework.update') && (
                                         <button
                                             type="button"
                                             onClick={() => openEdit(item)}
-                                            className="border-border-strong dark:border-slate-600 text-navy dark:text-white hover:bg-surface dark:hover:bg-slate-800 inline-flex items-center gap-1.5 rounded-[10px] border bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold transition-colors"
+                                            className="border-border-strong text-navy hover:bg-surface inline-flex items-center gap-1.5 rounded-[10px] border bg-white px-3 py-1.5 text-xs font-semibold transition-colors dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:hover:bg-slate-800"
                                         >
                                             <Pencil className="h-3.5 w-3.5" />
                                             {t('common.edit')}
@@ -239,7 +241,7 @@ export default function Frameworks({ frameworks = [], filters = {} }: Frameworks
                                         <button
                                             type="button"
                                             onClick={() => handleDelete(item)}
-                                            className="border-danger-border dark:border-red-800 bg-danger-bg text-danger dark:text-red-400 hover:bg-danger/10 inline-flex items-center gap-1.5 rounded-[10px] border px-3 py-1.5 text-xs font-semibold transition-colors"
+                                            className="border-danger-border bg-danger-bg text-danger hover:bg-danger/10 inline-flex items-center gap-1.5 rounded-[10px] border px-3 py-1.5 text-xs font-semibold transition-colors dark:border-red-800 dark:text-red-400"
                                         >
                                             <Trash2 className="h-3.5 w-3.5" />
                                             {t('common.delete')}
@@ -282,7 +284,7 @@ export default function Frameworks({ frameworks = [], filters = {} }: Frameworks
                         <button
                             type="button"
                             onClick={closeModal}
-                            className="border-border-strong dark:border-slate-600 text-body dark:text-slate-300 hover:bg-surface dark:hover:bg-slate-800 rounded-[10px] border bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium transition-colors"
+                            className="border-border-strong text-body hover:bg-surface rounded-[10px] border bg-white px-4 py-2 text-sm font-medium transition-colors dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
                         >
                             {t('common.cancel')}
                         </button>
@@ -304,9 +306,9 @@ export default function Frameworks({ frameworks = [], filters = {} }: Frameworks
                         onChange={(e) => form.setData('nama', e.target.value)}
                         placeholder={t('frameworks.namePlaceholder')}
                         aria-label={t('frameworks.nameLabel')}
-                        className="border-border-strong dark:border-slate-600 text-ink dark:text-white placeholder:text-faint dark:placeholder:text-slate-500 focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white dark:bg-slate-900 px-3 text-sm focus:ring-2 focus:outline-none"
+                        className="border-border-strong text-ink placeholder:text-faint focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white px-3 text-sm focus:ring-2 focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
                     />
-                    {form.errors.nama && <p className="text-danger dark:text-red-400 text-[11px] font-medium">{form.errors.nama}</p>}
+                    {form.errors.nama && <p className="text-danger text-[11px] font-medium dark:text-red-400">{form.errors.nama}</p>}
 
                     <input
                         type="text"
@@ -314,9 +316,9 @@ export default function Frameworks({ frameworks = [], filters = {} }: Frameworks
                         onChange={(e) => form.setData('versi', e.target.value)}
                         placeholder={t('frameworks.versionPlaceholder')}
                         aria-label={t('frameworks.versionLabel')}
-                        className="border-border-strong dark:border-slate-600 text-ink dark:text-white placeholder:text-faint dark:placeholder:text-slate-500 focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white dark:bg-slate-900 px-3 text-sm focus:ring-2 focus:outline-none"
+                        className="border-border-strong text-ink placeholder:text-faint focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white px-3 text-sm focus:ring-2 focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
                     />
-                    {form.errors.versi && <p className="text-danger dark:text-red-400 text-[11px] font-medium">{form.errors.versi}</p>}
+                    {form.errors.versi && <p className="text-danger text-[11px] font-medium dark:text-red-400">{form.errors.versi}</p>}
 
                     <div>
                         <input
@@ -334,18 +336,20 @@ export default function Frameworks({ frameworks = [], filters = {} }: Frameworks
                             <button
                                 type="button"
                                 onClick={() => fileInputRef.current?.click()}
-                                className="border-border-strong dark:border-slate-600 text-navy dark:text-white hover:bg-surface dark:hover:bg-slate-800 inline-flex items-center gap-1.5 rounded-[10px] border bg-white dark:bg-slate-900 px-3 py-2 text-xs font-semibold transition-colors"
+                                className="border-border-strong text-navy hover:bg-surface inline-flex items-center gap-1.5 rounded-[10px] border bg-white px-3 py-2 text-xs font-semibold transition-colors dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:hover:bg-slate-800"
                             >
                                 <Upload className="h-3.5 w-3.5" />
                                 <span className="whitespace-nowrap">{t('frameworks.chooseFile')}</span>
                             </button>
-                            <span className={`truncate text-xs ${selectedFileName ? 'text-body dark:text-slate-300' : 'text-faint dark:text-slate-500'}`}>
+                            <span
+                                className={`truncate text-xs ${selectedFileName ? 'text-body dark:text-slate-300' : 'text-faint dark:text-slate-500'}`}
+                            >
                                 {selectedFileName || t('frameworks.noFileSelected')}
                             </span>
                         </div>
-                        <p className="text-muted dark:text-slate-400 mt-1.5 text-[11px]">{t('frameworks.dokumenHint')}</p>
+                        <p className="text-muted mt-1.5 text-[11px] dark:text-slate-400">{t('frameworks.dokumenHint')}</p>
                     </div>
-                    {form.errors.file_dokumen && <p className="text-danger dark:text-red-400 text-[11px] font-medium">{form.errors.file_dokumen}</p>}
+                    {form.errors.file_dokumen && <p className="text-danger text-[11px] font-medium dark:text-red-400">{form.errors.file_dokumen}</p>}
                 </form>
             </Modal>
 

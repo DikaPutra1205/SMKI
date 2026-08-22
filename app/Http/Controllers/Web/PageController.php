@@ -88,7 +88,7 @@ class PageController extends Controller
         $roleName = $user->role()->value('name');
 
         return match ($roleName) {
-            'superadmin' => app(FrameworkController::class)->dashboard(),
+            'superadmin' => app(FrameworkController::class)->dashboard($request),
             'auditor' => app(AuditorDashboardController::class)->index($request),
             'pic' => app(PicDashboardController::class)->index($request),
             default => app(ComplianceController::class)->dashboard($request),

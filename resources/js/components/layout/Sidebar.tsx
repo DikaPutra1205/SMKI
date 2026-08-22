@@ -2,12 +2,29 @@ import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { NavEntry, SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { AlertCircle, AlertTriangle, CheckSquare, ChevronDown, ChevronRight, ClipboardCheck, Database, History, LayoutGrid, LogOut, Shield, ShieldCheck, Users, X } from 'lucide-react';
+import {
+    AlertCircle,
+    AlertTriangle,
+    CheckSquare,
+    ChevronDown,
+    ChevronRight,
+    ClipboardCheck,
+    Database,
+    History,
+    LayoutGrid,
+    LogOut,
+    Shield,
+    ShieldCheck,
+    Users,
+    X,
+} from 'lucide-react';
 import { type ComponentType, useState } from 'react';
 
 interface SidebarProps {
     isOpen: boolean;
+    isCollapsed?: boolean;
     onClose?: () => void;
+    onToggleCollapse?: () => void;
     currentPath?: string;
 }
 
@@ -24,14 +41,12 @@ const ICON_MAP: Record<string, ComponentType<{ className?: string }>> = {
     Shield,
 };
 
-export function Sidebar({ isOpen, onClose, currentPath }: SidebarProps) {
+export function Sidebar({ isOpen, isCollapsed = false, onClose, currentPath }: SidebarProps) {
     const page = usePage<SharedData>();
     const authUser = page.props.auth?.user;
     const navigation: NavEntry[] = page.props.navigation || [];
 
-    const pathname = currentPath || page.url;
     const userRole = (authUser as { role?: string })?.role;
-
     const userName = authUser?.name || '';
 
     const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
@@ -47,11 +62,30 @@ export function Sidebar({ isOpen, onClose, currentPath }: SidebarProps) {
         setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }));
     };
 
-    const normalize = (p: string) => p.replace(/^\/admin\/kepatuhan/, '') || '/';
-    const isUrlActive = (url: string) => {
-        const pn = normalize(pathname);
-        const u = normalize(url);
-        return pn === u || pn.startsWith(u + '/');
+    const cleanPath = (p: string) => {
+        if (!p) return '/';
+        const pathOnly = p.split('?')[0].split('#')[0];
+        return pathOnly.replace(/\/+$/, '') || '/';
+    };
+
+    const isUrlActive = (targetUrl?: string) => {
+        if (!targetUrl) return false;
+        const current = cleanPath(currentPath || page.url);
+        const target = cleanPath(targetUrl);
+
+        if (target === current) return true;
+
+        const currentNorm = current.replace(/^\/admin\/(kepatuhan|superadmin|pic|auditor)/, '') || '/';
+        const targetNorm = target.replace(/^\/admin\/(kepatuhan|superadmin|pic|auditor)/, '') || '/';
+
+        if (currentNorm === targetNorm) return true;
+
+        if (target !== '/' && target !== '/dashboard' && targetNorm !== '/' && targetNorm !== '/dashboard') {
+            if (current.startsWith(target + '/')) return true;
+            if (currentNorm.startsWith(targetNorm + '/')) return true;
+        }
+
+        return false;
     };
 
     const resolveIcon = (iconName?: string) => (iconName ? ICON_MAP[iconName] || LayoutGrid : LayoutGrid);
@@ -64,8 +98,9 @@ export function Sidebar({ isOpen, onClose, currentPath }: SidebarProps) {
 
             <aside
                 className={cn(
-                    'from-navy fixed top-0 bottom-0 left-0 z-50 flex w-64 flex-col bg-gradient-to-b to-[#001A30] text-[#A9C3DB] shadow-xl transition-transform duration-300 ease-in-out lg:translate-x-0',
+                    'from-navy fixed top-0 bottom-0 left-0 z-50 flex w-64 flex-col bg-gradient-to-b to-[#001A30] text-[#A9C3DB] shadow-xl transition-all duration-300 ease-in-out',
                     isOpen ? 'translate-x-0' : '-translate-x-full',
+                    isCollapsed ? 'lg:-translate-x-full' : 'lg:translate-x-0',
                 )}
             >
                 <div className="flex h-[68px] items-center justify-between border-b border-white/10 px-4 py-3">
@@ -78,6 +113,7 @@ export function Sidebar({ isOpen, onClose, currentPath }: SidebarProps) {
                         </div>
                     </div>
                     <button
+                        type="button"
                         onClick={onClose}
                         className="rounded-lg p-1.5 text-[#A9C3DB] transition-colors hover:bg-white/10 hover:text-white lg:hidden"
                         aria-label={t('layout.closeSidebar')}
