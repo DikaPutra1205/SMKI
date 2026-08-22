@@ -44,11 +44,11 @@ class Control extends Model
 
     public function getFrameworkNameAttribute(): string
     {
-        return $this->framework->nama;
+        return $this->framework?->nama ?? '';
     }
 
     public function getFrameworkVersiAttribute(): string
     {
-        return $this->framework->versi;
+        return $this->framework?->versi ?? '';
     }
 }
