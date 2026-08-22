@@ -16,26 +16,33 @@ class ComplianceService
      */
     public function getFrameworkSummaries(): array
     {
-        return Framework::withCount('controls')
+        $frameworks = Framework::withCount('controls')->orderBy('id')->get();
+
+        $stats = ChecklistEntry::join('controls', 'checklist_entries.control_id', '=', 'controls.id')
+            ->selectRaw('
+                controls.framework_id,
+                COUNT(*) as total_entries,
+                SUM(CASE WHEN checklist_entries.status = ? THEN 1 ELSE 0 END) as compliant_entries
+            ', [ChecklistEntry::STATUS_COMPLIANT])
+            ->groupBy('controls.framework_id')
             ->get()
-            ->map(function (Framework $fw) {
-                $totalEntries = ChecklistEntry::whereHas('control', fn ($q) => $q->where('framework_id', $fw->id))->count();
-                $compliantEntries = ChecklistEntry::whereHas('control', fn ($q) => $q->where('framework_id', $fw->id))
-                    ->where('status', ChecklistEntry::STATUS_COMPLIANT)
-                    ->count();
+            ->keyBy('framework_id');
 
-                $percentage = $totalEntries > 0 ? (int) round(($compliantEntries / $totalEntries) * 100) : 0;
+        return $frameworks->map(function (Framework $fw) use ($stats) {
+            $fwStat = $stats->get($fw->id);
+            $totalEntries = $fwStat ? (int) $fwStat->total_entries : 0;
+            $compliantEntries = $fwStat ? (int) $fwStat->compliant_entries : 0;
+            $percentage = $totalEntries > 0 ? (int) round(($compliantEntries / $totalEntries) * 100) : 0;
 
-                return [
-                    'id' => $fw->id,
-                    'nama' => $fw->nama,
-                    'versi' => $fw->versi,
-                    'url_file' => $fw->url_file,
-                    'controls_count' => $fw->controls_count,
-                    'compliance_percentage' => $percentage,
-                ];
-            })
-            ->toArray();
+            return [
+                'id' => $fw->id,
+                'nama' => $fw->nama,
+                'versi' => $fw->versi,
+                'url_file' => $fw->url_file,
+                'controls_count' => $fw->controls_count,
+                'compliance_percentage' => $percentage,
+            ];
+        })->toArray();
     }
 
     /**
@@ -50,11 +57,29 @@ class ComplianceService
     }
 
     /**
-     * Get checklist sessions list with progress statistics.
+     * Get checklist sessions list with progress statistics (eager aggregated, no N+1).
      */
     public function getChecklistSessions(array $filters = []): array
     {
-        $query = ChecklistSession::with(['unit:id,nama', 'framework:id,nama,versi', 'creator:id,name', 'updater:id,name']);
+        $query = ChecklistSession::with([
+            'unit:id,nama',
+            'framework:id,nama,versi',
+            'creator:id,name',
+            'updater:id,name',
+        ])->withCount([
+            'entries as total_entries',
+            'entries as compliant_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_COMPLIANT),
+            'entries as partial_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_PARTIAL),
+            'entries as non_compliant_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_NON_COMPLIANT),
+            'entries as na_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_NA),
+            'entries as verified_entries' => fn ($q) => $q->whereNotNull('tanggal_verifikasi'),
+            'entries as completed_entries' => fn ($q) => $q->where(fn ($q2) => $q2->where('status', ChecklistEntry::STATUS_COMPLIANT)
+                ->orWhere(fn ($q3) => $q3->whereIn('status', [
+                    ChecklistEntry::STATUS_PARTIAL,
+                    ChecklistEntry::STATUS_NON_COMPLIANT,
+                    ChecklistEntry::STATUS_NA,
+                ])->whereNotNull('catatan')->where('catatan', '!=', ''))),
+        ]);
 
         if (! empty($filters['unit_id'])) {
             $query->where('unit_id', $filters['unit_id']);
@@ -71,6 +96,10 @@ class ComplianceService
         return $query->orderByDesc('id')
             ->get()
             ->map(function (ChecklistSession $session) {
+                $total = (int) $session->total_entries;
+                $completed = (int) $session->completed_entries;
+                $compliant = (int) $session->compliant_entries;
+
                 return [
                     'id' => $session->id,
                     'konteks_penilaian' => $session->konteks_penilaian,
@@ -84,7 +113,17 @@ class ComplianceService
                     'updated_by' => $session->updated_by,
                     'updater_name' => $session->updater?->name ?? '',
                     'catatan' => $session->catatan ?? '',
-                    'summary' => $session->summary,
+                    'summary' => [
+                        'total_entries' => $total,
+                        'compliant' => $compliant,
+                        'partial' => (int) $session->partial_entries,
+                        'non_compliant' => (int) $session->non_compliant_entries,
+                        'na' => (int) $session->na_entries,
+                        'verified_entries' => (int) $session->verified_entries,
+                        'completed' => $completed,
+                        'completion_percentage' => $total > 0 ? (int) round(($completed / $total) * 100) : 0,
+                        'compliance_percentage' => $total > 0 ? (int) round(($compliant / $total) * 100) : 0,
+                    ],
                 ];
             })
             ->toArray();
