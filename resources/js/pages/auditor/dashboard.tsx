@@ -1,5 +1,6 @@
 import { ActivitySkeleton } from '@/components/skeletons/ActivitySkeleton';
 import { ChartSkeleton } from '@/components/skeletons/ChartSkeleton';
+import TrendAreaChart from '@/components/dashboards/TrendAreaChart';
 import AppLayout from '@/layouts/AppLayout';
 import { formatDateIndonesian, formatDateTimeIndonesian } from '@/lib/utils';
 import { type SharedData } from '@/types';
@@ -59,33 +60,10 @@ export default function AuditorDashboard({ summary, trends = [], recent_activiti
         return `${days[d.getDay()]}, ${formatDateIndonesian(d)}`;
     }, []);
 
-    // ── Trend Chart Geometry ──────────────────────────────────────────────────
-    const chartW = 600;
-    const chartH = 200;
-    const chartPadL = 36;
-    const chartPadR = 16;
-    const chartPadT = 16;
-    const chartPadB = 28;
-    const chartInnerW = chartW - chartPadL - chartPadR;
-    const chartInnerH = chartH - chartPadT - chartPadB;
-
+    // ── Trend Chart Data ──────────────────────────────────────────────────────
     const trendPoints = trends.length > 0 ? trends : [];
     const trendLabels = trendPoints.length > 0 ? trendPoints.map((p) => p.label) : FALLBACK_TREND_LABELS;
     const trendValues = trendPoints.length > 0 ? trendPoints.map((p) => p.overall_rate) : [65, 70, 72, 75, 78, overallRate || 80];
-
-    const chartX = (i: number) => {
-        const n = trendLabels.length;
-        return n <= 1 ? chartPadL + chartInnerW / 2 : chartPadL + (chartInnerW * i) / (n - 1);
-    };
-    const chartY = (v: number) => chartPadT + chartInnerH - (chartInnerH * Math.min(100, Math.max(0, v))) / 100;
-
-    const linePoints = trendValues.map((v, i) => `${chartX(i)},${chartY(v)}`).join(' ');
-    const areaPath =
-        trendValues.length > 0
-            ? `M ${chartX(0)} ${chartY(trendValues[0])} ` +
-              trendValues.map((v, i) => `L ${chartX(i)} ${chartY(v)}`).join(' ') +
-              ` L ${chartX(trendValues.length - 1)} ${chartPadT + chartInnerH} L ${chartX(0)} ${chartPadT + chartInnerH} Z`
-            : '';
 
     const totalRisks = (risks.critical || 0) + (risks.high || 0) + (risks.medium || 0) + (risks.low || 0);
 
@@ -303,67 +281,8 @@ export default function AuditorDashboard({ summary, trends = [], recent_activiti
                         </div>
                     </div>
                     <div className="pt-4">
-                        <Deferred data="trends" fallback={<ChartSkeleton height="h-[200px]" />}>
-                            <svg className="h-[200px] w-full" viewBox={`0 0 ${chartW} ${chartH}`} preserveAspectRatio="none" role="img">
-                                <defs>
-                                    <linearGradient id="auditorAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#2563eb" stopOpacity="0.25" />
-                                        <stop offset="100%" stopColor="#2563eb" stopOpacity="0.0" />
-                                    </linearGradient>
-                                </defs>
-                                {[0, 1, 2, 3].map((g) => {
-                                    const y = chartPadT + (chartInnerH * g) / 3;
-                                    return (
-                                        <line
-                                            key={g}
-                                            x1={chartPadL}
-                                            y1={y}
-                                            x2={chartW - chartPadR}
-                                            y2={y}
-                                            stroke="#f1f5f9"
-                                            className="dark:stroke-slate-800"
-                                            strokeWidth="1"
-                                        />
-                                    );
-                                })}
-                                {areaPath && <path d={areaPath} fill="url(#auditorAreaGrad)" />}
-                                {linePoints && (
-                                    <polyline
-                                        points={linePoints}
-                                        fill="none"
-                                        stroke="#2563eb"
-                                        strokeWidth="2.5"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                    />
-                                )}
-                                {trendValues.map((v, i) => (
-                                    <circle
-                                        key={i}
-                                        cx={chartX(i)}
-                                        cy={chartY(v)}
-                                        r="4"
-                                        className="fill-white stroke-blue-600 dark:fill-slate-900"
-                                        strokeWidth="2"
-                                    />
-                                ))}
-                                {/* X-axis Labels */}
-                                <g fill="#94a3b8" className="dark:fill-slate-500" fontSize="10.5" fontWeight="500" textAnchor="middle">
-                                    {trendLabels.map((label, i) => (
-                                        <text key={label + i} x={chartX(i)} y={chartH - 8}>
-                                            {label}
-                                        </text>
-                                    ))}
-                                </g>
-                                {/* Y-axis Labels */}
-                                <g fill="#94a3b8" className="dark:fill-slate-500" fontSize="10" fontWeight="500" textAnchor="end">
-                                    {[100, 75, 50, 25, 0].map((p) => (
-                                        <text key={p} x={chartPadL - 8} y={chartY(p) + 3}>
-                                            {p}%
-                                        </text>
-                                    ))}
-                                </g>
-                            </svg>
+                        <Deferred data="trends" fallback={<ChartSkeleton height="h-[250px]" />}>
+                            <TrendAreaChart labels={trendLabels} values={trendValues} />
                         </Deferred>
                     </div>
                 </div>
