@@ -1,4 +1,4 @@
-/**
+﻿/**
  * verify.tsx  —  Admin Kepatuhan: Unified Checklist Verification Page
  *
  * Designed with a world-class, frictionless UX:
@@ -315,7 +315,7 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
                                         nama_file: entry.active_evidence?.nama_file || `${code} Evidence`,
                                     })
                                 }
-                                className="w-full flex items-center justify-between gap-2.5 rounded-[10px] border border-emerald-300 bg-emerald-50 px-3.5 py-3 text-xs font-semibold text-emerald-800 transition-colors hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-950/60"
+                                className="flex w-full items-center justify-between gap-2.5 rounded-[10px] border border-emerald-300 bg-emerald-50 px-3.5 py-3 text-xs font-semibold text-emerald-800 transition-colors hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-950/60"
                             >
                                 <div className="flex items-center gap-2 truncate">
                                     <FileText className="h-4 w-4 shrink-0" />
@@ -453,8 +453,8 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
         const target = document.getElementById(`verify-row-${firstUnverifiedEntry.id}`);
         if (target) {
             target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            target.classList.add('ring-2', 'ring-blue-500', 'dark:ring-blue-400');
-            setTimeout(() => target.classList.remove('ring-2', 'ring-blue-500', 'dark:ring-blue-400'), 2500);
+            target.classList.add('ring-2', 'ring-primary', 'dark:ring-primary');
+            setTimeout(() => target.classList.remove('ring-2', 'ring-primary', 'dark:ring-primary'), 2500);
         }
     }
 
@@ -583,7 +583,7 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                                 {page.total} Kontrol
                             </span>
                         </div>
-                        <p className="text-muted mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                        <p className="text-muted mt-1 text-xs text-slate-500 sm:text-sm dark:text-slate-400">
                             {session?.konteks_penilaian
                                 ? `Meninjau entri checklist untuk sesi "${session.konteks_penilaian}". Centang baris untuk verifikasi massal atau klik baris untuk melihat detail.`
                                 : t('bulkVerify.subtitle')}
@@ -597,12 +597,12 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                 <div className="border-border flex flex-wrap items-center justify-between gap-3.5 rounded-2xl border bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                     <div className="flex flex-wrap items-center gap-3.5">
                         <div className="flex items-center gap-2">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400">
+                            <div className="bg-primary-50 text-primary dark:bg-navy-900/50 dark:text-primary-200 flex h-8 w-8 items-center justify-center rounded-xl">
                                 <Building2 className="h-4 w-4 shrink-0" />
                             </div>
                             <div>
-                                <span className="text-[10px] uppercase font-bold text-slate-400 block">Unit Kerja</span>
-                                <span className="text-slate-900 text-xs font-bold dark:text-white">{session.unit?.nama ?? 'Semua Unit'}</span>
+                                <span className="block text-[10px] font-bold text-slate-400 uppercase">Unit Kerja</span>
+                                <span className="text-xs font-bold text-slate-900 dark:text-white">{session.unit?.nama ?? 'Semua Unit'}</span>
                             </div>
                         </div>
 
@@ -612,8 +612,8 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                                     <Shield className="h-4 w-4 shrink-0" />
                                 </div>
                                 <div>
-                                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Framework</span>
-                                    <span className="text-slate-900 text-xs font-bold dark:text-white">
+                                    <span className="block text-[10px] font-bold text-slate-400 uppercase">Framework</span>
+                                    <span className="text-xs font-bold text-slate-900 dark:text-white">
                                         {session.framework.nama} {session.framework.versi}
                                     </span>
                                 </div>
@@ -622,8 +622,8 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
 
                         {session.periode && (
                             <div className="border-l border-slate-100 pl-3.5 dark:border-slate-800">
-                                <span className="text-[10px] uppercase font-bold text-slate-400 block">Periode</span>
-                                <span className="text-slate-700 text-xs font-semibold dark:text-slate-300">{session.periode}</span>
+                                <span className="block text-[10px] font-bold text-slate-400 uppercase">Periode</span>
+                                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{session.periode}</span>
                             </div>
                         )}
                     </div>
@@ -633,7 +633,7 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                         <button
                             type="button"
                             onClick={scrollToFirstUnverified}
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300 transition-colors shadow-xs"
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 shadow-xs transition-colors hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
                         >
                             <ArrowDown className="h-3.5 w-3.5" />
                             <span>Lompat ke Kontrol Belum Diverifikasi</span>
@@ -643,15 +643,15 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
             )}
 
             {/* Filter Toolbar */}
-            <div className="border-border flex flex-col gap-3 rounded-2xl border bg-white p-4 lg:flex-row lg:items-center dark:border-slate-800 dark:bg-slate-900 shadow-sm">
+            <div className="border-border flex flex-col gap-3 rounded-2xl border bg-white p-4 shadow-sm lg:flex-row lg:items-center dark:border-slate-800 dark:bg-slate-900">
                 <div className="relative flex-1">
-                    <Search className="text-slate-400 pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                    <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
                     <input
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Cari kode klausul atau judul kontrol…"
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 pr-3 pl-9 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800/40 dark:text-white"
+                        className="focus:border-primary w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 pr-3 pl-9 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none sm:text-sm dark:border-slate-700 dark:bg-slate-800/40 dark:text-white"
                     />
                 </div>
 
@@ -662,14 +662,14 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                         onClick={() => setVerification(verification === 'unverified' ? 'all' : 'unverified')}
                         className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition-all ${
                             verification === 'unverified'
-                                ? 'border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-500 dark:bg-blue-950/40 dark:text-blue-300 shadow-xs'
+                                ? 'border-primary bg-primary-50 text-primary-700 dark:border-primary dark:bg-navy-900/40 dark:text-primary-200 shadow-xs'
                                 : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
                         }`}
                     >
                         <Filter className="h-3.5 w-3.5" />
                         <span>Hanya Belum Diverifikasi</span>
                         {unverifiedCount > 0 && (
-                            <span className="rounded-full bg-amber-100 px-1.5 py-0.2 text-[10px] font-bold text-amber-800 dark:bg-amber-900/60 dark:text-amber-300">
+                            <span className="py-0.2 rounded-full bg-amber-100 px-1.5 text-[10px] font-bold text-amber-800 dark:bg-amber-900/60 dark:text-amber-300">
                                 {unverifiedCount}
                             </span>
                         )}
@@ -698,7 +698,7 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
             </div>
 
             {/* Main Table */}
-            <div className="border border-slate-200 overflow-hidden rounded-2xl bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 <div className="overflow-x-auto">
                     <table className="w-full min-w-[850px] text-left text-xs sm:text-sm">
                         <thead>
@@ -709,7 +709,7 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                                         checked={allSelectedOnPage}
                                         onChange={toggleAll}
                                         aria-label="Pilih semua baris pada halaman ini"
-                                        className="h-4 w-4 cursor-pointer rounded accent-blue-600 dark:border-slate-600"
+                                        className="accent-primary h-4 w-4 cursor-pointer rounded dark:border-slate-600"
                                     />
                                 </th>
                                 <th className="px-4 py-3.5">Kode Klausul</th>
@@ -747,9 +747,9 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                                             onClick={() => setActiveEntry(isPanelActive ? null : entry)}
                                             className={`cursor-pointer transition-all ${
                                                 isChecked
-                                                    ? 'bg-blue-50/70 dark:bg-blue-950/40'
+                                                    ? 'bg-primary-50/70 dark:bg-navy-900/40'
                                                     : isPanelActive
-                                                      ? 'bg-blue-50/50 dark:bg-blue-950/30'
+                                                      ? 'bg-primary-50/50 dark:bg-navy-900/30'
                                                       : 'hover:bg-slate-50/60 dark:hover:bg-slate-800/40'
                                             }`}
                                         >
@@ -759,13 +759,13 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                                                     checked={isChecked}
                                                     onChange={() => toggleOne(entry.id)}
                                                     aria-label={`Pilih baris ${code}`}
-                                                    className="h-4 w-4 cursor-pointer rounded accent-blue-600 dark:border-slate-600"
+                                                    className="accent-primary h-4 w-4 cursor-pointer rounded dark:border-slate-600"
                                                 />
                                             </td>
-                                            <td className="font-mono text-xs font-bold text-slate-900 dark:text-white px-4 py-3">{code}</td>
+                                            <td className="px-4 py-3 font-mono text-xs font-bold text-slate-900 dark:text-white">{code}</td>
                                             <td className="max-w-[280px] px-4 py-3">
-                                                <p className="font-semibold text-slate-900 truncate dark:text-white">{title}</p>
-                                                {framework && <p className="text-[11px] text-slate-400 truncate">{framework}</p>}
+                                                <p className="truncate font-semibold text-slate-900 dark:text-white">{title}</p>
+                                                {framework && <p className="truncate text-[11px] text-slate-400">{framework}</p>}
                                             </td>
                                             <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{entry.unit?.nama ?? '—'}</td>
                                             <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{entry.pic?.name ?? '—'}</td>
@@ -784,13 +784,13 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                                                                 nama_file: entry.active_evidence?.nama_file || `${code} Evidence`,
                                                             })
                                                         }
-                                                        className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 transition-colors"
+                                                        className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
                                                     >
                                                         <Eye className="h-3 w-3" />
                                                         <span>Lihat Bukti</span>
                                                     </button>
                                                 ) : (
-                                                    <span className="text-slate-400 text-xs">—</span>
+                                                    <span className="text-xs text-slate-400">—</span>
                                                 )}
                                             </td>
                                             <td className="px-4 py-3">
@@ -800,13 +800,13 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                                                             {fmtDate(entry.tanggal_verifikasi)}
                                                         </span>
                                                         {entry.admin?.name && (
-                                                            <span className="text-[11px] text-slate-400">
-                                                                oleh {entry.admin.name}
-                                                            </span>
+                                                            <span className="text-[11px] text-slate-400">oleh {entry.admin.name}</span>
                                                         )}
                                                     </div>
                                                 ) : (
-                                                    <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">Belum Diverifikasi</span>
+                                                    <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">
+                                                        Belum Diverifikasi
+                                                    </span>
                                                 )}
                                             </td>
                                             <td className="px-4 py-3 text-right">
@@ -818,7 +818,7 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                                                     }}
                                                     className={`rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all ${
                                                         isPanelActive
-                                                            ? 'border-blue-600 bg-blue-600 text-white shadow-sm'
+                                                            ? 'border-primary bg-primary text-white shadow-sm'
                                                             : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
                                                     }`}
                                                 >
@@ -862,7 +862,7 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                 <div className="animate-in fade-in slide-in-from-bottom-4 fixed bottom-6 left-1/2 z-40 -translate-x-1/2 duration-200">
                     <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/95 px-4 py-2.5 shadow-2xl backdrop-blur-md sm:gap-3 dark:border-slate-800 dark:bg-slate-900/95">
                         <div className="flex items-center gap-2 border-r border-slate-200 pr-3 dark:border-slate-700">
-                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800">
+                            <span className="bg-primary-100 text-primary-700 border-primary-200 dark:bg-navy-900 dark:text-primary-200 dark:border-primary-800 flex h-6 w-6 items-center justify-center rounded-full border text-xs font-bold">
                                 {selectedIds.size}
                             </span>
                             <span className="hidden text-xs font-medium text-slate-500 sm:inline dark:text-slate-400">terpilih</span>
@@ -890,7 +890,7 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                             <button
                                 type="button"
                                 onClick={clearSelection}
-                                className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors"
+                                className="rounded-xl p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
                                 title="Batal pilih"
                             >
                                 <X className="h-4 w-4" />
@@ -901,11 +901,7 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
             )}
 
             {/* Slide-over detail panel for single review */}
-            <DetailPanel
-                entry={activeEntry}
-                onClose={() => setActiveEntry(null)}
-                onPreviewEvidence={(evidence) => setPreviewEvidence(evidence)}
-            />
+            <DetailPanel entry={activeEntry} onClose={() => setActiveEntry(null)} onPreviewEvidence={(evidence) => setPreviewEvidence(evidence)} />
 
             {/* In-App Evidence Preview Lightbox Modal */}
             <Modal
@@ -915,13 +911,13 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                 onClose={() => setPreviewEvidence(null)}
                 maxWidth="xl"
                 footer={
-                    <div className="flex items-center justify-between w-full">
+                    <div className="flex w-full items-center justify-between">
                         {previewEvidence && (
                             <a
                                 href={previewEvidence.file_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                                className="text-primary hover:text-primary-700 dark:text-primary-200 inline-flex items-center gap-1.5 text-xs font-semibold"
                             >
                                 <ExternalLink className="h-3.5 w-3.5" />
                                 Buka di Tab Baru
@@ -940,7 +936,7 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                 {previewEvidence && (
                     <div className="flex flex-col items-center justify-center">
                         {isImageFile(previewEvidence.nama_file) ? (
-                            <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-950 p-2 max-h-[65vh] flex items-center justify-center w-full">
+                            <div className="flex max-h-[65vh] w-full items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-950">
                                 <img
                                     src={previewEvidence.file_url}
                                     alt={previewEvidence.nama_file}
@@ -948,11 +944,11 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                                 />
                             </div>
                         ) : (
-                            <div className="w-full h-[55vh] rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800">
+                            <div className="h-[55vh] w-full overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
                                 <iframe
                                     src={previewEvidence.file_url}
                                     title={previewEvidence.nama_file || 'Dokumen Evidence'}
-                                    className="w-full h-full"
+                                    className="h-full w-full"
                                 />
                             </div>
                         )}
@@ -967,7 +963,7 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                     const hasStatusChange = items.some((e) => selectedIds.has(e.id) && e.status !== targetStatus);
 
                     return (
-                        <div className="animate-in fade-in bg-slate-900/50 fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-[2px] duration-150">
+                        <div className="animate-in fade-in fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px] duration-150">
                             <div className="w-full max-w-[480px] rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
                                 <div className="mb-4 flex items-center gap-3">
                                     <div

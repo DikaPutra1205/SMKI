@@ -1,4 +1,4 @@
-import AssessmentSummarySkeleton from '@/components/skeletons/AssessmentSummarySkeleton';
+﻿import AssessmentSummarySkeleton from '@/components/skeletons/AssessmentSummarySkeleton';
 import { usePageLoading } from '@/hooks/usePageLoading';
 import AppLayout from '@/layouts/AppLayout';
 import { assessmentStore } from '@/stores/assessmentStore';
@@ -219,7 +219,7 @@ function ControlCardHeader({ entry }: { entry: EntryItem }) {
             <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-400">
                 {entry.control.kode_klausul}
             </span>
-            <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-600 dark:bg-blue-900/40 dark:text-blue-400">
+            <span className="bg-primary-50 text-primary dark:bg-primary-900/40 dark:text-primary-200 inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold">
                 {entry.control.framework_name}
             </span>
             <span className="text-[11px] text-slate-400">{formatKategori(entry.control.kategori)}</span>
@@ -433,7 +433,7 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
                     <button
                         type="button"
                         onClick={() => router.get(`/admin/pic/assessments/${session.id}`)}
-                        className="mb-2 inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 transition-colors hover:text-blue-700"
+                        className="text-primary hover:text-primary-700 mb-2 inline-flex items-center gap-1.5 text-sm font-medium transition-colors"
                     >
                         <ArrowLeft className="h-4 w-4" />
                         Kembali ke Checklist
@@ -519,7 +519,7 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
                     <select
                         value={frameworkFilter}
                         onChange={(e) => setFrameworkFilter(e.target.value)}
-                        className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                        className="focus:border-primary focus:ring-primary rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:ring-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
                     >
                         <option value="">Semua Framework</option>
                         {frameworks.map(([name, ver]) => (
@@ -531,7 +531,7 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
                     <select
                         value={kategoriFilter}
                         onChange={(e) => setKategoriFilter(e.target.value)}
-                        className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                        className="focus:border-primary focus:ring-primary rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:ring-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
                     >
                         <option value="">Semua Kategori</option>
                         {kategoris.map((k) => (
@@ -633,7 +633,7 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
             )}
 
             {/* Submit Action */}
-            <div className="mt-10 flex flex-col items-center gap-4 rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50 to-indigo-50/50 p-8 dark:border-blue-900 dark:from-blue-950/30 dark:to-indigo-950/20">
+            <div className="border-primary-100 from-primary-50 dark:border-navy-800 dark:from-navy-900/30 mt-10 flex flex-col items-center gap-4 rounded-2xl border bg-gradient-to-r to-indigo-50/50 p-8 dark:to-indigo-950/20">
                 <div className="text-center">
                     <h3 className="text-lg font-bold text-slate-900 dark:text-white">Kirim Assessment untuk Verifikasi?</h3>
                     <p className="mt-1 text-sm text-slate-500">Pastikan semua data sudah benar sebelum mengirim ke pengelola kepatuhan.</p>
@@ -650,7 +650,7 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
                     <button
                         type="button"
                         onClick={() => setShowConfirm(true)}
-                        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 hover:shadow-md"
+                        className="bg-primary hover:bg-primary-700 inline-flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:shadow-md"
                     >
                         <Send className="h-4 w-4" />
                         Kirim Assessment
@@ -666,8 +666,8 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
                 >
                     <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-slate-900" onClick={(e) => e.stopPropagation()}>
                         <div className="mb-4 flex justify-center">
-                            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/40">
-                                <Send className="h-7 w-7 text-blue-600 dark:text-blue-400" />
+                            <div className="bg-primary-100 dark:bg-primary-900/40 flex h-14 w-14 items-center justify-center rounded-full">
+                                <Send className="text-primary dark:text-primary-200 h-7 w-7" />
                             </div>
                         </div>
                         <h3 className="mb-2 text-center text-lg font-bold text-slate-900 dark:text-white">Konfirmasi Pengiriman</h3>
@@ -705,7 +705,7 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
                                 type="button"
                                 onClick={handleSubmit}
                                 disabled={submitting}
-                                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50"
+                                className="bg-primary hover:bg-primary-700 inline-flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold text-white shadow-sm transition-colors disabled:opacity-50"
                             >
                                 {submitting ? (
                                     <>

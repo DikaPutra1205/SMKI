@@ -1,4 +1,4 @@
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+﻿import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Modal } from '@/components/ui/Modal';
 import { Toast } from '@/components/ui/Toast';
 import AppLayout from '@/layouts/AppLayout';
@@ -260,7 +260,7 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                     <button
                         type="button"
                         onClick={openCreate}
-                        className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-blue-500 active:scale-95 sm:text-sm"
+                        className="bg-primary hover:bg-primary inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-all active:scale-95 sm:text-sm"
                     >
                         <Plus className="h-4 w-4" />
                         Tambah Role Baru
@@ -272,7 +272,7 @@ export default function Roles({ roles, permissionCatalog }: Props) {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                     <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400">
+                        <div className="bg-primary-50 text-primary dark:bg-navy-900/50 dark:text-primary-200 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
                             <Shield className="h-5 w-5" />
                         </div>
                         <div>
@@ -317,7 +317,7 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                         return (
                             <div
                                 key={r.id}
-                                className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition-all hover:border-blue-200 hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
+                                className="hover:border-primary-200 flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition-all hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
                             >
                                 <div>
                                     <div className="flex items-start justify-between gap-3">
@@ -333,7 +333,7 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                                             </p>
                                         </div>
 
-                                        <span className="inline-flex shrink-0 items-center rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700 dark:bg-blue-950/60 dark:text-blue-400">
+                                        <span className="bg-primary-50 text-primary-700 dark:bg-navy-900/60 dark:text-primary-200 inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-bold">
                                             {permCount} Hak Akses
                                         </span>
                                     </div>
@@ -348,7 +348,7 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                                         </div>
                                         <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                                             <div
-                                                className="h-full rounded-full bg-blue-600 transition-all duration-300"
+                                                className="bg-primary h-full rounded-full transition-all duration-300"
                                                 style={{ width: `${pct}%` }}
                                             />
                                         </div>
@@ -412,7 +412,7 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                             type="submit"
                             form="role-form"
                             disabled={form.processing}
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-5 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-blue-500 active:scale-95 disabled:opacity-50"
+                            className="bg-primary hover:bg-primary inline-flex items-center gap-1.5 rounded-xl px-5 py-2 text-xs font-semibold text-white shadow-sm transition-all active:scale-95 disabled:opacity-50"
                         >
                             {form.processing ? 'Menyimpan…' : mode === 'create' ? 'Simpan Role' : 'Perbarui Hak Akses'}
                         </button>
@@ -429,7 +429,7 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                                 value={form.data.label}
                                 onChange={(e) => form.setData('label', e.target.value)}
                                 placeholder="Contoh: Administrator Kepatuhan"
-                                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                                className="focus:border-primary focus:ring-primary/20 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                             />
                             {form.errors.label && <p className="mt-1 text-[11px] font-medium text-red-500">{form.errors.label}</p>}
                         </div>
@@ -442,7 +442,7 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                                 value={form.data.name}
                                 onChange={(e) => form.setData('name', e.target.value)}
                                 placeholder="Contoh: admin_kepatuhan"
-                                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 font-mono text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                                className="focus:border-primary focus:ring-primary/20 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 font-mono text-xs text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                             />
                             {form.errors.name && <p className="mt-1 text-[11px] font-medium text-red-500">{form.errors.name}</p>}
                         </div>
@@ -462,7 +462,7 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                                     <button
                                         type="button"
                                         onClick={() => setSelectedPerms(new Set(Object.values(permissionCatalog).flat()))}
-                                        className="text-xs font-semibold text-blue-600 hover:text-blue-500 dark:text-blue-400"
+                                        className="text-primary hover:text-primary dark:text-primary-200 text-xs font-semibold"
                                     >
                                         Pilih Semua Izin
                                     </button>
@@ -484,7 +484,7 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                                     value={query}
                                     onChange={(e) => setQuery(e.target.value)}
                                     placeholder="Cari modul atau hak akses..."
-                                    className="h-9 w-full rounded-xl border border-slate-200 bg-white py-1.5 pr-3 pl-9 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                                    className="focus:border-primary focus:ring-primary/20 h-9 w-full rounded-xl border border-slate-200 bg-white py-1.5 pr-3 pl-9 text-xs text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                                 />
                             </div>
 
@@ -524,7 +524,7 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                                                                 if (el) el.indeterminate = partialChecked;
                                                             }}
                                                             onChange={() => toggleGroup(mod)}
-                                                            className="h-4 w-4 rounded-md border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900"
+                                                            className="text-primary focus:ring-primary h-4 w-4 rounded-md border-slate-300 dark:border-slate-700 dark:bg-slate-900"
                                                         />
                                                         <div>
                                                             <div className="flex items-center gap-2">
@@ -560,7 +560,7 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                                                                     key={key}
                                                                     className={`flex cursor-pointer items-start gap-2.5 rounded-xl border p-2.5 transition-all ${
                                                                         on
-                                                                            ? 'border-blue-300 bg-blue-50/60 ring-1 ring-blue-400/20 dark:border-blue-800 dark:bg-blue-950/30'
+                                                                            ? 'border-primary-300 bg-primary-50/60 ring-primary/20 dark:border-primary-800 dark:bg-navy-900/30 ring-1'
                                                                             : 'border-slate-200/80 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700'
                                                                     }`}
                                                                 >
@@ -568,12 +568,12 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                                                                         type="checkbox"
                                                                         checked={on}
                                                                         onChange={() => togglePerm(key)}
-                                                                        className="mt-0.5 h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900"
+                                                                        className="text-primary focus:ring-primary mt-0.5 h-3.5 w-3.5 rounded border-slate-300 dark:border-slate-700 dark:bg-slate-900"
                                                                     />
                                                                     <div className="min-w-0 flex-1">
                                                                         <div className="flex items-center justify-between gap-1">
                                                                             <span
-                                                                                className={`text-xs font-bold ${on ? 'text-blue-900 dark:text-blue-300' : 'text-slate-900 dark:text-white'}`}
+                                                                                className={`text-xs font-bold ${on ? 'text-navy dark:text-primary-200' : 'text-slate-900 dark:text-white'}`}
                                                                             >
                                                                                 {actionName}
                                                                             </span>
