@@ -391,6 +391,8 @@ export const id = {
     audit: {
         title: 'Audit Trail',
         subtitle: 'Catatan perubahan data yang tidak dapat diubah (immutable).',
+        totalLogs: 'Total Log',
+        last24Hours: '24 Jam Terakhir',
         export: 'Export Log',
         cardTitle: 'Log Aktivitas',
         searchPlaceholder: 'Cari entitas atau ringkasan…',

@@ -12,7 +12,7 @@ export default function ChecklistDetailSkeleton() {
                 <Skeleton className="h-10 w-28 rounded-lg" />
             </div>
 
-            <div className="sticky top-[76px] z-30 mb-6 rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50 to-blue-100/50 p-5 shadow-sm backdrop-blur-sm">
+            <div className="border-primary-100 from-primary-50 to-primary-100/50 sticky top-[76px] z-30 mb-6 rounded-2xl border bg-gradient-to-r p-5 shadow-sm backdrop-blur-sm">
                 <div className="mb-2 flex items-center justify-between">
                     <Skeleton className="h-3 w-32" />
                     <div className="flex items-baseline gap-1.5">
@@ -35,7 +35,7 @@ export default function ChecklistDetailSkeleton() {
                 </div>
             </div>
 
-            <div className="mb-3 flex items-center gap-3 rounded-xl border border-blue-100 bg-white px-4 py-3 shadow-sm dark:bg-slate-900">
+            <div className="border-primary-100 mb-3 flex items-center gap-3 rounded-xl border bg-white px-4 py-3 shadow-sm dark:bg-slate-900">
                 <Skeleton className="h-8 w-24 rounded-lg" />
                 <Skeleton className="h-4 w-1" />
                 <Skeleton className="h-5 w-32" />

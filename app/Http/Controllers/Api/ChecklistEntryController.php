@@ -270,12 +270,19 @@ class ChecklistEntryController extends Controller
         // the existing verification timestamp.
         $statusChanging = isset($data['status']) && $data['status'] !== $checklistEntry->status;
 
-        $checklistEntry->update([
+        $updatePayload = [
             'status' => $data['status'] ?? $checklistEntry->status,
             'catatan' => $data['catatan'] ?? $checklistEntry->catatan,
             'tanggal_input' => now(),
             'tanggal_verifikasi' => $statusChanging ? null : $checklistEntry->tanggal_verifikasi,
-        ]);
+        ];
+
+        if ($statusChanging) {
+            $updatePayload['catatan_admin'] = null;
+            $updatePayload['admin_id'] = null;
+        }
+
+        $checklistEntry->update($updatePayload);
 
         if ($evidenceData) {
             ComplianceEvidence::create($evidenceData);

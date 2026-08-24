@@ -30,6 +30,8 @@ class ChecklistEntryController extends Controller
 
         if (isset($validated['status']) && $validated['status'] !== $entry->status) {
             $updateData['tanggal_verifikasi'] = null;
+            $updateData['catatan_admin'] = null;
+            $updateData['admin_id'] = null;
         }
 
         $entry->update($updateData);
@@ -75,6 +77,8 @@ class ChecklistEntryController extends Controller
                 if (array_key_exists('status', $item) && $item['status'] !== $entry->status) {
                     $updateData['status'] = $item['status'];
                     $updateData['tanggal_verifikasi'] = null;
+                    $updateData['catatan_admin'] = null;
+                    $updateData['admin_id'] = null;
                     $updateData['tanggal_input'] = $now;
                 } elseif (array_key_exists('catatan', $item)) {
                     $updateData['catatan'] = $item['catatan'];
@@ -126,6 +130,8 @@ class ChecklistEntryController extends Controller
         $entry->update([
             'tanggal_input' => now(),
             'tanggal_verifikasi' => null,
+            'catatan_admin' => null,
+            'admin_id' => null,
         ]);
 
         if ($request->wantsJson()) {
