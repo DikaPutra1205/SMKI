@@ -140,14 +140,12 @@ function DetailPanel({ entry, onClose }: DetailPanelProps) {
 
     const handleActionClick = (action: 'approve' | 'reject') => {
         if (!entry) return;
-        const targetStatus = action === 'approve' ? 'compliant' : 'non_compliant';
-        const isChanging = entry.status !== targetStatus;
-
-        if (isChanging && !adminNote.trim()) {
-            setNoteError('Catatan verifikasi admin wajib diisi jika mengubah status kepatuhan.');
+        // For approve: no note needed — submit immediately to confirm
+        // For reject: require note before confirming
+        if (action === 'reject' && !adminNote.trim()) {
+            setNoteError('Catatan verifikasi admin wajib diisi sebelum menolak.');
             return;
         }
-
         setNoteError(null);
         setConfirmAction(action);
     };
@@ -156,10 +154,10 @@ function DetailPanel({ entry, onClose }: DetailPanelProps) {
         if (!confirmAction || !entry) return;
 
         const targetStatus = confirmAction === 'approve' ? 'compliant' : 'non_compliant';
-        const isChanging = entry.status !== targetStatus;
 
-        if (isChanging && !adminNote.trim()) {
-            setNoteError('Catatan verifikasi admin wajib diisi jika mengubah status kepatuhan.');
+        // Reject requires a note; approve does not
+        if (confirmAction === 'reject' && !adminNote.trim()) {
+            setNoteError('Catatan verifikasi admin wajib diisi sebelum menolak.');
             setConfirmAction(null);
             return;
         }
@@ -314,21 +312,23 @@ function DetailPanel({ entry, onClose }: DetailPanelProps) {
                         </div>
                     )}
 
-                    {/* Admin notes textarea */}
-                    <div className="space-y-1">
-                        <Textarea
-                            label="Catatan Verifikasi Admin"
-                            value={adminNote}
-                            onChange={(e) => {
-                                setAdminNote(e.target.value);
-                                if (noteError && e.target.value.trim()) setNoteError(null);
-                            }}
-                            placeholder="Tuliskan catatan arahan atau tindak lanjut untuk PIC unit kerja..."
-                            rows={3}
-                            hint="Wajib diisi jika Anda mengubah status kepatuhan entri."
-                        />
-                        {noteError && <p className="text-xs font-semibold text-rose-600 dark:text-rose-400">{noteError}</p>}
-                    </div>
+                    {/* Admin notes textarea — only visible for reject flow */}
+                    {confirmAction !== 'approve' && (
+                        <div className="space-y-1">
+                            <Textarea
+                                label="Catatan Verifikasi Admin"
+                                value={adminNote}
+                                onChange={(e) => {
+                                    setAdminNote(e.target.value);
+                                    if (noteError && e.target.value.trim()) setNoteError(null);
+                                }}
+                                placeholder="Tuliskan alasan penolakan dan arahan tindak lanjut untuk PIC unit kerja..."
+                                rows={3}
+                                hint="Wajib diisi saat menolak entri."
+                            />
+                            {noteError && <p className="text-xs font-semibold text-rose-600 dark:text-rose-400">{noteError}</p>}
+                        </div>
+                    )}
                 </div>
 
                 {/* Footer action bar */}
@@ -478,10 +478,9 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
         if (!bulkConfirmAction || selectedIds.size === 0) return;
 
         const targetStatus = bulkConfirmAction === 'approve' ? 'compliant' : 'non_compliant';
-        const hasStatusChange = items.some((e) => selectedIds.has(e.id) && e.status !== targetStatus);
 
-        if (hasStatusChange && !bulkAdminNote.trim()) {
-            setBulkNoteError('Catatan verifikasi admin wajib diisi karena terdapat perubahan status pada entri terpilih.');
+        if (bulkConfirmAction === 'reject' && !bulkAdminNote.trim()) {
+            setBulkNoteError('Catatan verifikasi admin wajib diisi sebelum menolak secara massal.');
             return;
         }
 
@@ -821,7 +820,6 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
             {bulkConfirmAction !== null &&
                 (() => {
                     const targetStatus = bulkConfirmAction === 'approve' ? 'compliant' : 'non_compliant';
-                    const hasStatusChange = items.some((e) => selectedIds.has(e.id) && e.status !== targetStatus);
 
                     return (
                         <div className="animate-in fade-in bg-navy-900/50 fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-[2px] duration-150">
@@ -850,24 +848,22 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                                     </div>
                                 </div>
 
-                                <div className="mb-5 space-y-1">
-                                    <Textarea
-                                        label="Catatan Verifikasi Admin"
-                                        value={bulkAdminNote}
-                                        onChange={(e) => {
-                                            setBulkAdminNote(e.target.value);
-                                            if (bulkNoteError && e.target.value.trim()) setBulkNoteError(null);
-                                        }}
-                                        placeholder="Tuliskan arahan atau catatan tindak lanjut yang akan disertakan pada seluruh entri terpilih..."
-                                        rows={3}
-                                        hint={
-                                            hasStatusChange
-                                                ? 'Wajib diisi karena terdapat perubahan status kepatuhan pada entri yang dipilih.'
-                                                : 'Opsional jika tidak ada perubahan status.'
-                                        }
-                                    />
-                                    {bulkNoteError && <p className="text-xs font-semibold text-rose-600 dark:text-rose-400">{bulkNoteError}</p>}
-                                </div>
+                                {bulkConfirmAction !== 'approve' && (
+                                    <div className="mb-5 space-y-1">
+                                        <Textarea
+                                            label="Catatan Verifikasi Admin"
+                                            value={bulkAdminNote}
+                                            onChange={(e) => {
+                                                setBulkAdminNote(e.target.value);
+                                                if (bulkNoteError && e.target.value.trim()) setBulkNoteError(null);
+                                            }}
+                                            placeholder="Tuliskan alasan penolakan dan arahan tindak lanjut yang akan disertakan pada seluruh entri terpilih..."
+                                            rows={3}
+                                            hint="Wajib diisi saat menolak entri."
+                                        />
+                                        {bulkNoteError && <p className="text-xs font-semibold text-rose-600 dark:text-rose-400">{bulkNoteError}</p>}
+                                    </div>
+                                )}
 
                                 <div className="flex items-center justify-end gap-2.5">
                                     <button

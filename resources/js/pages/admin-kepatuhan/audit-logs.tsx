@@ -250,21 +250,31 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                                 ))}
                             </Select>
                             <div className="flex items-center gap-2">
-                                <input
-                                    type="date"
-                                    value={dateFrom}
-                                    onChange={(e) => setDateFrom(e.target.value)}
-                                    aria-label={t('audit.dateFrom')}
-                                    className="border-border-strong text-ink focus:border-primary h-10 rounded-[10px] border bg-white px-3 text-sm focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-white"
-                                />
-                                <span className="text-muted text-xs dark:text-slate-400">→</span>
-                                <input
-                                    type="date"
-                                    value={dateTo}
-                                    onChange={(e) => setDateTo(e.target.value)}
-                                    aria-label={t('audit.dateTo')}
-                                    className="border-border-strong text-ink focus:border-primary h-10 rounded-[10px] border bg-white px-3 text-sm focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-white"
-                                />
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-muted text-[11px] font-semibold uppercase tracking-wide dark:text-slate-400">
+                                        Tanggal Mulai
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={dateFrom}
+                                        onChange={(e) => setDateFrom(e.target.value)}
+                                        aria-label={t('audit.dateFrom')}
+                                        className="border-border-strong text-ink focus:border-primary h-10 rounded-[10px] border bg-white px-3 text-sm focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-white"
+                                    />
+                                </div>
+                                <span className="text-muted mt-5 text-xs dark:text-slate-400">→</span>
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-muted text-[11px] font-semibold uppercase tracking-wide dark:text-slate-400">
+                                        Tanggal Akhir
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={dateTo}
+                                        onChange={(e) => setDateTo(e.target.value)}
+                                        aria-label={t('audit.dateTo')}
+                                        className="border-border-strong text-ink focus:border-primary h-10 rounded-[10px] border bg-white px-3 text-sm focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-white"
+                                    />
+                                </div>
                             </div>
                         </div>
 
