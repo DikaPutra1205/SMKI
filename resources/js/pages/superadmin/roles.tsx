@@ -1,4 +1,4 @@
-﻿import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Modal } from '@/components/ui/Modal';
 import { Toast } from '@/components/ui/Toast';
 import AppLayout from '@/layouts/AppLayout';
@@ -296,7 +296,7 @@ export default function Roles({ roles, permissionCatalog }: Props) {
 
                 <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                     <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-400">
+                        <div className="bg-navy/10 text-navy dark:bg-navy-900/60 dark:text-primary-200 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
                             <ShieldCheck className="h-5 w-5" />
                         </div>
                         <div>

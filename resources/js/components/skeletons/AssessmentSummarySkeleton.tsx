@@ -1,4 +1,4 @@
-﻿import { Skeleton } from '@/components/ui/Skeleton';
+import { Skeleton } from '@/components/ui/Skeleton';
 import AppLayout from '@/layouts/AppLayout';
 
 export default function AssessmentSummarySkeleton() {
@@ -72,7 +72,7 @@ export default function AssessmentSummarySkeleton() {
                 </div>
             ))}
 
-            <div className="border-primary-100 from-primary-50 mt-10 flex flex-col items-center gap-4 rounded-2xl border bg-gradient-to-r to-indigo-50/50 p-8">
+            <div className="border-primary-100 from-primary-50 to-primary-100/50 mt-10 flex flex-col items-center gap-4 rounded-2xl border bg-gradient-to-r p-8">
                 <Skeleton className="h-6 w-56" />
                 <Skeleton className="h-4 w-80" />
                 <div className="flex items-center gap-3">

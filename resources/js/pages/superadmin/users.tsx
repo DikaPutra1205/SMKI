@@ -1,4 +1,4 @@
-﻿import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Modal } from '@/components/ui/Modal';
 import { Toast } from '@/components/ui/Toast';
 import AppLayout from '@/layouts/AppLayout';
@@ -62,8 +62,8 @@ function getRoleBadge(roleName?: string, roleLabel?: string) {
     if (role.includes('superadmin')) {
         return {
             label: roleLabel || 'Super Admin',
-            classes: 'border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-800 dark:bg-purple-950/40 dark:text-purple-400',
-            dot: 'bg-purple-500',
+            classes: 'border-navy/20 bg-navy/10 text-navy dark:border-navy-700 dark:bg-navy-900/60 dark:text-primary-200',
+            dot: 'bg-navy dark:bg-primary-200',
         };
     }
     if (role.includes('compliance') || role.includes('kepatuhan') || role.includes('koordinator')) {
@@ -258,9 +258,9 @@ export default function Users({ users, roles, units }: Props) {
                         const r = roles.find((role) => role.name.toLowerCase().includes('superadmin'));
                         if (r) setSelectedRole(String(r.id));
                     }}
-                    className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-4 transition-all hover:border-purple-300 dark:border-slate-800 dark:bg-slate-900"
+                    className="hover:border-navy-700 cursor-pointer rounded-2xl border border-slate-200 bg-white p-4 transition-all dark:border-slate-800 dark:bg-slate-900"
                 >
-                    <div className="mb-1 flex items-center justify-between text-purple-600 dark:text-purple-400">
+                    <div className="text-navy dark:text-primary-200 mb-1 flex items-center justify-between">
                         <span className="text-xs font-semibold">Super Admin</span>
                         <ShieldAlert className="h-4 w-4" />
                     </div>
