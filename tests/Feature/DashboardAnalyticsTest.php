@@ -742,6 +742,39 @@ class DashboardAnalyticsTest extends TestCase
             ->where('totalFrameworks', 2)
             ->where('totalControls', 3)
             ->has('frameworks', 2)
+            ->has('trends', 6)
+        );
+    }
+
+    public function test_pic_web_dashboard_trends_are_scoped_to_their_unit(): void
+    {
+        $ctrl = Control::factory()->create(['framework_id' => $this->iso27001->id]);
+
+        // Own-unit entry (compliant) vs other-unit entry (non-compliant).
+        ChecklistEntry::factory()->create([
+            'control_id' => $ctrl->id,
+            'unit_id' => $this->unitA->id,
+            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'tanggal_input' => now(),
+        ]);
+
+        ChecklistEntry::factory()->create([
+            'control_id' => $ctrl->id,
+            'unit_id' => $this->unitB->id,
+            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'tanggal_input' => now(),
+        ]);
+
+        $response = $this->actingAs($this->pic)->get('/admin/pic/dashboard');
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('pic/dashboard')
+            ->has('trends', 6)
+            ->where('trends.5.period', now()->format('Y-m'))
+            // Only the PIC's own unit entry counts: 100%, not blended 50%.
+            ->where('trends.5.iso27001_rate', 100)
+            ->where('trends.5.overall_rate', 100)
         );
     }
 }

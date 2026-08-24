@@ -42,6 +42,7 @@ class PicDashboardController extends Controller
 
         return Inertia::render('pic/dashboard', [
             'summary' => $summary,
+            'trends' => $this->analytics->getTrends($user),
             'recent_sessions' => $recent,
         ]);
     }
