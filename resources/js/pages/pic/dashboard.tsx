@@ -85,7 +85,7 @@ export default function PicDashboard({ summary, recent_sessions = [] }: PicDashb
                 <div className="flex items-center gap-2.5">
                     <Link
                         href="/checklist"
-                        className="bg-primary hover:bg-primary inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all active:scale-95 sm:text-sm"
+                        className="bg-primary hover:bg-primary-700 inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all active:scale-95 sm:text-sm"
                     >
                         <ClipboardCheck className="h-4 w-4" />
                         Daftar Penilaian

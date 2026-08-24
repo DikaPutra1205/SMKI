@@ -1,4 +1,4 @@
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, type TooltipProps, XAxis, YAxis } from 'recharts';
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 export interface TrendPoint {
     period: string;
@@ -17,7 +17,18 @@ const COLOR_OVERALL = '#0284c7'; // mid/sky blue untuk garis rata-rata
 const COLOR_27001 = '#196ecd'; // light blue (ISO 27001)
 const COLOR_27701 = '#0f4c81'; // dark blue (ISO 27701)
 
-function CustomTooltip({ active, payload, label }: TooltipProps<number, string>) {
+interface CustomTooltipProps {
+    active?: boolean;
+    payload?: Array<{
+        dataKey?: string | number;
+        color?: string;
+        name?: string;
+        value?: number | string;
+    }>;
+    label?: string;
+}
+
+function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
     if (!active || !payload || payload.length === 0) return null;
     return (
         <div className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-lg dark:border-white/10 dark:bg-[#002745]">
