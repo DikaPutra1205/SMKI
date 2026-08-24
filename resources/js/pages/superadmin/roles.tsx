@@ -296,7 +296,7 @@ export default function Roles({ roles, permissionCatalog }: Props) {
 
                 <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                     <div className="flex items-center gap-3">
-                        <div className="bg-navy/10 text-navy dark:bg-navy-900/60 dark:text-primary-200 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
+                        <div className="bg-primary-100 text-primary-800 dark:bg-primary-950/60 dark:text-primary-300 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
                             <ShieldCheck className="h-5 w-5" />
                         </div>
                         <div>

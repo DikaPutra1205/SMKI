@@ -62,8 +62,8 @@ function getRoleBadge(roleName?: string, roleLabel?: string) {
     if (role.includes('superadmin')) {
         return {
             label: roleLabel || 'Super Admin',
-            classes: 'border-navy/20 bg-navy/10 text-navy dark:border-navy-700 dark:bg-navy-900/60 dark:text-primary-200',
-            dot: 'bg-navy dark:bg-primary-200',
+            classes: 'border-primary-300 bg-primary-100 text-primary-800 dark:border-primary-800 dark:bg-primary-950/60 dark:text-primary-300',
+            dot: 'bg-primary-800 dark:bg-primary-300',
         };
     }
     if (role.includes('compliance') || role.includes('kepatuhan') || role.includes('koordinator')) {
@@ -258,9 +258,9 @@ export default function Users({ users, roles, units }: Props) {
                         const r = roles.find((role) => role.name.toLowerCase().includes('superadmin'));
                         if (r) setSelectedRole(String(r.id));
                     }}
-                    className="hover:border-navy-700 cursor-pointer rounded-2xl border border-slate-200 bg-white p-4 transition-all dark:border-slate-800 dark:bg-slate-900"
+                    className="hover:border-primary-300 cursor-pointer rounded-2xl border border-slate-200 bg-white p-4 transition-all dark:border-slate-800 dark:bg-slate-900"
                 >
-                    <div className="text-navy dark:text-primary-200 mb-1 flex items-center justify-between">
+                    <div className="text-primary-800 dark:text-primary-300 mb-1 flex items-center justify-between">
                         <span className="text-xs font-semibold">Super Admin</span>
                         <ShieldAlert className="h-4 w-4" />
                     </div>

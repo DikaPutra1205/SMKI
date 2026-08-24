@@ -608,7 +608,7 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
 
                         {session.framework && (
                             <div className="flex items-center gap-2 border-l border-slate-100 pl-3.5 dark:border-slate-800">
-                                <div className="bg-navy/10 text-navy dark:bg-navy-900/60 dark:text-primary-200 flex h-8 w-8 items-center justify-center rounded-xl">
+                                <div className="bg-primary-100 text-primary-800 dark:bg-primary-950/60 dark:text-primary-300 flex h-8 w-8 items-center justify-center rounded-xl">
                                     <Shield className="h-4 w-4 shrink-0" />
                                 </div>
                                 <div>
