@@ -1,4 +1,4 @@
-﻿import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, type TooltipProps, XAxis, YAxis } from 'recharts';
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, type TooltipProps, XAxis, YAxis } from 'recharts';
 
 export interface TrendPoint {
     period: string;
@@ -13,9 +13,9 @@ interface ComplianceAreaChartProps {
 }
 
 // Digitalent palette — hanya gunakan dark & light blue
-const COLOR_OVERALL = '#196ecd'; // light blue (primary Digitalent)
-const COLOR_27001 = '#002745'; // dark navy Digitalent
-const COLOR_27701 = '#4a9fd4'; // mid blue (antara keduanya)
+const COLOR_OVERALL = '#0284c7'; // mid/sky blue untuk garis rata-rata
+const COLOR_27001 = '#196ecd'; // light blue (ISO 27001)
+const COLOR_27701 = '#0f4c81'; // dark blue (ISO 27701)
 
 function CustomTooltip({ active, payload, label }: TooltipProps<number, string>) {
     if (!active || !payload || payload.length === 0) return null;

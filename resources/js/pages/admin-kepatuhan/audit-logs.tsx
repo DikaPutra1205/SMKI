@@ -243,7 +243,7 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                 </div>
 
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                    <div className="text-navy dark:text-primary-200 mb-1 flex items-center justify-between">
+                    <div className="text-primary-800 dark:text-primary-300 mb-1 flex items-center justify-between">
                         <span className="text-xs font-semibold">Pengguna Aktif</span>
                         <Users className="h-4 w-4" />
                     </div>
