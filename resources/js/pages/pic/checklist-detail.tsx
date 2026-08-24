@@ -1,4 +1,4 @@
-import ChecklistDetailSkeleton from '@/components/skeletons/ChecklistDetailSkeleton';
+﻿import ChecklistDetailSkeleton from '@/components/skeletons/ChecklistDetailSkeleton';
 import SyncWorker from '@/components/SyncWorker';
 import { Modal } from '@/components/ui/Modal';
 import { useAssessmentEntry, useAssessmentStore } from '@/hooks/useAssessmentStore';
@@ -209,7 +209,7 @@ function EntryItemRow({
                     </h4>
                 </div>
                 {saveState !== 'idle' && (
-                    <span className="inline-flex items-center gap-1 text-xs font-medium text-blue-600">
+                    <span className="text-primary inline-flex items-center gap-1 text-xs font-medium">
                         <Check className="h-3.5 w-3.5" />
                         Tersimpan
                     </span>
@@ -267,18 +267,18 @@ function EntryItemRow({
                         value={localCatatan}
                         onChange={(e) => handleCatatanInput(e.target.value)}
                         placeholder="Catatan tindak lanjut (opsional)..."
-                        className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 placeholder-slate-400 transition-colors focus:border-blue-400 focus:ring-1 focus:ring-blue-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                        className="focus:border-primary focus:ring-primary flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 placeholder-slate-400 transition-colors focus:ring-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
                     />
                     <label
                         className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
                             uploading
-                                ? 'cursor-wait border-blue-200 bg-blue-50 text-blue-400 dark:border-blue-800 dark:bg-blue-950'
-                                : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-400'
+                                ? 'border-primary-200 bg-primary-50 text-primary-300 dark:border-primary-800 dark:bg-navy-900 cursor-wait'
+                                : 'border-primary-200 bg-primary-50 text-primary-700 hover:bg-primary-100 dark:border-primary-800 dark:bg-navy-900 dark:text-primary-200'
                         }`}
                     >
                         {uploading ? (
                             <>
-                                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-blue-400 border-t-transparent" />
+                                <span className="border-primary h-3.5 w-3.5 animate-spin rounded-full border-2 border-t-transparent" />
                                 Mengunggah...
                             </>
                         ) : (
@@ -331,7 +331,7 @@ function EntryItemRow({
                     <button
                         type="button"
                         onClick={() => onPreviewEvidence({ nama_file: entry.active_evidence!.nama_file, file_url: entry.active_evidence!.file_url })}
-                        className="inline-flex items-center gap-1.5 font-semibold text-blue-600 hover:text-blue-700 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
+                        className="text-primary hover:text-primary-700 dark:text-primary-200 dark:hover:text-primary-200 inline-flex items-center gap-1.5 font-semibold hover:underline"
                     >
                         <Eye className="h-3.5 w-3.5" />
                         <span className="max-w-[260px] truncate">{entry.active_evidence.nama_file}</span>
@@ -562,29 +562,29 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
             </div>
 
             {/* Sticky Progress Header */}
-            <div className="sticky top-[76px] z-10 mb-6 rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50 to-blue-100/50 p-5 shadow-sm backdrop-blur-sm dark:border-blue-900 dark:from-blue-950/50 dark:to-blue-900/30">
+            <div className="border-primary-100 from-primary-50 to-primary-100/50 dark:border-navy-800 dark:from-navy-900/50 dark:to-navy-800/30 sticky top-[76px] z-10 mb-6 rounded-2xl border bg-gradient-to-r p-5 shadow-sm backdrop-blur-sm">
                 <div className="mb-2 flex items-center justify-between">
-                    <span className="text-[11px] font-bold tracking-wider text-blue-600 uppercase">Progress Pengecekan</span>
+                    <span className="text-primary text-[11px] font-bold tracking-wider uppercase">Progress Pengecekan</span>
                     <div className="flex items-center gap-3">
                         {incompleteCount > 0 && (
                             <button
                                 type="button"
                                 onClick={jumpToNextIncomplete}
-                                className="hidden sm:inline-flex items-center gap-1 rounded-lg bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800 hover:bg-amber-200 dark:bg-amber-950/60 dark:text-amber-300 transition-colors"
+                                className="hidden items-center gap-1 rounded-lg bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800 transition-colors hover:bg-amber-200 sm:inline-flex dark:bg-amber-950/60 dark:text-amber-300"
                             >
                                 <ArrowDownToLine className="h-3 w-3" />
                                 Lompat ke Kontrol Belum Terisi
                             </button>
                         )}
                         <div className="flex items-baseline gap-1.5">
-                            <span className="text-2xl font-bold text-blue-700 dark:text-blue-400">{progress.percentage}%</span>
-                            <span className="text-xs text-blue-500">
+                            <span className="text-primary-700 dark:text-primary-200 text-2xl font-bold">{progress.percentage}%</span>
+                            <span className="text-primary text-xs">
                                 {progress.completed}/{progress.total} Kontrol
                             </span>
                         </div>
                     </div>
                 </div>
-                <div className="flex h-2 w-full overflow-hidden rounded-full bg-blue-200/50 dark:bg-blue-800/50">
+                <div className="bg-primary-100/50 dark:bg-navy-800/50 flex h-2 w-full overflow-hidden rounded-full">
                     {progress.compliantCount > 0 && (
                         <div
                             className="h-full bg-emerald-500 transition-all duration-500"
@@ -654,7 +654,7 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
                     </div>
                     {pageLoading && (
                         <div className="mt-2 flex justify-center">
-                            <span className="text-xs text-blue-500">Memuat halaman...</span>
+                            <span className="text-primary text-xs">Memuat halaman...</span>
                         </div>
                     )}
                     {!pageLoading && !isCurrentPageComplete && (
@@ -671,8 +671,8 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
             <div className="space-y-6">
                 <div>
                     {currentPageMeta && (
-                        <div className="mb-3 flex items-center gap-3 rounded-xl border border-blue-100 bg-white px-4 py-3 shadow-sm dark:border-blue-900 dark:bg-slate-900">
-                            <span className="inline-flex items-center rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-bold text-white shadow-sm">
+                        <div className="border-primary-100 dark:border-navy-800 mb-3 flex items-center gap-3 rounded-xl border bg-white px-4 py-3 shadow-sm dark:bg-slate-900">
+                            <span className="bg-primary inline-flex items-center rounded-lg px-3 py-1.5 text-sm font-bold text-white shadow-sm">
                                 {currentPageMeta.framework_name}
                             </span>
                             <span className="text-slate-300 dark:text-slate-600">|</span>
@@ -686,15 +686,15 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
                     )}
 
                     {/* Filter and Search Bar */}
-                    <div className="flex flex-wrap items-center gap-3 mb-4">
-                        <div className="relative flex-1 min-w-[240px]">
+                    <div className="mb-4 flex flex-wrap items-center gap-3">
+                        <div className="relative min-w-[240px] flex-1">
                             <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
                             <input
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Cari kode klausul atau judul kontrol..."
-                                className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pr-3 pl-9 text-sm text-slate-700 placeholder-slate-400 transition-colors focus:border-blue-400 focus:ring-1 focus:ring-blue-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:placeholder-slate-500"
+                                className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white py-2.5 pr-3 pl-9 text-sm text-slate-700 placeholder-slate-400 transition-colors focus:ring-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:placeholder-slate-500"
                             />
                             {searchQuery && (
                                 <button
@@ -764,7 +764,7 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
                     }}
                     className={`inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold shadow-sm transition-all ${
                         progress.invalidCount === 0
-                            ? 'bg-blue-600 text-white hover:bg-blue-700'
+                            ? 'bg-primary hover:bg-primary-700 text-white'
                             : 'cursor-not-allowed bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-600'
                     }`}
                 >
@@ -781,13 +781,13 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
                 onClose={() => setPreviewEvidence(null)}
                 maxWidth="xl"
                 footer={
-                    <div className="flex items-center justify-between w-full">
+                    <div className="flex w-full items-center justify-between">
                         {previewEvidence && (
                             <a
                                 href={previewEvidence.file_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                                className="text-primary hover:text-primary-700 dark:text-primary-200 inline-flex items-center gap-1.5 text-xs font-semibold"
                             >
                                 <ExternalLink className="h-3.5 w-3.5" />
                                 Buka Dokumen Asli
@@ -806,7 +806,7 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
                 {previewEvidence && (
                     <div className="flex flex-col items-center justify-center">
                         {isImageFile(previewEvidence.nama_file) ? (
-                            <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-950 p-2 max-h-[65vh] flex items-center justify-center w-full">
+                            <div className="flex max-h-[65vh] w-full items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-950">
                                 <img
                                     src={previewEvidence.file_url}
                                     alt={previewEvidence.nama_file}
@@ -814,12 +814,8 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
                                 />
                             </div>
                         ) : (
-                            <div className="w-full h-[55vh] rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800">
-                                <iframe
-                                    src={previewEvidence.file_url}
-                                    title={previewEvidence.nama_file}
-                                    className="w-full h-full"
-                                />
+                            <div className="h-[55vh] w-full overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+                                <iframe src={previewEvidence.file_url} title={previewEvidence.nama_file} className="h-full w-full" />
                             </div>
                         )}
                     </div>
@@ -830,11 +826,10 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
                 type="button"
                 onClick={atBottom ? scrollToTop : scrollToBottom}
                 aria-label={atBottom ? 'Ke atas' : 'Ke bawah'}
-                className="fixed right-5 bottom-5 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg shadow-blue-600/30 transition-all hover:bg-blue-700 hover:shadow-blue-600/40"
+                className="bg-primary shadow-primary/30 hover:bg-primary-700 hover:shadow-primary/40 fixed right-5 bottom-5 z-40 flex h-12 w-12 items-center justify-center rounded-full text-white shadow-lg transition-all"
             >
                 {atBottom ? <ArrowUpToLine className="h-5 w-5" /> : <ArrowDownToLine className="h-5 w-5" />}
             </button>
         </AppLayout>
     );
 }
-

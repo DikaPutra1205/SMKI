@@ -9,15 +9,7 @@ import AppLayout from '@/layouts/AppLayout';
 import { useCan } from '@/lib/can';
 import { t } from '@/lib/i18n';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import {
-    Eye,
-    Layers,
-    Pencil,
-    Plus,
-    Search,
-    Trash2,
-    XCircle,
-} from 'lucide-react';
+import { Eye, Layers, Pencil, Plus, Search, Trash2, XCircle } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 export interface FrameworkItem {
@@ -222,17 +214,17 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
             <Head title={`${t('compliance.title')} - Pustaka Kontrol SMKI`} />
 
             {/* Page Header */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{t('compliance.title')}</h1>
-                    <p className="text-muted mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">{t('compliance.subtitle')}</p>
+                    <p className="text-muted mt-1 text-xs text-slate-500 sm:text-sm dark:text-slate-400">{t('compliance.subtitle')}</p>
                 </div>
 
                 {can('control.create') && (
                     <button
                         type="button"
                         onClick={openCreate}
-                        className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors"
+                        className="bg-primary hover:bg-primary-700 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-colors sm:text-sm"
                     >
                         <Plus className="h-4 w-4" />
                         <span>{t('compliance.addControl')}</span>
@@ -252,7 +244,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                             onClick={() => setSelectedFrameworkId(fw.id)}
                             className={`flex flex-col items-start gap-3 rounded-2xl border p-5 text-left transition-all ${
                                 isActive
-                                    ? 'border-blue-500 bg-blue-50/40 shadow-sm ring-1 ring-blue-500/20 dark:border-blue-500 dark:bg-blue-950/20'
+                                    ? 'border-primary bg-primary-50/40 ring-primary/20 dark:border-primary dark:bg-navy-900/20 shadow-sm ring-1'
                                     : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900'
                             }`}
                         >
@@ -261,8 +253,8 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                                     <div
                                         className={`flex h-10 w-10 items-center justify-center rounded-xl ${
                                             is27001
-                                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
-                                                : 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'
+                                                ? 'bg-primary-100 text-primary-700 dark:bg-navy-900/40 dark:text-primary-200'
+                                                : 'bg-primary-100 text-primary-800 dark:bg-primary-950/60 dark:text-primary-300'
                                         }`}
                                     >
                                         <Layers className="h-5 w-5" />
@@ -281,13 +273,13 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                             </div>
 
                             <div className="w-full">
-                                <div className="flex justify-between text-xs text-slate-500 mb-1.5">
+                                <div className="mb-1.5 flex justify-between text-xs text-slate-500">
                                     <span>{fw.controls_count} Kontrol Terdaftar</span>
                                     <span className="font-bold text-slate-700 dark:text-slate-300">{fw.compliance_percentage}% Patuh</span>
                                 </div>
                                 <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                                     <div
-                                        className={`h-full rounded-full transition-all duration-500 ${is27001 ? 'bg-blue-600' : 'bg-purple-600'}`}
+                                        className={`h-full rounded-full transition-all duration-500 ${is27001 ? 'bg-primary' : 'bg-primary-800 dark:bg-primary-400'}`}
                                         style={{ width: `${Math.min(100, fw.compliance_percentage)}%` }}
                                     />
                                 </div>
@@ -298,18 +290,18 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
             </div>
 
             {/* Controls Panel Container */}
-            <div className="border border-slate-200 overflow-hidden rounded-2xl bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 {/* Annex A Domain Filter Tabs */}
-                <div className="flex items-center gap-1 overflow-x-auto border-b border-slate-200 p-2.5 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                <div className="flex items-center gap-1 overflow-x-auto border-b border-slate-200 bg-slate-50/50 p-2.5 dark:border-slate-800 dark:bg-slate-900/50">
                     {DOMAIN_TABS.map((tab) => (
                         <button
                             key={tab.id}
                             type="button"
                             onClick={() => setSelectedDomain(tab.id)}
-                            className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+                            className={`rounded-xl px-3.5 py-2 text-xs font-semibold whitespace-nowrap transition-all ${
                                 selectedDomain === tab.id
-                                    ? 'bg-white text-blue-600 shadow-sm border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-blue-400'
-                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
+                                    ? 'text-primary dark:text-primary-200 border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800'
+                                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800'
                             }`}
                         >
                             {tab.label}
@@ -318,15 +310,15 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                 </div>
 
                 {/* Search Bar */}
-                <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
-                    <div className="relative flex-1 min-w-[240px]">
+                <div className="flex items-center justify-between gap-3 border-b border-slate-200 p-4 dark:border-slate-800">
+                    <div className="relative min-w-[240px] flex-1">
                         <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
                         <input
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Cari kode klausul, judul klausul, atau deskripsi..."
-                            className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pr-3 pl-9 text-xs sm:text-sm text-slate-700 placeholder-slate-400 transition-colors focus:border-blue-400 focus:bg-white focus:ring-1 focus:ring-blue-400 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-300 dark:focus:bg-slate-900"
+                            className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pr-3 pl-9 text-xs text-slate-700 placeholder-slate-400 transition-colors focus:bg-white focus:ring-1 sm:text-sm dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-300 dark:focus:bg-slate-900"
                         />
                         {searchQuery && (
                             <button
@@ -364,14 +356,12 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                                     <tr
                                         key={item.id}
                                         onClick={() => setDetailTarget(item)}
-                                        className="hover:bg-slate-50/60 transition-colors dark:hover:bg-slate-800/40 cursor-pointer"
+                                        className="cursor-pointer transition-colors hover:bg-slate-50/60 dark:hover:bg-slate-800/40"
                                     >
-                                        <td className="px-5 py-4 font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
-                                            {item.code}
-                                        </td>
+                                        <td className="text-primary dark:text-primary-200 px-5 py-4 font-bold whitespace-nowrap">{item.code}</td>
                                         <td className="px-5 py-4 text-left">
                                             <div className="font-bold text-slate-900 dark:text-white">{item.title}</div>
-                                            <div className="mt-1 text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{item.description}</div>
+                                            <div className="mt-1 line-clamp-2 text-xs text-slate-500 dark:text-slate-400">{item.description}</div>
                                         </td>
                                         <td className="px-5 py-4 text-left whitespace-nowrap">
                                             <span className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
@@ -383,7 +373,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                                                 <button
                                                     type="button"
                                                     onClick={() => setDetailTarget(item)}
-                                                    className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
+                                                    className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
                                                     title={t('compliance.detailRef')}
                                                 >
                                                     <Eye className="h-4 w-4" />
@@ -392,7 +382,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                                                     <button
                                                         type="button"
                                                         onClick={() => openEdit(item)}
-                                                        className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
+                                                        className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
                                                         title={t('compliance.editControl')}
                                                     >
                                                         <Pencil className="h-4 w-4" />
@@ -402,7 +392,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                                                     <button
                                                         type="button"
                                                         onClick={() => handleDelete(item)}
-                                                        className="rounded-lg p-2 text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40 transition-colors"
+                                                        className="rounded-lg p-2 text-rose-600 transition-colors hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40"
                                                         title={t('compliance.deleteControl')}
                                                     >
                                                         <Trash2 className="h-4 w-4" />
@@ -452,7 +442,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                 subtitle={detailTarget?.framework_nama || 'Standar Keamanan Informasi ISO 27001'}
                 width="max-w-xl"
                 footer={
-                    <div className="flex items-center justify-between w-full">
+                    <div className="flex w-full items-center justify-between">
                         {can('control.update') && detailTarget && (
                             <button
                                 type="button"
@@ -480,12 +470,12 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                 {detailTarget && (
                     <div className="space-y-6">
                         {/* Header Box */}
-                        <div className="rounded-2xl border border-blue-100 bg-blue-50/60 p-4.5 dark:border-blue-900 dark:bg-blue-950/30">
-                            <div className="flex items-center gap-2 mb-2">
-                                <span className="inline-flex items-center rounded-lg bg-blue-600 px-2.5 py-1 text-xs font-bold text-white">
+                        <div className="border-primary-100 bg-primary-50/60 dark:border-navy-800 dark:bg-navy-900/30 rounded-2xl border p-4.5">
+                            <div className="mb-2 flex items-center gap-2">
+                                <span className="bg-primary inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-bold text-white">
                                     {detailTarget.code}
                                 </span>
-                                <span className="inline-flex items-center rounded-lg bg-white px-2.5 py-1 text-xs font-semibold text-blue-700 border border-blue-200 dark:bg-slate-800 dark:border-slate-700 dark:text-blue-300">
+                                <span className="text-primary-700 border-primary-200 dark:text-primary-200 inline-flex items-center rounded-lg border bg-white px-2.5 py-1 text-xs font-semibold dark:border-slate-700 dark:bg-slate-800">
                                     {detailTarget.category}
                                 </span>
                             </div>
@@ -494,27 +484,25 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
 
                         {/* Deskripsi & Persyaratan */}
                         <div>
-                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">
+                            <span className="mb-2 block text-xs font-bold tracking-wider text-slate-400 uppercase">
                                 Deskripsi & Persyaratan Kontrol
                             </span>
-                            <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-4 text-xs sm:text-sm text-slate-700 leading-relaxed dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-300 whitespace-pre-wrap">
+                            <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-4 text-xs leading-relaxed whitespace-pre-wrap text-slate-700 sm:text-sm dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-300">
                                 {detailTarget.description || 'Tidak ada deskripsi rinci untuk klausul kontrol ini.'}
                             </div>
                         </div>
 
                         {/* Framework Reference */}
                         <div>
-                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">
-                                Informasi Kerangka Kerja
-                            </span>
-                            <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3 dark:border-slate-800 dark:bg-slate-900">
+                            <span className="mb-2 block text-xs font-bold tracking-wider text-slate-400 uppercase">Informasi Kerangka Kerja</span>
+                            <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
                                 <div className="flex items-center justify-between text-xs sm:text-sm">
                                     <span className="text-slate-500">Framework Induk</span>
                                     <span className="font-semibold text-slate-900 dark:text-white">
                                         {detailTarget.framework_nama || 'ISO/IEC 27001:2022'}
                                     </span>
                                 </div>
-                                <div className="border-t border-slate-100 dark:border-slate-800 pt-3 flex items-center justify-between text-xs sm:text-sm">
+                                <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs sm:text-sm dark:border-slate-800">
                                     <span className="text-slate-500">Kategori Kontrol</span>
                                     <span className="font-semibold text-slate-900 dark:text-white">{detailTarget.category}</span>
                                 </div>
@@ -536,7 +524,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                         <button
                             type="button"
                             onClick={closeModal}
-                            className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                            className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 sm:text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
                         >
                             {t('common.cancel')}
                         </button>
@@ -544,7 +532,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                             type="submit"
                             form="control-form"
                             disabled={form.processing}
-                            className="rounded-xl bg-blue-600 hover:bg-blue-700 px-5 py-2.5 text-xs sm:text-sm font-semibold text-white disabled:opacity-50 transition-colors shadow-sm"
+                            className="bg-primary hover:bg-primary-700 rounded-xl px-5 py-2.5 text-xs font-semibold text-white shadow-sm transition-colors disabled:opacity-50 sm:text-sm"
                         >
                             {form.processing ? t('common.saving') : t('compliance.addControlBtn')}
                         </button>
@@ -578,7 +566,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                     </div>
 
                     <div>
-                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
                             Kode Klausul / Kontrol <span className="text-red-500">*</span>
                         </label>
                         <input
@@ -587,15 +575,13 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                             onChange={(e) => form.setData('kode_klausul', e.target.value)}
                             placeholder="Contoh: A.5.1 atau 5.1"
                             aria-label={t('compliance.code')}
-                            className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                            className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                         />
-                        {form.errors.kode_klausul && (
-                            <p className="text-red-500 mt-1 text-xs">{form.errors.kode_klausul}</p>
-                        )}
+                        {form.errors.kode_klausul && <p className="mt-1 text-xs text-red-500">{form.errors.kode_klausul}</p>}
                     </div>
 
                     <div>
-                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
                             Judul Kontrol <span className="text-red-500">*</span>
                         </label>
                         <input
@@ -603,25 +589,23 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                             value={form.data.judul}
                             onChange={(e) => form.setData('judul', e.target.value)}
                             placeholder="Contoh: Kebijakan Keamanan Informasi"
-                            className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                            className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                             aria-label={t('compliance.controlTitle')}
                         />
-                        {form.errors.judul && <p className="text-red-500 mt-1 text-xs">{form.errors.judul}</p>}
+                        {form.errors.judul && <p className="mt-1 text-xs text-red-500">{form.errors.judul}</p>}
                     </div>
 
                     <div>
-                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                            Deskripsi & Detail Klausul
-                        </label>
+                        <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">Deskripsi & Detail Klausul</label>
                         <textarea
                             value={form.data.deskripsi}
                             onChange={(e) => form.setData('deskripsi', e.target.value)}
                             rows={3}
                             placeholder="Jelaskan ruang lingkup atau persyaratan kontrol..."
-                            className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                            className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                             aria-label={t('compliance.description')}
                         />
-                        {form.errors.deskripsi && <p className="text-red-500 mt-1 text-xs">{form.errors.deskripsi}</p>}
+                        {form.errors.deskripsi && <p className="mt-1 text-xs text-red-500">{form.errors.deskripsi}</p>}
                     </div>
                 </form>
             </Modal>
@@ -647,4 +631,3 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
         </AppLayout>
     );
 }
-
