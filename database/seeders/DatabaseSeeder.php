@@ -17,6 +17,8 @@ class DatabaseSeeder extends Seeder
             ControlSeeder::class,
             UserSeeder::class,
             WorkUnitSeeder::class,
+            FindingSeeder::class,
+            RiskSeeder::class,
         ]);
     }
 }

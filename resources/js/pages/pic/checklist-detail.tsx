@@ -1,5 +1,6 @@
 import ChecklistDetailSkeleton from '@/components/skeletons/ChecklistDetailSkeleton';
 import SyncWorker from '@/components/SyncWorker';
+import { Modal } from '@/components/ui/Modal';
 import { useAssessmentEntry, useAssessmentStore } from '@/hooks/useAssessmentStore';
 import { usePageLoading } from '@/hooks/usePageLoading';
 import AppLayout from '@/layouts/AppLayout';
@@ -13,7 +14,9 @@ import {
     ArrowUpToLine,
     Check,
     CheckCircle2,
-    FileText,
+    ExternalLink,
+    Eye,
+    Filter,
     Search,
     Send,
     Shield,
@@ -129,6 +132,7 @@ function EntryItemRow({
     entryId,
     onEntryUpdate,
     onEvidenceUpdate,
+    onPreviewEvidence,
     highlight,
 }: {
     entryId: number;
@@ -137,6 +141,7 @@ function EntryItemRow({
         id: number,
         evidence: { id: number; checklist_entry_id: number; version_number: number; file_url: string; nama_file: string; is_active: boolean },
     ) => void;
+    onPreviewEvidence: (evidence: { nama_file: string; file_url: string }) => void;
     highlight: boolean;
 }) {
     const entry = useAssessmentEntry(entryId);
@@ -183,7 +188,6 @@ function EntryItemRow({
 
     const isVerified = entry.tanggal_verifikasi !== null;
     const missingStatus = !entry.status;
-    const isCatatanMissing = entry.status !== null && entry.status !== 'compliant' && !entry.catatan;
     const isEvidenceMissing = !entry.active_evidence;
     const isIncomplete = missingStatus || isEvidenceMissing;
     const showErrorLabels = highlight && isIncomplete;
@@ -286,7 +290,7 @@ function EntryItemRow({
                         <input
                             type="file"
                             className="hidden"
-                            accept=".jpg,.jpeg,.png,.webp,.gif"
+                            accept=".jpg,.jpeg,.png,.webp,.gif,.pdf"
                             disabled={uploading}
                             onChange={(e) => {
                                 const file = e.target.files?.[0];
@@ -304,9 +308,7 @@ function EntryItemRow({
                                         if (data?.evidence) {
                                             onEvidenceUpdate(entry.id, data.evidence);
                                         }
-                                        setSaveState('saved');
-                                        if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
-                                        savedTimeoutRef.current = setTimeout(() => setSaveState('idle'), 2000);
+                                        showSaved();
                                     })
                                     .catch(() => {
                                         /* silent */
@@ -316,12 +318,6 @@ function EntryItemRow({
                         />
                     </label>
                 </div>
-                {isCatatanMissing && (
-                    <div className="flex items-center gap-1 text-[11px] font-medium text-red-500">
-                        <XCircle className="h-3 w-3" />
-                        Catatan wajib diisi untuk status ini
-                    </div>
-                )}
                 {isEvidenceMissing && (
                     <div className={`flex items-center gap-1 text-[11px] font-medium ${showErrorLabels ? 'text-red-500' : 'text-amber-500'}`}>
                         <XCircle className="h-3 w-3" />
@@ -331,16 +327,16 @@ function EntryItemRow({
             </div>
 
             {entry.active_evidence && (
-                <div className="mt-2 flex items-center gap-1.5 text-xs text-slate-500">
-                    <FileText className="h-3.5 w-3.5" />
-                    <a
-                        href={entry.active_evidence.file_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="max-w-[240px] truncate font-medium text-blue-600 underline-offset-2 hover:underline dark:text-blue-400"
+                <div className="mt-2.5 flex items-center gap-3 text-xs">
+                    <button
+                        type="button"
+                        onClick={() => onPreviewEvidence({ nama_file: entry.active_evidence!.nama_file, file_url: entry.active_evidence!.file_url })}
+                        className="inline-flex items-center gap-1.5 font-semibold text-blue-600 hover:text-blue-700 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
                     >
-                        {entry.active_evidence.nama_file}
-                    </a>
+                        <Eye className="h-3.5 w-3.5" />
+                        <span className="max-w-[260px] truncate">{entry.active_evidence.nama_file}</span>
+                    </button>
+                    <span className="text-[11px] text-slate-400 dark:text-slate-500">(Klik untuk pratinjau)</span>
                 </div>
             )}
         </div>
@@ -354,6 +350,8 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
     const [pageLoading, setPageLoading] = useState(false);
     const [atBottom, setAtBottom] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [showOnlyIncomplete, setShowOnlyIncomplete] = useState(false);
+    const [previewEvidence, setPreviewEvidence] = useState<{ nama_file: string; file_url: string } | null>(null);
     const [highlightIncomplete, setHighlightIncomplete] = useState(false);
     // Checklist detail URLs are /admin/pic/checklist/{id} — use prefix matching
     const isLoading = usePageLoading('/admin/pic/checklist/');
@@ -416,22 +414,26 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentPageIndex, getPageEntries, storeEntries]);
 
+    const isEntryIncomplete = (e: EntryInput): boolean => {
+        return !e.status || !e.active_evidence;
+    };
+
     const filteredEntries = useMemo(() => {
-        if (!searchQuery.trim()) return currentEntries;
+        let list = currentEntries;
+        if (showOnlyIncomplete) {
+            list = list.filter((e) => isEntryIncomplete(e));
+        }
+        if (!searchQuery.trim()) return list;
         const q = searchQuery.toLowerCase();
-        return currentEntries.filter(
+        return list.filter(
             (e) =>
                 e.control.kode_klausul.toLowerCase().includes(q) ||
                 e.control.judul.toLowerCase().includes(q) ||
                 (e.control.deskripsi && e.control.deskripsi.toLowerCase().includes(q)),
         );
-    }, [currentEntries, searchQuery]);
+    }, [currentEntries, showOnlyIncomplete, searchQuery]);
 
     const currentPageMeta = pageMeta[currentPageIndex];
-
-    const isEntryIncomplete = (e: EntryInput): boolean => {
-        return !e.status || !e.active_evidence;
-    };
 
     const isCurrentPageComplete = useMemo(() => {
         if (currentEntries.length === 0) return false;
@@ -444,6 +446,13 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
         const source = filteredEntries.length > 0 ? filteredEntries : currentEntries;
         return source.find((e) => isEntryIncomplete(e))?.id ?? null;
     }, [filteredEntries, currentEntries]);
+
+    const jumpToNextIncomplete = () => {
+        if (firstIncompleteEntryId !== null) {
+            setHighlightIncomplete(true);
+            document.getElementById(`entry-row-${firstIncompleteEntryId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    };
 
     useEffect(() => {
         const onScroll = () => {
@@ -511,6 +520,8 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
         }
     };
 
+    const isImageFile = (filename: string) => /\.(jpe?g|png|gif|webp|svg)$/i.test(filename);
+
     if (isLoading) {
         return <ChecklistDetailSkeleton />;
     }
@@ -550,14 +561,27 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
                 </button>
             </div>
 
+            {/* Sticky Progress Header */}
             <div className="sticky top-[76px] z-10 mb-6 rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50 to-blue-100/50 p-5 shadow-sm backdrop-blur-sm dark:border-blue-900 dark:from-blue-950/50 dark:to-blue-900/30">
                 <div className="mb-2 flex items-center justify-between">
                     <span className="text-[11px] font-bold tracking-wider text-blue-600 uppercase">Progress Pengecekan</span>
-                    <div className="flex items-baseline gap-1.5">
-                        <span className="text-2xl font-bold text-blue-700 dark:text-blue-400">{progress.percentage}%</span>
-                        <span className="text-xs text-blue-500">
-                            {progress.completed}/{progress.total} Kontrol
-                        </span>
+                    <div className="flex items-center gap-3">
+                        {incompleteCount > 0 && (
+                            <button
+                                type="button"
+                                onClick={jumpToNextIncomplete}
+                                className="hidden sm:inline-flex items-center gap-1 rounded-lg bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800 hover:bg-amber-200 dark:bg-amber-950/60 dark:text-amber-300 transition-colors"
+                            >
+                                <ArrowDownToLine className="h-3 w-3" />
+                                Lompat ke Kontrol Belum Terisi
+                            </button>
+                        )}
+                        <div className="flex items-baseline gap-1.5">
+                            <span className="text-2xl font-bold text-blue-700 dark:text-blue-400">{progress.percentage}%</span>
+                            <span className="text-xs text-blue-500">
+                                {progress.completed}/{progress.total} Kontrol
+                            </span>
+                        </div>
                     </div>
                 </div>
                 <div className="flex h-2 w-full overflow-hidden rounded-full bg-blue-200/50 dark:bg-blue-800/50">
@@ -636,7 +660,7 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
                     {!pageLoading && !isCurrentPageComplete && (
                         <div className="mt-2 flex justify-center">
                             <span className="text-xs font-medium text-red-500">
-                                {incompleteCount} kontrol belum lengkap (status/bukti/catatan)
+                                {incompleteCount} kontrol belum lengkap (status atau bukti pendukung)
                                 {currentPageIndex < pageMeta.length - 1 ? ' — klik "Selanjutnya" untuk menuju bagian yang belum diisi' : ''}
                             </span>
                         </div>
@@ -660,30 +684,57 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
                             </span>
                         </div>
                     )}
-                    <div className="relative mb-3">
-                        <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Cari kode klausul atau judul kontrol..."
-                            className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pr-3 pl-9 text-sm text-slate-700 placeholder-slate-400 transition-colors focus:border-blue-400 focus:ring-1 focus:ring-blue-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:placeholder-slate-500"
-                        />
-                        {searchQuery && (
-                            <button
-                                type="button"
-                                onClick={() => setSearchQuery('')}
-                                className="absolute top-1/2 right-3 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                            >
-                                <XCircle className="h-4 w-4" />
-                            </button>
-                        )}
+
+                    {/* Filter and Search Bar */}
+                    <div className="flex flex-wrap items-center gap-3 mb-4">
+                        <div className="relative flex-1 min-w-[240px]">
+                            <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Cari kode klausul atau judul kontrol..."
+                                className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pr-3 pl-9 text-sm text-slate-700 placeholder-slate-400 transition-colors focus:border-blue-400 focus:ring-1 focus:ring-blue-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:placeholder-slate-500"
+                            />
+                            {searchQuery && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSearchQuery('')}
+                                    className="absolute top-1/2 right-3 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                >
+                                    <XCircle className="h-4 w-4" />
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Incomplete Filter Toggle */}
+                        <button
+                            type="button"
+                            onClick={() => setShowOnlyIncomplete(!showOnlyIncomplete)}
+                            className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2.5 text-xs font-semibold transition-all ${
+                                showOnlyIncomplete
+                                    ? 'border-rose-400 bg-rose-50 text-rose-700 shadow-sm dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-400'
+                                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'
+                            }`}
+                        >
+                            <Filter className="h-3.5 w-3.5" />
+                            <span>{showOnlyIncomplete ? 'Menampilkan Kontrol Belum Lengkap' : 'Hanya Belum Selesai'}</span>
+                            {incompleteCount > 0 && (
+                                <span className="rounded-full bg-rose-200 px-1.5 py-0.5 text-[10px] font-bold text-rose-800 dark:bg-rose-900 dark:text-rose-200">
+                                    {incompleteCount}
+                                </span>
+                            )}
+                        </button>
                     </div>
-                    {searchQuery && filteredEntries.length === 0 && (
-                        <div className="mb-3 rounded-lg border border-slate-100 bg-slate-50 py-4 text-center text-sm text-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-500">
-                            Tidak ada kontrol yang cocok dengan pencarian
+
+                    {filteredEntries.length === 0 && (
+                        <div className="mb-4 rounded-xl border border-slate-100 bg-slate-50 p-6 text-center text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+                            {showOnlyIncomplete
+                                ? 'Selamat! Seluruh kontrol pada halaman ini telah lengkap terisi.'
+                                : 'Tidak ada kontrol yang cocok dengan kriteria pencarian.'}
                         </div>
                     )}
+
                     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
                         {filteredEntries.map((entry) => (
                             <EntryItemRow
@@ -691,6 +742,7 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
                                 entryId={entry.id}
                                 onEntryUpdate={handleEntryUpdate}
                                 onEvidenceUpdate={handleEvidenceUpdate}
+                                onPreviewEvidence={(evidence) => setPreviewEvidence(evidence)}
                                 highlight={highlightIncomplete}
                             />
                         ))}
@@ -721,6 +773,59 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
                 </button>
             </div>
 
+            {/* Evidence Preview Lightbox Modal */}
+            <Modal
+                open={previewEvidence !== null}
+                title={previewEvidence?.nama_file || 'Pratinjau Bukti Dokumen'}
+                description="Pratinjau langsung bukti kepatuhan yang diunggah"
+                onClose={() => setPreviewEvidence(null)}
+                maxWidth="xl"
+                footer={
+                    <div className="flex items-center justify-between w-full">
+                        {previewEvidence && (
+                            <a
+                                href={previewEvidence.file_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                            >
+                                <ExternalLink className="h-3.5 w-3.5" />
+                                Buka Dokumen Asli
+                            </a>
+                        )}
+                        <button
+                            type="button"
+                            onClick={() => setPreviewEvidence(null)}
+                            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                        >
+                            Tutup
+                        </button>
+                    </div>
+                }
+            >
+                {previewEvidence && (
+                    <div className="flex flex-col items-center justify-center">
+                        {isImageFile(previewEvidence.nama_file) ? (
+                            <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-950 p-2 max-h-[65vh] flex items-center justify-center w-full">
+                                <img
+                                    src={previewEvidence.file_url}
+                                    alt={previewEvidence.nama_file}
+                                    className="max-h-[60vh] max-w-full rounded-lg object-contain"
+                                />
+                            </div>
+                        ) : (
+                            <div className="w-full h-[55vh] rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800">
+                                <iframe
+                                    src={previewEvidence.file_url}
+                                    title={previewEvidence.nama_file}
+                                    className="w-full h-full"
+                                />
+                            </div>
+                        )}
+                    </div>
+                )}
+            </Modal>
+
             <button
                 type="button"
                 onClick={atBottom ? scrollToTop : scrollToBottom}
@@ -732,3 +837,4 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
         </AppLayout>
     );
 }
+

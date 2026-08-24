@@ -1,12 +1,26 @@
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
 import { Select } from '@/components/ui/Select';
-import { StatusBadge } from '@/components/ui/StatusBadge';
+import { SlideOver } from '@/components/ui/SlideOver';
 import AppLayout from '@/layouts/AppLayout';
 import { t } from '@/lib/i18n';
+import { formatDateTimeIndonesian } from '@/lib/utils';
 import { Head, router } from '@inertiajs/react';
-import { AlertTriangle, Plus, Search, ShieldAlert } from 'lucide-react';
+import {
+    Activity,
+    AlertTriangle,
+    CheckCircle2,
+    Clock,
+    Eye,
+    FileText,
+    Flame,
+    Plus,
+    Search,
+    Shield,
+    ShieldAlert,
+    ShieldCheck,
+    UserCheck,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 export interface RiskItem {
@@ -66,19 +80,6 @@ interface RisksProps {
 const LEVEL_OPTIONS = ['critical', 'high', 'medium', 'low'] as const;
 const STATUS_OPTIONS = ['open', 'mitigated', 'accepted'] as const;
 
-const LEVEL_TONE: Record<string, 'red' | 'amber' | 'blue'> = {
-    critical: 'red',
-    high: 'red',
-    medium: 'amber',
-    low: 'blue',
-};
-
-const STATUS_TONE: Record<string, 'red' | 'green'> = {
-    open: 'red',
-    mitigated: 'green',
-    accepted: 'green',
-};
-
 function riskRef(r: RiskItem): string {
     return String(r.id).padStart(3, '0');
 }
@@ -99,6 +100,8 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
     const high = matrix.by_level?.high ?? 0;
     const mitigated = matrix.by_status?.mitigated ?? 0;
 
+    const getBasePath = () => (typeof window !== 'undefined' ? window.location.pathname : '/admin/kepatuhan/risks');
+
     useEffect(() => {
         if (isFirstRender.current) {
             isFirstRender.current = false;
@@ -107,7 +110,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
 
         const timer = setTimeout(() => {
             router.get(
-                '/admin/kepatuhan/risks',
+                getBasePath(),
                 {
                     search: searchQuery || undefined,
                     risk_level: selectedLevel !== 'all' ? selectedLevel : undefined,
@@ -121,11 +124,11 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
         return () => clearTimeout(timer);
     }, [searchQuery, selectedLevel, selectedStatus, selectedUnit]);
 
-    const breadcrumbs = [{ label: t('common.dashboard'), href: '/admin/kepatuhan/dashboard' }, { label: t('risks.title') }];
+    const breadcrumbs = [{ label: t('common.dashboard'), href: '/dashboard' }, { label: t('risks.title') }];
 
     const goToPage = (p: number) =>
         router.get(
-            '/admin/kepatuhan/risks',
+            getBasePath(),
             {
                 search: searchQuery || undefined,
                 risk_level: selectedLevel !== 'all' ? selectedLevel : undefined,
@@ -138,285 +141,421 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
 
     const kpiCards = [
         {
-            label: t('risks.totalRisks'),
+            key: 'all',
+            label: 'Total Register Risiko',
             value: totalRisks,
-            iconClass: 'bg-violet-bg text-violet dark:text-violet-400',
-            Icon: ShieldAlert,
+            icon: ShieldAlert,
+            accent: 'blue',
+            badge: `${items.length} di Halaman Ini`,
+            borderClass: selectedLevel === 'all' ? 'ring-2 ring-blue-500 border-blue-500' : '',
+            iconClass: 'bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400',
         },
         {
-            label: t('risks.critical'),
+            key: 'critical',
+            label: 'Risiko Kritis (Critical)',
             value: critical,
-            iconClass: 'bg-danger-bg text-danger dark:text-red-400',
-            Icon: AlertTriangle,
+            icon: Flame,
+            accent: 'red',
+            badge: 'Prioritas Tertinggi',
+            borderClass: selectedLevel === 'critical' ? 'ring-2 ring-rose-500 border-rose-500' : '',
+            iconClass: 'bg-rose-50 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400',
         },
         {
-            label: t('risks.high'),
+            key: 'high',
+            label: 'Risiko Tinggi (High)',
             value: high,
-            iconClass: 'bg-warning-bg text-warning dark:text-amber-400',
-            Icon: AlertTriangle,
+            icon: AlertTriangle,
+            accent: 'amber',
+            badge: 'Perhatian Khusus',
+            borderClass: selectedLevel === 'high' ? 'ring-2 ring-amber-500 border-amber-500' : '',
+            iconClass: 'bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400',
         },
         {
-            label: t('risks.mitigated'),
+            key: 'mitigated',
+            label: 'Telah Dimitigasi',
             value: mitigated,
-            iconClass: 'bg-info-bg text-info dark:text-sky-400',
-            Icon: ShieldAlert,
+            icon: ShieldCheck,
+            accent: 'emerald',
+            badge: 'Terkendali',
+            borderClass: selectedStatus === 'mitigated' ? 'ring-2 ring-emerald-500 border-emerald-500' : '',
+            iconClass: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400',
         },
     ];
 
+    const getRiskLevelBadge = (level: string) => {
+        switch (level) {
+            case 'critical':
+                return (
+                    <span className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-700 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-400">
+                        <Flame className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
+                        Kritis (Critical)
+                    </span>
+                );
+            case 'high':
+                return (
+                    <span className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-300">
+                        <AlertTriangle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                        Tinggi (High)
+                    </span>
+                );
+            case 'medium':
+                return (
+                    <span className="inline-flex items-center gap-1.5 rounded-lg border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-semibold text-sky-800 dark:border-sky-800/60 dark:bg-sky-950/40 dark:text-sky-300">
+                        <Activity className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400" />
+                        Sedang (Medium)
+                    </span>
+                );
+            default:
+                return (
+                    <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-700 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300">
+                        <Shield className="h-3.5 w-3.5 text-slate-500" />
+                        Rendah (Low)
+                    </span>
+                );
+        }
+    };
+
+    const getMitigationStatus = (status: string) => {
+        if (status === 'mitigated') {
+            return (
+                <span className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 dark:border-emerald-800/60 dark:bg-emerald-950/40 dark:text-emerald-400">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                    Selesai Dimitigasi
+                </span>
+            );
+        }
+        if (status === 'accepted') {
+            return (
+                <span className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700 dark:border-blue-800/60 dark:bg-blue-950/40 dark:text-blue-400">
+                    <ShieldCheck className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                    Risiko Diterima (Accepted)
+                </span>
+            );
+        }
+        return (
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-700 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-400">
+                <Clock className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
+                Terbuka (Belum Dimitigasi)
+            </span>
+        );
+    };
+
     return (
-        <AppLayout breadcrumbs={breadcrumbs} currentPath="/admin/kepatuhan/risks">
-            <Head title={`${t('risks.title')} - Admin Kepatuhan`} />
+        <AppLayout breadcrumbs={breadcrumbs} currentPath="/risks">
+            <Head title={`${t('risks.title')} - SMKI`} />
 
-            <div className="page-head flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">{t('risks.title')}</h1>
-                    <p className="text-muted mt-1 text-xs sm:text-sm dark:text-slate-400">{t('risks.subtitle')}</p>
-                </div>
-
-                <button
-                    type="button"
-                    disabled
-                    className="bg-surface-2 border-border text-faint inline-flex items-center gap-2 rounded-[10px] border px-4 py-2 text-xs font-semibold sm:text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-500"
-                    title={t('risks.comingSoon')}
-                >
-                    <Plus className="h-4 w-4" />
-                    <span>{t('risks.newRisk')}</span>
-                    <span className="text-[10px] font-bold tracking-wider uppercase">({t('risks.comingSoon')})</span>
-                </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-[14px] xl:grid-cols-4">
-                {kpiCards.map((kpi) => (
-                    <div
-                        key={kpi.label}
-                        className="border-border rounded-[14px] border bg-white p-[18px_20px] shadow-sm dark:border-slate-700 dark:bg-slate-900"
-                    >
-                        <div className="flex items-center justify-between">
-                            <div className={`grid h-9 w-9 place-items-center rounded-[10px] ${kpi.iconClass}`}>
-                                <kpi.Icon className="h-[18px] w-[18px]" />
-                            </div>
+            <div className="space-y-6">
+                {/* Header Banner */}
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between border-b border-slate-200/80 pb-5 dark:border-slate-800">
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                                {t('risks.title')}
+                            </h1>
+                            <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-700 border border-blue-200 dark:bg-blue-950/60 dark:border-blue-800 dark:text-blue-300">
+                                {totalRisks} Risiko Terdaftar
+                            </span>
                         </div>
-                        <div className="text-navy mt-3 text-[26px] leading-none font-bold dark:text-white">{kpi.value}</div>
-                        <div className="text-muted mt-1.5 text-xs font-semibold dark:text-slate-400">{kpi.label}</div>
+                        <p className="mt-1 text-xs text-slate-500 sm:text-sm dark:text-slate-400">
+                            Pemetaan dan mitigasi risiko keamanan informasi berbasis standar ISO 27001
+                        </p>
                     </div>
-                ))}
+
+                    <button
+                        type="button"
+                        disabled
+                        className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-100/80 px-4 py-2 text-xs font-semibold text-slate-400 cursor-not-allowed dark:border-slate-800 dark:bg-slate-800 dark:text-slate-500"
+                        title="Pendaftaran risiko baru dilakukan melalui verifikasi temuan audit"
+                    >
+                        <Plus className="h-4 w-4" />
+                        <span>Daftarkan Risiko Baru</span>
+                    </button>
+                </div>
+
+                {/* Interactive KPI Cards */}
+                <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+                    {kpiCards.map((kpi) => {
+                        const Icon = kpi.icon;
+                        return (
+                            <button
+                                key={kpi.label}
+                                type="button"
+                                onClick={() => {
+                                    if (kpi.key === 'mitigated') {
+                                        setSelectedStatus(selectedStatus === 'mitigated' ? 'all' : 'mitigated');
+                                    } else {
+                                        setSelectedLevel(selectedLevel === kpi.key ? 'all' : kpi.key);
+                                    }
+                                }}
+                                className={`flex flex-col text-left rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition-all hover:border-blue-400 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 ${kpi.borderClass}`}
+                            >
+                                <div className="flex items-center justify-between w-full">
+                                    <div className={`grid h-10 w-10 place-items-center rounded-xl ${kpi.iconClass}`}>
+                                        <Icon className="h-5 w-5" />
+                                    </div>
+                                    <span className="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
+                                        {kpi.badge}
+                                    </span>
+                                </div>
+                                <div className="mt-4 text-2xl font-bold text-slate-900 dark:text-white">
+                                    {kpi.value}
+                                </div>
+                                <div className="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                    {kpi.label}
+                                </div>
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {/* Main Table Section */}
+                <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <div className="border-b border-slate-100 px-6 py-4 dark:border-slate-800">
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white">Daftar Register Risiko Keamanan Informasi</h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Seluruh risiko yang teridentifikasi dari gap pemenuhan kontrol SMKI</p>
+                    </div>
+
+                    {/* Filter Bar */}
+                    <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+                        <div className="relative min-w-[240px] flex-1">
+                            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Cari deskripsi risiko, nomor klausul, atau pemilik risiko..."
+                                className="h-10 w-full rounded-xl border border-slate-200 bg-white py-2 pr-4 pl-9 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
+                            />
+                        </div>
+
+                        <Select value={selectedLevel} onChange={(e) => setSelectedLevel(e.target.value)} className="min-w-[160px]">
+                            <option value="all">Semua Level Risiko</option>
+                            {LEVEL_OPTIONS.map((l) => (
+                                <option key={l} value={l}>
+                                    {t(`status.${l}`)}
+                                </option>
+                            ))}
+                        </Select>
+
+                        <Select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className="min-w-[160px]">
+                            <option value="all">Semua Status</option>
+                            {STATUS_OPTIONS.map((s) => (
+                                <option key={s} value={s}>
+                                    {t(`status.${s}`)}
+                                </option>
+                            ))}
+                        </Select>
+
+                        <Select value={selectedUnit} onChange={(e) => setSelectedUnit(e.target.value)} className="min-w-[170px]">
+                            <option value="all">Semua Unit Kerja</option>
+                            {workUnits.map((u) => (
+                                <option key={u.id} value={String(u.id)}>
+                                    {u.nama}
+                                </option>
+                            ))}
+                        </Select>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs sm:text-sm">
+                            <thead className="border-b border-slate-100 bg-slate-50/70 text-[11px] font-bold tracking-wider uppercase text-slate-500 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400">
+                                <tr>
+                                    <th scope="col" className="px-5 py-3.5">
+                                        {t('risks.code')}
+                                    </th>
+                                    <th scope="col" className="px-5 py-3.5">
+                                        Klausul Kontrol & Risiko
+                                    </th>
+                                    <th scope="col" className="px-5 py-3.5">
+                                        Level Risiko
+                                    </th>
+                                    <th scope="col" className="px-5 py-3.5">
+                                        Pemilik Risiko (Owner)
+                                    </th>
+                                    <th scope="col" className="px-5 py-3.5">
+                                        Status Mitigasi
+                                    </th>
+                                    <th scope="col" className="px-5 py-3.5 text-right">
+                                        Aksi
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                {items.length > 0 ? (
+                                    items.map((r) => (
+                                        <tr key={r.id} className="hover:bg-slate-50/60 transition-colors dark:hover:bg-slate-800/40">
+                                            <td className="px-5 py-4 whitespace-nowrap">
+                                                <code className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                                                    RSK-{riskRef(r)}
+                                                </code>
+                                            </td>
+                                            <td className="px-5 py-4">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setDetailTarget(r)}
+                                                    className="font-semibold text-slate-900 hover:text-blue-600 text-left transition-colors dark:text-white dark:hover:text-blue-400 line-clamp-1"
+                                                >
+                                                    {r.control?.judul || t('common.noData')}
+                                                </button>
+                                                <div className="mt-1 flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                                                    <span className="font-semibold text-slate-700 dark:text-slate-300">
+                                                        {r.control?.kode_klausul}
+                                                    </span>
+                                                    {r.control?.framework && (
+                                                        <span>· {r.control.framework.nama}</span>
+                                                    )}
+                                                </div>
+                                                {r.mitigation_plan || r.rencana_mitigasi ? (
+                                                    <p className="mt-1 text-[11px] text-slate-400 line-clamp-1 italic">
+                                                        Mitigasi: {r.mitigation_plan || r.rencana_mitigasi}
+                                                    </p>
+                                                ) : null}
+                                            </td>
+                                            <td className="px-5 py-4 whitespace-nowrap">
+                                                {getRiskLevelBadge(r.risk_level || r.level_risiko)}
+                                            </td>
+                                            <td className="px-5 py-4 whitespace-nowrap text-slate-700 dark:text-slate-300">
+                                                <div className="flex items-center gap-1.5">
+                                                    <UserCheck className="h-3.5 w-3.5 text-slate-400" />
+                                                    <span>{r.risk_owner || r.pemilik_risiko || '—'}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-5 py-4 whitespace-nowrap">
+                                                {getMitigationStatus(r.status)}
+                                            </td>
+                                            <td className="px-5 py-4 whitespace-nowrap text-right">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setDetailTarget(r)}
+                                                    className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                                                >
+                                                    <Eye className="h-3.5 w-3.5" />
+                                                    Detail
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={6}>
+                                            <EmptyState message="Belum ada data risiko keamanan informasi yang terdaftar." />
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <Pagination
+                        currentPage={page.current_page}
+                        totalPages={page.last_page}
+                        perPage={page.per_page}
+                        totalItems={page.total}
+                        startIndex={(page.from ?? 1) - 1}
+                        endIndex={page.to ?? page.total}
+                        onPageChange={goToPage}
+                    />
+                </section>
             </div>
 
-            <section className="border-border overflow-hidden rounded-[14px] border bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-                <div className="border-border border-b px-5 py-4 dark:border-slate-700">
-                    <h3 className="text-[15px] font-bold">{t('risks.title')}</h3>
-                </div>
-
-                <div className="border-border flex flex-col gap-3 border-b bg-white p-[12px_16px] md:flex-row md:items-center dark:border-slate-700 dark:bg-slate-900">
-                    <div className="relative min-w-[220px] flex-1">
-                        <Search className="text-faint absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 dark:text-slate-500" />
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder={t('risks.searchPlaceholder')}
-                            className="border-border-strong text-ink placeholder:text-faint focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white py-2 pr-4 pl-9 text-xs focus:ring-2 focus:outline-none sm:text-sm dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
-                        />
-                    </div>
-
-                    <Select value={selectedLevel} onChange={(e) => setSelectedLevel(e.target.value)} className="min-w-[150px]">
-                        <option value="all">{t('risks.allLevels')}</option>
-                        {LEVEL_OPTIONS.map((l) => (
-                            <option key={l} value={l}>
-                                {t(`status.${l}`)}
-                            </option>
-                        ))}
-                    </Select>
-
-                    <Select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className="min-w-[150px]">
-                        <option value="all">{t('risks.allStatus')}</option>
-                        {STATUS_OPTIONS.map((s) => (
-                            <option key={s} value={s}>
-                                {t(`status.${s}`)}
-                            </option>
-                        ))}
-                    </Select>
-
-                    <Select value={selectedUnit} onChange={(e) => setSelectedUnit(e.target.value)} className="min-w-[170px]">
-                        <option value="all">{t('risks.allUnits')}</option>
-                        {workUnits.map((u) => (
-                            <option key={u.id} value={String(u.id)}>
-                                {u.nama}
-                            </option>
-                        ))}
-                    </Select>
-                </div>
-
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs sm:text-sm">
-                        <thead className="border-border bg-surface/60 text-muted border-b text-[11px] font-bold tracking-wider uppercase dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-400">
-                            <tr>
-                                <th scope="col" className="px-5 py-3 text-left font-semibold">
-                                    {t('risks.code')}
-                                </th>
-                                <th scope="col" className="px-5 py-3 text-left font-semibold">
-                                    {t('risks.risk')}
-                                </th>
-                                <th scope="col" className="px-5 py-3 text-left font-semibold">
-                                    {t('risks.unitControl')}
-                                </th>
-                                <th scope="col" className="px-5 py-3 text-left font-semibold">
-                                    {t('risks.level')}
-                                </th>
-                                <th scope="col" className="px-5 py-3 text-left font-semibold">
-                                    {t('risks.owner')}
-                                </th>
-                                <th scope="col" className="px-5 py-3 text-left font-semibold">
-                                    {t('risks.status')}
-                                </th>
-                                <th scope="col" className="px-5 py-3 text-left font-semibold">
-                                    {t('risks.target')}
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-border divide-y dark:divide-slate-700">
-                            {items.length > 0 ? (
-                                items.map((r) => (
-                                    <tr key={r.id} className="hover:bg-surface/50 transition-colors dark:hover:bg-slate-800/50">
-                                        <td className="px-5 py-4 whitespace-nowrap">
-                                            <code className="text-primary font-bold">RSK-{riskRef(r)}</code>
-                                        </td>
-                                        <td className="px-5 py-4">
-                                            <button
-                                                type="button"
-                                                onClick={() => setDetailTarget(r)}
-                                                className="text-navy hover:text-primary text-left font-semibold dark:text-white"
-                                            >
-                                                {r.control?.judul || t('common.noData')}
-                                            </button>
-                                            {r.mitigation_plan || r.rencana_mitigasi ? (
-                                                <div className="text-faint mt-0.5 line-clamp-1 text-xs dark:text-slate-500">
-                                                    {r.mitigation_plan || r.rencana_mitigasi}
-                                                </div>
-                                            ) : null}
-                                        </td>
-                                        <td className="text-body px-5 py-4 whitespace-nowrap dark:text-slate-300">
-                                            <span className="text-navy font-medium dark:text-white">{r.control?.kode_klausul || '—'}</span>
-                                            {r.control?.framework ? (
-                                                <div className="text-faint text-xs dark:text-slate-500">{r.control.framework.nama}</div>
-                                            ) : null}
-                                        </td>
-                                        <td className="px-5 py-4 whitespace-nowrap">
-                                            <StatusBadge tone={LEVEL_TONE[r.risk_level || r.level_risiko] ?? 'gray'}>
-                                                {t(`status.${(r.risk_level || r.level_risiko) as 'critical' | 'high' | 'medium' | 'low'}`)}
-                                            </StatusBadge>
-                                        </td>
-                                        <td className="text-body px-5 py-4 whitespace-nowrap dark:text-slate-300">
-                                            {r.risk_owner || r.pemilik_risiko || '—'}
-                                        </td>
-                                        <td className="px-5 py-4 whitespace-nowrap">
-                                            <StatusBadge tone={STATUS_TONE[r.status] ?? 'gray'}>
-                                                {t(`status.${r.status as 'open' | 'mitigated' | 'accepted'}`)}
-                                            </StatusBadge>
-                                        </td>
-                                        <td className="text-faint px-5 py-4 whitespace-nowrap dark:text-slate-500">{t('risks.noTarget')}</td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan={7}>
-                                        <EmptyState message={t('risks.noRisks')} />
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                <Pagination
-                    currentPage={page.current_page}
-                    totalPages={page.last_page}
-                    perPage={page.per_page}
-                    totalItems={page.total}
-                    startIndex={(page.from ?? 1) - 1}
-                    endIndex={page.to ?? page.total}
-                    onPageChange={goToPage}
-                />
-            </section>
-
-            <Modal
+            {/* Risk Detail Slide-Over Drawer */}
+            <SlideOver
                 open={detailTarget !== null}
-                title={t('risks.detailTitle')}
-                description={detailTarget ? `RSK-${riskRef(detailTarget)}` : undefined}
+                title={
+                    detailTarget ? (
+                        <div className="flex items-center gap-2.5">
+                            <span>Detail Risiko</span>
+                            <code className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-400">
+                                RSK-{riskRef(detailTarget)}
+                            </code>
+                        </div>
+                    ) : (
+                        'Detail Risiko'
+                    )
+                }
+                description={detailTarget?.control?.judul || 'Analisis dan rencana perlakuan risiko keamanan'}
                 onClose={() => setDetailTarget(null)}
-                maxWidth="lg"
+                maxWidth="xl"
                 footer={
                     <button
                         type="button"
                         onClick={() => setDetailTarget(null)}
-                        className="border-border-strong text-body hover:bg-surface rounded-[10px] border bg-white px-4 py-2 text-sm font-medium transition-colors dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                        className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 transition-colors"
                     >
-                        {t('risks.close')}
+                        Tutup Panel
                     </button>
                 }
             >
                 {detailTarget && (
-                    <div className="space-y-4">
-                        <div className="border-border overflow-hidden rounded-[10px] border dark:border-slate-700">
-                            <div className="border-border flex items-center justify-between border-b px-4 py-2.5 dark:border-slate-700">
-                                <span className="text-body text-[13px] font-medium dark:text-slate-300">{t('risks.risk')}</span>
-                                <span className="text-navy max-w-[60%] text-right text-[13px] font-semibold dark:text-white">
-                                    {detailTarget.control?.judul}
-                                </span>
-                            </div>
-                            <div className="border-border flex items-center justify-between border-b px-4 py-2.5 dark:border-slate-700">
-                                <span className="text-body text-[13px] font-medium dark:text-slate-300">{t('risks.unitControl')}</span>
-                                <span className="text-navy text-[13px] font-semibold dark:text-white">
-                                    {detailTarget.control?.kode_klausul || '—'}
-                                    {detailTarget.control?.framework ? ` · ${detailTarget.control.framework.nama}` : ''}
-                                </span>
-                            </div>
-                            <div className="border-border flex items-center justify-between border-b px-4 py-2.5 dark:border-slate-700">
-                                <span className="text-body text-[13px] font-medium dark:text-slate-300">{t('risks.frameworkLabel')}</span>
-                                <span className="text-navy text-[13px] font-semibold dark:text-white">
-                                    {detailTarget.control?.framework?.nama || '—'}
-                                </span>
-                            </div>
-                            <div className="flex items-center justify-between px-4 py-2.5">
-                                <span className="text-body text-[13px] font-medium dark:text-slate-300">{t('risks.owner')}</span>
-                                <span className="text-navy text-[13px] font-semibold dark:text-white">
-                                    {detailTarget.risk_owner || detailTarget.pemilik_risiko || '—'}
-                                </span>
-                            </div>
-                        </div>
-
-                        <div className="flex flex-wrap gap-4">
-                            <div>
-                                <h4 className="text-navy text-sm font-bold dark:text-white">{t('risks.level')}</h4>
+                    <div className="space-y-6">
+                        {/* Top Information Cards */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="rounded-xl border border-slate-200/80 bg-white p-3.5 dark:border-slate-800 dark:bg-slate-900">
+                                <span className="text-[11px] font-medium text-slate-400">Level Keparahan Risiko</span>
                                 <div className="mt-2">
-                                    <StatusBadge tone={LEVEL_TONE[detailTarget.risk_level || detailTarget.level_risiko] ?? 'gray'}>
-                                        {t(
-                                            `status.${(detailTarget.risk_level || detailTarget.level_risiko) as 'critical' | 'high' | 'medium' | 'low'}`,
-                                        )}
-                                    </StatusBadge>
+                                    {getRiskLevelBadge(detailTarget.risk_level || detailTarget.level_risiko)}
                                 </div>
                             </div>
-                            <div>
-                                <h4 className="text-navy text-sm font-bold dark:text-white">{t('risks.status')}</h4>
+
+                            <div className="rounded-xl border border-slate-200/80 bg-white p-3.5 dark:border-slate-800 dark:bg-slate-900">
+                                <span className="text-[11px] font-medium text-slate-400">Status Mitigasi</span>
                                 <div className="mt-2">
-                                    <StatusBadge tone={STATUS_TONE[detailTarget.status] ?? 'gray'}>
-                                        {t(`status.${detailTarget.status as 'open' | 'mitigated' | 'accepted'}`)}
-                                    </StatusBadge>
+                                    {getMitigationStatus(detailTarget.status)}
                                 </div>
                             </div>
                         </div>
 
-                        {detailTarget.mitigation_plan || detailTarget.rencana_mitigasi ? (
-                            <div>
-                                <h4 className="text-navy text-sm font-bold dark:text-white">{t('risks.mitigationLabel')}</h4>
-                                <p className="text-body border-border bg-surface/50 mt-2 rounded-[10px] border p-3.5 text-[13px] leading-relaxed dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-300">
-                                    {detailTarget.mitigation_plan || detailTarget.rencana_mitigasi}
-                                </p>
+                        {/* Control Klausul Association */}
+                        <div className="rounded-xl border border-slate-200/80 bg-white p-4 space-y-3 dark:border-slate-800 dark:bg-slate-900">
+                            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                <Shield className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                <span>Kontrol SMKI Terkait</span>
                             </div>
-                        ) : null}
+                            <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-800/60">
+                                <div className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                                    {detailTarget.control?.kode_klausul}
+                                    {detailTarget.control?.framework && (
+                                        <span className="text-slate-500 font-normal"> · {detailTarget.control.framework.nama} ({detailTarget.control.framework.versi})</span>
+                                    )}
+                                </div>
+                                <div className="mt-1 text-sm font-semibold text-slate-900 dark:text-white leading-relaxed">
+                                    {detailTarget.control?.judul || '—'}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Risk Owner Information */}
+                        <div className="rounded-xl border border-slate-200/80 bg-white p-4 space-y-2 dark:border-slate-800 dark:bg-slate-900">
+                            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                <UserCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                                <span>Pemilik Risiko (Risk Owner)</span>
+                            </div>
+                            <p className="text-xs font-semibold text-slate-900 dark:text-white bg-slate-50 p-3 rounded-lg dark:bg-slate-800/60">
+                                {detailTarget.risk_owner || detailTarget.pemilik_risiko || 'Belum ditugaskan'}
+                            </p>
+                        </div>
+
+                        {/* Mitigation Plan & Actions */}
+                        <div className="rounded-xl border border-slate-200/80 bg-white p-4 space-y-2 dark:border-slate-800 dark:bg-slate-900">
+                            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                <FileText className="h-4 w-4 text-amber-500" />
+                                <span>Rencana Tindakan Mitigasi</span>
+                            </div>
+                            <p className="text-xs leading-relaxed text-slate-700 bg-slate-50 p-3 rounded-lg dark:bg-slate-800/60 dark:text-slate-300">
+                                {detailTarget.mitigation_plan || detailTarget.rencana_mitigasi || 'Belum ada rencana perlakuan risiko yang didokumentasikan.'}
+                            </p>
+                        </div>
+
+                        {/* Metadata Timeline */}
+                        {detailTarget.created_at && (
+                            <div className="border-t border-slate-100 pt-3 text-[11px] text-slate-400 dark:border-slate-800">
+                                Terdaftar pada: {formatDateTimeIndonesian(detailTarget.created_at)}
+                            </div>
+                        )}
                     </div>
                 )}
-            </Modal>
+            </SlideOver>
         </AppLayout>
     );
 }
+
