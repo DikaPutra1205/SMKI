@@ -5,8 +5,8 @@ import AppLayout from '@/layouts/AppLayout';
 import { useCan } from '@/lib/can';
 import { t } from '@/lib/i18n';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Building2, Pencil, Plus, Search, ShieldAlert, ShieldCheck, Trash2, UserCheck, Users as UsersIcon, XCircle } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 
 interface RoleOpt {
     id: number;
@@ -23,7 +23,7 @@ interface UserRow {
     email: string;
     role_id: number;
     unit_id: number | null;
-    role: { id: number; name: string; label: string } | null;
+    role?: { id: number; name: string; label: string } | string | null;
     unit: { id: number; nama: string } | null;
 }
 interface Props {
@@ -34,10 +34,64 @@ interface Props {
 type ModalMode = 'create' | 'edit' | null;
 type FormData = { name: string; email: string; role_id: string; unit_id: string };
 
+function getInitials(name: string): string {
+    if (!name) return 'U';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
+function resolveRoleInfo(u: UserRow, roles: RoleOpt[]) {
+    if (u.role_id) {
+        const found = roles.find((r) => r.id === u.role_id);
+        if (found) return { name: found.name, label: found.label };
+    }
+    if (typeof u.role === 'object' && u.role?.name) {
+        return { name: u.role.name, label: u.role.label || u.role.name };
+    }
+    if (typeof u.role === 'string') {
+        const found = roles.find((r) => r.name.toLowerCase() === (u.role as string).toLowerCase());
+        if (found) return { name: found.name, label: found.label };
+        return { name: u.role, label: t(`role.${u.role}` as never) || u.role };
+    }
+    return { name: 'pic', label: 'PIC Unit' };
+}
+
+function getRoleBadge(roleName?: string, roleLabel?: string) {
+    const role = (roleName || '').toLowerCase();
+    if (role.includes('superadmin')) {
+        return {
+            label: roleLabel || 'Super Admin',
+            classes: 'border-primary-300 bg-primary-100 text-primary-800 dark:border-primary-800 dark:bg-primary-950/60 dark:text-primary-300',
+            dot: 'bg-primary-800 dark:bg-primary-300',
+        };
+    }
+    if (role.includes('compliance') || role.includes('kepatuhan') || role.includes('koordinator')) {
+        return {
+            label: roleLabel || 'Admin Kepatuhan',
+            classes: 'border-primary-200 bg-primary-50 text-primary-700 dark:border-primary-800 dark:bg-navy-900/40 dark:text-primary-200',
+            dot: 'bg-primary',
+        };
+    }
+    if (role.includes('auditor')) {
+        return {
+            label: roleLabel || 'Auditor',
+            classes: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-400',
+            dot: 'bg-amber-500',
+        };
+    }
+    return {
+        label: roleLabel || 'PIC Unit',
+        classes: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400',
+        dot: 'bg-emerald-500',
+    };
+}
+
 export default function Users({ users, roles, units }: Props) {
     const can = useCan();
     const { flash } = usePage<{ flash?: { type: string; message: string } }>().props;
     const [visible, setVisible] = useState(false);
+
     useEffect(() => {
         if (flash?.message) {
             setVisible(true);
@@ -45,6 +99,10 @@ export default function Users({ users, roles, units }: Props) {
             return () => clearTimeout(tm);
         }
     }, [flash]);
+
+    const [searchQuery, setSearchQuery] = useState('');
+    const [selectedRole, setSelectedRole] = useState('all');
+    const [selectedUnit, setSelectedUnit] = useState('all');
 
     const [mode, setMode] = useState<ModalMode>(null);
     const [editingId, setEditingId] = useState<number | null>(null);
@@ -54,24 +112,78 @@ export default function Users({ users, roles, units }: Props) {
 
     const form = useForm<FormData>({ name: '', email: '', role_id: '', unit_id: '' });
 
+    const userRoleInfoMap = useMemo(() => {
+        const map = new Map<number, { name: string; label: string }>();
+        users.forEach((u) => {
+            map.set(u.id, resolveRoleInfo(u, roles));
+        });
+        return map;
+    }, [users, roles]);
+
+    const filteredUsers = useMemo(() => {
+        return users.filter((u) => {
+            if (searchQuery.trim()) {
+                const q = searchQuery.toLowerCase();
+                const matchName = u.name.toLowerCase().includes(q);
+                const matchEmail = u.email.toLowerCase().includes(q);
+                const matchUnit = u.unit?.nama.toLowerCase().includes(q);
+                if (!matchName && !matchEmail && !matchUnit) return false;
+            }
+            if (selectedRole !== 'all' && String(u.role_id) !== selectedRole) {
+                return false;
+            }
+            if (selectedUnit !== 'all') {
+                if (selectedUnit === 'none' && u.unit_id !== null) return false;
+                if (selectedUnit !== 'none' && String(u.unit_id) !== selectedUnit) return false;
+            }
+            return true;
+        });
+    }, [users, searchQuery, selectedRole, selectedUnit]);
+
+    // Statistics counts
+    const superadminCount = useMemo(
+        () => users.filter((u) => userRoleInfoMap.get(u.id)?.name.toLowerCase().includes('superadmin')).length,
+        [users, userRoleInfoMap],
+    );
+    const complianceCount = useMemo(
+        () =>
+            users.filter((u) => {
+                const n = userRoleInfoMap.get(u.id)?.name.toLowerCase() || '';
+                return n.includes('compliance') || n.includes('kepatuhan') || n.includes('koordinator');
+            }).length,
+        [users, userRoleInfoMap],
+    );
+    const picCount = useMemo(
+        () => users.filter((u) => userRoleInfoMap.get(u.id)?.name.toLowerCase().includes('pic')).length,
+        [users, userRoleInfoMap],
+    );
+
     function openCreate() {
         form.reset();
         form.clearErrors();
         setEditingId(null);
         setMode('create');
     }
+
     function openEdit(u: UserRow) {
-        form.setData({ name: u.name, email: u.email, role_id: String(u.role_id), unit_id: u.unit_id ? String(u.unit_id) : '' });
+        form.setData({
+            name: u.name,
+            email: u.email,
+            role_id: String(u.role_id),
+            unit_id: u.unit_id ? String(u.unit_id) : '',
+        });
         form.clearErrors();
         setEditingId(u.id);
         setMode('edit');
     }
+
     function close() {
         setMode(null);
         setEditingId(null);
         form.reset();
         form.clearErrors();
     }
+
     function submit(e: React.FormEvent) {
         e.preventDefault();
         const coerce = (data: FormData) => ({
@@ -87,6 +199,7 @@ export default function Users({ users, roles, units }: Props) {
             form.patch(`/admin/superadmin/users/${editingId}`, { onSuccess: close });
         }
     }
+
     function confirmDelete() {
         if (!delTarget) return;
         setDelBusy(true);
@@ -104,16 +217,18 @@ export default function Users({ users, roles, units }: Props) {
     return (
         <AppLayout breadcrumbs={breadcrumbs} currentPath="/admin/superadmin/users">
             <Head title={t('admin.users.title')} />
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+
+            {/* Page Header */}
+            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">{t('admin.users.title')}</h1>
-                    <p className="text-muted mt-1 text-xs sm:text-sm dark:text-slate-400">{t('admin.users.subtitle')}</p>
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{t('admin.users.title')}</h1>
+                    <p className="text-muted mt-1 text-xs text-slate-500 sm:text-sm dark:text-slate-400">{t('admin.users.subtitle')}</p>
                 </div>
                 {can('user.create') && (
                     <button
                         type="button"
                         onClick={openCreate}
-                        className="bg-primary shadow-blue hover:bg-primary-700 inline-flex items-center gap-2 rounded-[10px] px-4 py-2 text-xs font-semibold text-white transition-colors sm:text-sm"
+                        className="bg-primary hover:bg-primary-700 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-colors sm:text-sm"
                     >
                         <Plus className="h-4 w-4" />
                         {t('admin.users.addUser')}
@@ -121,63 +236,203 @@ export default function Users({ users, roles, units }: Props) {
                 )}
             </div>
 
-            <div className="border-border overflow-hidden rounded-[14px] border bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            {/* Quick KPI Stat Cards */}
+            <div className="mb-6 grid grid-cols-2 gap-3.5 sm:grid-cols-4">
+                <div
+                    onClick={() => setSelectedRole('all')}
+                    className={`cursor-pointer rounded-2xl border p-4 transition-all ${
+                        selectedRole === 'all'
+                            ? 'border-primary bg-primary-50/50 dark:border-primary/60 dark:bg-navy-900/30 shadow-sm'
+                            : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900'
+                    }`}
+                >
+                    <div className="mb-1 flex items-center justify-between text-slate-500 dark:text-slate-400">
+                        <span className="text-xs font-semibold">Total Pengguna</span>
+                        <UsersIcon className="text-primary h-4 w-4" />
+                    </div>
+                    <span className="text-2xl font-bold text-slate-900 dark:text-white">{users.length}</span>
+                </div>
+
+                <div
+                    onClick={() => {
+                        const r = roles.find((role) => role.name.toLowerCase().includes('superadmin'));
+                        if (r) setSelectedRole(String(r.id));
+                    }}
+                    className="hover:border-primary-300 cursor-pointer rounded-2xl border border-slate-200 bg-white p-4 transition-all dark:border-slate-800 dark:bg-slate-900"
+                >
+                    <div className="text-primary-800 dark:text-primary-300 mb-1 flex items-center justify-between">
+                        <span className="text-xs font-semibold">Super Admin</span>
+                        <ShieldAlert className="h-4 w-4" />
+                    </div>
+                    <span className="text-2xl font-bold text-slate-900 dark:text-white">{superadminCount}</span>
+                </div>
+
+                <div
+                    onClick={() => {
+                        const r = roles.find(
+                            (role) => role.name.toLowerCase().includes('compliance') || role.name.toLowerCase().includes('kepatuhan'),
+                        );
+                        if (r) setSelectedRole(String(r.id));
+                    }}
+                    className="hover:border-primary-300 cursor-pointer rounded-2xl border border-slate-200 bg-white p-4 transition-all dark:border-slate-800 dark:bg-slate-900"
+                >
+                    <div className="text-primary dark:text-primary-200 mb-1 flex items-center justify-between">
+                        <span className="text-xs font-semibold">Admin Kepatuhan</span>
+                        <ShieldCheck className="h-4 w-4" />
+                    </div>
+                    <span className="text-2xl font-bold text-slate-900 dark:text-white">{complianceCount}</span>
+                </div>
+
+                <div
+                    onClick={() => {
+                        const r = roles.find((role) => role.name.toLowerCase().includes('pic'));
+                        if (r) setSelectedRole(String(r.id));
+                    }}
+                    className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-4 transition-all hover:border-emerald-300 dark:border-slate-800 dark:bg-slate-900"
+                >
+                    <div className="mb-1 flex items-center justify-between text-emerald-600 dark:text-emerald-400">
+                        <span className="text-xs font-semibold">PIC Unit Kerja</span>
+                        <UserCheck className="h-4 w-4" />
+                    </div>
+                    <span className="text-2xl font-bold text-slate-900 dark:text-white">{picCount}</span>
+                </div>
+            </div>
+
+            {/* Filter & Table Container */}
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                {/* Search & Select Filters */}
+                <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 p-4 dark:border-slate-800">
+                    <div className="relative min-w-[240px] flex-1">
+                        <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Cari nama, email, atau unit kerja..."
+                            className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pr-3 pl-9 text-xs text-slate-700 placeholder-slate-400 transition-colors focus:bg-white focus:ring-1 sm:text-sm dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-300 dark:focus:bg-slate-900"
+                        />
+                        {searchQuery && (
+                            <button
+                                type="button"
+                                onClick={() => setSearchQuery('')}
+                                className="absolute top-1/2 right-3 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                            >
+                                <XCircle className="h-4 w-4" />
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <select
+                            value={selectedRole}
+                            onChange={(e) => setSelectedRole(e.target.value)}
+                            className="focus:border-primary focus:ring-primary rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs text-slate-700 focus:ring-1 sm:text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                        >
+                            <option value="all">Semua Peran (Role)</option>
+                            {roles.map((r) => (
+                                <option key={r.id} value={String(r.id)}>
+                                    {r.label}
+                                </option>
+                            ))}
+                        </select>
+
+                        <select
+                            value={selectedUnit}
+                            onChange={(e) => setSelectedUnit(e.target.value)}
+                            className="focus:border-primary focus:ring-primary rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs text-slate-700 focus:ring-1 sm:text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                        >
+                            <option value="all">Semua Unit Kerja</option>
+                            <option value="none">Tanpa Unit Kerja</option>
+                            {units.map((u) => (
+                                <option key={u.id} value={String(u.id)}>
+                                    {u.nama}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
                 <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm">
-                        <thead className="border-border bg-surface/60 text-muted border-b text-[11px] font-bold tracking-wider uppercase dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-400">
+                        <thead className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold tracking-wider text-slate-500 uppercase dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-400">
                             <tr>
-                                <th className="px-5 py-3">{t('admin.users.name')}</th>
-                                <th className="px-5 py-3">Email</th>
-                                <th className="px-5 py-3">Role</th>
-                                <th className="px-5 py-3">Unit</th>
-                                <th className="px-5 py-3 text-right">{t('common.actions')}</th>
+                                <th className="px-5 py-3.5">{t('admin.users.name')}</th>
+                                <th className="px-5 py-3.5">Peran (Role)</th>
+                                <th className="px-5 py-3.5">Unit Kerja</th>
+                                <th className="px-5 py-3.5 text-right">{t('common.actions')}</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-border divide-y dark:divide-slate-700">
-                            {users.length ? (
-                                users.map((u) => (
-                                    <tr key={u.id} className="hover:bg-surface/50 dark:hover:bg-slate-800/50">
-                                        <td className="text-navy px-5 py-3 font-medium dark:text-white">{u.name}</td>
-                                        <td className="text-body px-5 py-3 text-xs dark:text-slate-300">{u.email}</td>
-                                        <td className="px-5 py-3">
-                                            <span className="bg-primary-50 dark:bg-primary/10 text-primary rounded-[6px] px-2 py-0.5 text-xs font-semibold">
-                                                {u.role?.label ?? u.role_id}
-                                            </span>
-                                        </td>
-                                        <td className="text-body px-5 py-3 text-xs dark:text-slate-300">{u.unit?.nama ?? '—'}</td>
-                                        <td className="px-5 py-3 text-right">
-                                            <div className="flex justify-end gap-1">
-                                                {can('user.update') && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => openEdit(u)}
-                                                        className="border-border-strong text-navy hover:bg-surface inline-flex items-center gap-1 rounded-[8px] border bg-white px-2.5 py-1.5 text-xs font-semibold dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:hover:bg-slate-800"
-                                                    >
-                                                        <Pencil className="h-3 w-3" />
-                                                        {t('common.edit')}
-                                                    </button>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                            {filteredUsers.length ? (
+                                filteredUsers.map((u) => {
+                                    const roleInfo = userRoleInfoMap.get(u.id) || resolveRoleInfo(u, roles);
+                                    const badge = getRoleBadge(roleInfo.name, roleInfo.label);
+                                    const initials = getInitials(u.name);
+                                    return (
+                                        <tr key={u.id} className="transition-colors hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
+                                            <td className="px-5 py-3.5">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="bg-primary-100 text-primary-700 dark:bg-navy-900/40 dark:text-primary-200 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold">
+                                                        {initials}
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-semibold text-slate-900 dark:text-white">{u.name}</div>
+                                                        <div className="text-xs text-slate-400 dark:text-slate-500">{u.email}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-5 py-3.5">
+                                                <span
+                                                    className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold ${badge.classes}`}
+                                                >
+                                                    <span className={`h-1.5 w-1.5 rounded-full ${badge.dot}`} />
+                                                    {badge.label}
+                                                </span>
+                                            </td>
+                                            <td className="px-5 py-3.5 text-xs text-slate-600 dark:text-slate-300">
+                                                {u.unit?.nama ? (
+                                                    <span className="inline-flex items-center gap-1 font-medium text-slate-700 dark:text-slate-300">
+                                                        <Building2 className="h-3.5 w-3.5 text-slate-400" />
+                                                        {u.unit.nama}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-slate-400 italic dark:text-slate-500">—</span>
                                                 )}
-                                                {can('user.delete') && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setDelTarget(u);
-                                                            setDelOpen(true);
-                                                        }}
-                                                        className="border-danger-border bg-danger-bg text-danger hover:bg-danger/10 inline-flex items-center gap-1 rounded-[8px] border px-2.5 py-1.5 text-xs font-semibold dark:border-red-800 dark:text-red-400"
-                                                    >
-                                                        <Trash2 className="h-3 w-3" />
-                                                        {t('common.delete')}
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
+                                            </td>
+                                            <td className="px-5 py-3.5 text-right">
+                                                <div className="flex justify-end gap-1.5">
+                                                    {can('user.update') && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => openEdit(u)}
+                                                            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                                                        >
+                                                            <Pencil className="h-3 w-3" />
+                                                            {t('common.edit')}
+                                                        </button>
+                                                    )}
+                                                    {can('user.delete') && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setDelTarget(u);
+                                                                setDelOpen(true);
+                                                            }}
+                                                            className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-400"
+                                                        >
+                                                            <Trash2 className="h-3 w-3" />
+                                                            {t('common.delete')}
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
                             ) : (
                                 <tr>
-                                    <td colSpan={5} className="text-muted px-5 py-10 text-center text-sm dark:text-slate-400">
-                                        {t('common.noData')}
+                                    <td colSpan={4} className="px-5 py-10 text-center text-sm text-slate-400 dark:text-slate-500">
+                                        Tidak ada pengguna yang cocok dengan kriteria pencarian.
                                     </td>
                                 </tr>
                             )}
@@ -193,16 +448,19 @@ export default function Users({ users, roles, units }: Props) {
                 onDismiss={() => setVisible(false)}
             />
 
+            {/* Modal Create / Edit User */}
             <Modal
                 open={mode !== null}
                 title={mode === 'create' ? t('admin.users.createTitle') : t('admin.users.editTitle')}
+                description="Kelola akun pengguna dan hak akses peran dalam sistem SMKI"
                 onClose={close}
+                maxWidth="md"
                 footer={
                     <>
                         <button
                             type="button"
                             onClick={close}
-                            className="border-border-strong text-body hover:bg-surface rounded-[10px] border bg-white px-4 py-2 text-sm font-medium dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
                         >
                             {t('common.cancel')}
                         </button>
@@ -210,37 +468,49 @@ export default function Users({ users, roles, units }: Props) {
                             type="submit"
                             form="user-form"
                             disabled={form.processing}
-                            className="bg-primary hover:bg-primary-700 rounded-[10px] px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                            className="bg-primary hover:bg-primary-700 rounded-xl px-5 py-2 text-sm font-semibold text-white shadow-sm transition-colors disabled:opacity-50"
                         >
                             {form.processing ? t('common.saving') : mode === 'create' ? t('common.add') : t('common.save')}
                         </button>
                     </>
                 }
             >
-                <form id="user-form" onSubmit={submit} className="space-y-3">
+                <form id="user-form" onSubmit={submit} className="space-y-4 pt-2">
                     <div>
+                        <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            {t('admin.users.nameLabel')} <span className="text-red-500">*</span>
+                        </label>
                         <input
                             value={form.data.name}
                             onChange={(e) => form.setData('name', e.target.value)}
-                            placeholder={t('admin.users.nameLabel')}
-                            className="border-border-strong text-ink placeholder:text-faint focus:border-primary h-10 w-full rounded-[10px] border bg-white px-3 text-sm focus:ring-2 focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
+                            placeholder="Contoh: Dika Pratama"
+                            className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                         />
-                        {form.errors.name && <p className="text-danger mt-1 text-[11px] dark:text-red-400">{form.errors.name}</p>}
+                        {form.errors.name && <p className="mt-1 text-xs text-red-500">{form.errors.name}</p>}
                     </div>
+
                     <div>
+                        <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            Alamat Email <span className="text-red-500">*</span>
+                        </label>
                         <input
+                            type="email"
                             value={form.data.email}
                             onChange={(e) => form.setData('email', e.target.value)}
-                            placeholder="Email"
-                            className="border-border-strong text-ink placeholder:text-faint focus:border-primary h-10 w-full rounded-[10px] border bg-white px-3 text-sm focus:ring-2 focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
+                            placeholder="Contoh: user@instansi.go.id"
+                            className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                         />
-                        {form.errors.email && <p className="text-danger mt-1 text-[11px] dark:text-red-400">{form.errors.email}</p>}
+                        {form.errors.email && <p className="mt-1 text-xs text-red-500">{form.errors.email}</p>}
                     </div>
+
                     <div>
+                        <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            Peran Pengguna (Role) <span className="text-red-500">*</span>
+                        </label>
                         <select
                             value={form.data.role_id}
                             onChange={(e) => form.setData('role_id', e.target.value)}
-                            className="border-border-strong text-ink focus:border-primary h-10 w-full rounded-[10px] border bg-white px-3 text-sm focus:ring-2 focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-white"
+                            className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                         >
                             <option value="">— Pilih Role —</option>
                             {roles.map((r) => (
@@ -249,22 +519,26 @@ export default function Users({ users, roles, units }: Props) {
                                 </option>
                             ))}
                         </select>
-                        {form.errors.role_id && <p className="text-danger mt-1 text-[11px] dark:text-red-400">{form.errors.role_id}</p>}
+                        {form.errors.role_id && <p className="mt-1 text-xs text-red-500">{form.errors.role_id}</p>}
                     </div>
+
                     <div>
+                        <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            Unit Kerja <span className="font-normal text-slate-400">(Wajib untuk PIC)</span>
+                        </label>
                         <select
                             value={form.data.unit_id}
                             onChange={(e) => form.setData('unit_id', e.target.value)}
-                            className="border-border-strong text-ink focus:border-primary h-10 w-full rounded-[10px] border bg-white px-3 text-sm focus:ring-2 focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-white"
+                            className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                         >
-                            <option value="">— Tanpa Unit —</option>
+                            <option value="">— Tanpa Unit Kerja —</option>
                             {units.map((u) => (
                                 <option key={u.id} value={String(u.id)}>
                                     {u.nama}
                                 </option>
                             ))}
                         </select>
-                        {form.errors.unit_id && <p className="text-danger mt-1 text-[11px] dark:text-red-400">{form.errors.unit_id}</p>}
+                        {form.errors.unit_id && <p className="mt-1 text-xs text-red-500">{form.errors.unit_id}</p>}
                     </div>
                 </form>
             </Modal>

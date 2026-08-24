@@ -92,6 +92,8 @@ class ComplianceEvidenceController extends Controller
             $checklistEntry->update([
                 'tanggal_input' => now(),
                 'tanggal_verifikasi' => null,
+                'catatan_admin' => null,
+                'admin_id' => null,
             ]);
 
             return $evidence;

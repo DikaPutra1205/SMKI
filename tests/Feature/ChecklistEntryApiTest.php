@@ -702,8 +702,8 @@ class ChecklistEntryApiTest extends TestCase
         $session = ChecklistSession::create(['konteks_penilaian' => 'Sesi bukti', 'unit_id' => $unit->id, 'framework_id' => $fw->id]);
         $entry = ChecklistEntry::create([
             'session_id' => $session->id, 'control_id' => $control->id, 'unit_id' => $unit->id,
-            'pic_id' => $pic->id, 'status' => ChecklistEntry::STATUS_COMPLIANT,
-            'admin_id' => $pic->id, 'tanggal_verifikasi' => now(), 'catatan' => 'ok',
+            'pic_id' => $pic->id, 'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'admin_id' => $pic->id, 'tanggal_verifikasi' => now(), 'catatan_admin' => 'Tolak, bukti buram', 'catatan' => 'ok',
         ]);
 
         $this->actingAs($pic)
@@ -717,7 +717,37 @@ class ChecklistEntryApiTest extends TestCase
             'checklist_entry_id' => $entry->id, 'uploaded_by' => $pic->id, 'version_number' => 1,
         ]);
         $this->assertDatabaseHas('checklist_entries', [
-            'id' => $entry->id, 'tanggal_verifikasi' => null,
+            'id' => $entry->id,
+            'tanggal_verifikasi' => null,
+            'catatan_admin' => null,
+            'admin_id' => null,
         ]);
+    }
+
+    public function test_web_pic_entry_status_update_clears_verification_and_admin_notes(): void
+    {
+        $unit = WorkUnit::create(['nama' => 'Unit Update Web']);
+        $fw = Framework::create(['nama' => 'ISO 27001', 'versi' => '2022']);
+        $control = $fw->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a']);
+        $pic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unit->id]);
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN_KEPATUHAN]);
+        $session = ChecklistSession::create(['konteks_penilaian' => 'Sesi Update', 'unit_id' => $unit->id, 'framework_id' => $fw->id]);
+        $entry = ChecklistEntry::create([
+            'session_id' => $session->id, 'control_id' => $control->id, 'unit_id' => $unit->id,
+            'pic_id' => $pic->id, 'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'admin_id' => $admin->id, 'tanggal_verifikasi' => now(), 'catatan_admin' => 'Perbaiki klausul ini',
+        ]);
+
+        $this->actingAs($pic)
+            ->patchJson("/admin/pic/checklist-entries/{$entry->id}", [
+                'status' => ChecklistEntry::STATUS_COMPLIANT,
+            ])
+            ->assertOk();
+
+        $fresh = $entry->fresh();
+        $this->assertSame(ChecklistEntry::STATUS_COMPLIANT, $fresh->status);
+        $this->assertNull($fresh->tanggal_verifikasi);
+        $this->assertNull($fresh->catatan_admin);
+        $this->assertNull($fresh->admin_id);
     }
 }

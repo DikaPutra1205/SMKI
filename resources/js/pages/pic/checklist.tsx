@@ -95,7 +95,7 @@ export default function Assessments({ sessions, user_unit }: AssessmentsProps) {
                     <button
                         type="button"
                         onClick={() => setShowModal(true)}
-                        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
+                        className="bg-primary hover:bg-primary-700 inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors"
                     >
                         <Plus className="h-4 w-4" />
                         Buat Assessment Baru
@@ -121,7 +121,7 @@ export default function Assessments({ sessions, user_unit }: AssessmentsProps) {
                                 key={s.id}
                                 type="button"
                                 onClick={() => router.get(`/admin/pic/checklist/${s.id}`)}
-                                className="group flex flex-col rounded-xl border border-slate-200 bg-white p-5 text-left shadow-sm transition-all hover:border-blue-200 hover:shadow-md dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-800"
+                                className="group hover:border-primary-200 dark:hover:border-primary-800 flex flex-col rounded-xl border border-slate-200 bg-white p-5 text-left shadow-sm transition-all hover:shadow-md dark:border-slate-700 dark:bg-slate-900"
                             >
                                 <div className="mb-3 flex items-start justify-between">
                                     <div className="min-w-0 flex-1">
@@ -130,7 +130,7 @@ export default function Assessments({ sessions, user_unit }: AssessmentsProps) {
                                             {s.periode ? formatPeriodeIndonesian(s.periode) : 'Tanpa Periode'}
                                         </p>
                                     </div>
-                                    <ChevronRight className="h-4 w-4 shrink-0 text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-blue-500" />
+                                    <ChevronRight className="group-hover:text-primary h-4 w-4 shrink-0 text-slate-300 transition-transform group-hover:translate-x-0.5" />
                                 </div>
 
                                 <div className="mb-3">
@@ -138,7 +138,7 @@ export default function Assessments({ sessions, user_unit }: AssessmentsProps) {
                                         <span className="text-xs text-slate-500">
                                             {completed}/{total} Kontrol
                                         </span>
-                                        <span className="text-xs font-bold text-blue-600">{pct}%</span>
+                                        <span className="text-primary text-xs font-bold">{pct}%</span>
                                     </div>
                                     <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                                         {compliantPct > 0 && (
@@ -240,7 +240,7 @@ function CreateModal({ onClose, userUnit }: { onClose: () => void; userUnit: Wor
                             value={data.konteks_penilaian}
                             onChange={(e) => setData('konteks_penilaian', e.target.value)}
                             placeholder="Kepatuhan Keamanan Informasi"
-                            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 placeholder-slate-400 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                            className="focus:border-primary focus:ring-primary w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 placeholder-slate-400 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
                             required
                         />
                         {errors.konteks_penilaian && <p className="mt-1 text-xs text-red-500">{errors.konteks_penilaian}</p>}
@@ -252,7 +252,7 @@ function CreateModal({ onClose, userUnit }: { onClose: () => void; userUnit: Wor
                             <select
                                 value={selectedMonth >= 0 ? selectedMonth : ''}
                                 onChange={(e) => handleMonthChange(parseInt(e.target.value))}
-                                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                                className="focus:border-primary focus:ring-primary w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
                             >
                                 <option value="">Pilih bulan</option>
                                 {MONTHS.map((m, i) => (
@@ -267,7 +267,7 @@ function CreateModal({ onClose, userUnit }: { onClose: () => void; userUnit: Wor
                             <select
                                 value={selectedYear}
                                 onChange={(e) => handleYearChange(parseInt(e.target.value))}
-                                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                                className="focus:border-primary focus:ring-primary w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
                             >
                                 {[currentYear - 1, currentYear, currentYear + 1].map((y) => (
                                     <option key={y} value={y}>
@@ -285,7 +285,7 @@ function CreateModal({ onClose, userUnit }: { onClose: () => void; userUnit: Wor
                             value={data.periode || ''}
                             onChange={(e) => setData('periode', e.target.value)}
                             placeholder="Januari 2026"
-                            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 placeholder-slate-400 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                            className="focus:border-primary focus:ring-primary w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 placeholder-slate-400 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
                         />
                         {errors.periode && <p className="mt-1 text-xs text-red-500">{errors.periode}</p>}
                     </div>
@@ -301,7 +301,7 @@ function CreateModal({ onClose, userUnit }: { onClose: () => void; userUnit: Wor
                         <button
                             type="submit"
                             disabled={processing || !data.konteks_penilaian}
-                            className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50"
+                            className="bg-primary hover:bg-primary-700 rounded-lg px-5 py-2 text-sm font-semibold text-white shadow-sm transition-colors disabled:opacity-50"
                         >
                             {processing ? 'Membuat...' : 'Buat Assessment'}
                         </button>

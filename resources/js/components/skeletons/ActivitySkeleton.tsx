@@ -1,6 +1,6 @@
 export function ActivitySkeleton({ count = 5 }: { count?: number }) {
     return (
-        <div className="space-y-4 animate-pulse">
+        <div className="animate-pulse space-y-4">
             {Array.from({ length: count }).map((_, i) => (
                 <div key={i} className="flex items-start gap-3">
                     <div className="mt-0.5 h-8 w-8 shrink-0 rounded-full bg-slate-200 dark:bg-slate-700" />
