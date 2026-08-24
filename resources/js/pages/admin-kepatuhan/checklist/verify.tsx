@@ -138,10 +138,10 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
     const form = useForm({ status: '', admin_notes: '' });
 
     useEffect(() => {
-        setAdminNote(entry?.catatan_admin || '');
+        setAdminNote(entry?.tanggal_verifikasi ? (entry?.catatan_admin || '') : '');
         setNoteError(null);
         setConfirmAction(null);
-    }, [entry?.id, entry?.catatan_admin]);
+    }, [entry?.id, entry?.catatan_admin, entry?.tanggal_verifikasi]);
 
     useEffect(() => {
         if (flash?.message) {

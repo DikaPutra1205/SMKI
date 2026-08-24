@@ -293,6 +293,42 @@ class ChecklistSessionApiTest extends TestCase
             ->assertSessionHas('flash.type', 'success');
     }
 
+    public function test_web_resubmit_clears_verification_and_admin_notes(): void
+    {
+        extract($this->setupData());
+
+        $session = ChecklistSession::create([
+            'konteks_penilaian' => 'Sesi Resubmit Test',
+            'unit_id' => $unit->id,
+            'framework_id' => $fw->id,
+            'status' => 'in_progress',
+        ]);
+
+        $entry = ChecklistEntry::create([
+            'session_id' => $session->id,
+            'control_id' => $control1->id,
+            'unit_id' => $unit->id,
+            'pic_id' => $pic->id,
+            'admin_id' => $admin->id,
+            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'catatan' => 'Sudah diperbaiki sesuai catatan admin.',
+            'catatan_admin' => 'Tolak sebelumnya: SOP belum disahkan.',
+            'tanggal_verifikasi' => now()->subDay(),
+        ]);
+
+        $this->actingAs($pic)
+            ->from('/admin/pic/checklist')
+            ->post("/admin/pic/checklist/{$session->id}/submit")
+            ->assertRedirect('/admin/pic/checklist')
+            ->assertSessionHas('flash.type', 'success');
+
+        $fresh = $entry->fresh();
+        $this->assertNotNull($fresh->tanggal_input);
+        $this->assertNull($fresh->tanggal_verifikasi);
+        $this->assertNull($fresh->catatan_admin);
+        $this->assertNull($fresh->admin_id);
+    }
+
     public function test_closed_session_locks_checklist_entries_from_updates(): void
     {
         extract($this->setupData());

@@ -246,11 +246,13 @@ class ChecklistSessionController extends Controller
                 ->with('flash', ['type' => 'error', 'message' => "{$incomplete} kontrol belum diisi catatan untuk status Sebagian Patuh/Ketidaksesuaian/Tidak Berlaku."]);
         }
 
-        // Mark all entries with tanggal_input
+        // Mark all entries with tanggal_input and reset verification state for submission
         $checklistSession->entries()
-            ->whereNull('tanggal_input')
             ->update([
                 'tanggal_input' => now(),
+                'tanggal_verifikasi' => null,
+                'catatan_admin' => null,
+                'admin_id' => null,
             ]);
 
         $checklistSession->update([
