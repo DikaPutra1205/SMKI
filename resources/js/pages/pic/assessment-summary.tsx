@@ -1,4 +1,4 @@
-﻿import AssessmentSummarySkeleton from '@/components/skeletons/AssessmentSummarySkeleton';
+import AssessmentSummarySkeleton from '@/components/skeletons/AssessmentSummarySkeleton';
 import { usePageLoading } from '@/hooks/usePageLoading';
 import AppLayout from '@/layouts/AppLayout';
 import { assessmentStore } from '@/stores/assessmentStore';
@@ -633,7 +633,7 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
             )}
 
             {/* Submit Action */}
-            <div className="border-primary-100 from-primary-50 dark:border-navy-800 dark:from-navy-900/30 mt-10 flex flex-col items-center gap-4 rounded-2xl border bg-gradient-to-r to-indigo-50/50 p-8 dark:to-indigo-950/20">
+            <div className="border-primary-100 from-primary-50 dark:border-navy-800 dark:from-navy-900/30 to-primary-100/50 dark:to-navy-900/50 mt-10 flex flex-col items-center gap-4 rounded-2xl border bg-gradient-to-r p-8">
                 <div className="text-center">
                     <h3 className="text-lg font-bold text-slate-900 dark:text-white">Kirim Assessment untuk Verifikasi?</h3>
                     <p className="mt-1 text-sm text-slate-500">Pastikan semua data sudah benar sebelum mengirim ke pengelola kepatuhan.</p>

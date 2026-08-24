@@ -1,4 +1,4 @@
-﻿import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
@@ -254,7 +254,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                                         className={`flex h-10 w-10 items-center justify-center rounded-xl ${
                                             is27001
                                                 ? 'bg-primary-100 text-primary-700 dark:bg-navy-900/40 dark:text-primary-200'
-                                                : 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'
+                                                : 'bg-navy/10 text-navy dark:bg-navy-900/60 dark:text-primary-200'
                                         }`}
                                     >
                                         <Layers className="h-5 w-5" />
@@ -279,7 +279,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                                 </div>
                                 <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                                     <div
-                                        className={`h-full rounded-full transition-all duration-500 ${is27001 ? 'bg-primary' : 'bg-purple-600'}`}
+                                        className={`h-full rounded-full transition-all duration-500 ${is27001 ? 'bg-primary' : 'bg-navy dark:bg-primary-300'}`}
                                         style={{ width: `${Math.min(100, fw.compliance_percentage)}%` }}
                                     />
                                 </div>

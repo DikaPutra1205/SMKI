@@ -1,4 +1,4 @@
-﻿import { EmptyState } from '@/components/ui/EmptyState';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { Pagination } from '@/components/ui/Pagination';
 import { Select } from '@/components/ui/Select';
 import { SlideOver } from '@/components/ui/SlideOver';
@@ -243,7 +243,7 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                 </div>
 
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                    <div className="mb-1 flex items-center justify-between text-purple-600 dark:text-purple-400">
+                    <div className="text-navy dark:text-primary-200 mb-1 flex items-center justify-between">
                         <span className="text-xs font-semibold">Pengguna Aktif</span>
                         <Users className="h-4 w-4" />
                     </div>

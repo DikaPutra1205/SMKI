@@ -246,7 +246,7 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                 <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                     <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 dark:border-slate-800">
                         <div className="flex items-center gap-2.5">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-400">
+                            <div className="bg-navy/10 text-navy dark:bg-navy-900/60 dark:text-primary-200 flex h-8 w-8 items-center justify-center rounded-lg">
                                 <ShieldCheck className="h-4 w-4" />
                             </div>
                             <div>
@@ -254,7 +254,7 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                                 <p className="text-[11px] text-slate-500 dark:text-slate-400">Sistem Manajemen Informasi Privasi (PIMS)</p>
                             </div>
                         </div>
-                        <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-bold text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-400">
+                        <span className="bg-navy/10 text-navy dark:bg-navy-900/60 dark:text-primary-200 rounded-full px-2.5 py-0.5 text-xs font-bold">
                             {iso27701?.compliance_rate ?? 0}% Patuh
                         </span>
                     </div>
@@ -268,7 +268,7 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                         </div>
                         <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                             <div
-                                className="h-full rounded-full bg-indigo-600 transition-all duration-500"
+                                className="bg-navy dark:bg-primary-300 h-full rounded-full transition-all duration-500"
                                 style={{ width: `${iso27701?.compliance_rate ?? 0}%` }}
                             />
                         </div>
