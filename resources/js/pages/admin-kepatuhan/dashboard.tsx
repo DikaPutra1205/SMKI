@@ -1,6 +1,6 @@
+import ComplianceAreaChart, { type TrendPoint } from '@/components/dashboards/ComplianceAreaChart';
 import { ActivitySkeleton } from '@/components/skeletons/ActivitySkeleton';
 import { ChartSkeleton } from '@/components/skeletons/ChartSkeleton';
-import TrendAreaChart from '@/components/dashboards/TrendAreaChart';
 import AppLayout from '@/layouts/AppLayout';
 import { formatDateIndonesian, formatDateTimeIndonesian } from '@/lib/utils';
 import { type SharedData } from '@/types';
@@ -20,13 +20,7 @@ interface FrameworkBreakdown {
     total_controls: number;
 }
 
-interface TrendPoint {
-    period: string;
-    label: string;
-    iso27001_rate: number;
-    iso27701_rate: number;
-    overall_rate: number;
-}
+// TrendPoint is imported from ComplianceAreaChart component
 
 interface RecentActivity {
     id: number;
@@ -51,8 +45,6 @@ interface AdminDashboardProps {
     recent_activities?: RecentActivity[];
 }
 
-const FALLBACK_TREND_LABELS = ['Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu'];
-
 export default function Dashboard({ summary, trends = [], recent_activities = [] }: AdminDashboardProps) {
     const { auth } = usePage<SharedData>().props;
     const userName = auth.user?.name || 'Administrator';
@@ -76,10 +68,7 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
         return `${dayName}, ${formatDateIndonesian(d)}`;
     }, []);
 
-    // ── Trend Chart Data ──────────────────────────────────────────────────────
-    const trendPoints = trends.length > 0 ? trends : [];
-    const trendLabels = trendPoints.length > 0 ? trendPoints.map((p) => p.label) : FALLBACK_TREND_LABELS;
-    const trendValues = trendPoints.length > 0 ? trendPoints.map((p) => p.overall_rate) : [65, 70, 72, 75, 78, overallRate || 80];
+    // Trend data langsung dari backend (tidak perlu kalkulasi manual)
 
     const totalRisks = (risks.critical || 0) + (risks.high || 0) + (risks.medium || 0) + (risks.low || 0);
 
@@ -91,7 +80,7 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold tracking-wide text-blue-600 uppercase dark:text-blue-400">{currentDateFormatted}</span>
+                        <span className="text-primary dark:text-primary-200 text-xs font-bold tracking-wide uppercase">{currentDateFormatted}</span>
                     </div>
                     <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Selamat Datang, {userName}</h1>
                     <p className="mt-0.5 text-xs text-slate-500 sm:text-sm dark:text-slate-400">
@@ -109,7 +98,7 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                     </Link>
                     <Link
                         href="/admin/kepatuhan/checklist/verify"
-                        className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-blue-500 active:scale-95"
+                        className="bg-primary hover:bg-primary inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all active:scale-95"
                     >
                         <FileCheck className="h-4 w-4" />
                         Verifikasi Penilaian
@@ -154,14 +143,14 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                 <div className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                     <div className="flex items-center justify-between">
                         <span className="text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">Standar Terdaftar</span>
-                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400">
+                        <div className="bg-primary-50 text-primary dark:bg-navy-900/50 dark:text-primary-200 flex h-9 w-9 items-center justify-center rounded-xl">
                             <ShieldCheck className="h-4.5 w-4.5" />
                         </div>
                     </div>
                     <div className="mt-3">
                         <div className="flex items-baseline gap-2">
                             <span className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{frameworks.length || 2}</span>
-                            <span className="rounded-md bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">
+                            <span className="bg-primary-50 text-primary-700 dark:bg-navy-900/60 dark:text-primary-200 rounded-md px-2 py-0.5 text-xs font-semibold">
                                 Standar Aktif
                             </span>
                         </div>
@@ -226,7 +215,7 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                 <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                     <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 dark:border-slate-800">
                         <div className="flex items-center gap-2.5">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400">
+                            <div className="bg-primary-50 text-primary dark:bg-navy-900/50 dark:text-primary-200 flex h-8 w-8 items-center justify-center rounded-lg">
                                 <Shield className="h-4 w-4" />
                             </div>
                             <div>
@@ -248,7 +237,7 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                         </div>
                         <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                             <div
-                                className="h-full rounded-full bg-blue-600 transition-all duration-500"
+                                className="bg-primary h-full rounded-full transition-all duration-500"
                                 style={{ width: `${iso27001?.compliance_rate ?? 0}%` }}
                             />
                         </div>
@@ -259,7 +248,7 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                 <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                     <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 dark:border-slate-800">
                         <div className="flex items-center gap-2.5">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-400">
+                            <div className="bg-primary-100 text-primary-800 dark:bg-primary-950/60 dark:text-primary-300 flex h-8 w-8 items-center justify-center rounded-lg">
                                 <ShieldCheck className="h-4 w-4" />
                             </div>
                             <div>
@@ -267,7 +256,7 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                                 <p className="text-[11px] text-slate-500 dark:text-slate-400">Sistem Manajemen Informasi Privasi (PIMS)</p>
                             </div>
                         </div>
-                        <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-bold text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-400">
+                        <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
                             {iso27701?.compliance_rate ?? 0}% Patuh
                         </span>
                     </div>
@@ -281,7 +270,7 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                         </div>
                         <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                             <div
-                                className="h-full rounded-full bg-indigo-600 transition-all duration-500"
+                                className="bg-primary-800 dark:bg-primary-400 h-full rounded-full transition-all duration-500"
                                 style={{ width: `${iso27701?.compliance_rate ?? 0}%` }}
                             />
                         </div>
@@ -291,22 +280,33 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
 
             {/* Row 3: Tren Kepatuhan & Asesmen Risiko Organisasi */}
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-7">
-                {/* Tren Kepatuhan (SVG Area Chart) */}
+                {/* Tren Kepatuhan — Recharts AreaChart */}
                 <div className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm lg:col-span-4 dark:border-slate-800 dark:bg-slate-900">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 dark:border-slate-800">
+                    <div className="flex items-start justify-between border-b border-slate-100 pb-3.5 dark:border-slate-800">
                         <div>
                             <h3 className="text-sm font-bold text-slate-900 dark:text-white">Tren Kepatuhan Organisasi</h3>
                             <p className="text-xs text-slate-500 dark:text-slate-400">Riwayat perkembangan kepatuhan bulanan</p>
                         </div>
-                        <div className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400">
-                            <span className="h-2.5 w-2.5 rounded-full bg-blue-600" />
-                            Rata-rata Kepatuhan (%)
+                        {/* Legend */}
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                            <span className="flex items-center gap-1.5">
+                                <span className="h-2 w-4 rounded-full" style={{ background: '#0284c7' }} />
+                                Rata-rata
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                                <span className="h-0.5 w-4" style={{ borderTop: '2px dashed #196ecd', display: 'block' }} />
+                                ISO 27001
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                                <span className="h-0.5 w-4" style={{ borderTop: '2px dashed #0f4c81', display: 'block' }} />
+                                ISO 27701
+                            </span>
                         </div>
                     </div>
 
                     <div className="pt-4">
-                        <Deferred data="trends" fallback={<ChartSkeleton height="h-[250px]" />}>
-                            <TrendAreaChart labels={trendLabels} values={trendValues} />
+                        <Deferred data="trends" fallback={<ChartSkeleton height="h-[200px]" />}>
+                            <ComplianceAreaChart trends={trends} />
                         </Deferred>
                     </div>
                 </div>
@@ -320,7 +320,7 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                         </div>
                         <Link
                             href="/admin/kepatuhan/risks"
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-500 dark:text-blue-400"
+                            className="text-primary hover:text-primary dark:text-primary-200 inline-flex items-center gap-1 text-xs font-semibold"
                         >
                             Buka Register
                             <ArrowUpRight className="h-3.5 w-3.5" />
@@ -365,15 +365,15 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                         {/* Medium */}
                         <div>
                             <div className="flex items-center justify-between text-xs font-medium">
-                                <span className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
-                                    <span className="h-2 w-2 rounded-full bg-blue-500" />
+                                <span className="text-primary dark:text-primary-200 flex items-center gap-1.5">
+                                    <span className="bg-primary h-2 w-2 rounded-full" />
                                     Risiko Sedang
                                 </span>
                                 <span className="font-bold text-slate-900 dark:text-white">{risks.medium || 0}</span>
                             </div>
                             <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                                 <div
-                                    className="h-full rounded-full bg-blue-500 transition-all duration-300"
+                                    className="bg-primary h-full rounded-full transition-all duration-300"
                                     style={{ width: `${totalRisks ? ((risks.medium || 0) / totalRisks) * 100 : 0}%` }}
                                 />
                             </div>
@@ -418,7 +418,7 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                             <h3 className="text-sm font-bold text-slate-900 dark:text-white">Tindakan Prioritas</h3>
                             <p className="text-xs text-slate-500 dark:text-slate-400">Item yang membutuhkan persetujuan atau tindak lanjut</p>
                         </div>
-                        <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-700 dark:bg-blue-950/60 dark:text-blue-400">
+                        <span className="bg-primary-50 text-primary-700 dark:bg-navy-900/60 dark:text-primary-200 rounded-full px-2.5 py-0.5 text-xs font-bold">
                             {findings.total_active + risks.total_active} Item
                         </span>
                     </div>
@@ -426,13 +426,13 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                     <div className="mt-3 space-y-3">
                         <Link
                             href="/admin/kepatuhan/checklist/verify"
-                            className="group flex items-start gap-3 rounded-xl border border-slate-200/70 p-3.5 transition-colors hover:border-blue-300 hover:bg-blue-50/30 dark:border-slate-800 dark:hover:border-slate-700 dark:hover:bg-slate-800/40"
+                            className="group hover:border-primary-300 hover:bg-primary-50/30 flex items-start gap-3 rounded-xl border border-slate-200/70 p-3.5 transition-colors dark:border-slate-800 dark:hover:border-slate-700 dark:hover:bg-slate-800/40"
                         >
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400">
+                            <div className="bg-primary-50 text-primary dark:bg-navy-900/50 dark:text-primary-200 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl">
                                 <FileCheck className="h-4.5 w-4.5" />
                             </div>
                             <div className="min-w-0 flex-1">
-                                <h4 className="text-xs font-bold text-slate-900 group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400">
+                                <h4 className="group-hover:text-primary dark:group-hover:text-primary-300 text-xs font-bold text-slate-900 dark:text-white">
                                     Verifikasi Pengajuan Checklist PIC
                                 </h4>
                                 <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
@@ -469,7 +469,7 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                         </div>
                         <Link
                             href="/audit-logs"
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-500 dark:text-blue-400"
+                            className="text-primary hover:text-primary dark:text-primary-200 inline-flex items-center gap-1 text-xs font-semibold"
                         >
                             Lihat Semua
                             <ArrowUpRight className="h-3.5 w-3.5" />
@@ -500,7 +500,9 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                                                 <td className="px-3 py-3 text-slate-700 dark:text-slate-300">
                                                     <span className="font-medium">{act.action}</span>
                                                     {act.entity_name && (
-                                                        <span className="block text-[11px] text-slate-400 dark:text-slate-500">{act.entity_name}</span>
+                                                        <span className="block text-[11px] text-slate-400 dark:text-slate-500">
+                                                            {act.entity_name}
+                                                        </span>
                                                     )}
                                                 </td>
                                                 <td className="py-3 pl-3 text-right whitespace-nowrap">

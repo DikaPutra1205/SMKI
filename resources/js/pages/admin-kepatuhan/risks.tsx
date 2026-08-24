@@ -1,4 +1,4 @@
-import { EmptyState } from '@/components/ui/EmptyState';
+﻿import { EmptyState } from '@/components/ui/EmptyState';
 import { Pagination } from '@/components/ui/Pagination';
 import { Select } from '@/components/ui/Select';
 import { SlideOver } from '@/components/ui/SlideOver';
@@ -147,8 +147,8 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
             icon: ShieldAlert,
             accent: 'blue',
             badge: `${items.length} di Halaman Ini`,
-            borderClass: selectedLevel === 'all' ? 'ring-2 ring-blue-500 border-blue-500' : '',
-            iconClass: 'bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400',
+            borderClass: selectedLevel === 'all' ? 'ring-2 ring-primary border-primary' : '',
+            iconClass: 'bg-primary-50 text-primary dark:bg-navy-900/60 dark:text-primary-200',
         },
         {
             key: 'critical',
@@ -226,8 +226,8 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
         }
         if (status === 'accepted') {
             return (
-                <span className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700 dark:border-blue-800/60 dark:bg-blue-950/40 dark:text-blue-400">
-                    <ShieldCheck className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                <span className="border-primary-200 bg-primary-50 text-primary-700 dark:border-primary-800/60 dark:bg-navy-900/40 dark:text-primary-200 inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-semibold">
+                    <ShieldCheck className="text-primary dark:text-primary-200 h-3.5 w-3.5" />
                     Risiko Diterima (Accepted)
                 </span>
             );
@@ -246,13 +246,11 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
 
             <div className="space-y-6">
                 {/* Header Banner */}
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between border-b border-slate-200/80 pb-5 dark:border-slate-800">
+                <div className="flex flex-col gap-4 border-b border-slate-200/80 pb-5 sm:flex-row sm:items-end sm:justify-between dark:border-slate-800">
                     <div>
                         <div className="flex items-center gap-2">
-                            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                                {t('risks.title')}
-                            </h1>
-                            <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-700 border border-blue-200 dark:bg-blue-950/60 dark:border-blue-800 dark:text-blue-300">
+                            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{t('risks.title')}</h1>
+                            <span className="bg-primary-50 text-primary-700 border-primary-200 dark:bg-navy-900/60 dark:border-primary-800 dark:text-primary-200 rounded-full border px-2.5 py-0.5 text-xs font-bold">
                                 {totalRisks} Risiko Terdaftar
                             </span>
                         </div>
@@ -264,7 +262,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
                     <button
                         type="button"
                         disabled
-                        className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-100/80 px-4 py-2 text-xs font-semibold text-slate-400 cursor-not-allowed dark:border-slate-800 dark:bg-slate-800 dark:text-slate-500"
+                        className="inline-flex cursor-not-allowed items-center gap-2 rounded-xl border border-slate-200 bg-slate-100/80 px-4 py-2 text-xs font-semibold text-slate-400 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-500"
                         title="Pendaftaran risiko baru dilakukan melalui verifikasi temuan audit"
                     >
                         <Plus className="h-4 w-4" />
@@ -287,22 +285,18 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
                                         setSelectedLevel(selectedLevel === kpi.key ? 'all' : kpi.key);
                                     }
                                 }}
-                                className={`flex flex-col text-left rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition-all hover:border-blue-400 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 ${kpi.borderClass}`}
+                                className={`hover:border-primary flex flex-col rounded-2xl border border-slate-200/80 bg-white p-5 text-left shadow-sm transition-all hover:shadow-md dark:border-slate-800 dark:bg-slate-900 ${kpi.borderClass}`}
                             >
-                                <div className="flex items-center justify-between w-full">
+                                <div className="flex w-full items-center justify-between">
                                     <div className={`grid h-10 w-10 place-items-center rounded-xl ${kpi.iconClass}`}>
                                         <Icon className="h-5 w-5" />
                                     </div>
-                                    <span className="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
+                                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500 dark:bg-slate-800">
                                         {kpi.badge}
                                     </span>
                                 </div>
-                                <div className="mt-4 text-2xl font-bold text-slate-900 dark:text-white">
-                                    {kpi.value}
-                                </div>
-                                <div className="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400">
-                                    {kpi.label}
-                                </div>
+                                <div className="mt-4 text-2xl font-bold text-slate-900 dark:text-white">{kpi.value}</div>
+                                <div className="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400">{kpi.label}</div>
                             </button>
                         );
                     })}
@@ -312,7 +306,9 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
                 <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
                     <div className="border-b border-slate-100 px-6 py-4 dark:border-slate-800">
                         <h3 className="text-sm font-bold text-slate-900 dark:text-white">Daftar Register Risiko Keamanan Informasi</h3>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">Seluruh risiko yang teridentifikasi dari gap pemenuhan kontrol SMKI</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                            Seluruh risiko yang teridentifikasi dari gap pemenuhan kontrol SMKI
+                        </p>
                     </div>
 
                     {/* Filter Bar */}
@@ -324,7 +320,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Cari deskripsi risiko, nomor klausul, atau pemilik risiko..."
-                                className="h-10 w-full rounded-xl border border-slate-200 bg-white py-2 pr-4 pl-9 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
+                                className="focus:border-primary focus:ring-primary/20 h-10 w-full rounded-xl border border-slate-200 bg-white py-2 pr-4 pl-9 text-xs text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:outline-none sm:text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
                             />
                         </div>
 
@@ -358,7 +354,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
 
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-xs sm:text-sm">
-                            <thead className="border-b border-slate-100 bg-slate-50/70 text-[11px] font-bold tracking-wider uppercase text-slate-500 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400">
+                            <thead className="border-b border-slate-100 bg-slate-50/70 text-[11px] font-bold tracking-wider text-slate-500 uppercase dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400">
                                 <tr>
                                     <th scope="col" className="px-5 py-3.5">
                                         {t('risks.code')}
@@ -383,17 +379,15 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
                             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                                 {items.length > 0 ? (
                                     items.map((r) => (
-                                        <tr key={r.id} className="hover:bg-slate-50/60 transition-colors dark:hover:bg-slate-800/40">
+                                        <tr key={r.id} className="transition-colors hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
                                             <td className="px-5 py-4 whitespace-nowrap">
-                                                <code className="text-xs font-bold text-blue-600 dark:text-blue-400">
-                                                    RSK-{riskRef(r)}
-                                                </code>
+                                                <code className="text-primary dark:text-primary-200 text-xs font-bold">RSK-{riskRef(r)}</code>
                                             </td>
                                             <td className="px-5 py-4">
                                                 <button
                                                     type="button"
                                                     onClick={() => setDetailTarget(r)}
-                                                    className="font-semibold text-slate-900 hover:text-blue-600 text-left transition-colors dark:text-white dark:hover:text-blue-400 line-clamp-1"
+                                                    className="hover:text-primary dark:hover:text-primary-300 line-clamp-1 text-left font-semibold text-slate-900 transition-colors dark:text-white"
                                                 >
                                                     {r.control?.judul || t('common.noData')}
                                                 </button>
@@ -401,33 +395,27 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
                                                     <span className="font-semibold text-slate-700 dark:text-slate-300">
                                                         {r.control?.kode_klausul}
                                                     </span>
-                                                    {r.control?.framework && (
-                                                        <span>· {r.control.framework.nama}</span>
-                                                    )}
+                                                    {r.control?.framework && <span>· {r.control.framework.nama}</span>}
                                                 </div>
                                                 {r.mitigation_plan || r.rencana_mitigasi ? (
-                                                    <p className="mt-1 text-[11px] text-slate-400 line-clamp-1 italic">
+                                                    <p className="mt-1 line-clamp-1 text-[11px] text-slate-400 italic">
                                                         Mitigasi: {r.mitigation_plan || r.rencana_mitigasi}
                                                     </p>
                                                 ) : null}
                                             </td>
-                                            <td className="px-5 py-4 whitespace-nowrap">
-                                                {getRiskLevelBadge(r.risk_level || r.level_risiko)}
-                                            </td>
+                                            <td className="px-5 py-4 whitespace-nowrap">{getRiskLevelBadge(r.risk_level || r.level_risiko)}</td>
                                             <td className="px-5 py-4 whitespace-nowrap text-slate-700 dark:text-slate-300">
                                                 <div className="flex items-center gap-1.5">
                                                     <UserCheck className="h-3.5 w-3.5 text-slate-400" />
                                                     <span>{r.risk_owner || r.pemilik_risiko || '—'}</span>
                                                 </div>
                                             </td>
-                                            <td className="px-5 py-4 whitespace-nowrap">
-                                                {getMitigationStatus(r.status)}
-                                            </td>
-                                            <td className="px-5 py-4 whitespace-nowrap text-right">
+                                            <td className="px-5 py-4 whitespace-nowrap">{getMitigationStatus(r.status)}</td>
+                                            <td className="px-5 py-4 text-right whitespace-nowrap">
                                                 <button
                                                     type="button"
                                                     onClick={() => setDetailTarget(r)}
-                                                    className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                                                    className="text-primary hover:text-primary-700 dark:text-primary-200 dark:hover:text-primary-200 inline-flex items-center gap-1 text-xs font-semibold"
                                                 >
                                                     <Eye className="h-3.5 w-3.5" />
                                                     Detail
@@ -465,7 +453,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
                     detailTarget ? (
                         <div className="flex items-center gap-2.5">
                             <span>Detail Risiko</span>
-                            <code className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-400">
+                            <code className="text-primary bg-primary-50 border-primary-200 dark:bg-navy-900 dark:border-primary-800 dark:text-primary-200 rounded border px-2 py-0.5 text-xs font-bold">
                                 RSK-{riskRef(detailTarget)}
                             </code>
                         </div>
@@ -480,7 +468,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
                     <button
                         type="button"
                         onClick={() => setDetailTarget(null)}
-                        className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 transition-colors"
+                        className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                     >
                         Tutup Panel
                     </button>
@@ -492,57 +480,58 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
                         <div className="grid grid-cols-2 gap-3">
                             <div className="rounded-xl border border-slate-200/80 bg-white p-3.5 dark:border-slate-800 dark:bg-slate-900">
                                 <span className="text-[11px] font-medium text-slate-400">Level Keparahan Risiko</span>
-                                <div className="mt-2">
-                                    {getRiskLevelBadge(detailTarget.risk_level || detailTarget.level_risiko)}
-                                </div>
+                                <div className="mt-2">{getRiskLevelBadge(detailTarget.risk_level || detailTarget.level_risiko)}</div>
                             </div>
 
                             <div className="rounded-xl border border-slate-200/80 bg-white p-3.5 dark:border-slate-800 dark:bg-slate-900">
                                 <span className="text-[11px] font-medium text-slate-400">Status Mitigasi</span>
-                                <div className="mt-2">
-                                    {getMitigationStatus(detailTarget.status)}
-                                </div>
+                                <div className="mt-2">{getMitigationStatus(detailTarget.status)}</div>
                             </div>
                         </div>
 
                         {/* Control Klausul Association */}
-                        <div className="rounded-xl border border-slate-200/80 bg-white p-4 space-y-3 dark:border-slate-800 dark:bg-slate-900">
-                            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                                <Shield className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        <div className="space-y-3 rounded-xl border border-slate-200/80 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                            <div className="flex items-center gap-2 text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
+                                <Shield className="text-primary dark:text-primary-200 h-4 w-4" />
                                 <span>Kontrol SMKI Terkait</span>
                             </div>
                             <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-800/60">
-                                <div className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                                <div className="text-primary dark:text-primary-200 text-xs font-bold">
                                     {detailTarget.control?.kode_klausul}
                                     {detailTarget.control?.framework && (
-                                        <span className="text-slate-500 font-normal"> · {detailTarget.control.framework.nama} ({detailTarget.control.framework.versi})</span>
+                                        <span className="font-normal text-slate-500">
+                                            {' '}
+                                            · {detailTarget.control.framework.nama} ({detailTarget.control.framework.versi})
+                                        </span>
                                     )}
                                 </div>
-                                <div className="mt-1 text-sm font-semibold text-slate-900 dark:text-white leading-relaxed">
+                                <div className="mt-1 text-sm leading-relaxed font-semibold text-slate-900 dark:text-white">
                                     {detailTarget.control?.judul || '—'}
                                 </div>
                             </div>
                         </div>
 
                         {/* Risk Owner Information */}
-                        <div className="rounded-xl border border-slate-200/80 bg-white p-4 space-y-2 dark:border-slate-800 dark:bg-slate-900">
-                            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        <div className="space-y-2 rounded-xl border border-slate-200/80 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                            <div className="flex items-center gap-2 text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
                                 <UserCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                                 <span>Pemilik Risiko (Risk Owner)</span>
                             </div>
-                            <p className="text-xs font-semibold text-slate-900 dark:text-white bg-slate-50 p-3 rounded-lg dark:bg-slate-800/60">
+                            <p className="rounded-lg bg-slate-50 p-3 text-xs font-semibold text-slate-900 dark:bg-slate-800/60 dark:text-white">
                                 {detailTarget.risk_owner || detailTarget.pemilik_risiko || 'Belum ditugaskan'}
                             </p>
                         </div>
 
                         {/* Mitigation Plan & Actions */}
-                        <div className="rounded-xl border border-slate-200/80 bg-white p-4 space-y-2 dark:border-slate-800 dark:bg-slate-900">
-                            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        <div className="space-y-2 rounded-xl border border-slate-200/80 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                            <div className="flex items-center gap-2 text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
                                 <FileText className="h-4 w-4 text-amber-500" />
                                 <span>Rencana Tindakan Mitigasi</span>
                             </div>
-                            <p className="text-xs leading-relaxed text-slate-700 bg-slate-50 p-3 rounded-lg dark:bg-slate-800/60 dark:text-slate-300">
-                                {detailTarget.mitigation_plan || detailTarget.rencana_mitigasi || 'Belum ada rencana perlakuan risiko yang didokumentasikan.'}
+                            <p className="rounded-lg bg-slate-50 p-3 text-xs leading-relaxed text-slate-700 dark:bg-slate-800/60 dark:text-slate-300">
+                                {detailTarget.mitigation_plan ||
+                                    detailTarget.rencana_mitigasi ||
+                                    'Belum ada rencana perlakuan risiko yang didokumentasikan.'}
                             </p>
                         </div>
 
@@ -558,4 +547,3 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
         </AppLayout>
     );
 }
-

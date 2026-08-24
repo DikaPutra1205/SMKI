@@ -131,7 +131,12 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
     const [detailTarget, setDetailTarget] = useState<FindingItem | null>(null);
     const isFirstRender = useRef(true);
 
-    const { data: updateData, setData: setUpdateData, put: submitUpdate, processing: updateProcessing } = useForm({
+    const {
+        data: updateData,
+        setData: setUpdateData,
+        put: submitUpdate,
+        processing: updateProcessing,
+    } = useForm({
         status: '',
         category: '',
         deadline: '',
@@ -235,8 +240,8 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
         }
 
         return (
-            <span className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700 dark:border-blue-800/60 dark:bg-blue-950/40 dark:text-blue-400">
-                <Calendar className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+            <span className="border-primary-200 bg-primary-50 text-primary-700 dark:border-primary-800/60 dark:bg-navy-900/40 dark:text-primary-200 inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-semibold">
+                <Calendar className="text-primary dark:text-primary-200 h-3.5 w-3.5" />
                 {remaining === 0 ? t('temuan.deadlineToday') : t('temuan.leftDays', remaining)}
             </span>
         );
@@ -261,9 +266,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
 
         return (
             <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-900/60">
-                <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
-                    Tahapan Progres Temuan
-                </div>
+                <div className="mb-3 text-xs font-semibold tracking-wider text-slate-500 uppercase dark:text-slate-400">Tahapan Progres Temuan</div>
                 <div className="grid grid-cols-3 gap-2">
                     {steps.map((step, idx) => {
                         const isDone = idx < currentIndex;
@@ -271,26 +274,26 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                         return (
                             <div
                                 key={step.id}
-                                className={`flex flex-col p-2.5 rounded-lg border text-left transition-all ${
+                                className={`flex flex-col rounded-lg border p-2.5 text-left transition-all ${
                                     isCurrent
-                                        ? 'border-blue-500 bg-blue-50/80 dark:border-blue-600 dark:bg-blue-950/50 shadow-sm'
+                                        ? 'border-primary bg-primary-50/80 dark:border-primary dark:bg-navy-900/50 shadow-sm'
                                         : isDone
                                           ? 'border-emerald-200 bg-emerald-50/60 dark:border-emerald-900/40 dark:bg-emerald-950/30'
-                                          : 'border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 opacity-60'
+                                          : 'border-slate-200 bg-white opacity-60 dark:border-slate-800 dark:bg-slate-900'
                                 }`}
                             >
                                 <div className="flex items-center gap-1.5">
                                     {isDone ? (
-                                        <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
                                     ) : isCurrent ? (
-                                        <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                                        <Clock className="text-primary dark:text-primary-200 h-4 w-4 shrink-0" />
                                     ) : (
-                                        <div className="h-3.5 w-3.5 rounded-full border-2 border-slate-300 dark:border-slate-600 shrink-0" />
+                                        <div className="h-3.5 w-3.5 shrink-0 rounded-full border-2 border-slate-300 dark:border-slate-600" />
                                     )}
                                     <span
                                         className={`text-xs font-bold ${
                                             isCurrent
-                                                ? 'text-blue-900 dark:text-blue-200'
+                                                ? 'text-navy dark:text-primary-200'
                                                 : isDone
                                                   ? 'text-emerald-900 dark:text-emerald-200'
                                                   : 'text-slate-600 dark:text-slate-400'
@@ -299,9 +302,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                                         {step.label}
                                     </span>
                                 </div>
-                                <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 line-clamp-1">
-                                    {step.desc}
-                                </span>
+                                <span className="mt-1 line-clamp-1 text-[10px] text-slate-500 dark:text-slate-400">{step.desc}</span>
                             </div>
                         );
                     })}
@@ -323,9 +324,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                         <div className="mb-3.5 flex items-center justify-between px-1">
                             <div className="flex items-center gap-2">
                                 <span className={`h-2.5 w-2.5 rounded-full ${col.dotClass}`} />
-                                <strong className="text-sm font-bold text-slate-900 dark:text-white">
-                                    {t(col.label as never)}
-                                </strong>
+                                <strong className="text-sm font-bold text-slate-900 dark:text-white">{t(col.label as never)}</strong>
                                 <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-bold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
                                     {columnItems.length}
                                 </span>
@@ -339,27 +338,21 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                                         key={f.id}
                                         type="button"
                                         onClick={() => setDetailTarget(f)}
-                                        className="group block w-full rounded-xl border border-slate-200/80 bg-white p-4 text-left shadow-sm transition-all hover:border-blue-400 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-blue-600"
+                                        className="group hover:border-primary dark:hover:border-primary block w-full rounded-xl border border-slate-200/80 bg-white p-4 text-left shadow-sm transition-all hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
                                     >
                                         <div className="flex items-center justify-between gap-2">
-                                            <code className="text-xs font-bold text-blue-600 dark:text-blue-400">
-                                                FND-{findingRef(f)}
-                                            </code>
-                                            <StatusBadge tone={SEVERITY_TONE[f.kategori] ?? 'gray'}>
-                                                {severityLabel(f.kategori)}
-                                            </StatusBadge>
+                                            <code className="text-primary dark:text-primary-200 text-xs font-bold">FND-{findingRef(f)}</code>
+                                            <StatusBadge tone={SEVERITY_TONE[f.kategori] ?? 'gray'}>{severityLabel(f.kategori)}</StatusBadge>
                                         </div>
 
-                                        <div className="mt-2.5 text-[13px] font-semibold leading-snug text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 dark:text-white dark:group-hover:text-blue-400">
+                                        <div className="group-hover:text-primary dark:group-hover:text-primary-300 mt-2.5 line-clamp-2 text-[13px] leading-snug font-semibold text-slate-900 transition-colors dark:text-white">
                                             {f.control?.judul || t('common.noData')}
                                         </div>
 
-                                        <div className="mt-2 text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                                        <div className="mt-2 flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400">
                                             <Shield className="h-3 w-3 text-slate-400" />
                                             <span>{f.control?.kode_klausul}</span>
-                                            {f.control?.framework && (
-                                                <span className="text-slate-400">· {f.control.framework.nama}</span>
-                                            )}
+                                            {f.control?.framework && <span className="text-slate-400">· {f.control.framework.nama}</span>}
                                         </div>
 
                                         <div className="mt-3 flex items-center justify-between gap-2 border-t border-slate-100 pt-2.5 text-[11px] dark:border-slate-800/80">
@@ -372,7 +365,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                                             {f.pic?.name && (
                                                 <span
                                                     title={f.pic.name}
-                                                    className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-blue-600 text-[10px] font-bold text-white shadow-sm"
+                                                    className="bg-primary grid h-6 w-6 shrink-0 place-items-center rounded-full text-[10px] font-bold text-white shadow-sm"
                                                 >
                                                     {initials(f.pic.name)}
                                                 </span>
@@ -384,9 +377,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                                 ))
                             ) : (
                                 <div className="rounded-xl border border-dashed border-slate-200 bg-white/50 p-6 text-center dark:border-slate-800 dark:bg-slate-900/50">
-                                    <span className="text-xs text-slate-400 dark:text-slate-500">
-                                        Tidak ada temuan pada kolom ini
-                                    </span>
+                                    <span className="text-xs text-slate-400 dark:text-slate-500">Tidak ada temuan pada kolom ini</span>
                                 </div>
                             )}
                         </div>
@@ -400,7 +391,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
         <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs sm:text-sm">
-                    <thead className="border-b border-slate-100 bg-slate-50/70 text-[11px] font-bold tracking-wider uppercase text-slate-500 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400">
+                    <thead className="border-b border-slate-100 bg-slate-50/70 text-[11px] font-bold tracking-wider text-slate-500 uppercase dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400">
                         <tr>
                             <th scope="col" className="px-5 py-3 text-left font-semibold">
                                 {t('temuan.ref')}
@@ -421,7 +412,8 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                                 {t('temuan.status')}
                             </th>
                             <th scope="col" className="px-5 py-3 text-left font-semibold">
-                                {t('temuan.deadline')}                            </th>
+                                {t('temuan.deadline')}{' '}
+                            </th>
                             <th scope="col" className="px-5 py-3.5 text-right">
                                 Aksi
                             </th>
@@ -430,14 +422,12 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                         {items.length > 0 ? (
                             items.map((f) => (
-                                <tr key={f.id} className="hover:bg-slate-50/60 transition-colors dark:hover:bg-slate-800/40">
+                                <tr key={f.id} className="transition-colors hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
                                     <td className="px-5 py-4 whitespace-nowrap">
-                                        <code className="text-xs font-bold text-blue-600 dark:text-blue-400">
-                                            FND-{findingRef(f)}
-                                        </code>
+                                        <code className="text-primary dark:text-primary-200 text-xs font-bold">FND-{findingRef(f)}</code>
                                     </td>
                                     <td className="px-5 py-4">
-                                        <div className="font-semibold text-slate-900 dark:text-white line-clamp-1">
+                                        <div className="line-clamp-1 font-semibold text-slate-900 dark:text-white">
                                             {f.control?.judul || t('common.noData')}
                                         </div>
                                         <div className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -445,17 +435,13 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                                         </div>
                                     </td>
                                     <td className="px-5 py-4 whitespace-nowrap">
-                                        <StatusBadge tone={SEVERITY_TONE[f.kategori] ?? 'gray'}>
-                                            {severityLabel(f.kategori)}
-                                        </StatusBadge>
+                                        <StatusBadge tone={SEVERITY_TONE[f.kategori] ?? 'gray'}>{severityLabel(f.kategori)}</StatusBadge>
                                     </td>
-                                    <td className="px-5 py-4 whitespace-nowrap text-slate-700 dark:text-slate-300">
-                                        {f.unit?.nama || '—'}
-                                    </td>
+                                    <td className="px-5 py-4 whitespace-nowrap text-slate-700 dark:text-slate-300">{f.unit?.nama || '—'}</td>
                                     <td className="px-5 py-4 whitespace-nowrap text-slate-700 dark:text-slate-300">
                                         {f.pic?.name ? (
                                             <div className="flex items-center gap-1.5">
-                                                <span className="grid h-5 w-5 place-items-center rounded-full bg-blue-600 text-[9px] font-bold text-white">
+                                                <span className="bg-primary grid h-5 w-5 place-items-center rounded-full text-[9px] font-bold text-white">
                                                     {initials(f.pic.name)}
                                                 </span>
                                                 <span>{f.pic.name}</span>
@@ -469,14 +455,12 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                                             {t(`status.${f.status as 'open' | 'in_progress' | 'closed'}`)}
                                         </StatusBadge>
                                     </td>
-                                    <td className="px-5 py-4 whitespace-nowrap">
-                                        {deadlineChip(f)}
-                                    </td>
-                                    <td className="px-5 py-4 whitespace-nowrap text-right">
+                                    <td className="px-5 py-4 whitespace-nowrap">{deadlineChip(f)}</td>
+                                    <td className="px-5 py-4 text-right whitespace-nowrap">
                                         <button
                                             type="button"
                                             onClick={() => setDetailTarget(f)}
-                                            className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                                            className="text-primary hover:text-primary-700 dark:text-primary-200 dark:hover:text-primary-200 inline-flex items-center gap-1 text-xs font-semibold"
                                         >
                                             <Eye className="h-3.5 w-3.5" />
                                             Detail
@@ -487,7 +471,8 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                         ) : (
                             <tr>
                                 <td colSpan={8}>
-                                    <EmptyState message={t('temuan.noFindings')} />                                </td>
+                                    <EmptyState message={t('temuan.noFindings')} />{' '}
+                                </td>
                             </tr>
                         )}
                     </tbody>
@@ -531,13 +516,11 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
 
             <div className="space-y-6">
                 {/* Header Banner */}
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between border-b border-slate-200/80 pb-5 dark:border-slate-800">
+                <div className="flex flex-col gap-4 border-b border-slate-200/80 pb-5 sm:flex-row sm:items-end sm:justify-between dark:border-slate-800">
                     <div>
                         <div className="flex items-center gap-2">
-                            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                                {t('temuan.title')}
-                            </h1>
-                            <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-700 border border-blue-200 dark:bg-blue-950/60 dark:border-blue-800 dark:text-blue-300">
+                            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{t('temuan.title')}</h1>
+                            <span className="bg-primary-50 text-primary-700 border-primary-200 dark:bg-navy-900/60 dark:border-primary-800 dark:text-primary-200 rounded-full border px-2.5 py-0.5 text-xs font-bold">
                                 {page.total} Total
                             </span>
                         </div>
@@ -559,7 +542,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                             onClick={() => setView('kanban')}
                             className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all ${
                                 view === 'kanban'
-                                    ? 'bg-blue-600 text-white shadow-sm'
+                                    ? 'bg-primary text-white shadow-sm'
                                     : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
                             }`}
                         >
@@ -571,7 +554,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                             onClick={() => setView('list')}
                             className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all ${
                                 view === 'list'
-                                    ? 'bg-blue-600 text-white shadow-sm'
+                                    ? 'bg-primary text-white shadow-sm'
                                     : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
                             }`}
                         >
@@ -580,7 +563,6 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                         </button>
                     </div>
                 </div>
-
                 {/* Filters */}
                 <div className="flex flex-wrap items-center gap-3">
                     <div className="relative min-w-[240px] flex-1">
@@ -590,7 +572,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Cari temuan, nomor klausul, atau judul kontrol..."
-                            className="h-10 w-full rounded-xl border border-slate-200 bg-white py-2 pr-4 pl-9 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
+                            className="focus:border-primary focus:ring-primary/20 h-10 w-full rounded-xl border border-slate-200 bg-white py-2 pr-4 pl-9 text-xs text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:outline-none sm:text-sm dark:border-slate-800 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
                         />
                     </div>
 
@@ -621,10 +603,8 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                         ))}
                     </Select>
                 </div>
-
                 {/* Content View */}
                 {view === 'kanban' ? renderKanban() : renderList()}
-
                 {view === 'kanban' && page.last_page > 1 && (
                     <Pagination
                         currentPage={page.current_page}
@@ -647,7 +627,8 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                             )
                         }
                     />
-                )}            </div>
+                )}{' '}
+            </div>
 
             {/* Detail Slide-Over Drawer */}
             <SlideOver
@@ -656,7 +637,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                     detailTarget ? (
                         <div className="flex items-center gap-2.5">
                             <span>Detail Temuan</span>
-                            <code className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-400">
+                            <code className="text-primary bg-primary-50 border-primary-200 dark:bg-navy-900 dark:border-primary-800 dark:text-primary-200 rounded border px-2 py-0.5 text-xs font-bold">
                                 FND-{findingRef(detailTarget)}
                             </code>
                         </div>
@@ -664,15 +645,17 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                         'Detail Temuan'
                     )
                 }
-                description={detailTarget?.control?.judul || 'Informasi lengkap temuan audit ketidaksesuaian'}                onClose={() => setDetailTarget(null)}
+                description={detailTarget?.control?.judul || 'Informasi lengkap temuan audit ketidaksesuaian'}
+                onClose={() => setDetailTarget(null)}
                 maxWidth="xl"
                 footer={
                     <button
                         type="button"
                         onClick={() => setDetailTarget(null)}
-                        className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 transition-colors"
+                        className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                     >
-                        {t('temuan.close')}                    </button>
+                        {t('temuan.close')}{' '}
+                    </button>
                 }
             >
                 {detailTarget && (
@@ -706,15 +689,14 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <Clock className="h-4 w-4 text-slate-500 dark:text-slate-400" />
-                                    <span className="text-xs font-bold text-slate-900 dark:text-white">
-                                        Batas Waktu Penyelesaian (SLA)
-                                    </span>
+                                    <span className="text-xs font-bold text-slate-900 dark:text-white">Batas Waktu Penyelesaian (SLA)</span>
                                 </div>
                                 <div>{deadlineChip(detailTarget)}</div>
                             </div>
                             {detailTarget.deadline && (
                                 <div className="mt-2.5 text-xs text-slate-600 dark:text-slate-400">
-                                    Target Deadline: <strong className="text-slate-900 dark:text-white">{formatDateIndonesian(detailTarget.deadline)}</strong>
+                                    Target Deadline:{' '}
+                                    <strong className="text-slate-900 dark:text-white">{formatDateIndonesian(detailTarget.deadline)}</strong>
                                 </div>
                             )}
                         </div>
@@ -723,22 +705,22 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                         {can('finding.update-status') && (
                             <form
                                 onSubmit={handleUpdateFinding}
-                                className="rounded-2xl border border-blue-200/80 bg-blue-50/50 p-4 space-y-3.5 dark:border-blue-900/50 dark:bg-blue-950/20"
+                                className="border-primary-200/80 bg-primary-50/50 dark:border-navy-800/50 dark:bg-navy-900/20 space-y-3.5 rounded-2xl border p-4"
                             >
-                                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-900 dark:text-blue-300">
-                                    <Edit3 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                <div className="text-navy dark:text-primary-200 flex items-center gap-2 text-xs font-bold tracking-wider uppercase">
+                                    <Edit3 className="text-primary dark:text-primary-200 h-4 w-4" />
                                     <span>Perbarui Status & Tindak Lanjut</span>
                                 </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                     <div>
-                                        <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                        <label className="mb-1 block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
                                             Ubah Status Temuan
                                         </label>
                                         <select
                                             value={updateData.status}
                                             onChange={(e) => setUpdateData('status', e.target.value)}
-                                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 focus:border-blue-400 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                                            className="focus:border-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                                         >
                                             <option value="open">Terbuka (Open)</option>
                                             <option value="in_progress">Dalam Penanganan (In Progress)</option>
@@ -747,20 +729,20 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                                     </div>
 
                                     <div>
-                                        <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                        <label className="mb-1 block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
                                             Target Deadline SLA
                                         </label>
                                         <input
                                             type="date"
                                             value={updateData.deadline}
                                             onChange={(e) => setUpdateData('deadline', e.target.value)}
-                                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:border-blue-400 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                                            className="focus:border-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                                         />
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                    <label className="mb-1 block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
                                         Catatan Verifikasi / Tindak Lanjut
                                     </label>
                                     <textarea
@@ -768,7 +750,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                                         onChange={(e) => setUpdateData('admin_notes', e.target.value)}
                                         rows={2}
                                         placeholder="Tuliskan catatan perbaikan atau progres penanganan..."
-                                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:border-blue-400 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                                        className="focus:border-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                                     />
                                 </div>
 
@@ -776,7 +758,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                                     <button
                                         type="submit"
                                         disabled={updateProcessing}
-                                        className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                                        className="bg-primary hover:bg-primary-700 inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors disabled:opacity-50"
                                     >
                                         <Save className="h-3.5 w-3.5" />
                                         <span>{updateProcessing ? 'Menyimpan…' : 'Simpan Perubahan'}</span>
@@ -786,64 +768,62 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                         )}
 
                         {/* Control Klausul Details */}
-                        <div className="rounded-xl border border-slate-200/80 bg-white p-4 space-y-3 dark:border-slate-800 dark:bg-slate-900">
-                            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                                <Shield className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        <div className="space-y-3 rounded-xl border border-slate-200/80 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                            <div className="flex items-center gap-2 text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
+                                <Shield className="text-primary dark:text-primary-200 h-4 w-4" />
                                 <span>Kontrol SMKI Terkait</span>
                             </div>
                             <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-800/60">
-                                <div className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                                <div className="text-primary dark:text-primary-200 text-xs font-bold">
                                     {detailTarget.control?.kode_klausul}
                                     {detailTarget.control?.framework && (
-                                        <span className="text-slate-500 font-normal"> · {detailTarget.control.framework.nama} ({detailTarget.control.framework.versi})</span>
+                                        <span className="font-normal text-slate-500">
+                                            {' '}
+                                            · {detailTarget.control.framework.nama} ({detailTarget.control.framework.versi})
+                                        </span>
                                     )}
                                 </div>
-                                <div className="mt-1 text-sm font-semibold text-slate-900 dark:text-white leading-relaxed">
+                                <div className="mt-1 text-sm leading-relaxed font-semibold text-slate-900 dark:text-white">
                                     {detailTarget.control?.judul || '—'}
                                 </div>
                             </div>
                         </div>
 
                         {/* Unit & Stakeholder Assignment */}
-                        <div className="rounded-xl border border-slate-200/80 bg-white p-4 space-y-3 dark:border-slate-800 dark:bg-slate-900">
-                            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        <div className="space-y-3 rounded-xl border border-slate-200/80 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                            <div className="flex items-center gap-2 text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
                                 <UserCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                                 <span>Penanggung Jawab & Unit Kerja</span>
                             </div>
                             <div className="grid grid-cols-2 gap-3 text-xs">
                                 <div className="rounded-lg border border-slate-100 p-2.5 dark:border-slate-800">
                                     <span className="text-[11px] text-slate-400">Unit Kerja / Satuan Kerja</span>
-                                    <p className="mt-1 font-semibold text-slate-900 dark:text-white">
-                                        {detailTarget.unit?.nama || '—'}
-                                    </p>
+                                    <p className="mt-1 font-semibold text-slate-900 dark:text-white">{detailTarget.unit?.nama || '—'}</p>
                                 </div>
                                 <div className="rounded-lg border border-slate-100 p-2.5 dark:border-slate-800">
                                     <span className="text-[11px] text-slate-400">PIC Penanggung Jawab</span>
-                                    <p className="mt-1 font-semibold text-slate-900 dark:text-white">
-                                        {detailTarget.pic?.name || '—'}
-                                    </p>
+                                    <p className="mt-1 font-semibold text-slate-900 dark:text-white">{detailTarget.pic?.name || '—'}</p>
                                 </div>
                             </div>
                         </div>
 
                         {/* Admin / Auditor Notes */}
                         {(detailTarget.admin_notes || detailTarget.catatan_admin) && (
-                            <div className="rounded-xl border border-slate-200/80 bg-white p-4 space-y-2 dark:border-slate-800 dark:bg-slate-900">
-                                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                            <div className="space-y-2 rounded-xl border border-slate-200/80 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                                <div className="flex items-center gap-2 text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
                                     <FileText className="h-4 w-4 text-amber-500" />
                                     <span>Catatan Auditor / Admin Kepatuhan</span>
                                 </div>
-                                <p className="text-xs leading-relaxed text-slate-700 bg-slate-50 p-3 rounded-lg dark:bg-slate-800/60 dark:text-slate-300">                                    {detailTarget.admin_notes || detailTarget.catatan_admin}
+                                <p className="rounded-lg bg-slate-50 p-3 text-xs leading-relaxed text-slate-700 dark:bg-slate-800/60 dark:text-slate-300">
+                                    {detailTarget.admin_notes || detailTarget.catatan_admin}
                                 </p>
                             </div>
                         )}
 
                         {/* Audit Metadata Timeline */}
-                        <div className="border-t border-slate-100 pt-3 text-[11px] text-slate-400 flex items-center justify-between dark:border-slate-800">
+                        <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-[11px] text-slate-400 dark:border-slate-800">
                             <span>Dibuat: {detailTarget.created_at ? formatDateTimeIndonesian(detailTarget.created_at) : '—'}</span>
-                            {detailTarget.verified_at && (
-                                <span>Diverifikasi: {formatDateTimeIndonesian(detailTarget.verified_at)}</span>
-                            )}
+                            {detailTarget.verified_at && <span>Diverifikasi: {formatDateTimeIndonesian(detailTarget.verified_at)}</span>}
                         </div>
                     </div>
                 )}
