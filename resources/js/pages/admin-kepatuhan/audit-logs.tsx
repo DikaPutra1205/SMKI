@@ -1,4 +1,4 @@
-import { EmptyState } from '@/components/ui/EmptyState';
+﻿import { EmptyState } from '@/components/ui/EmptyState';
 import { Pagination } from '@/components/ui/Pagination';
 import { Select } from '@/components/ui/Select';
 import { SlideOver } from '@/components/ui/SlideOver';
@@ -7,14 +7,7 @@ import AppLayout from '@/layouts/AppLayout';
 import { t, type TranslationKey } from '@/lib/i18n';
 import { formatDateTimeIndonesian } from '@/lib/utils';
 import { Head, router } from '@inertiajs/react';
-import {
-    Clock,
-    Eye,
-    History,
-    Search,
-    ShieldCheck,
-    Users,
-} from 'lucide-react';
+import { Clock, Eye, History, Search, ShieldCheck, Users } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 interface AuditActor {
@@ -205,10 +198,10 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
         <AppLayout breadcrumbs={breadcrumbs} currentPath={getBasePath()}>
             <Head title={`${t('audit.title')} - Audit Trail SMKI`} />
 
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{t('audit.title')}</h1>
-                    <p className="text-muted mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">{t('audit.subtitle')}</p>
+                    <p className="text-muted mt-1 text-xs text-slate-500 sm:text-sm dark:text-slate-400">{t('audit.subtitle')}</p>
                 </div>
             </div>
 
@@ -217,19 +210,19 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                     onClick={() => setSelectedAction('all')}
                     className={`cursor-pointer rounded-2xl border p-4 transition-all ${
                         selectedAction === 'all'
-                            ? 'border-blue-500 bg-blue-50/50 shadow-sm dark:border-blue-500/60 dark:bg-blue-950/30'
+                            ? 'border-primary bg-primary-50/50 dark:border-primary/60 dark:bg-navy-900/30 shadow-sm'
                             : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900'
                     }`}
                 >
-                    <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1">
+                    <div className="mb-1 flex items-center justify-between text-slate-500 dark:text-slate-400">
                         <span className="text-xs font-semibold">{t('audit.totalLogs')}</span>
-                        <History className="h-4 w-4 text-blue-600" />
+                        <History className="text-primary h-4 w-4" />
                     </div>
                     <span className="text-2xl font-bold text-slate-900 dark:text-white">{stats?.total_logs ?? page.total}</span>
                 </div>
 
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                    <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400 mb-1">
+                    <div className="mb-1 flex items-center justify-between text-emerald-600 dark:text-emerald-400">
                         <span className="text-xs font-semibold">{t('audit.last24Hours')}</span>
                         <Clock className="h-4 w-4" />
                     </div>
@@ -238,9 +231,9 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
 
                 <div
                     onClick={() => setSelectedAction('verify')}
-                    className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-4 hover:border-amber-300 transition-all dark:border-slate-800 dark:bg-slate-900"
+                    className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-4 transition-all hover:border-amber-300 dark:border-slate-800 dark:bg-slate-900"
                 >
-                    <div className="flex items-center justify-between text-amber-600 dark:text-amber-400 mb-1">
+                    <div className="mb-1 flex items-center justify-between text-amber-600 dark:text-amber-400">
                         <span className="text-xs font-semibold">Verifikasi Selesai</span>
                         <ShieldCheck className="h-4 w-4" />
                     </div>
@@ -250,7 +243,7 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                 </div>
 
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                    <div className="flex items-center justify-between text-purple-600 dark:text-purple-400 mb-1">
+                    <div className="mb-1 flex items-center justify-between text-purple-600 dark:text-purple-400">
                         <span className="text-xs font-semibold">Pengguna Aktif</span>
                         <Users className="h-4 w-4" />
                     </div>
@@ -258,25 +251,21 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                 </div>
             </div>
 
-            <div className="border border-slate-200 overflow-hidden rounded-2xl bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center gap-3">
-                    <div className="relative flex-1 min-w-[240px]">
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 p-4 dark:border-slate-800">
+                    <div className="relative min-w-[240px] flex-1">
                         <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
                         <input
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder={t('audit.searchPlaceholder')}
-                            className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pr-3 pl-9 text-xs sm:text-sm text-slate-700 placeholder-slate-400 transition-colors focus:border-blue-400 focus:bg-white focus:ring-1 focus:ring-blue-400 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-300 dark:focus:bg-slate-900"
+                            className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pr-3 pl-9 text-xs text-slate-700 placeholder-slate-400 transition-colors focus:bg-white focus:ring-1 sm:text-sm dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-300 dark:focus:bg-slate-900"
                         />
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
-                        <Select
-                            value={selectedAction}
-                            onChange={(e) => setSelectedAction(e.target.value)}
-                            aria-label={t('audit.actionLabel')}
-                        >
+                        <Select value={selectedAction} onChange={(e) => setSelectedAction(e.target.value)} aria-label={t('audit.actionLabel')}>
                             <option value="all">{t('audit.allActions')}</option>
                             {actionOptions.map((a) => (
                                 <option key={a} value={a}>
@@ -285,11 +274,7 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                             ))}
                         </Select>
 
-                        <Select
-                            value={selectedEntity}
-                            onChange={(e) => setSelectedEntity(e.target.value)}
-                            aria-label={t('audit.entityLabel')}
-                        >
+                        <Select value={selectedEntity} onChange={(e) => setSelectedEntity(e.target.value)} aria-label={t('audit.entityLabel')}>
                             <option value="all">{t('audit.allEntities')}</option>
                             {entityOptions.map((ent) => (
                                 <option key={ent} value={ent}>
@@ -298,11 +283,7 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                             ))}
                         </Select>
 
-                        <Select
-                            value={selectedActor}
-                            onChange={(e) => setSelectedActor(e.target.value)}
-                            aria-label={t('audit.actorLabel')}
-                        >
+                        <Select value={selectedActor} onChange={(e) => setSelectedActor(e.target.value)} aria-label={t('audit.actorLabel')}>
                             <option value="all">{t('audit.allActors')}</option>
                             {actors.map((actor) => (
                                 <option key={actor.id} value={String(actor.id)}>
@@ -315,14 +296,14 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                             type="date"
                             value={dateFrom}
                             onChange={(e) => setDateFrom(e.target.value)}
-                            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                            className="focus:border-primary focus:ring-primary rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
                             title="Tanggal Mulai"
                         />
                         <input
                             type="date"
                             value={dateTo}
                             onChange={(e) => setDateTo(e.target.value)}
-                            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                            className="focus:border-primary focus:ring-primary rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
                             title="Tanggal Selesai"
                         />
                     </div>
@@ -358,9 +339,9 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                                     <tr
                                         key={log.id}
                                         onClick={() => setDetailTarget(log)}
-                                        className="hover:bg-slate-50/60 transition-colors dark:hover:bg-slate-800/40 cursor-pointer"
+                                        className="cursor-pointer transition-colors hover:bg-slate-50/60 dark:hover:bg-slate-800/40"
                                     >
-                                        <td className="px-5 py-4 whitespace-nowrap text-xs text-slate-500 dark:text-slate-400">
+                                        <td className="px-5 py-4 text-xs whitespace-nowrap text-slate-500 dark:text-slate-400">
                                             {formatDateTimeIndonesian(log.created_at)}
                                         </td>
                                         <td className="px-5 py-4">
@@ -373,20 +354,20 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                                             )}
                                         </td>
                                         <td className="px-5 py-4">
-                                            <span className="font-semibold text-slate-900 dark:text-white block">{log.entity_label}</span>
+                                            <span className="block font-semibold text-slate-900 dark:text-white">{log.entity_label}</span>
                                             <span className="text-[11px] text-slate-400 dark:text-slate-500">{log.entity_type}</span>
                                         </td>
                                         <td className="px-5 py-4 whitespace-nowrap">
                                             <StatusBadge tone={actionTone(log.action)}>{actionLabel(log.action)}</StatusBadge>
                                         </td>
-                                        <td className="px-5 py-4 text-xs text-slate-600 dark:text-slate-300 max-w-[280px] truncate">
+                                        <td className="max-w-[280px] truncate px-5 py-4 text-xs text-slate-600 dark:text-slate-300">
                                             {summaryText(log.changes)}
                                         </td>
                                         <td className="px-5 py-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                                             <button
                                                 type="button"
                                                 onClick={() => setDetailTarget(log)}
-                                                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors"
+                                                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                                             >
                                                 <Eye className="h-3 w-3" />
                                                 {t('audit.detail')}
@@ -441,18 +422,16 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                 {detailTarget && (
                     <div className="space-y-6">
                         <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-800/40">
-                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-3">
-                                Pelaksana Tindakan (Actor)
-                            </span>
+                            <span className="mb-3 block text-xs font-bold tracking-wider text-slate-400 uppercase">Pelaksana Tindakan (Actor)</span>
                             <div className="flex items-center gap-3.5">
-                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-sm font-bold text-white shadow-sm">
+                                <div className="bg-primary flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-sm font-bold text-white shadow-sm">
                                     {getInitials(detailTarget.actor.name)}
                                 </div>
                                 <div>
                                     <div className="font-bold text-slate-900 dark:text-white">{detailTarget.actor.name}</div>
                                     <div className="text-xs text-slate-400">{detailTarget.actor.email || 'Tanpa Email'}</div>
                                     <div className="mt-1 flex items-center gap-2">
-                                        <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                                        <span className="bg-primary-50 text-primary-700 dark:bg-navy-900 dark:text-primary-200 inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold">
                                             {roleLabel(detailTarget.actor.role)}
                                         </span>
                                         {detailTarget.actor.unit_name && (
@@ -463,19 +442,17 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                             </div>
                         </div>
 
-                        <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3 dark:border-slate-800 dark:bg-slate-900">
-                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
-                                Objek & Tipe Tindakan
-                            </span>
-                            <div className="flex items-center justify-between text-xs sm:text-sm pt-1">
+                        <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                            <span className="block text-xs font-bold tracking-wider text-slate-400 uppercase">Objek & Tipe Tindakan</span>
+                            <div className="flex items-center justify-between pt-1 text-xs sm:text-sm">
                                 <span className="text-slate-500">Tindakan</span>
                                 <StatusBadge tone={actionTone(detailTarget.action)}>{actionLabel(detailTarget.action)}</StatusBadge>
                             </div>
-                            <div className="border-t border-slate-100 dark:border-slate-800 pt-3 flex items-center justify-between text-xs sm:text-sm">
+                            <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs sm:text-sm dark:border-slate-800">
                                 <span className="text-slate-500">Objek Target</span>
                                 <span className="font-semibold text-slate-900 dark:text-white">{detailTarget.entity_label}</span>
                             </div>
-                            <div className="border-t border-slate-100 dark:border-slate-800 pt-3 flex items-center justify-between text-xs sm:text-sm">
+                            <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs sm:text-sm dark:border-slate-800">
                                 <span className="text-slate-500">Tipe Entitas / ID</span>
                                 <span className="text-slate-600 dark:text-slate-400">
                                     {detailTarget.entity_type} (#{detailTarget.entity_id})
@@ -484,7 +461,7 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                         </div>
 
                         <div>
-                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">
+                            <span className="mb-2 block text-xs font-bold tracking-wider text-slate-400 uppercase">
                                 Rekam Jejak Nilai Sebelum & Sesudah
                             </span>
                             {diff.length > 0 ? (
@@ -492,29 +469,21 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                                     {diff.map((entry) => (
                                         <div
                                             key={entry.field}
-                                            className="rounded-2xl border border-slate-200 bg-white p-3.5 space-y-2 dark:border-slate-800 dark:bg-slate-900"
+                                            className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3.5 dark:border-slate-800 dark:bg-slate-900"
                                         >
                                             <div className="flex items-center justify-between">
-                                                <span className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400">
-                                                    {entry.field}
-                                                </span>
+                                                <span className="text-primary dark:text-primary-200 font-mono text-xs font-bold">{entry.field}</span>
                                             </div>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                            <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
                                                 <div className="rounded-xl border border-rose-100 bg-rose-50/60 p-2.5 dark:border-rose-900/50 dark:bg-rose-950/20">
-                                                    <span className="text-[10px] font-bold text-rose-500 uppercase block mb-1">
-                                                        Sebelum (Old)
-                                                    </span>
-                                                    <span className="text-slate-700 dark:text-slate-300 line-through decoration-rose-400">
+                                                    <span className="mb-1 block text-[10px] font-bold text-rose-500 uppercase">Sebelum (Old)</span>
+                                                    <span className="text-slate-700 line-through decoration-rose-400 dark:text-slate-300">
                                                         {fmtValue(entry.before)}
                                                     </span>
                                                 </div>
                                                 <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-2.5 dark:border-emerald-900/50 dark:bg-emerald-950/20">
-                                                    <span className="text-[10px] font-bold text-emerald-600 uppercase block mb-1">
-                                                        Sesudah (New)
-                                                    </span>
-                                                    <span className="text-slate-900 dark:text-white font-semibold">
-                                                        {fmtValue(entry.after)}
-                                                    </span>
+                                                    <span className="mb-1 block text-[10px] font-bold text-emerald-600 uppercase">Sesudah (New)</span>
+                                                    <span className="font-semibold text-slate-900 dark:text-white">{fmtValue(entry.after)}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -527,7 +496,7 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                             )}
                         </div>
 
-                        <div className="rounded-2xl border border-sky-100 bg-sky-50/70 p-3.5 flex items-center gap-3 text-xs text-sky-800 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-300">
+                        <div className="flex items-center gap-3 rounded-2xl border border-sky-100 bg-sky-50/70 p-3.5 text-xs text-sky-800 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-300">
                             <ShieldCheck className="h-5 w-5 shrink-0 text-sky-600 dark:text-sky-400" />
                             <span>Rekam jejak audit trail bersifat permanen (immutable) dan tidak dapat dimodifikasi atau dihapus.</span>
                         </div>

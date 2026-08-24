@@ -1,4 +1,4 @@
-import AppLayout from '@/layouts/AppLayout';
+﻿import AppLayout from '@/layouts/AppLayout';
 import { formatDateIndonesian, formatPeriodeIndonesian } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
@@ -72,7 +72,7 @@ export default function PicDashboard({ summary, recent_sessions = [] }: PicDashb
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold tracking-wide text-blue-600 uppercase dark:text-blue-400">
+                        <span className="text-primary dark:text-primary-200 text-xs font-bold tracking-wide uppercase">
                             {currentDateFormatted} · {userUnit}
                         </span>
                     </div>
@@ -85,7 +85,7 @@ export default function PicDashboard({ summary, recent_sessions = [] }: PicDashb
                 <div className="flex items-center gap-2.5">
                     <Link
                         href="/assessments"
-                        className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-blue-500 active:scale-95 sm:text-sm"
+                        className="bg-primary hover:bg-primary inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all active:scale-95 sm:text-sm"
                     >
                         <ClipboardCheck className="h-4 w-4" />
                         Daftar Penilaian
@@ -127,14 +127,14 @@ export default function PicDashboard({ summary, recent_sessions = [] }: PicDashb
                 <div className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                     <div className="flex items-center justify-between">
                         <span className="text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">Sesi Penilaian Aktif</span>
-                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400">
+                        <div className="bg-primary-50 text-primary dark:bg-navy-900/50 dark:text-primary-200 flex h-9 w-9 items-center justify-center rounded-xl">
                             <Layers className="h-4.5 w-4.5" />
                         </div>
                     </div>
                     <div className="mt-3">
                         <div className="flex items-baseline gap-2">
                             <span className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{recent_sessions.length}</span>
-                            <span className="rounded-md bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">
+                            <span className="bg-primary-50 text-primary-700 dark:bg-navy-900/60 dark:text-primary-200 rounded-md px-2 py-0.5 text-xs font-semibold">
                                 Sesi Berjalan
                             </span>
                         </div>
@@ -191,7 +191,7 @@ export default function PicDashboard({ summary, recent_sessions = [] }: PicDashb
                 <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                     <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 dark:border-slate-800">
                         <div className="flex items-center gap-2.5">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400">
+                            <div className="bg-primary-50 text-primary dark:bg-navy-900/50 dark:text-primary-200 flex h-8 w-8 items-center justify-center rounded-lg">
                                 <Shield className="h-4 w-4" />
                             </div>
                             <div>
@@ -213,7 +213,7 @@ export default function PicDashboard({ summary, recent_sessions = [] }: PicDashb
                         </div>
                         <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                             <div
-                                className="h-full rounded-full bg-blue-600 transition-all duration-500"
+                                className="bg-primary h-full rounded-full transition-all duration-500"
                                 style={{ width: `${iso27001?.compliance_rate ?? 0}%` }}
                             />
                         </div>
@@ -262,7 +262,7 @@ export default function PicDashboard({ summary, recent_sessions = [] }: PicDashb
                         </div>
                         <Link
                             href="/assessments"
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-500 dark:text-blue-400"
+                            className="text-primary hover:text-primary dark:text-primary-200 inline-flex items-center gap-1 text-xs font-semibold"
                         >
                             Lihat Semua
                             <ArrowUpRight className="h-3.5 w-3.5" />
@@ -291,7 +291,7 @@ export default function PicDashboard({ summary, recent_sessions = [] }: PicDashb
                                             </div>
                                             <div className="mt-2 h-1.5 w-full max-w-[280px] overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                                                 <div
-                                                    className="h-full rounded-full bg-blue-600 transition-all duration-300"
+                                                    className="bg-primary h-full rounded-full transition-all duration-300"
                                                     style={{ width: `${pct}%` }}
                                                 />
                                             </div>
@@ -328,13 +328,13 @@ export default function PicDashboard({ summary, recent_sessions = [] }: PicDashb
                     <div className="mt-3 space-y-3">
                         <Link
                             href="/assessments"
-                            className="group flex items-start gap-3 rounded-xl border border-slate-200/70 p-3.5 transition-colors hover:border-blue-300 hover:bg-blue-50/30 dark:border-slate-800 dark:hover:border-slate-700 dark:hover:bg-slate-800/40"
+                            className="group hover:border-primary-300 hover:bg-primary-50/30 flex items-start gap-3 rounded-xl border border-slate-200/70 p-3.5 transition-colors dark:border-slate-800 dark:hover:border-slate-700 dark:hover:bg-slate-800/40"
                         >
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400">
+                            <div className="bg-primary-50 text-primary dark:bg-navy-900/50 dark:text-primary-200 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl">
                                 <FileEdit className="h-4.5 w-4.5" />
                             </div>
                             <div className="min-w-0 flex-1">
-                                <h4 className="text-xs font-bold text-slate-900 group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400">
+                                <h4 className="group-hover:text-primary dark:group-hover:text-primary-300 text-xs font-bold text-slate-900 dark:text-white">
                                     Lengkapi Bukti Evidence Kontrol
                                 </h4>
                                 <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
