@@ -121,8 +121,32 @@ function getInitials(name: string): string {
 function fmtValue(value: unknown): string {
     if (value === null || value === undefined) return 'Kosong / Null';
     if (typeof value === 'boolean') return value ? 'Ya / Benar' : 'Tidak / Salah';
-    if (typeof value === 'object') return JSON.stringify(value, null, 2);
+    if (Array.isArray(value)) {
+        if (value.length === 0) return '[]';
+        if (value.every((v) => typeof v === 'number' || typeof v === 'string')) {
+            return `[${value.join(', ')}]`;
+        }
+        return JSON.stringify(value);
+    }
+    if (typeof value === 'object') return JSON.stringify(value);
     return String(value);
+}
+
+function isPlainObject(val: unknown): val is Record<string, unknown> {
+    return typeof val === 'object' && val !== null && !Array.isArray(val);
+}
+
+function getSnapshotData(changes: Record<string, unknown> | null): Record<string, unknown> | null {
+    if (!changes) return null;
+    if (isPlainObject(changes.data)) return changes.data;
+    if (isPlainObject(changes.attributes)) return changes.attributes;
+    if (isPlainObject(changes.after) && !changes.before) return changes.after;
+    return null;
+}
+
+function isDiffChanges(changes: Record<string, unknown> | null): boolean {
+    if (!changes) return false;
+    return Boolean(changes.before || changes.after);
 }
 
 function diffEntries(changes: Record<string, unknown> | null): Array<{ field: string; before: unknown; after: unknown }> {
@@ -133,10 +157,67 @@ function diffEntries(changes: Record<string, unknown> | null): Array<{ field: st
     return fields.map((field) => ({ field, before: before[field], after: after[field] }));
 }
 
-function summaryText(changes: Record<string, unknown> | null): string {
-    const changed = diffEntries(changes).filter((entry) => fmtValue(entry.before) !== fmtValue(entry.after));
-    if (changed.length === 0) return 'Tidak ada detail modifikasi langsung';
-    return changed.map((entry) => `${entry.field}: ${fmtValue(entry.before)} → ${fmtValue(entry.after)}`).join('; ');
+function formatSnapshotSummary(data: Record<string, unknown>): string {
+    const keys = Object.keys(data);
+    if (keys.length === 0) return '';
+
+    const excludedKeys = new Set(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes']);
+    let candidateKeys = keys.filter((k) => !excludedKeys.has(k));
+
+    const meaningfulKeys = candidateKeys.filter((k) => !['created_at', 'updated_at', 'deleted_at', 'id'].includes(k));
+    if (meaningfulKeys.length > 0) {
+        candidateKeys = meaningfulKeys;
+    }
+
+    if (candidateKeys.length === 0) {
+        candidateKeys = keys.filter((k) => !excludedKeys.has(k));
+    }
+
+    return candidateKeys.map((k) => `${k}: ${fmtValue(data[k])}`).join('; ');
+}
+
+function formatGenericPayload(changes: Record<string, unknown>): string {
+    const entries: string[] = [];
+    for (const [k, v] of Object.entries(changes)) {
+        if (k === 'data' || k === 'attributes' || k === 'before' || k === 'after') continue;
+        entries.push(`${k}: ${fmtValue(v)}`);
+    }
+    return entries.join('; ');
+}
+
+function summaryText(action: string, changes: Record<string, unknown> | null, entityLabel?: string): string {
+    if (!changes || Object.keys(changes).length === 0) {
+        if (action === 'delete') return 'Entitas dihapus dari sistem';
+        if (action === 'create') return `Membuat ${entityLabel || 'entitas baru'}`;
+        if (action === 'verify') return 'Verifikasi diselesaikan';
+        if (action === 'bulk_verify') return 'Verifikasi massal selesai';
+        if (action === 'export') return 'Ekspor laporan';
+        return 'Tidak ada detail modifikasi langsung';
+    }
+
+    if (isDiffChanges(changes)) {
+        const changed = diffEntries(changes).filter((entry) => fmtValue(entry.before) !== fmtValue(entry.after));
+        if (changed.length > 0) {
+            return changed.map((entry) => `${entry.field}: ${fmtValue(entry.before)} → ${fmtValue(entry.after)}`).join('; ');
+        }
+    }
+
+    const snapshot = getSnapshotData(changes);
+    if (snapshot) {
+        const summary = formatSnapshotSummary(snapshot);
+        if (summary) {
+            return summary;
+        }
+    }
+
+    const genericSummary = formatGenericPayload(changes);
+    if (genericSummary) {
+        return genericSummary;
+    }
+
+    if (action === 'delete') return 'Entitas dihapus dari sistem';
+    if (action === 'create') return `Membuat ${entityLabel || 'entitas baru'}`;
+    return 'Tidak ada detail modifikasi langsung';
 }
 
 function buildFilterParams(
@@ -190,7 +271,12 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
 
     const actionOptions = Array.from(new Set([...(stats?.by_action ? Object.keys(stats.by_action) : []), ...FALLBACK_ACTIONS]));
     const entityOptions = Array.from(new Set([...KNOWN_ENTITIES, ...(stats?.by_entity ? Object.keys(stats.by_entity) : [])]));
-    const diff = detailTarget ? diffEntries(detailTarget.changes) : [];
+    const diff = detailTarget && isDiffChanges(detailTarget.changes) ? diffEntries(detailTarget.changes) : [];
+    const snapshotData = detailTarget ? getSnapshotData(detailTarget.changes) : null;
+    const genericPayload =
+        detailTarget && !isDiffChanges(detailTarget.changes) && !snapshotData && detailTarget.changes && Object.keys(detailTarget.changes).length > 0
+            ? detailTarget.changes
+            : null;
 
     const breadcrumbs = [{ label: t('common.dashboard'), href: '/dashboard' }, { label: t('audit.title') }];
 
@@ -208,10 +294,11 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
             <div className="mb-6 grid grid-cols-2 gap-3.5 sm:grid-cols-4">
                 <div
                     onClick={() => setSelectedAction('all')}
-                    className={`cursor-pointer rounded-2xl border p-4 transition-all ${selectedAction === 'all'
+                    className={`cursor-pointer rounded-2xl border p-4 transition-all ${
+                        selectedAction === 'all'
                             ? 'border-primary bg-primary-50/50 dark:border-primary/60 dark:bg-navy-900/30 shadow-sm'
                             : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900'
-                        }`}
+                    }`}
                 >
                     <div className="mb-1 flex items-center justify-between text-slate-500 dark:text-slate-400">
                         <span className="text-xs font-semibold">{t('audit.totalLogs')}</span>
@@ -359,8 +446,11 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                                         <td className="px-5 py-4 whitespace-nowrap">
                                             <StatusBadge tone={actionTone(log.action)}>{actionLabel(log.action)}</StatusBadge>
                                         </td>
-                                        <td className="max-w-[280px] truncate px-5 py-4 text-xs text-slate-600 dark:text-slate-300">
-                                            {summaryText(log.changes)}
+                                        <td
+                                            className="max-w-[320px] truncate px-5 py-4 text-xs text-slate-600 dark:text-slate-300"
+                                            title={summaryText(log.action, log.changes, log.entity_label)}
+                                        >
+                                            {summaryText(log.action, log.changes, log.entity_label)}
                                         </td>
                                         <td className="px-5 py-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                                             <button
@@ -461,7 +551,13 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
 
                         <div>
                             <span className="mb-2 block text-xs font-bold tracking-wider text-slate-400 uppercase">
-                                Rekam Jejak Nilai Sebelum & Sesudah
+                                {isDiffChanges(detailTarget.changes)
+                                    ? 'Rekam Jejak Nilai Sebelum & Sesudah'
+                                    : snapshotData
+                                      ? detailTarget.action === 'delete'
+                                          ? 'Data Entitas Sebelum Dihapus'
+                                          : 'Data Atribut Entitas yang Dibuat'
+                                      : 'Detail & Parameter Aktivitas'}
                             </span>
                             {diff.length > 0 ? (
                                 <div className="space-y-3">
@@ -488,9 +584,43 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                                         </div>
                                     ))}
                                 </div>
+                            ) : snapshotData && Object.keys(snapshotData).length > 0 ? (
+                                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                                    {Object.entries(snapshotData).map(([key, val]) => (
+                                        <div
+                                            key={key}
+                                            className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-xs transition-colors dark:border-slate-800 dark:bg-slate-900"
+                                        >
+                                            <span className="text-primary dark:text-primary-300 mb-1 block font-mono text-[11px] font-bold">
+                                                {key}
+                                            </span>
+                                            <span className="block text-xs font-semibold break-words text-slate-900 dark:text-white">
+                                                {fmtValue(val)}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : genericPayload && Object.keys(genericPayload).length > 0 ? (
+                                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                                    {Object.entries(genericPayload).map(([key, val]) => (
+                                        <div
+                                            key={key}
+                                            className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-xs transition-colors dark:border-slate-800 dark:bg-slate-900"
+                                        >
+                                            <span className="text-primary dark:text-primary-300 mb-1 block font-mono text-[11px] font-bold">
+                                                {key}
+                                            </span>
+                                            <span className="block text-xs font-semibold break-words text-slate-900 dark:text-white">
+                                                {fmtValue(val)}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
                             ) : (
                                 <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 text-center text-xs text-slate-400 dark:border-slate-800 dark:bg-slate-900">
-                                    Tidak ada data payload perubahan sebelum / sesudah yang tersimpan.
+                                    {detailTarget.action === 'delete'
+                                        ? 'Entitas berhasil dihapus dari sistem.'
+                                        : 'Tidak ada data payload perubahan tambahan yang tersimpan.'}
                                 </div>
                             )}
                         </div>

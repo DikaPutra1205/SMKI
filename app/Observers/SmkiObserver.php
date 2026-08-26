@@ -63,11 +63,18 @@ class SmkiObserver
 
     public function deleted(Model $model): void
     {
+        $data = $model->toArray();
+        if (! empty($model->getHidden())) {
+            $hidden = array_flip($model->getHidden());
+            $data = array_diff_key($data, $hidden);
+        }
+
         AuditLog::catat(
             entityType: class_basename($model),
             entityId: $model->getKey(),
             aksi: 'delete',
             actorId: Auth::id(),
+            detail: ['data' => $data],
         );
     }
 }
