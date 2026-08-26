@@ -30,11 +30,13 @@ import {
     Filter,
     Search,
     Shield,
+    Loader2,
     ShieldCheck,
     X,
     XCircle,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 /* ─── Types ─────────────────────────────────────────────────────────────── */
 
@@ -212,7 +214,7 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
     const hasEvidence = Boolean(entry.active_evidence?.file_url);
     const alreadyVerified = Boolean(entry.tanggal_verifikasi);
 
-    return (
+    return createPortal(
         <>
             <Toast
                 visible={flashVisible}
@@ -396,7 +398,8 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
                 onCancel={() => setConfirmAction(null)}
                 onConfirm={submitDecision}
             />
-        </>
+        </>,
+        document.body,
     );
 }
 
@@ -428,6 +431,11 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
 
     // ── Lightbox Evidence Modal State ─────────────────────────────────────────
     const [previewEvidence, setPreviewEvidence] = useState<{ file_url: string; nama_file?: string } | null>(null);
+    const [evidenceLoading, setEvidenceLoading] = useState(true);
+
+    useEffect(() => {
+        setEvidenceLoading(previewEvidence !== null);
+    }, [previewEvidence]);
 
     // ── Checkbox Selection State ──────────────────────────────────────────────
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -935,11 +943,18 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                 {previewEvidence && (
                     <div className="flex flex-col items-center justify-center">
                         {isImageFile(previewEvidence.nama_file) ? (
-                            <div className="flex max-h-[65vh] w-full items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-950">
+                            <div className="relative flex max-h-[65vh] w-full items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-950">
+                                {evidenceLoading && (
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+                                    </div>
+                                )}
                                 <img
                                     src={previewEvidence.file_url}
                                     alt={previewEvidence.nama_file}
-                                    className="max-h-[60vh] max-w-full rounded-lg object-contain"
+                                    onLoad={() => setEvidenceLoading(false)}
+                                    onError={() => setEvidenceLoading(false)}
+                                    className={`max-h-[60vh] max-w-full rounded-lg object-contain transition-opacity ${evidenceLoading ? 'opacity-0' : 'opacity-100'}`}
                                 />
                             </div>
                         ) : (
@@ -960,7 +975,7 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                 (() => {
                     const targetStatus = bulkConfirmAction === 'approve' ? 'compliant' : 'non_compliant';
 
-                    return (
+                    return createPortal(
                         <div className="animate-in fade-in fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px] duration-150">
                             <div className="w-full max-w-[480px] rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
                                 <div className="mb-4 flex items-center gap-3">
@@ -1027,7 +1042,8 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                                     </button>
                                 </div>
                             </div>
-                        </div>
+                        </div>,
+                        document.body,
                     );
                 })()}
         </AppLayout>

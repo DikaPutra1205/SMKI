@@ -2,9 +2,10 @@ import AssessmentsListSkeleton from '@/components/skeletons/AssessmentsListSkele
 import { usePageLoading } from '@/hooks/usePageLoading';
 import AppLayout from '@/layouts/AppLayout';
 import { formatDateIndonesian, formatPeriodeIndonesian } from '@/lib/utils';
-import { Head, router, usePage } from '@inertiajs/react';
-import { AlertTriangle, CheckCircle2, ChevronRight, ClipboardCheck } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { AlertTriangle, CheckCircle2, ChevronRight, ClipboardCheck, Plus, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 interface Framework {
     id: number;

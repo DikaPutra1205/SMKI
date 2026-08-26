@@ -17,6 +17,7 @@ import {
     ExternalLink,
     Eye,
     Filter,
+    Loader2,
     Search,
     Send,
     Shield,
@@ -365,7 +366,12 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
     const [searchQuery, setSearchQuery] = useState('');
     const [showOnlyIncomplete, setShowOnlyIncomplete] = useState(false);
     const [previewEvidence, setPreviewEvidence] = useState<{ nama_file: string; file_url: string } | null>(null);
+    const [evidenceLoading, setEvidenceLoading] = useState(true);
     const [highlightIncomplete, setHighlightIncomplete] = useState(false);
+
+    useEffect(() => {
+        setEvidenceLoading(previewEvidence !== null);
+    }, [previewEvidence]);
     // Checklist detail URLs are /admin/pic/checklist/{id} — use prefix matching
     const isLoading = usePageLoading('/admin/pic/checklist/');
 
@@ -871,11 +877,18 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
                 {previewEvidence && (
                     <div className="flex flex-col items-center justify-center">
                         {isImageFile(previewEvidence.nama_file) ? (
-                            <div className="flex max-h-[65vh] w-full items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-950">
+                            <div className={`relative flex max-h-[65vh] w-full items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-950 ${evidenceLoading ? 'min-h-[60vh]' : ''}`}>
+                                {evidenceLoading && (
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+                                    </div>
+                                )}
                                 <img
                                     src={previewEvidence.file_url}
                                     alt={previewEvidence.nama_file}
-                                    className="max-h-[60vh] max-w-full rounded-lg object-contain"
+                                    onLoad={() => setEvidenceLoading(false)}
+                                    onError={() => setEvidenceLoading(false)}
+                                    className={`max-h-[60vh] max-w-full rounded-lg object-contain transition-opacity ${evidenceLoading ? 'opacity-0' : 'opacity-100'}`}
                                 />
                             </div>
                         ) : (

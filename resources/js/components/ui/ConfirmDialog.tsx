@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
 import { AlertTriangle, Info, Loader2, Trash2 } from 'lucide-react';
 import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 type ConfirmVariant = 'danger' | 'warning' | 'info';
 
@@ -69,7 +70,7 @@ export function ConfirmDialog({
     const v = variantStyles[variant];
     const Icon = v.icon;
 
-    return (
+    return createPortal(
         <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-navy-900/50 p-4"
             role="dialog"
@@ -113,6 +114,7 @@ export function ConfirmDialog({
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body,
     );
 }

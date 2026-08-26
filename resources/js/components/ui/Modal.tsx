@@ -1,5 +1,6 @@
 import { X } from 'lucide-react';
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 
 interface ModalProps {
@@ -38,7 +39,7 @@ export function Modal({ open, title, description, onClose, children, footer, max
 
     if (!open) return null;
 
-    return (
+    return createPortal(
         <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-navy-900/50 p-4"
             role="dialog"
@@ -73,6 +74,7 @@ export function Modal({ open, title, description, onClose, children, footer, max
 
                 {footer && <div className="flex items-center justify-end gap-3 border-t border-border dark:border-slate-700 bg-surface/60 dark:bg-slate-900/60 px-5 py-4">{footer}</div>}
             </div>
-        </div>
+        </div>,
+        document.body,
     );
 }
