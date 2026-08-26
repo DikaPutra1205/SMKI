@@ -39,39 +39,107 @@ class DashboardAnalyticsService
         $totalApplicableOverall = 0;
         $totalCompliantOverall = 0;
 
-        $entryQuery = ChecklistEntry::join('controls', 'checklist_entries.control_id', '=', 'controls.id')
-            ->selectRaw('
-                controls.framework_id,
-                SUM(CASE WHEN checklist_entries.status = ? THEN 1 ELSE 0 END) as compliant_count,
-                SUM(CASE WHEN checklist_entries.status = ? THEN 1 ELSE 0 END) as partial_count,
-                SUM(CASE WHEN checklist_entries.status = ? THEN 1 ELSE 0 END) as non_compliant_count,
-                SUM(CASE WHEN checklist_entries.status = ? THEN 1 ELSE 0 END) as na_count
-            ', [
-                ChecklistEntry::STATUS_COMPLIANT,
-                ChecklistEntry::STATUS_PARTIAL,
-                ChecklistEntry::STATUS_NON_COMPLIANT,
-                ChecklistEntry::STATUS_NA,
-            ]);
-
-        if ($scopedUnitId) {
-            $entryQuery->where('checklist_entries.unit_id', $scopedUnitId);
-        }
-
+        // Explicit session drill-down overrides the most-recent-session rule.
         if ($sessionId) {
-            $entryQuery->where('checklist_entries.session_id', $sessionId);
-        }
+            $entryQuery = ChecklistEntry::query()
+                ->join('controls', 'checklist_entries.control_id', '=', 'controls.id')
+                ->where('checklist_entries.session_id', $sessionId)
+                ->selectRaw('
+                    controls.framework_id,
+                    checklist_entries.unit_id AS session_unit_id,
+                    COUNT(DISTINCT CASE WHEN checklist_entries.status = ? THEN checklist_entries.control_id END) as compliant_count,
+                    COUNT(DISTINCT CASE WHEN checklist_entries.status = ? THEN checklist_entries.control_id END) as partial_count,
+                    COUNT(DISTINCT CASE WHEN checklist_entries.status = ? THEN checklist_entries.control_id END) as non_compliant_count,
+                    COUNT(DISTINCT CASE WHEN checklist_entries.status = ? THEN checklist_entries.control_id END) as na_count
+                ', [
+                    ChecklistEntry::STATUS_COMPLIANT,
+                    ChecklistEntry::STATUS_PARTIAL,
+                    ChecklistEntry::STATUS_NON_COMPLIANT,
+                    ChecklistEntry::STATUS_NA,
+                ]);
 
-        $statsByFramework = $entryQuery->groupBy('controls.framework_id')->get()->keyBy('framework_id');
+            if ($scopedUnitId) {
+                $entryQuery->where('checklist_entries.unit_id', $scopedUnitId);
+            }
+
+            $statsByFrameworkUnit = $entryQuery->groupBy('controls.framework_id', 'checklist_entries.unit_id')->get();
+        } else {
+            // Scope entries to the most-recent session per (unit, framework) by
+            // `periode` (yyyy-mm), so each control is counted once in the latest
+            // assessment rather than across every historical session. Sessions are
+            // soft-deletable, hence deleted_at IS NULL.
+            $latestSessionSql = '
+                SELECT id, unit_id, framework_id,
+                       ROW_NUMBER() OVER (PARTITION BY unit_id, framework_id ORDER BY periode DESC) AS rn
+                FROM checklist_sessions
+                WHERE deleted_at IS NULL';
+
+            $entryQuery = ChecklistEntry::from(\DB::raw("({$latestSessionSql}) AS ms"))
+                ->join('checklist_entries', 'checklist_entries.session_id', '=', 'ms.id')
+                ->join('controls', 'checklist_entries.control_id', '=', 'controls.id')
+                ->selectRaw('
+                    controls.framework_id,
+                    ms.unit_id AS session_unit_id,
+                    COUNT(DISTINCT CASE WHEN checklist_entries.status = ? THEN checklist_entries.control_id END) as compliant_count,
+                    COUNT(DISTINCT CASE WHEN checklist_entries.status = ? THEN checklist_entries.control_id END) as partial_count,
+                    COUNT(DISTINCT CASE WHEN checklist_entries.status = ? THEN checklist_entries.control_id END) as non_compliant_count,
+                    COUNT(DISTINCT CASE WHEN checklist_entries.status = ? THEN checklist_entries.control_id END) as na_count
+                ', [
+                    ChecklistEntry::STATUS_COMPLIANT,
+                    ChecklistEntry::STATUS_PARTIAL,
+                    ChecklistEntry::STATUS_NON_COMPLIANT,
+                    ChecklistEntry::STATUS_NA,
+                ])
+                ->where('ms.rn', 1);
+
+            if ($scopedUnitId) {
+                $entryQuery->where('ms.unit_id', $scopedUnitId);
+            }
+
+            $statsByFrameworkUnit = $entryQuery->groupBy('controls.framework_id', 'ms.unit_id')->get();
+        }
 
         foreach ($frameworks as $fw) {
-            $stats = $statsByFramework->get($fw->id);
-            $compliantCount = $stats ? (int) $stats->compliant_count : 0;
-            $partialCount = $stats ? (int) $stats->partial_count : 0;
-            $nonCompliantCount = $stats ? (int) $stats->non_compliant_count : 0;
-            $naCount = $stats ? (int) $stats->na_count : 0;
+            $unitRows = $statsByFrameworkUnit->where('framework_id', $fw->id);
 
-            $applicableCount = $compliantCount + $partialCount + $nonCompliantCount;
-            $complianceRate = $applicableCount > 0 ? (int) round(($compliantCount / $applicableCount) * 100) : 0;
+            if ($scopedUnitId) {
+                $stats = $unitRows->first();
+                $compliantCount = $stats ? (int) $stats->compliant_count : 0;
+                $partialCount = $stats ? (int) $stats->partial_count : 0;
+                $nonCompliantCount = $stats ? (int) $stats->non_compliant_count : 0;
+                $naCount = $stats ? (int) $stats->na_count : 0;
+
+                $applicableCount = $compliantCount + $partialCount + $nonCompliantCount;
+                $complianceRate = $applicableCount > 0 ? (int) round(($compliantCount / $applicableCount) * 100) : 0;
+            } else {
+                // Overall (non-unit roles): average each unit's compliant-control
+                // count and rate from its most-recent session. Units never
+                // assessed contribute 0 compliant (no latest session row).
+                $perUnitRates = [];
+                $perUnitCompliant = [];
+                foreach ($unitRows as $row) {
+                    $compliant = (int) $row->compliant_count;
+                    $applicable = $compliant + (int) $row->partial_count + (int) $row->non_compliant_count;
+                    $perUnitCompliant[] = $compliant;
+                    if ($applicable > 0) {
+                        $perUnitRates[] = $compliant / $applicable;
+                    }
+                }
+
+                $compliantCount = $perUnitCompliant
+                    ? (int) round(array_sum($perUnitCompliant) / count($perUnitCompliant))
+                    : 0;
+                $partialCount = (int) $unitRows->sum('partial_count');
+                $nonCompliantCount = (int) $unitRows->sum('non_compliant_count');
+                $naCount = (int) $unitRows->sum('na_count');
+
+                $complianceRate = $perUnitRates
+                    ? (int) round((array_sum($perUnitRates) / count($perUnitRates)) * 100)
+                    : 0;
+
+                // Overall applicable across units drives overall_compliance_rate.
+                $applicableCount = $compliantCount + $partialCount + $nonCompliantCount;
+            }
 
             $totalApplicableOverall += $applicableCount;
             $totalCompliantOverall += $compliantCount;
