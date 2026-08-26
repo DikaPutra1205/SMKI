@@ -13,6 +13,7 @@ use App\Models\WorkUnit;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
@@ -369,7 +370,7 @@ class ChecklistEntryController extends Controller
 
         $now = now();
         $period = $request->input('periode', $now->format('Y-m'));
-        $periodLabel = $now->translatedFormat('F Y');
+        $periodLabel = Carbon::parse($period)->translatedFormat('F Y');
 
         $frameworks = Framework::whereHas('controls')->get();
         if ($frameworks->isEmpty()) {

@@ -313,6 +313,24 @@ class ChecklistEntryApiTest extends TestCase
             ->assertJsonStructure(['status', 'message', 'data' => ['created']]);
     }
 
+    // Period bug: konteks_penilaian month must follow the requested periode, not now().
+    public function test_generate_monthly_uses_requested_periode_month(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        ['unit' => $unit] = $this->seedUnitControlPics();
+
+        $this->actingAs($admin)
+            ->postJson('/api/checklist-entries/generate-monthly', ['periode' => '2026-03'])
+            ->assertOk();
+
+        $session = ChecklistSession::where('unit_id', $unit->id)
+            ->where('periode', '2026-03')
+            ->firstOrFail();
+
+        $this->assertSame('2026-03', $session->periode);
+        $this->assertStringContainsString('Maret 2026', $session->konteks_penilaian);
+    }
+
     // Fix verified: a comment-only PATCH (no status key) must NOT wipe tanggal_verifikasi.
     public function test_update_comment_only_preserves_tanggal_verifikasi(): void
     {

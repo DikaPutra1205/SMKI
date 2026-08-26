@@ -37,6 +37,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { formatPeriodeIndonesian } from '@/lib/utils';
 
 /* ─── Types ─────────────────────────────────────────────────────────────── */
 
@@ -661,7 +662,7 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                         {session.periode && (
                             <div className="border-l border-slate-100 pl-3.5 dark:border-slate-800">
                                 <span className="block text-[10px] font-bold text-slate-400 uppercase">Periode</span>
-                                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{session.periode}</span>
+                                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{formatPeriodeIndonesian(session.periode)}</span>
                             </div>
                         )}
                     </div>
