@@ -246,10 +246,15 @@ class ChecklistSessionController extends Controller
                 ->with('flash', ['type' => 'error', 'message' => "{$incomplete} kontrol belum diisi catatan untuk status Sebagian Patuh/Ketidaksesuaian/Tidak Berlaku."]);
         }
 
-        // Mark all entries with tanggal_input and reset verification state for submission
+        // Stamp submission time on every entry in the session.
+        $checklistSession->entries()->update(['tanggal_input' => now()]);
+
+        // Reset verification only for entries the admin rejected (left a note).
+        // Approved entries with no admin note stay verified — no follow-up needed.
         $checklistSession->entries()
+            ->whereNotNull('catatan_admin')
+            ->where('catatan_admin', '<>', '')
             ->update([
-                'tanggal_input' => now(),
                 'tanggal_verifikasi' => null,
                 'catatan_admin' => null,
                 'admin_id' => null,

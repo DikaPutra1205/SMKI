@@ -329,6 +329,60 @@ class ChecklistSessionApiTest extends TestCase
         $this->assertNull($fresh->admin_id);
     }
 
+    public function test_web_resubmit_keeps_verified_entries_without_admin_note(): void
+    {
+        extract($this->setupData());
+
+        $session = ChecklistSession::create([
+            'konteks_penilaian' => 'Sesi Resubmit Keep Verified',
+            'unit_id' => $unit->id,
+            'framework_id' => $fw->id,
+            'status' => 'in_progress',
+        ]);
+
+        // Approved, no admin note — should stay verified on resubmission.
+        $approved = ChecklistEntry::create([
+            'session_id' => $session->id,
+            'control_id' => $control1->id,
+            'unit_id' => $unit->id,
+            'pic_id' => $pic->id,
+            'admin_id' => $admin->id,
+            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'catatan' => 'Sudah patuh sepenuhnya.',
+            'catatan_admin' => null,
+            'tanggal_verifikasi' => now()->subDay(),
+        ]);
+
+        // Rejected, has admin note — should be reset for re-review.
+        $rejected = ChecklistEntry::create([
+            'session_id' => $session->id,
+            'control_id' => $control2->id,
+            'unit_id' => $unit->id,
+            'pic_id' => $pic->id,
+            'admin_id' => $admin->id,
+            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'catatan' => 'Sudah diperbaiki sesuai catatan admin.',
+            'catatan_admin' => 'Tolak sebelumnya: SOP belum disahkan.',
+            'tanggal_verifikasi' => now()->subDay(),
+        ]);
+
+        $this->actingAs($pic)
+            ->from('/admin/pic/checklist')
+            ->post("/admin/pic/checklist/{$session->id}/submit")
+            ->assertRedirect('/admin/pic/checklist')
+            ->assertSessionHas('flash.type', 'success');
+
+        $approvedFresh = $approved->fresh();
+        $this->assertNotNull($approvedFresh->tanggal_input);
+        $this->assertNotNull($approvedFresh->tanggal_verifikasi, 'verified entry without note must stay verified');
+        $this->assertNotNull($approvedFresh->admin_id);
+
+        $rejectedFresh = $rejected->fresh();
+        $this->assertNull($rejectedFresh->tanggal_verifikasi, 'rejected entry must be reset on resubmit');
+        $this->assertNull($rejectedFresh->catatan_admin);
+        $this->assertNull($rejectedFresh->admin_id);
+    }
+
     public function test_closed_session_locks_checklist_entries_from_updates(): void
     {
         extract($this->setupData());
