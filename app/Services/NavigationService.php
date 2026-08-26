@@ -118,24 +118,11 @@ class NavigationService
                 'denies' => ['work-unit.view'],
             ],
             [
-                'label' => 'Manajemen Kontrol',
-                'url' => '/compliance',
-                'icon' => 'ShieldCheck',
-                'permissions' => ['control.view'],
-            ],
-            [
                 'label' => 'Verifikasi Penilaian',
                 'url' => '/admin/kepatuhan/checklist/verify',
                 'icon' => 'ClipboardCheck',
                 'permissions' => ['checklist.bulk-verify'],
                 'denies' => ['work-unit.view'],
-            ],
-
-            [
-                'label' => 'Audit Log',
-                'url' => '/audit-logs',
-                'icon' => 'History',
-                'permissions' => ['audit-log.view'],
             ],
 
             // ── PIC Satuan Kerja ──────────────────────────────────────
@@ -161,6 +148,20 @@ class NavigationService
                 'icon' => 'AlertTriangle',
                 'permissions' => ['risk.view'],
                 'denies' => ['work-unit.view'],
+            ],
+
+            [
+                'label' => 'Manajemen Kontrol',
+                'url' => '/compliance',
+                'icon' => 'ShieldCheck',
+                'permissions' => ['control.view'],
+            ],
+
+            [
+                'label' => 'Audit Log',
+                'url' => '/audit-logs',
+                'icon' => 'History',
+                'permissions' => ['audit-log.view'],
             ],
         ];
     }

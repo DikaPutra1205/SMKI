@@ -105,11 +105,11 @@ type ConfirmAction = 'approve' | 'reject' | null;
 
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
 
-function fmtDate(value: string | null): string {
+function fmtDateTime(value: string | null): string {
     if (!value) return '';
     const d = new Date(value);
     if (Number.isNaN(d.getTime())) return '';
-    return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+    return d.toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 function kategoriLabel(k: string): string {
@@ -297,7 +297,7 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
                                 label: 'Status PIC',
                                 value: <StatusBadge tone={statusTone(entry.status)}>{t(`status.${entry.status ?? 'pending'}` as never)}</StatusBadge>,
                             },
-                            { label: 'Tanggal Input', value: fmtDate(entry.tanggal_input) || '—' },
+                            { label: 'Tanggal Input', value: fmtDateTime(entry.tanggal_input) || '—' },
                         ].map(({ label, value }, i, arr) => (
                             <div
                                 key={label}
@@ -351,7 +351,7 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
                     {alreadyVerified && (
                         <div className="border-info/20 bg-info-bg rounded-[10px] border px-3.5 py-3 dark:bg-sky-950/30">
                             <p className="text-info text-xs font-semibold dark:text-sky-400">
-                                Telah Diverifikasi · {fmtDate(entry.tanggal_verifikasi)}
+                                Telah Diverifikasi · {fmtDateTime(entry.tanggal_verifikasi)}
                                 {entry.admin?.name ? ` oleh ${entry.admin.name}` : ''}
                             </p>
                             {entry.catatan_admin && <p className="text-body mt-1 text-xs dark:text-slate-300">{entry.catatan_admin}</p>}
@@ -841,7 +841,7 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                                                 {entry.tanggal_verifikasi ? (
                                                     <div className="flex flex-col">
                                                         <span className="text-xs font-semibold text-slate-900 dark:text-slate-200">
-                                                            {fmtDate(entry.tanggal_verifikasi)}
+                                                            {fmtDateTime(entry.tanggal_verifikasi)}
                                                         </span>
                                                         {entry.admin?.name && (
                                                             <span className="text-[11px] text-slate-400">oleh {entry.admin.name}</span>
