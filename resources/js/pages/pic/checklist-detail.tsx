@@ -209,7 +209,7 @@ function EntryItemRow({
                 isVerified
                     ? verifiedRowTint
                     : showErrorLabels
-                      ? 'rounded-lg border-l-4 border-l-red-400 bg-red-50/50 pr-2 pl-3 dark:bg-red-950/20'
+                      ? 'rounded-lg border-l-4 border-l-amber-400 bg-amber-50/50 pr-2 pl-3 dark:bg-amber-950/20'
                       : ''
             }`}
         >
@@ -218,7 +218,7 @@ function EntryItemRow({
                     <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600 dark:bg-slate-800">
                         {entry.control.kode_klausul}
                     </span>
-                    <h4 className={`text-sm font-bold ${showErrorLabels ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-white'}`}>
+                    <h4 className={`text-sm font-bold ${showErrorLabels ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white'}`}>
                         {entry.control.judul}
                     </h4>
                 </div>
@@ -259,7 +259,7 @@ function EntryItemRow({
             })()}
 
             {showErrorLabels && missingStatus && (
-                <div className="mb-2 flex items-center gap-1 text-[11px] font-medium text-red-500">
+                <div className="mb-2 flex items-center gap-1 text-[11px] font-medium text-amber-500">
                     <XCircle className="h-3 w-3" />
                     Status wajib dipilih
                 </div>
@@ -349,7 +349,7 @@ function EntryItemRow({
                     </label>
                 </div>
                 {isEvidenceMissing && (
-                    <div className={`flex items-center gap-1 text-[11px] font-medium ${showErrorLabels ? 'text-red-500' : 'text-amber-500'}`}>
+                    <div className={`flex items-center gap-1 text-[11px] font-medium text-amber-500`}>
                         <XCircle className="h-3 w-3" />
                         Bukti wajib diunggah
                     </div>
