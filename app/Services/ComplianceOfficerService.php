@@ -279,7 +279,13 @@ class ComplianceOfficerService
                 'admin_id' => $user->id,
             ];
 
-            if ($adminNotes !== null) {
+            // Approving (compliant) must stay catatan-free — clear any prior note
+            // so the PIC screen never shows a red "Ditolak" cue on a compliant
+            // entry. On rejection (non_compliant) a supplied note overrides the
+            // existing one; if no note is given, the existing note is preserved.
+            if ($status === 'compliant') {
+                $updatePayload['catatan_admin'] = null;
+            } elseif ($adminNotes !== null) {
                 $updatePayload['catatan_admin'] = $adminNotes;
             }
 

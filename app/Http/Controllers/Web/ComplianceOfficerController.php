@@ -99,17 +99,9 @@ class ComplianceOfficerController extends Controller
         $adminNotes = $request->input('admin_notes');
 
         $entries = ChecklistEntry::whereIn('id', $entryIds)->get();
-        $hasStatusChange = $entries->contains(fn ($entry) => $entry->status !== $status);
 
-        if ($hasStatusChange && empty(trim($adminNotes ?? ''))) {
-            return back()->withErrors([
-                'admin_notes' => 'Catatan verifikasi admin wajib diisi karena terdapat perubahan status kepatuhan pada entri terpilih.',
-            ])->with('flash', [
-                'type' => 'error',
-                'message' => 'Catatan verifikasi admin wajib diisi karena terdapat perubahan status kepatuhan pada entri terpilih.',
-            ]);
-        }
-
+        // No note requirement: approving (compliant) must stay catatan-free, and
+        // the service only attaches a note on rejection when one is supplied.
         $verifiedCount = $this->complianceOfficerService->bulkVerifyChecklistEntries($user, $entryIds, $status, $adminNotes);
 
         return back()->with('flash', [
@@ -229,11 +221,13 @@ class ComplianceOfficerController extends Controller
             'admin_notes' => 'nullable|string|max:2000',
         ]);
 
-        // Admin may verify without a note; a verified entry with no
-        // catatan_admin renders green on the PIC screen (no auto-fill).
+        // Catatan admin only applies to the reject (non_compliant) path.
+        // Approving (compliant) must not attach a note — a note drives the
+        // red "Ditolak" cue on the PIC screen, so approval stays catatan-free.
+        $isReject = $validated['status'] === 'non_compliant';
         $entry->update([
             'status' => $validated['status'],
-            'catatan_admin' => ! empty(trim($validated['admin_notes'] ?? '')) ? trim($validated['admin_notes']) : null,
+            'catatan_admin' => $isReject && ! empty(trim($validated['admin_notes'] ?? '')) ? trim($validated['admin_notes']) : null,
             'tanggal_verifikasi' => now(),
             'admin_id' => $user->id,
         ]);

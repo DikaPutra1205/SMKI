@@ -175,12 +175,15 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
         setNoteError(null);
         setActionSubmitting(action);
 
+        // Approve (compliant) must not carry an admin note — catatan is only
+        // for the reject path. Backend also nulls catatan_admin on approve.
+        const payload = action === 'reject'
+            ? { status: targetStatus, admin_notes: adminNote.trim() || undefined }
+            : { status: targetStatus };
+
         router.post(
             `/admin/kepatuhan/checklist/verify/${entry.id}`,
-            {
-                status: targetStatus,
-                admin_notes: adminNote.trim() || undefined,
-            },
+            payload,
             {
                 preserveScroll: true,
                 preserveState: true,
@@ -564,13 +567,15 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
         }
 
         setBulkBusy(true);
+        // Approve (compliant) must not carry an admin note — catatan is only
+        // for the bulk reject path. Backend also nulls catatan_admin on approve.
+        const bulkPayload = bulkConfirmAction === 'reject'
+            ? { entry_ids: Array.from(selectedIds), status: targetStatus, admin_notes: bulkAdminNote.trim() || undefined }
+            : { entry_ids: Array.from(selectedIds), status: targetStatus };
+
         router.post(
             '/admin/kepatuhan/bulk-verify',
-            {
-                entry_ids: Array.from(selectedIds),
-                status: targetStatus,
-                admin_notes: bulkAdminNote.trim() || undefined,
-            },
+            bulkPayload,
             {
                 preserveScroll: true,
                 preserveState: true,
