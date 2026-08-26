@@ -288,7 +288,6 @@ return [
             'checklist.update',
             'checklist.verify',
             'checklist.generate-monthly',
-            'checklist-session.view',
             'checklist-session.read',
             'checklist-session.update',
             'control.read',

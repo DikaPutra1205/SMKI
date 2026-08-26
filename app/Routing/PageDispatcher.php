@@ -57,7 +57,7 @@ class PageDispatcher
             'default' => 'superadmin/roles',
         ],
         'checklist' => [
-            'permissions' => ['checklist-session.view'],
+            'permissions' => ['checklist-session.read'],
             'destinations' => [
                 'pic' => 'pic/checklist',
                 'superadmin' => 'pic/checklist',

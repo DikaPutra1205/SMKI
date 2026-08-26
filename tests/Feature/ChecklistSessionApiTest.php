@@ -677,14 +677,13 @@ class ChecklistSessionApiTest extends TestCase
 
     // routes/web.php:58-59 point to Web\ChecklistSessionController@destroy/@restore,
     // which do not exist in that controller -> 500.
-    public function test_web_admin_checklist_session_destroy_and_restore_routes_broken(): void
+    public function test_web_admin_checklist_session_destroy_soft_deletes(): void
     {
         extract($this->setupData());
         $session = ChecklistSession::create(['konteks_penilaian' => 'Sesi admin web', 'unit_id' => $unit->id, 'framework_id' => $fw->id]);
 
-        $this->actingAs($admin)->delete("/admin/kepatuhan/checklist-sessions/{$session->id}")->assertStatus(500);
-        $this->actingAs($admin)->post("/admin/kepatuhan/checklist-sessions/{$session->id}/restore")->assertStatus(500);
-        $this->assertNotSoftDeleted('checklist_sessions', ['id' => $session->id]);
+        $this->actingAs($admin)->delete("/admin/kepatuhan/checklist-sessions/{$session->id}")->assertRedirect('/admin/kepatuhan/sessions');
+        $this->assertSoftDeleted('checklist_sessions', ['id' => $session->id]);
     }
 
     public function test_store_rejects_missing_konteks_penilaian(): void

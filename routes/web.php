@@ -66,7 +66,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/sessions', [ComplianceController::class, 'sessions'])->name('sessions');
 
         // ── Checklist Sessions (Inertia-style) ───────────────────────────────────
-        Route::post('/checklist-sessions', [ChecklistSessionController::class, 'store'])->name('checklist-sessions.store');
+        Route::post('/checklist-sessions', [ChecklistSessionController::class, 'generate'])->name('checklist-sessions.store');
+        Route::post('/generate-monthly', [ChecklistSessionController::class, 'generateMonthly'])->name('checklist-sessions.generate-monthly');
         Route::put('/checklist-sessions/{checklistSession}', [ChecklistSessionController::class, 'update'])->name('checklist-sessions.update');
         Route::delete('/checklist-sessions/{checklistSession}', [ChecklistSessionController::class, 'destroy'])->name('checklist-sessions.destroy');
         Route::post('/checklist-sessions/{id}/restore', [ChecklistSessionController::class, 'restore'])->name('checklist-sessions.restore');

@@ -151,6 +151,13 @@ class NavigationService
             ],
 
             [
+                'label' => 'Manajemen Sesi Checklist',
+                'url' => '/admin/kepatuhan/sessions',
+                'icon' => 'ClipboardList',
+                'permissions' => ['checklist-session.view'],
+            ],
+
+            [
                 'label' => 'Manajemen Kontrol',
                 'url' => '/compliance',
                 'icon' => 'ShieldCheck',
