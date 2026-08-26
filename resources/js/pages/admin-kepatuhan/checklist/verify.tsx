@@ -18,7 +18,7 @@ import { Toast } from '@/components/ui/Toast';
 import AppLayout from '@/layouts/AppLayout';
 import { useCan } from '@/lib/can';
 import { t } from '@/lib/i18n';
-import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     ArrowDown,
     ArrowLeft,
@@ -28,9 +28,9 @@ import {
     Eye,
     FileText,
     Filter,
+    Loader2,
     Search,
     Shield,
-    Loader2,
     ShieldCheck,
     X,
     XCircle,
@@ -136,13 +136,13 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
     const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
     const [adminNote, setAdminNote] = useState('');
     const [noteError, setNoteError] = useState<string | null>(null);
-    const [busy, setBusy] = useState(false);
-    const form = useForm({ status: '', admin_notes: '' });
+    const [actionSubmitting, setActionSubmitting] = useState<'approve' | 'reject' | null>(null);
 
     useEffect(() => {
-        setAdminNote(entry?.tanggal_verifikasi ? (entry?.catatan_admin || '') : '');
+        setAdminNote(entry?.tanggal_verifikasi ? entry?.catatan_admin || '' : '');
         setNoteError(null);
         setConfirmAction(null);
+        setActionSubmitting(null);
     }, [entry?.id, entry?.catatan_admin, entry?.tanggal_verifikasi]);
 
     useEffect(() => {
@@ -162,47 +162,59 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
         return () => document.removeEventListener('keydown', handler);
     }, [entry, onClose]);
 
-    const handleActionClick = (action: 'approve' | 'reject') => {
-        if (!entry) return;
-        // For approve: no note needed — submit immediately to confirm
-        // For reject: require note before confirming
+    const executeVerify = (action: 'approve' | 'reject') => {
+        if (!entry || actionSubmitting) return;
+        const targetStatus = action === 'approve' ? 'compliant' : 'non_compliant';
+
         if (action === 'reject' && !adminNote.trim()) {
             setNoteError('Catatan verifikasi admin wajib diisi sebelum menolak.');
             return;
         }
+
         setNoteError(null);
-        setConfirmAction(action);
+        setActionSubmitting(action);
+
+        router.post(
+            `/admin/kepatuhan/checklist/verify/${entry.id}`,
+            {
+                status: targetStatus,
+                admin_notes: adminNote.trim() || undefined,
+            },
+            {
+                preserveScroll: true,
+                preserveState: true,
+                only: ['entries', 'session', 'flash'],
+                onSuccess: () => {
+                    setActionSubmitting(null);
+                    setConfirmAction(null);
+                    setAdminNote('');
+                    setNoteError(null);
+                    onClose();
+                },
+                onError: () => {
+                    setActionSubmitting(null);
+                    setConfirmAction(null);
+                },
+            },
+        );
     };
 
-    function submitDecision() {
-        if (!confirmAction || !entry) return;
-
-        const targetStatus = confirmAction === 'approve' ? 'compliant' : 'non_compliant';
-
-        // Reject requires a note; approve does not
-        if (confirmAction === 'reject' && !adminNote.trim()) {
-            setNoteError('Catatan verifikasi admin wajib diisi sebelum menolak.');
-            setConfirmAction(null);
+    const handleActionClick = (action: 'approve' | 'reject') => {
+        if (!entry || actionSubmitting) return;
+        if (action === 'approve') {
+            // One-click fast approval
+            executeVerify('approve');
             return;
         }
-
-        setBusy(true);
-        form.setData({
-            status: targetStatus,
-            admin_notes: adminNote,
-        });
-        form.post(`/admin/kepatuhan/checklist/verify/${entry.id}`, {
-            preserveScroll: true,
-            onSuccess: () => {
-                setBusy(false);
-                setConfirmAction(null);
-                setAdminNote('');
-                setNoteError(null);
-                onClose();
-            },
-            onError: () => setBusy(false),
-        });
-    }
+        if (action === 'reject') {
+            if (!adminNote.trim()) {
+                setNoteError('Catatan verifikasi admin wajib diisi sebelum menolak.');
+                return;
+            }
+            setNoteError(null);
+            setConfirmAction('reject');
+        }
+    };
 
     if (!entry) return null;
 
@@ -366,37 +378,53 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
                     <div className="border-border bg-surface/60 flex items-center gap-3 border-t px-5 py-4 dark:border-slate-700 dark:bg-slate-900/60">
                         <button
                             type="button"
+                            disabled={actionSubmitting !== null}
                             onClick={() => handleActionClick('approve')}
-                            className="bg-success hover:bg-success/90 inline-flex flex-1 items-center justify-center gap-2 rounded-[10px] px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-colors"
+                            className="bg-success hover:bg-success/90 inline-flex flex-1 items-center justify-center gap-2 rounded-[10px] px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-all disabled:opacity-50 active:scale-[0.98]"
                         >
-                            <CheckCircle2 className="h-4 w-4" />
-                            Setujui (Patuh)
+                            {actionSubmitting === 'approve' ? (
+                                <>
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    Menyetujui...
+                                </>
+                            ) : (
+                                <>
+                                    <CheckCircle2 className="h-4 w-4" />
+                                    Setujui (Patuh)
+                                </>
+                            )}
                         </button>
                         <button
                             type="button"
+                            disabled={actionSubmitting !== null}
                             onClick={() => handleActionClick('reject')}
-                            className="bg-danger hover:bg-danger/90 inline-flex flex-1 items-center justify-center gap-2 rounded-[10px] px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-colors"
+                            className="bg-danger hover:bg-danger/90 inline-flex flex-1 items-center justify-center gap-2 rounded-[10px] px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-all disabled:opacity-50 active:scale-[0.98]"
                         >
-                            <XCircle className="h-4 w-4" />
-                            Tolak (Tidak Patuh)
+                            {actionSubmitting === 'reject' ? (
+                                <>
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    Menolak...
+                                </>
+                            ) : (
+                                <>
+                                    <XCircle className="h-4 w-4" />
+                                    Tolak (Tidak Patuh)
+                                </>
+                            )}
                         </button>
                     </div>
                 )}
             </aside>
 
             <ConfirmDialog
-                open={confirmAction !== null}
-                title={confirmAction === 'approve' ? 'Setujui Kontrol Ini?' : 'Tolak Kontrol Ini?'}
-                description={
-                    confirmAction === 'approve'
-                        ? 'Tandai entri kontrol ini sebagai Patuh? Catatan verifikasi akan dikirimkan ke PIC.'
-                        : 'Tandai entri kontrol ini sebagai Tidak Patuh? PIC unit kerja perlu menindaklanjuti.'
-                }
-                confirmLabel={confirmAction === 'approve' ? 'Setujui (Patuh)' : 'Tolak (Tidak Patuh)'}
-                variant={confirmAction === 'approve' ? 'info' : 'danger'}
-                busy={busy}
+                open={confirmAction === 'reject'}
+                title="Tolak Kontrol Ini?"
+                description="Tandai entri kontrol ini sebagai Tidak Patuh? PIC unit kerja perlu menindaklanjuti."
+                confirmLabel="Tolak (Tidak Patuh)"
+                variant="danger"
+                busy={actionSubmitting === 'reject'}
                 onCancel={() => setConfirmAction(null)}
-                onConfirm={submitDecision}
+                onConfirm={() => executeVerify('reject')}
             />
         </>,
         document.body,
@@ -443,8 +471,6 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
     const [bulkAdminNote, setBulkAdminNote] = useState('');
     const [bulkNoteError, setBulkNoteError] = useState<string | null>(null);
     const [bulkBusy, setBulkBusy] = useState(false);
-
-    const bulkForm = useForm({ entry_ids: [] as number[], status: '', admin_notes: '' });
 
     function clearSelection() {
         setSelectedIds(new Set());
@@ -537,20 +563,25 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
         }
 
         setBulkBusy(true);
-        bulkForm.setData({
-            entry_ids: Array.from(selectedIds),
-            status: targetStatus,
-            admin_notes: bulkAdminNote,
-        });
-        bulkForm.post('/admin/kepatuhan/bulk-verify', {
-            preserveScroll: true,
-            onSuccess: () => {
-                setBulkBusy(false);
-                setBulkNoteError(null);
-                clearSelection();
+        router.post(
+            '/admin/kepatuhan/bulk-verify',
+            {
+                entry_ids: Array.from(selectedIds),
+                status: targetStatus,
+                admin_notes: bulkAdminNote.trim() || undefined,
             },
-            onError: () => setBulkBusy(false),
-        });
+            {
+                preserveScroll: true,
+                preserveState: true,
+                only: ['entries', 'session', 'flash'],
+                onSuccess: () => {
+                    setBulkBusy(false);
+                    setBulkNoteError(null);
+                    clearSelection();
+                },
+                onError: () => setBulkBusy(false),
+            },
+        );
     }
 
     const breadcrumbs = [
@@ -943,7 +974,9 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                 {previewEvidence && (
                     <div className="flex flex-col items-center justify-center">
                         {isImageFile(previewEvidence.nama_file) ? (
-                            <div className={`relative flex max-h-[65vh] w-full items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-950 ${evidenceLoading ? 'min-h-[60vh]' : ''}`}>
+                            <div
+                                className={`relative flex max-h-[65vh] w-full items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-950 ${evidenceLoading ? 'min-h-[60vh]' : ''}`}
+                            >
                                 {evidenceLoading && (
                                     <div className="absolute inset-0 flex items-center justify-center">
                                         <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
@@ -972,80 +1005,76 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
 
             {/* Bulk Verification Modal Dialog with Optional/Required Admin Notes */}
             {bulkConfirmAction !== null &&
-                (() => {
-                    const targetStatus = bulkConfirmAction === 'approve' ? 'compliant' : 'non_compliant';
-
-                    return createPortal(
-                        <div className="animate-in fade-in fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px] duration-150">
-                            <div className="w-full max-w-[480px] rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
-                                <div className="mb-4 flex items-center gap-3">
-                                    <div
-                                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
-                                            bulkConfirmAction === 'approve'
-                                                ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400'
-                                                : 'bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400'
-                                        }`}
-                                    >
-                                        {bulkConfirmAction === 'approve' ? <CheckCircle2 className="h-5 w-5" /> : <XCircle className="h-5 w-5" />}
-                                    </div>
-                                    <div>
-                                        <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                                            {bulkConfirmAction === 'approve' ? 'Setujui Entri Terpilih?' : 'Tolak Entri Terpilih?'}
-                                        </h3>
-                                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                                            {selectedIds.size} entri kontrol checklist akan ditandai sebagai{' '}
-                                            <span className="font-semibold text-slate-900 dark:text-white">
-                                                {bulkConfirmAction === 'approve' ? 'Patuh' : 'Tidak Patuh'}
-                                            </span>
-                                            .
-                                        </p>
-                                    </div>
+                createPortal(
+                    <div className="animate-in fade-in fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px] duration-150">
+                        <div className="w-full max-w-[480px] rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+                            <div className="mb-4 flex items-center gap-3">
+                                <div
+                                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                                        bulkConfirmAction === 'approve'
+                                            ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400'
+                                            : 'bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400'
+                                    }`}
+                                >
+                                    {bulkConfirmAction === 'approve' ? <CheckCircle2 className="h-5 w-5" /> : <XCircle className="h-5 w-5" />}
                                 </div>
-
-                                {bulkConfirmAction !== 'approve' && (
-                                    <div className="mb-5 space-y-1">
-                                        <Textarea
-                                            label="Catatan Verifikasi Admin"
-                                            value={bulkAdminNote}
-                                            onChange={(e) => {
-                                                setBulkAdminNote(e.target.value);
-                                                if (bulkNoteError && e.target.value.trim()) setBulkNoteError(null);
-                                            }}
-                                            placeholder="Tuliskan alasan penolakan dan arahan tindak lanjut yang akan disertakan pada seluruh entri terpilih..."
-                                            rows={3}
-                                            hint="Wajib diisi saat menolak entri."
-                                        />
-                                        {bulkNoteError && <p className="text-xs font-semibold text-rose-600 dark:text-rose-400">{bulkNoteError}</p>}
-                                    </div>
-                                )}
-
-                                <div className="flex items-center justify-end gap-2.5">
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setBulkConfirmAction(null);
-                                            setBulkNoteError(null);
-                                        }}
-                                        className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
-                                    >
-                                        Batal
-                                    </button>
-                                    <button
-                                        type="button"
-                                        disabled={bulkBusy}
-                                        onClick={submitBulkDecision}
-                                        className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all active:scale-95 ${
-                                            bulkConfirmAction === 'approve' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-rose-600 hover:bg-rose-500'
-                                        } disabled:opacity-50`}
-                                    >
-                                        {bulkBusy ? 'Memproses…' : 'Konfirmasi & Simpan'}
-                                    </button>
+                                <div>
+                                    <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                                        {bulkConfirmAction === 'approve' ? 'Setujui Entri Terpilih?' : 'Tolak Entri Terpilih?'}
+                                    </h3>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                                        {selectedIds.size} entri kontrol checklist akan ditandai sebagai{' '}
+                                        <span className="font-semibold text-slate-900 dark:text-white">
+                                            {bulkConfirmAction === 'approve' ? 'Patuh' : 'Tidak Patuh'}
+                                        </span>
+                                        .
+                                    </p>
                                 </div>
                             </div>
-                        </div>,
-                        document.body,
-                    );
-                })()}
+
+                            {bulkConfirmAction !== 'approve' && (
+                                <div className="mb-5 space-y-1">
+                                    <Textarea
+                                        label="Catatan Verifikasi Admin"
+                                        value={bulkAdminNote}
+                                        onChange={(e) => {
+                                            setBulkAdminNote(e.target.value);
+                                            if (bulkNoteError && e.target.value.trim()) setBulkNoteError(null);
+                                        }}
+                                        placeholder="Tuliskan alasan penolakan dan arahan tindak lanjut yang akan disertakan pada seluruh entri terpilih..."
+                                        rows={3}
+                                        hint="Wajib diisi saat menolak entri."
+                                    />
+                                    {bulkNoteError && <p className="text-xs font-semibold text-rose-600 dark:text-rose-400">{bulkNoteError}</p>}
+                                </div>
+                            )}
+
+                            <div className="flex items-center justify-end gap-2.5">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setBulkConfirmAction(null);
+                                        setBulkNoteError(null);
+                                    }}
+                                    className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={bulkBusy}
+                                    onClick={submitBulkDecision}
+                                    className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all active:scale-95 ${
+                                        bulkConfirmAction === 'approve' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-rose-600 hover:bg-rose-500'
+                                    } disabled:opacity-50`}
+                                >
+                                    {bulkBusy ? 'Memproses…' : 'Konfirmasi & Simpan'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>,
+                    document.body,
+                )}
         </AppLayout>
     );
 }
