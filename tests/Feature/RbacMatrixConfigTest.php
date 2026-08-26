@@ -53,7 +53,7 @@ class RbacMatrixConfigTest extends TestCase
         $this->assertCount(50, $config['roles']['admin_kepatuhan']);
         $this->assertCount(21, $config['roles']['koordinator_smki']);
         $this->assertCount(21, $config['roles']['auditor']);
-        $this->assertCount(34, $config['roles']['pic']);
+        $this->assertCount(28, $config['roles']['pic']);
 
         $this->assertSame($config['roles']['auditor'], $config['roles']['koordinator_smki']);
         $this->assertContains('checklist.bulk-verify', $config['roles']['admin_kepatuhan']);

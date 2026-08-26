@@ -143,8 +143,8 @@ class NavigationService
                 'label' => 'Checklist',
                 'url' => '/checklist',
                 'icon' => 'ClipboardCheck',
-                'permissions' => ['checklist-session.create'],
-                'denies' => ['control.view'],
+                'permissions' => ['checklist-session.read'],
+                'denies' => ['control.view', 'audit-log.view'],
             ],
 
             // ── LANJOOT Satuan Kerja ──────────────────────────────────────

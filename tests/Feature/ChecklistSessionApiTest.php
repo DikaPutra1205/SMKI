@@ -444,15 +444,15 @@ class ChecklistSessionApiTest extends TestCase
     {
         extract($this->setupData());
 
-        $this->actingAs($pic)->postJson('/api/checklist-sessions', [
+        $this->actingAs($admin)->postJson('/api/checklist-sessions', [
             'konteks_penilaian' => 'Sesi dengan creator default',
             'unit_id' => $unit->id,
             'framework_id' => $fw->id,
         ])->assertCreated();
 
         $session = ChecklistSession::first();
-        $this->assertSame($pic->id, $session->created_by);
-        $this->assertSame($pic->id, $session->updated_by);
+        $this->assertSame($admin->id, $session->created_by);
+        $this->assertSame($admin->id, $session->updated_by);
     }
 
     public function test_index_filters_by_unit_framework_and_trashed(): void
@@ -550,7 +550,9 @@ class ChecklistSessionApiTest extends TestCase
             'pic_id' => $pic->id,
         ]);
 
-        $this->actingAs($pic)
+        // PIC may no longer delete sessions (checklist-session.delete removed);
+        // admin_kepatuhan performs the delete on its behalf.
+        $this->actingAs($admin)
             ->deleteJson("/api/checklist-sessions/{$session->id}")
             ->assertOk();
 
@@ -586,9 +588,9 @@ class ChecklistSessionApiTest extends TestCase
         $this->actingAs($pic)->get("/admin/pic/checklist/{$session->id}")->assertStatus(403);
     }
 
-    // D-gap — web assessments.store validates unit_id as "exists" only: a PIC can
-    // create a session (and its provisioned entries) for another unit.
-    public function test_web_pic_assessments_store_allows_cross_unit_creation(): void
+    // PIC may no longer create checklist sessions — generation is system-only.
+    // Manual create must be forbidden for PIC; admins/superadmin keep that ability.
+    public function test_web_pic_assessments_store_is_forbidden(): void
     {
         extract($this->setupData());
         $otherUnit = WorkUnit::create(['nama' => 'Biro Keuangan']);
@@ -600,11 +602,8 @@ class ChecklistSessionApiTest extends TestCase
             'framework_id' => $fw->id,
         ]);
 
-        $res->assertRedirect();
-        $session = ChecklistSession::where('konteks_penilaian', 'Sesi silang unit')->first();
-        $this->assertNotNull($session);
-        $this->assertSame($otherUnit->id, $session->unit_id);
-        $this->assertDatabaseHas('checklist_entries', ['session_id' => $session->id, 'unit_id' => $otherUnit->id]);
+        $res->assertForbidden();
+        $this->assertDatabaseMissing('checklist_sessions', ['konteks_penilaian' => 'Sesi silang unit']);
     }
 
     // Fixed: web assessments.update now enforces unit scoping (403 cross-unit).

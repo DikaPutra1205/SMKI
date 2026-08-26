@@ -48,16 +48,15 @@ class FlatRouteTenantIsolationTest extends TestCase
         $picA = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unitA->id]);
         $fw = Framework::factory()->create();
 
-        // Attempt to create session for other unit via the assessments store (inertia route)
+        // PIC may no longer create checklist sessions (system-only generation).
         $resp = $this->actingAs($picA)->post('/admin/pic/checklist', [
             'konteks_penilaian' => 'test',
             'unit_id' => $unitB->id,
             'framework_id' => $fw->id,
         ]);
 
-        // The store does not enforce tenant; check that created session belongs to requested unit
-        // but the isolation contract for A2 is about SEE/UPDATE isolation; allow creation as-is
-        // Just assert no 403 required, but tenant enforcement is out-of-scope per plan §7
-        $this->assertTrue(in_array($resp->status(), [302, 201, 200]));
+        // Creation is forbidden for PIC; the session must not be created.
+        $resp->assertForbidden();
+        $this->assertDatabaseMissing('checklist_sessions', ['konteks_penilaian' => 'test']);
     }
 }

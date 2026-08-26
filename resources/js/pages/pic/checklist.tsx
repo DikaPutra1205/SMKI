@@ -2,9 +2,9 @@ import AssessmentsListSkeleton from '@/components/skeletons/AssessmentsListSkele
 import { usePageLoading } from '@/hooks/usePageLoading';
 import AppLayout from '@/layouts/AppLayout';
 import { formatDateIndonesian, formatPeriodeIndonesian } from '@/lib/utils';
-import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { AlertTriangle, CheckCircle2, ChevronRight, ClipboardCheck, Plus, X } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Head, router, usePage } from '@inertiajs/react';
+import { AlertTriangle, CheckCircle2, ChevronRight, ClipboardCheck } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 
 interface Framework {
     id: number;
@@ -40,12 +40,9 @@ interface AssessmentsProps {
     user_unit: WorkUnit;
 }
 
-const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-
 export default function Assessments({ sessions, user_unit }: AssessmentsProps) {
     const { flash } = usePage<{ flash?: { type: string; message: string } }>().props;
     const [flashVisible, setFlashVisible] = useState(false);
-    const [showModal, setShowModal] = useState(false);
     const isLoading = usePageLoading('/admin/pic/checklist');
 
     useEffect(() => {
@@ -91,15 +88,7 @@ export default function Assessments({ sessions, user_unit }: AssessmentsProps) {
                 <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 py-20 dark:border-slate-700">
                     <ClipboardCheck className="mb-4 h-16 w-16 text-slate-300 dark:text-slate-600" />
                     <p className="mb-1 text-lg font-semibold text-slate-700 dark:text-slate-300">Belum ada assessment kepatuhan</p>
-                    <p className="mb-6 text-sm text-slate-400">Mulai buat assessment baru untuk satuan kerja Anda.</p>
-                    <button
-                        type="button"
-                        onClick={() => setShowModal(true)}
-                        className="bg-primary hover:bg-primary-700 inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors"
-                    >
-                        <Plus className="h-4 w-4" />
-                        Buat Assessment Baru
-                    </button>
+                    <p className="text-sm text-slate-400">Assessment akan dibuat otomatis oleh sistem setiap bulan untuk satuan kerja Anda.</p>
                 </div>
             ) : (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -172,142 +161,6 @@ export default function Assessments({ sessions, user_unit }: AssessmentsProps) {
                 </div>
             )}
 
-            {showModal && <CreateModal onClose={() => setShowModal(false)} userUnit={user_unit} />}
         </AppLayout>
-    );
-}
-
-function CreateModal({ onClose, userUnit }: { onClose: () => void; userUnit: WorkUnit }) {
-    const { data, setData, post, processing, errors } = useForm({
-        konteks_penilaian: '',
-        periode: '',
-        unit_id: userUnit?.id || 0,
-        framework_id: '' as string | number,
-    });
-
-    const currentYear = new Date().getFullYear();
-
-    const selectedMonth = useMemo(() => {
-        const m = parseInt(data.periode?.split(' ')[0] ?? '', 10);
-        return isNaN(m) ? -1 : m - 1;
-    }, [data.periode]);
-
-    const handleMonthChange = useCallback(
-        (monthIndex: number) => {
-            const monthName = MONTHS[monthIndex];
-            const yearPart = data.periode?.split(' ')[1] || String(new Date().getFullYear());
-            setData('periode', `${monthName} ${yearPart}`);
-        },
-        [data.periode, setData],
-    );
-
-    const handleYearChange = useCallback(
-        (year: number) => {
-            const monthPart = data.periode?.split(' ')[0] || MONTHS[new Date().getMonth()];
-            setData('periode', `${monthPart} ${year}`);
-        },
-        [data.periode, setData],
-    );
-
-    const selectedYear = parseInt(data.periode?.split(' ')[1] || '', 10) || currentYear;
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        post('/admin/pic/checklist', {
-            onSuccess: () => onClose(),
-        });
-    };
-
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm" onClick={onClose}>
-            <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-slate-900" onClick={(e) => e.stopPropagation()}>
-                <div className="mb-5 flex items-center justify-between">
-                    <h2 className="text-lg font-bold text-slate-900 dark:text-white">Buat Assessment Baru</h2>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
-                    >
-                        <X className="h-5 w-5" />
-                    </button>
-                </div>
-
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Konteks Penilaian</label>
-                        <input
-                            type="text"
-                            value={data.konteks_penilaian}
-                            onChange={(e) => setData('konteks_penilaian', e.target.value)}
-                            placeholder="Kepatuhan Keamanan Informasi"
-                            className="focus:border-primary focus:ring-primary w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 placeholder-slate-400 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                            required
-                        />
-                        {errors.konteks_penilaian && <p className="mt-1 text-xs text-red-500">{errors.konteks_penilaian}</p>}
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                        <div>
-                            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Bulan</label>
-                            <select
-                                value={selectedMonth >= 0 ? selectedMonth : ''}
-                                onChange={(e) => handleMonthChange(parseInt(e.target.value))}
-                                className="focus:border-primary focus:ring-primary w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                            >
-                                <option value="">Pilih bulan</option>
-                                {MONTHS.map((m, i) => (
-                                    <option key={m} value={i}>
-                                        {m}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        <div>
-                            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Tahun</label>
-                            <select
-                                value={selectedYear}
-                                onChange={(e) => handleYearChange(parseInt(e.target.value))}
-                                className="focus:border-primary focus:ring-primary w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                            >
-                                {[currentYear - 1, currentYear, currentYear + 1].map((y) => (
-                                    <option key={y} value={y}>
-                                        {y}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Periode</label>
-                        <input
-                            type="text"
-                            value={data.periode || ''}
-                            onChange={(e) => setData('periode', e.target.value)}
-                            placeholder="Januari 2026"
-                            className="focus:border-primary focus:ring-primary w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 placeholder-slate-400 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                        />
-                        {errors.periode && <p className="mt-1 text-xs text-red-500">{errors.periode}</p>}
-                    </div>
-
-                    <div className="flex items-center justify-end gap-3 pt-2">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-                        >
-                            Batal
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={processing || !data.konteks_penilaian}
-                            className="bg-primary hover:bg-primary-700 rounded-lg px-5 py-2 text-sm font-semibold text-white shadow-sm transition-colors disabled:opacity-50"
-                        >
-                            {processing ? 'Membuat...' : 'Buat Assessment'}
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
     );
 }

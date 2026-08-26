@@ -17,20 +17,20 @@ Rule: for `pic`, every ✓ grant is limited to records owned by the PIC's own un
 | **checklist** | | | | | |
 | checklist.view | ✓ | ✓ | ✓ | ✓ | ✓ |
 | checklist.read | ✓ | ✓ | ✓ | ✓ | ✓ |
-| checklist.create | ✓ | ✓ | ✗ | ✗ | ✓ |
+| checklist.create | ✓ | ✓ | ✗ | ✗ | ✗ |
 | checklist.update | ✓ | ✓ | ✗ | ✗ | ✓ |
 | checklist.verify | ✓ | ✓ | ✗ | ✗ | ✓ |
 | checklist.bulk-verify | ✓ | ✓ | ✗ | ✗ | ✗ |
-| checklist.delete | ✓ | ✓ | ✗ | ✗ | ✓ |
-| checklist.restore | ✓ | ✓ | ✗ | ✗ | ✓ |
+| checklist.delete | ✓ | ✓ | ✗ | ✗ | ✗ |
+| checklist.restore | ✓ | ✓ | ✗ | ✗ | ✗ |
 | checklist.generate-monthly | ✓ | ✓ | ✗ | ✗ | ✓ |
 | **checklist-session** | | | | | |
 | checklist-session.view | ✓ | ✓ | ✓ | ✓ | ✓ |
 | checklist-session.read | ✓ | ✓ | ✓ | ✓ | ✓ |
-| checklist-session.create | ✓ | ✓ | ✗ | ✗ | ✓ |
+| checklist-session.create | ✓ | ✓ | ✗ | ✗ | ✗ |
 | checklist-session.update | ✓ | ✓ | ✗ | ✗ | ✓ |
-| checklist-session.delete | ✓ | ✓ | ✗ | ✗ | ✓ |
-| checklist-session.restore | ✓ | ✓ | ✗ | ✗ | ✓ |
+| checklist-session.delete | ✓ | ✓ | ✗ | ✗ | ✗ |
+| checklist-session.restore | ✓ | ✓ | ✗ | ✗ | ✗ |
 | **control** | | | | | |
 | control.view | ✓ | ✓ | ✗ | ✗ | ✗ |
 | control.read | ✓ | ✓ | ✓ | ✓ | ✓ |
