@@ -943,7 +943,7 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                 {previewEvidence && (
                     <div className="flex flex-col items-center justify-center">
                         {isImageFile(previewEvidence.nama_file) ? (
-                            <div className="relative flex max-h-[65vh] w-full items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-950">
+                            <div className={`relative flex max-h-[65vh] w-full items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-950 ${evidenceLoading ? 'min-h-[60vh]' : ''}`}>
                                 {evidenceLoading && (
                                     <div className="absolute inset-0 flex items-center justify-center">
                                         <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
