@@ -244,10 +244,11 @@ class DashboardAnalyticsService
             $date = Carbon::now()->subMonths($i);
             $yearMonth = $date->format('Y-m');
             $label = $date->translatedFormat('F Y');
-            $endOfPeriod = $date->copy()->endOfMonth();
 
-            $query = ChecklistEntry::join('controls', 'checklist_entries.control_id', '=', 'controls.id')
-                ->where('checklist_entries.tanggal_input', '<=', $endOfPeriod);
+            $query = ChecklistEntry::query()
+                ->join('controls', 'checklist_entries.control_id', '=', 'controls.id')
+                ->join('checklist_sessions', 'checklist_entries.session_id', '=', 'checklist_sessions.id')
+                ->where('checklist_sessions.periode', '=', $yearMonth);
 
             if ($scopedUnitId) {
                 $query->where('checklist_entries.unit_id', $scopedUnitId);

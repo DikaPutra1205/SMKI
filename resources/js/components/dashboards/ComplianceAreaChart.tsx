@@ -30,9 +30,10 @@ interface CustomTooltipProps {
 
 function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
     if (!active || !payload || payload.length === 0) return null;
+    const fullMonth = payload[0]?.payload?.fullMonth ?? label;
     return (
         <div className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-lg dark:border-white/10 dark:bg-[#002745]">
-            <p className="dark:text-primary-300 mb-1.5 text-[11px] font-bold text-slate-500">{label}</p>
+            <p className="dark:text-primary-300 mb-1.5 text-[11px] font-bold text-slate-500">{fullMonth}</p>
             {payload.map((entry) => (
                 <div key={entry.dataKey} className="flex items-center gap-2 text-xs">
                     <span className="h-2 w-2 rounded-full" style={{ background: entry.color }} />
@@ -75,6 +76,7 @@ function MonthTick({ x = 0, y = 0, payload }: MonthTickProps) {
 export default function ComplianceAreaChart({ trends }: ComplianceAreaChartProps) {
     const data = trends.map((t) => ({
         label: t.label,
+        fullMonth: t.label.split(' ')[0],
         shortLabel: formatLabel(t.label),
         overall: Number(t.overall_rate.toFixed(1)),
         iso27001: Number(t.iso27001_rate.toFixed(1)),
