@@ -227,9 +227,38 @@ function ControlCardHeader({ entry }: { entry: EntryItem }) {
     );
 }
 
+/** Verified-by-admin indicator: green badge when no note, red note block when a note exists. */
+function VerifiedAdminNote({ entry }: { entry: EntryItem }) {
+    if (!entry.tanggal_verifikasi) return null;
+
+    if (!entry.catatan_admin) {
+        return (
+            <div className="mb-3 inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
+                <CheckCircle2 className="h-3 w-3" /> Terverifikasi Admin Kepatuhan
+            </div>
+        );
+    }
+
+    return (
+        <div className="mb-3 flex items-start gap-1.5 rounded-lg bg-red-50 px-2.5 py-2 text-xs text-red-700 dark:bg-red-950/30 dark:text-red-400">
+            <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+            <span>
+                <span className="font-semibold">Catatan Admin Kepatuhan:</span> {entry.catatan_admin}
+            </span>
+        </div>
+    );
+}
+
+/** Red-tint the whole card when the admin verified it with a follow-up note. */
+function verifiedRedCardClass(entry: EntryItem): string {
+    return entry.tanggal_verifikasi && entry.catatan_admin
+        ? 'border-red-200 bg-red-50/60 dark:border-red-900/50 dark:bg-red-950/20'
+        : '';
+}
+
 function NonCompliantCard({ entry, index }: { entry: EntryItem; index: number }) {
     return (
-        <div className="flex h-full flex-col rounded-xl border border-red-100 bg-white p-4 shadow-sm dark:border-red-900/40 dark:bg-slate-900">
+        <div className={`flex h-full flex-col rounded-xl border p-4 shadow-sm dark:bg-slate-900 ${verifiedRedCardClass(entry) || 'border-red-100 bg-white dark:border-red-900/40'}`}>
             <div className="mb-2 flex items-center justify-between gap-2">
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-100 text-xs font-bold text-red-600 dark:bg-red-900/40 dark:text-red-400">
                     {index}
@@ -240,6 +269,7 @@ function NonCompliantCard({ entry, index }: { entry: EntryItem; index: number })
                 </div>
             </div>
             <ControlCardHeader entry={entry} />
+            <VerifiedAdminNote entry={entry} />
             <h4 className="mb-1 text-sm font-bold text-slate-900 dark:text-white">{entry.control.judul}</h4>
             {entry.control.deskripsi && (
                 <p className="mb-3 line-clamp-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400">{entry.control.deskripsi}</p>
@@ -262,7 +292,7 @@ function NonCompliantCard({ entry, index }: { entry: EntryItem; index: number })
 
 function NaCard({ entry, index }: { entry: EntryItem; index: number }) {
     return (
-        <div className="flex h-full flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className={`flex h-full flex-col rounded-xl border p-4 shadow-sm dark:bg-slate-900 ${verifiedRedCardClass(entry) || 'border-slate-200 bg-white dark:border-slate-700'}`}>
             <div className="mb-2 flex items-center justify-between gap-2">
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
                     {index}
@@ -273,6 +303,7 @@ function NaCard({ entry, index }: { entry: EntryItem; index: number }) {
                 </div>
             </div>
             <ControlCardHeader entry={entry} />
+            <VerifiedAdminNote entry={entry} />
             <h4 className="mb-1 text-sm font-bold text-slate-900 dark:text-white">{entry.control.judul}</h4>
             {entry.control.deskripsi && (
                 <p className="mb-3 line-clamp-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400">{entry.control.deskripsi}</p>
@@ -295,7 +326,7 @@ function NaCard({ entry, index }: { entry: EntryItem; index: number }) {
 
 function PartialCard({ entry, index }: { entry: EntryItem; index: number }) {
     return (
-        <div className="flex h-full flex-col rounded-xl border border-amber-100 bg-white p-4 shadow-sm dark:border-amber-900/40 dark:bg-slate-900">
+        <div className={`flex h-full flex-col rounded-xl border p-4 shadow-sm dark:bg-slate-900 ${verifiedRedCardClass(entry) || 'border-amber-100 bg-white dark:border-amber-900/40'}`}>
             <div className="mb-2 flex items-center justify-between gap-2">
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-100 text-xs font-bold text-amber-600 dark:bg-amber-900/40 dark:text-amber-400">
                     {index}
@@ -306,6 +337,7 @@ function PartialCard({ entry, index }: { entry: EntryItem; index: number }) {
                 </div>
             </div>
             <ControlCardHeader entry={entry} />
+            <VerifiedAdminNote entry={entry} />
             <h4 className="mb-1 text-sm font-bold text-slate-900 dark:text-white">{entry.control.judul}</h4>
             {entry.control.deskripsi && (
                 <p className="mb-3 line-clamp-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400">{entry.control.deskripsi}</p>
@@ -328,7 +360,7 @@ function PartialCard({ entry, index }: { entry: EntryItem; index: number }) {
 
 function CompliantCard({ entry }: { entry: EntryItem }) {
     return (
-        <div className="flex h-full flex-col rounded-xl border border-emerald-100 bg-white p-4 shadow-sm dark:border-emerald-900/40 dark:bg-slate-900">
+        <div className={`flex h-full flex-col rounded-xl border p-4 shadow-sm dark:bg-slate-900 ${verifiedRedCardClass(entry) || 'border-emerald-100 bg-white dark:border-emerald-900/40'}`}>
             <div className="mb-2 flex items-center justify-between gap-2">
                 <div className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
                     <CheckCircle2 className="h-3 w-3" />
@@ -336,6 +368,7 @@ function CompliantCard({ entry }: { entry: EntryItem }) {
                 </div>
             </div>
             <ControlCardHeader entry={entry} />
+            <VerifiedAdminNote entry={entry} />
             <h4 className="mb-1 text-sm font-bold text-slate-900 dark:text-white">{entry.control.judul}</h4>
             {entry.control.deskripsi && (
                 <p className="mb-3 line-clamp-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400">{entry.control.deskripsi}</p>

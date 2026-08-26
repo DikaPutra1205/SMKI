@@ -277,6 +277,50 @@ class ComplianceOfficerTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_verify_single_entry_without_admin_notes(): void
+    {
+        $entry = ChecklistEntry::factory()->create([
+            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'catatan' => 'Catatan PIC',
+        ]);
+
+        // Verifying without a note must succeed (no longer required) and leave
+        // catatan_admin null — this drives the green state on the PIC screen.
+        $response = $this->actingAs($this->admin)
+            ->from('/admin/kepatuhan/checklist/verify')
+            ->post("/admin/kepatuhan/checklist/verify/{$entry->id}", [
+                'status' => ChecklistEntry::STATUS_COMPLIANT,
+            ]);
+
+        $response->assertRedirect();
+        $fresh = $entry->fresh();
+
+        $this->assertNull($fresh->catatan_admin);
+        $this->assertNotNull($fresh->tanggal_verifikasi);
+        $this->assertEquals(ChecklistEntry::STATUS_COMPLIANT, $fresh->status);
+        $this->assertEquals($this->admin->id, $fresh->admin_id);
+    }
+
+    public function test_admin_can_verify_single_entry_with_admin_notes(): void
+    {
+        $entry = ChecklistEntry::factory()->create([
+            'status' => ChecklistEntry::STATUS_PARTIAL,
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->from('/admin/kepatuhan/checklist/verify')
+            ->post("/admin/kepatuhan/checklist/verify/{$entry->id}", [
+                'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+                'admin_notes' => 'Perlu perbaikan bukti unggah',
+            ]);
+
+        $response->assertRedirect();
+        $fresh = $entry->fresh();
+
+        $this->assertEquals('Perlu perbaikan bukti unggah', $fresh->catatan_admin);
+        $this->assertNotNull($fresh->tanggal_verifikasi);
+    }
+
     public function test_pic_cannot_perform_bulk_verification(): void
     {
         $entry = ChecklistEntry::factory()->create();
@@ -1166,11 +1210,12 @@ class ComplianceOfficerTest extends TestCase
         $this->actingAs($this->picA)->get('/admin/kepatuhan/checklist/bulk-verify')->assertForbidden();
     }
 
-    public function test_single_verify_requires_catatan_when_status_changes(): void
+    public function test_single_verify_allows_catatan_when_status_changes(): void
     {
         $entry = ChecklistEntry::factory()->create(['status' => ChecklistEntry::STATUS_NON_COMPLIANT]);
 
-        // Attempting to change status to compliant without notes should fail with validation error
+        // Changing status without notes now succeeds (no longer required) and
+        // leaves catatan_admin null — this drives the green state on the PIC screen.
         $this->actingAs($this->admin)
             ->from('/admin/kepatuhan/checklist/verify')
             ->post("/admin/kepatuhan/checklist/verify/{$entry->id}", [
@@ -1178,20 +1223,25 @@ class ComplianceOfficerTest extends TestCase
                 'admin_notes' => '',
             ])
             ->assertRedirect('/admin/kepatuhan/checklist/verify')
-            ->assertSessionHasErrors('admin_notes');
+            ->assertSessionHas('flash.type', 'success');
 
-        // With notes, it must succeed
+        $this->assertNull($entry->fresh()->catatan_admin);
+        $this->assertNotNull($entry->fresh()->tanggal_verifikasi);
+
+        // With notes, catatan_admin is stored.
+        $entry2 = ChecklistEntry::factory()->create(['status' => ChecklistEntry::STATUS_NON_COMPLIANT]);
+
         $this->actingAs($this->admin)
             ->from('/admin/kepatuhan/checklist/verify')
-            ->post("/admin/kepatuhan/checklist/verify/{$entry->id}", [
+            ->post("/admin/kepatuhan/checklist/verify/{$entry2->id}", [
                 'status' => 'compliant',
                 'admin_notes' => 'Telah diverifikasi sesuai standar',
             ])
             ->assertRedirect('/admin/kepatuhan/checklist/verify')
             ->assertSessionHas('flash.type', 'success');
 
-        $this->assertEquals(ChecklistEntry::STATUS_COMPLIANT, $entry->fresh()->status);
-        $this->assertEquals('Telah diverifikasi sesuai standar', $entry->fresh()->catatan_admin);
+        $this->assertEquals(ChecklistEntry::STATUS_COMPLIANT, $entry2->fresh()->status);
+        $this->assertEquals('Telah diverifikasi sesuai standar', $entry2->fresh()->catatan_admin);
     }
 
     public function test_single_verify_allows_nullable_catatan_when_status_unchanged(): void

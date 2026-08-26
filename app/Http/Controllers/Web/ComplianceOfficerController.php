@@ -229,18 +229,11 @@ class ComplianceOfficerController extends Controller
             'admin_notes' => 'nullable|string|max:2000',
         ]);
 
-        if ($entry->status !== $validated['status'] && empty(trim($validated['admin_notes'] ?? ''))) {
-            return back()->withErrors([
-                'admin_notes' => 'Catatan verifikasi admin wajib diisi jika mengubah status kepatuhan.',
-            ])->with('flash', [
-                'type' => 'error',
-                'message' => 'Catatan verifikasi admin wajib diisi jika mengubah status kepatuhan.',
-            ]);
-        }
-
+        // Admin may verify without a note; a verified entry with no
+        // catatan_admin renders green on the PIC screen (no auto-fill).
         $entry->update([
             'status' => $validated['status'],
-            'catatan_admin' => ! empty(trim($validated['admin_notes'] ?? '')) ? $validated['admin_notes'] : $entry->catatan_admin,
+            'catatan_admin' => ! empty(trim($validated['admin_notes'] ?? '')) ? trim($validated['admin_notes']) : null,
             'tanggal_verifikasi' => now(),
             'admin_id' => $user->id,
         ]);

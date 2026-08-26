@@ -188,16 +188,30 @@ function EntryItemRow({
     if (!entry) return null;
 
     const isVerified = entry.tanggal_verifikasi !== null;
+    const hasAdminCatatan = !!entry.catatan_admin;
     const missingStatus = !entry.status;
     const isEvidenceMissing = !entry.active_evidence;
     const isIncomplete = missingStatus || isEvidenceMissing;
     const showErrorLabels = highlight && isIncomplete;
 
+    // A verified entry's color is driven by whether the admin left a note,
+    // not by the PIC's live status — so it stays fixed on the PIC screen.
+    const verifiedRowTint = isVerified
+        ? hasAdminCatatan
+            ? 'rounded-lg border-l-4 border-l-red-400 bg-red-50/40 pr-2 pl-3 dark:bg-red-950/20'
+            : 'rounded-lg border-l-4 border-l-emerald-400 bg-emerald-50/40 pr-2 pl-3 dark:bg-emerald-950/20'
+        : '';
+
     return (
         <div
             id={`entry-row-${entryId}`}
-            className={`border-b border-slate-100 py-5 last:border-b-0 dark:border-slate-800 ${showErrorLabels ? 'rounded-lg border-l-4 border-l-red-400 bg-red-50/50 pr-2 pl-3 dark:bg-red-950/20' : ''
-                }`}
+            className={`border-b border-slate-100 py-5 last:border-b-0 dark:border-slate-800 ${
+                isVerified
+                    ? verifiedRowTint
+                    : showErrorLabels
+                      ? 'rounded-lg border-l-4 border-l-red-400 bg-red-50/50 pr-2 pl-3 dark:bg-red-950/20'
+                      : ''
+            }`}
         >
             <div className="mb-2 flex items-start justify-between">
                 <div className="flex items-center gap-2">
@@ -219,22 +233,24 @@ function EntryItemRow({
             {entry.control.deskripsi && <p className="mb-3 text-xs leading-relaxed text-slate-500">{entry.control.deskripsi}</p>}
 
             {isVerified && (() => {
-                const verifiedStatusColor =
-                    entry.status === 'compliant'
-                        ? 'text-emerald-700 dark:text-emerald-400'
-                        : entry.status === 'partial'
-                            ? 'text-amber-700 dark:text-amber-400'
-                            : entry.status === 'non_compliant'
-                                ? 'text-red-700 dark:text-red-400'
-                                : 'text-slate-600 dark:text-slate-400';
+                const verifiedStatusColor = hasAdminCatatan
+                    ? 'text-red-700 dark:text-red-400'
+                    : 'text-emerald-700 dark:text-emerald-400';
                 return (
                     <div className={`mb-3 flex flex-col gap-1 text-xs ${verifiedStatusColor}`}>
                         <div className="flex items-center gap-1.5 font-semibold">
-                            <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-                            Sudah Diverifikasi oleh Pengelola
+                            {hasAdminCatatan ? (
+                                <XCircle className="h-3.5 w-3.5 shrink-0" />
+                            ) : (
+                                <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                            )}
+                            {hasAdminCatatan
+                                ? 'Ditolak Oleh Admin Kepatuhan'
+                                : 'Terverifikasi oleh Admin Kepatuhan'}
                         </div>
                         {entry.catatan_admin && (
                             <p className={`ml-5 text-xs font-medium leading-relaxed ${verifiedStatusColor}`}>
+                                <span className="font-semibold">Catatan: </span>
                                 {entry.catatan_admin}
                             </p>
                         )}
