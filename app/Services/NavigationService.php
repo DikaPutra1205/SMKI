@@ -94,6 +94,12 @@ class NavigationService
                 'icon' => 'Shield',
                 'permissions' => ['role.managementview'],
             ],
+            [
+                'label' => 'Manajemen Unit',
+                'url' => '/admin/superadmin/units',
+                'icon' => 'Building2',
+                'permissions' => ['work-unit.view'],
+            ],
 
             // ── PIC / generic dashboard (requires only dashboard.read) ──
             [

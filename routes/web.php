@@ -15,6 +15,7 @@ use App\Http\Controllers\Web\PicDashboardController;
 use App\Http\Controllers\Web\ReportExportController;
 use App\Http\Controllers\Web\RoleController;
 use App\Http\Controllers\Web\UserController;
+use App\Http\Controllers\Web\WorkUnitController;
 use App\Routing\PageDispatcher;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -114,6 +115,11 @@ Route::middleware('auth')->group(function () {
         Route::post('/roles', [RoleController::class, 'store'])->name('roles.store');
         Route::patch('/roles/{role}', [RoleController::class, 'update'])->name('roles.update');
         Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
+
+        Route::get('/units', [WorkUnitController::class, 'index'])->name('units.index');
+        Route::post('/units', [WorkUnitController::class, 'store'])->name('units.store');
+        Route::patch('/units/{workUnit}', [WorkUnitController::class, 'update'])->name('units.update');
+        Route::delete('/units/{workUnit}', [WorkUnitController::class, 'destroy'])->name('units.destroy');
 
         Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
     });
