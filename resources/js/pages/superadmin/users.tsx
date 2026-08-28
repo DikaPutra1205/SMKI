@@ -354,7 +354,7 @@ export default function Users({ users, roles, units }: Props) {
 
                 <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm">
-                        <thead className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold tracking-wider text-slate-500 uppercase dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-400">
+                        <thead className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-bold tracking-wider text-slate-600 uppercase dark:border-slate-800 dark:bg-[#001f38] dark:text-slate-300">
                             <tr>
                                 <th className="px-5 py-3.5">{t('admin.users.name')}</th>
                                 <th className="px-5 py-3.5">Peran (Role)</th>
@@ -362,14 +362,19 @@ export default function Users({ users, roles, units }: Props) {
                                 <th className="px-5 py-3.5 text-right">{t('common.actions')}</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
                             {filteredUsers.length ? (
-                                filteredUsers.map((u) => {
+                                filteredUsers.map((u, idx) => {
                                     const roleInfo = userRoleInfoMap.get(u.id) || resolveRoleInfo(u, roles);
                                     const badge = getRoleBadge(roleInfo.name, roleInfo.label);
                                     const initials = getInitials(u.name);
                                     return (
-                                        <tr key={u.id} className="transition-colors hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
+                                        <tr
+                                            key={u.id}
+                                            className={`transition-colors ${
+                                                idx % 2 === 0 ? 'bg-white dark:bg-[#00223d]/70' : 'bg-slate-50/75 dark:bg-[#00172b]/80'
+                                            } hover:bg-primary-50/40 dark:hover:bg-[#0a3b63]/60`}
+                                        >
                                             <td className="px-5 py-3.5">
                                                 <div className="flex items-center gap-3">
                                                     <div className="bg-primary-100 text-primary-700 dark:bg-navy-900/40 dark:text-primary-200 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold">

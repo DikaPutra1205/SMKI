@@ -94,6 +94,12 @@ class NavigationService
                 'icon' => 'Shield',
                 'permissions' => ['role.managementview'],
             ],
+            [
+                'label' => 'Manajemen Unit',
+                'url' => '/admin/superadmin/units',
+                'icon' => 'Building2',
+                'permissions' => ['work-unit.view'],
+            ],
 
             // ── PIC / generic dashboard (requires only dashboard.read) ──
             [
@@ -112,12 +118,6 @@ class NavigationService
                 'denies' => ['work-unit.view'],
             ],
             [
-                'label' => 'Manajemen Kontrol',
-                'url' => '/compliance',
-                'icon' => 'ShieldCheck',
-                'permissions' => ['control.view'],
-            ],
-            [
                 'label' => 'Verifikasi Penilaian',
                 'url' => '/admin/kepatuhan/checklist/verify',
                 'icon' => 'ClipboardCheck',
@@ -125,20 +125,13 @@ class NavigationService
                 'denies' => ['work-unit.view'],
             ],
 
-            [
-                'label' => 'Audit Log',
-                'url' => '/audit-logs',
-                'icon' => 'History',
-                'permissions' => ['audit-log.view'],
-            ],
-
             // ── PIC Satuan Kerja ──────────────────────────────────────
             [
                 'label' => 'Checklist',
                 'url' => '/checklist',
                 'icon' => 'ClipboardCheck',
-                'permissions' => ['checklist-session.create'],
-                'denies' => ['control.view'],
+                'permissions' => ['checklist-session.read'],
+                'denies' => ['control.view', 'audit-log.view'],
             ],
 
             // ── LANJOOT Satuan Kerja ──────────────────────────────────────
@@ -155,6 +148,27 @@ class NavigationService
                 'icon' => 'AlertTriangle',
                 'permissions' => ['risk.view'],
                 'denies' => ['work-unit.view'],
+            ],
+
+            [
+                'label' => 'Manajemen Sesi Checklist',
+                'url' => '/admin/kepatuhan/sessions',
+                'icon' => 'ClipboardList',
+                'permissions' => ['checklist-session.view'],
+            ],
+
+            [
+                'label' => 'Manajemen Kontrol',
+                'url' => '/compliance',
+                'icon' => 'ShieldCheck',
+                'permissions' => ['control.view'],
+            ],
+
+            [
+                'label' => 'Audit Log',
+                'url' => '/audit-logs',
+                'icon' => 'History',
+                'permissions' => ['audit-log.view'],
             ],
         ];
     }

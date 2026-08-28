@@ -95,12 +95,14 @@ class NavigationServiceTest extends TestCase
         $this->assertContains('/checklist', $before);
         $this->assertContains('/dashboard', $before);
 
-        // Grant audit-log.view — PIC should now also match the admin_kepatuhan
-        // dashboard entry (no change in visible URLs since PIC dashboard entry
-        // already covers dashboard.read).
+        // Grant dashboard.recent-activities — proves nav reacts to permission
+        // changes without code edits. This must NOT flip the /checklist link,
+        // which is gated on checklist-session.read (PIC keeps view/fill access).
+        // We deliberately do NOT grant audit-log.view here: that key is one of the
+        // `denies` on the PIC Checklist entry, so granting it would hide the link.
         $role = $pic->role()->first();
         $role->permissions()->attach(
-            Permission::whereIn('key', ['dashboard.recent-activities', 'audit-log.view'])->pluck('id')
+            Permission::whereIn('key', ['dashboard.recent-activities'])->pluck('id')
         );
         Role::flushPermissionsCache($pic->role_id);
 

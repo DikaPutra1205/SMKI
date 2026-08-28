@@ -313,6 +313,24 @@ class ChecklistEntryApiTest extends TestCase
             ->assertJsonStructure(['status', 'message', 'data' => ['created']]);
     }
 
+    // Period bug: konteks_penilaian month must follow the requested periode, not now().
+    public function test_generate_monthly_uses_requested_periode_month(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        ['unit' => $unit] = $this->seedUnitControlPics();
+
+        $this->actingAs($admin)
+            ->postJson('/api/checklist-entries/generate-monthly', ['periode' => '2026-03'])
+            ->assertOk();
+
+        $session = ChecklistSession::where('unit_id', $unit->id)
+            ->where('periode', '2026-03')
+            ->firstOrFail();
+
+        $this->assertSame('2026-03', $session->periode);
+        $this->assertStringContainsString('Maret 2026', $session->konteks_penilaian);
+    }
+
     // Fix verified: a comment-only PATCH (no status key) must NOT wipe tanggal_verifikasi.
     public function test_update_comment_only_preserves_tanggal_verifikasi(): void
     {
@@ -702,8 +720,8 @@ class ChecklistEntryApiTest extends TestCase
         $session = ChecklistSession::create(['konteks_penilaian' => 'Sesi bukti', 'unit_id' => $unit->id, 'framework_id' => $fw->id]);
         $entry = ChecklistEntry::create([
             'session_id' => $session->id, 'control_id' => $control->id, 'unit_id' => $unit->id,
-            'pic_id' => $pic->id, 'status' => ChecklistEntry::STATUS_COMPLIANT,
-            'admin_id' => $pic->id, 'tanggal_verifikasi' => now(), 'catatan' => 'ok',
+            'pic_id' => $pic->id, 'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'admin_id' => $pic->id, 'tanggal_verifikasi' => now(), 'catatan_admin' => 'Tolak, bukti buram', 'catatan' => 'ok',
         ]);
 
         $this->actingAs($pic)
@@ -717,7 +735,37 @@ class ChecklistEntryApiTest extends TestCase
             'checklist_entry_id' => $entry->id, 'uploaded_by' => $pic->id, 'version_number' => 1,
         ]);
         $this->assertDatabaseHas('checklist_entries', [
-            'id' => $entry->id, 'tanggal_verifikasi' => null,
+            'id' => $entry->id,
+            'tanggal_verifikasi' => null,
+            'catatan_admin' => null,
+            'admin_id' => null,
         ]);
+    }
+
+    public function test_web_pic_entry_status_update_clears_verification_and_admin_notes(): void
+    {
+        $unit = WorkUnit::create(['nama' => 'Unit Update Web']);
+        $fw = Framework::create(['nama' => 'ISO 27001', 'versi' => '2022']);
+        $control = $fw->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a']);
+        $pic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unit->id]);
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN_KEPATUHAN]);
+        $session = ChecklistSession::create(['konteks_penilaian' => 'Sesi Update', 'unit_id' => $unit->id, 'framework_id' => $fw->id]);
+        $entry = ChecklistEntry::create([
+            'session_id' => $session->id, 'control_id' => $control->id, 'unit_id' => $unit->id,
+            'pic_id' => $pic->id, 'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'admin_id' => $admin->id, 'tanggal_verifikasi' => now(), 'catatan_admin' => 'Perbaiki klausul ini',
+        ]);
+
+        $this->actingAs($pic)
+            ->patchJson("/admin/pic/checklist-entries/{$entry->id}", [
+                'status' => ChecklistEntry::STATUS_COMPLIANT,
+            ])
+            ->assertOk();
+
+        $fresh = $entry->fresh();
+        $this->assertSame(ChecklistEntry::STATUS_COMPLIANT, $fresh->status);
+        $this->assertNull($fresh->tanggal_verifikasi);
+        $this->assertNull($fresh->catatan_admin);
+        $this->assertNull($fresh->admin_id);
     }
 }

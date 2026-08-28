@@ -24,15 +24,17 @@ interface CustomTooltipProps {
         color?: string;
         name?: string;
         value?: number | string;
+        payload?: { fullMonth?: string; [key: string]: unknown };
     }>;
     label?: string;
 }
 
 function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
     if (!active || !payload || payload.length === 0) return null;
+    const fullMonth = payload[0]?.payload?.fullMonth ?? label;
     return (
         <div className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-lg dark:border-white/10 dark:bg-[#002745]">
-            <p className="dark:text-primary-300 mb-1.5 text-[11px] font-bold text-slate-500">{label}</p>
+            <p className="dark:text-primary-300 mb-1.5 text-[11px] font-bold text-slate-500">{fullMonth}</p>
             {payload.map((entry) => (
                 <div key={entry.dataKey} className="flex items-center gap-2 text-xs">
                     <span className="h-2 w-2 rounded-full" style={{ background: entry.color }} />
@@ -48,9 +50,27 @@ function formatLabel(label: string) {
     return label.split(' ')[0].substring(0, 3);
 }
 
+interface MonthTickProps {
+    x?: number;
+    y?: number;
+    payload?: { value?: string };
+}
+
+function MonthTick({ x = 0, y = 0, payload }: MonthTickProps) {
+    return (
+        <g transform={`translate(${x},${y})`}>
+            <circle cx={0} cy={0} r={2} fill="#94a3b8" />
+            <text x={0} y={16} textAnchor="middle" fill="#94a3b8" fontSize={10.5} fontWeight={500}>
+                {payload?.value ?? ''}
+            </text>
+        </g>
+    );
+}
+
 export default function ComplianceAreaChart({ trends }: ComplianceAreaChartProps) {
     const data = trends.map((t) => ({
         label: t.label,
+        fullMonth: t.label.split(' ')[0],
         shortLabel: formatLabel(t.label),
         overall: Number(t.overall_rate.toFixed(1)),
         iso27001: Number(t.iso27001_rate.toFixed(1)),
@@ -74,8 +94,15 @@ export default function ComplianceAreaChart({ trends }: ComplianceAreaChartProps
                         <stop offset="95%" stopColor={COLOR_27701} stopOpacity={0} />
                     </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" className="dark:[&_line]:stroke-slate-800" vertical={false} />
-                <XAxis dataKey="shortLabel" tick={{ fontSize: 10.5, fontWeight: 500, fill: '#94a3b8' }} axisLine={false} tickLine={false} dy={6} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" className="dark:[&_line]:stroke-slate-800" />
+                <XAxis
+                    dataKey="shortLabel"
+                    tick={<MonthTick />}
+                    tickLine={false}
+                    height={32}
+                    axisLine={true}
+                    className="[&_line]:stroke-slate-200 dark:[&_line]:stroke-slate-700"
+                />
                 <YAxis
                     domain={[0, 100]}
                     tick={{ fontSize: 10, fontWeight: 500, fill: '#94a3b8' }}
@@ -93,7 +120,7 @@ export default function ComplianceAreaChart({ trends }: ComplianceAreaChartProps
                     strokeWidth={1.5}
                     strokeDasharray="5 3"
                     fill="url(#grad27001)"
-                    dot={false}
+                    dot={{ r: 2.5, fill: COLOR_27001, strokeWidth: 0 }}
                     activeDot={{ r: 4, fill: COLOR_27001, strokeWidth: 0 }}
                     animationDuration={800}
                 />
@@ -105,7 +132,7 @@ export default function ComplianceAreaChart({ trends }: ComplianceAreaChartProps
                     strokeWidth={1.5}
                     strokeDasharray="5 3"
                     fill="url(#grad27701)"
-                    dot={false}
+                    dot={{ r: 2.5, fill: COLOR_27701, strokeWidth: 0 }}
                     activeDot={{ r: 4, fill: COLOR_27701, strokeWidth: 0 }}
                     animationDuration={800}
                 />
@@ -116,7 +143,7 @@ export default function ComplianceAreaChart({ trends }: ComplianceAreaChartProps
                     stroke={COLOR_OVERALL}
                     strokeWidth={2.5}
                     fill="url(#gradOverall)"
-                    dot={false}
+                    dot={{ r: 3, fill: '#fff', stroke: COLOR_OVERALL, strokeWidth: 2 }}
                     activeDot={{ r: 5, fill: '#fff', stroke: COLOR_OVERALL, strokeWidth: 2.5 }}
                     animationDuration={1000}
                 />

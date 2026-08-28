@@ -3,6 +3,8 @@
 namespace App\Observers;
 
 use App\Models\AuditLog;
+use App\Models\ChecklistEntry;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 
@@ -61,13 +63,41 @@ class SmkiObserver
         );
     }
 
+    /**
+     * Reassign a unit's unowned checklist entries to a newly-assigned PIC.
+     * Entries are only stamped with pic_id at generation time, so a PIC created
+     * after generation leaves those entries NULL and uneditable by the PIC
+     * (the edit/evidence gates filter on pic_id = auth user). When a PIC is
+     * saved with a unit, claim the unit's still-NULL entries so the PIC can
+     * edit/upload/submit them. Entries already owned by another PIC are left.
+     */
+    public function saved(Model $model): void
+    {
+        if (! $model instanceof User) {
+            return;
+        }
+
+        if ($model->role === User::ROLE_PIC && $model->unit_id) {
+            ChecklistEntry::where('unit_id', $model->unit_id)
+                ->whereNull('pic_id')
+                ->update(['pic_id' => $model->id]);
+        }
+    }
+
     public function deleted(Model $model): void
     {
+        $data = $model->toArray();
+        if (! empty($model->getHidden())) {
+            $hidden = array_flip($model->getHidden());
+            $data = array_diff_key($data, $hidden);
+        }
+
         AuditLog::catat(
             entityType: class_basename($model),
             entityId: $model->getKey(),
             aksi: 'delete',
             actorId: Auth::id(),
+            detail: ['data' => $data],
         );
     }
 }

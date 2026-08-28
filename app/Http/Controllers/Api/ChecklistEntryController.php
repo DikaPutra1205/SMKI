@@ -13,6 +13,7 @@ use App\Models\WorkUnit;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
@@ -270,12 +271,19 @@ class ChecklistEntryController extends Controller
         // the existing verification timestamp.
         $statusChanging = isset($data['status']) && $data['status'] !== $checklistEntry->status;
 
-        $checklistEntry->update([
+        $updatePayload = [
             'status' => $data['status'] ?? $checklistEntry->status,
             'catatan' => $data['catatan'] ?? $checklistEntry->catatan,
             'tanggal_input' => now(),
             'tanggal_verifikasi' => $statusChanging ? null : $checklistEntry->tanggal_verifikasi,
-        ]);
+        ];
+
+        if ($statusChanging) {
+            $updatePayload['catatan_admin'] = null;
+            $updatePayload['admin_id'] = null;
+        }
+
+        $checklistEntry->update($updatePayload);
 
         if ($evidenceData) {
             ComplianceEvidence::create($evidenceData);
@@ -362,7 +370,7 @@ class ChecklistEntryController extends Controller
 
         $now = now();
         $period = $request->input('periode', $now->format('Y-m'));
-        $periodLabel = $now->translatedFormat('F Y');
+        $periodLabel = Carbon::parse($period)->translatedFormat('F Y');
 
         $frameworks = Framework::whereHas('controls')->get();
         if ($frameworks->isEmpty()) {

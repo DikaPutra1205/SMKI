@@ -334,7 +334,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
 
                 <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs sm:text-sm">
-                        <thead className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold tracking-wider text-slate-500 uppercase dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-400">
+                        <thead className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-bold tracking-wider text-slate-600 uppercase dark:border-slate-800 dark:bg-[#001f38] dark:text-slate-300">
                             <tr>
                                 <th scope="col" className="px-5 py-3.5 text-left font-semibold">
                                     {t('compliance.code')}
@@ -350,13 +350,15 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                                 </th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
                             {filteredItems.length > 0 ? (
-                                filteredItems.map((item) => (
+                                filteredItems.map((item, idx) => (
                                     <tr
                                         key={item.id}
                                         onClick={() => setDetailTarget(item)}
-                                        className="cursor-pointer transition-colors hover:bg-slate-50/60 dark:hover:bg-slate-800/40"
+                                        className={`cursor-pointer transition-colors ${
+                                            idx % 2 === 0 ? 'bg-white dark:bg-[#00223d]/70' : 'bg-slate-50/75 dark:bg-[#00172b]/80'
+                                        } hover:bg-primary-50/40 dark:hover:bg-[#0a3b63]/60`}
                                     >
                                         <td className="text-primary dark:text-primary-200 px-5 py-4 font-bold whitespace-nowrap">{item.code}</td>
                                         <td className="px-5 py-4 text-left">

@@ -192,6 +192,7 @@ class ComplianceService
                 'framework_nama' => $session->framework ? "{$session->framework->nama}:{$session->framework->versi}" : '',
                 'creator_id' => $session->created_by,
                 'creator_name' => $session->creator?->name ?? '',
+                'catatan' => $session->catatan,
                 'total_entries' => $total,
                 'compliant_entries' => $compliant,
                 'partial_entries' => (int) $session->partial_entries,

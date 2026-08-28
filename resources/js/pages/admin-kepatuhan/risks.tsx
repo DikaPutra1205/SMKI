@@ -1,4 +1,4 @@
-﻿import { EmptyState } from '@/components/ui/EmptyState';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { Pagination } from '@/components/ui/Pagination';
 import { Select } from '@/components/ui/Select';
 import { SlideOver } from '@/components/ui/SlideOver';
@@ -354,7 +354,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
 
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-xs sm:text-sm">
-                            <thead className="border-b border-slate-100 bg-slate-50/70 text-[11px] font-bold tracking-wider text-slate-500 uppercase dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400">
+                            <thead className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-bold tracking-wider text-slate-600 uppercase dark:border-slate-800 dark:bg-[#001f38] dark:text-slate-300">
                                 <tr>
                                     <th scope="col" className="px-5 py-3.5">
                                         {t('risks.code')}
@@ -376,10 +376,15 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
                                 {items.length > 0 ? (
-                                    items.map((r) => (
-                                        <tr key={r.id} className="transition-colors hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
+                                    items.map((r, idx) => (
+                                        <tr
+                                            key={r.id}
+                                            className={`transition-colors ${
+                                                idx % 2 === 0 ? 'bg-white dark:bg-[#00223d]/70' : 'bg-slate-50/75 dark:bg-[#00172b]/80'
+                                            } hover:bg-primary-50/40 dark:hover:bg-[#0a3b63]/60`}
+                                        >
                                             <td className="px-5 py-4 whitespace-nowrap">
                                                 <code className="text-primary dark:text-primary-200 text-xs font-bold">RSK-{riskRef(r)}</code>
                                             </td>

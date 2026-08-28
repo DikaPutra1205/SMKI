@@ -18,7 +18,8 @@ import { Toast } from '@/components/ui/Toast';
 import AppLayout from '@/layouts/AppLayout';
 import { useCan } from '@/lib/can';
 import { t } from '@/lib/i18n';
-import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { formatPeriodeIndonesian } from '@/lib/utils';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     ArrowDown,
     ArrowLeft,
@@ -28,13 +29,16 @@ import {
     Eye,
     FileText,
     Filter,
+    Loader2,
     Search,
     Shield,
     ShieldCheck,
+    User,
     X,
     XCircle,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 /* ─── Types ─────────────────────────────────────────────────────────────── */
 
@@ -102,11 +106,11 @@ type ConfirmAction = 'approve' | 'reject' | null;
 
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
 
-function fmtDate(value: string | null): string {
+function fmtDateTime(value: string | null): string {
     if (!value) return '';
     const d = new Date(value);
     if (Number.isNaN(d.getTime())) return '';
-    return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+    return d.toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 function kategoriLabel(k: string): string {
@@ -134,14 +138,14 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
     const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
     const [adminNote, setAdminNote] = useState('');
     const [noteError, setNoteError] = useState<string | null>(null);
-    const [busy, setBusy] = useState(false);
-    const form = useForm({ status: '', admin_notes: '' });
+    const [actionSubmitting, setActionSubmitting] = useState<'approve' | 'reject' | null>(null);
 
     useEffect(() => {
-        setAdminNote(entry?.catatan_admin || '');
+        setAdminNote(entry?.tanggal_verifikasi ? entry?.catatan_admin || '' : '');
         setNoteError(null);
         setConfirmAction(null);
-    }, [entry?.id, entry?.catatan_admin]);
+        setActionSubmitting(null);
+    }, [entry?.id, entry?.catatan_admin, entry?.tanggal_verifikasi]);
 
     useEffect(() => {
         if (flash?.message) {
@@ -160,49 +164,56 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
         return () => document.removeEventListener('keydown', handler);
     }, [entry, onClose]);
 
-    const handleActionClick = (action: 'approve' | 'reject') => {
-        if (!entry) return;
+    const executeVerify = (action: 'approve' | 'reject') => {
+        if (!entry || actionSubmitting) return;
         const targetStatus = action === 'approve' ? 'compliant' : 'non_compliant';
-        const isChanging = entry.status !== targetStatus;
 
-        if (isChanging && !adminNote.trim()) {
-            setNoteError('Catatan verifikasi admin wajib diisi jika mengubah status kepatuhan.');
+        if (action === 'reject' && !adminNote.trim()) {
+            setNoteError('Catatan verifikasi admin wajib diisi sebelum menolak.');
             return;
         }
 
         setNoteError(null);
-        setConfirmAction(action);
-    };
+        setActionSubmitting(action);
 
-    function submitDecision() {
-        if (!confirmAction || !entry) return;
+        // Approve (compliant) must not carry an admin note — catatan is only
+        // for the reject path. Backend also nulls catatan_admin on approve.
+        const payload = action === 'reject' ? { status: targetStatus, admin_notes: adminNote.trim() || undefined } : { status: targetStatus };
 
-        const targetStatus = confirmAction === 'approve' ? 'compliant' : 'non_compliant';
-        const isChanging = entry.status !== targetStatus;
-
-        if (isChanging && !adminNote.trim()) {
-            setNoteError('Catatan verifikasi admin wajib diisi jika mengubah status kepatuhan.');
-            setConfirmAction(null);
-            return;
-        }
-
-        setBusy(true);
-        form.setData({
-            status: targetStatus,
-            admin_notes: adminNote,
-        });
-        form.post(`/admin/kepatuhan/checklist/verify/${entry.id}`, {
+        router.post(`/admin/kepatuhan/checklist/verify/${entry.id}`, payload, {
             preserveScroll: true,
+            preserveState: true,
+            only: ['entries', 'session', 'flash'],
             onSuccess: () => {
-                setBusy(false);
+                setActionSubmitting(null);
                 setConfirmAction(null);
                 setAdminNote('');
                 setNoteError(null);
                 onClose();
             },
-            onError: () => setBusy(false),
+            onError: () => {
+                setActionSubmitting(null);
+                setConfirmAction(null);
+            },
         });
-    }
+    };
+
+    const handleActionClick = (action: 'approve' | 'reject') => {
+        if (!entry || actionSubmitting) return;
+        if (action === 'approve') {
+            // One-click fast approval
+            executeVerify('approve');
+            return;
+        }
+        if (action === 'reject') {
+            if (!adminNote.trim()) {
+                setNoteError('Catatan verifikasi admin wajib diisi sebelum menolak.');
+                return;
+            }
+            setNoteError(null);
+            setConfirmAction('reject');
+        }
+    };
 
     if (!entry) return null;
 
@@ -214,7 +225,7 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
     const hasEvidence = Boolean(entry.active_evidence?.file_url);
     const alreadyVerified = Boolean(entry.tanggal_verifikasi);
 
-    return (
+    return createPortal(
         <>
             <Toast
                 visible={flashVisible}
@@ -281,7 +292,7 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
                                 label: 'Status PIC',
                                 value: <StatusBadge tone={statusTone(entry.status)}>{t(`status.${entry.status ?? 'pending'}` as never)}</StatusBadge>,
                             },
-                            { label: 'Tanggal Input', value: fmtDate(entry.tanggal_input) || '—' },
+                            { label: 'Tanggal Input', value: fmtDateTime(entry.tanggal_input) || '—' },
                         ].map(({ label, value }, i, arr) => (
                             <div
                                 key={label}
@@ -335,28 +346,30 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
                     {alreadyVerified && (
                         <div className="border-info/20 bg-info-bg rounded-[10px] border px-3.5 py-3 dark:bg-sky-950/30">
                             <p className="text-info text-xs font-semibold dark:text-sky-400">
-                                Telah Diverifikasi · {fmtDate(entry.tanggal_verifikasi)}
+                                Telah Diverifikasi · {fmtDateTime(entry.tanggal_verifikasi)}
                                 {entry.admin?.name ? ` oleh ${entry.admin.name}` : ''}
                             </p>
                             {entry.catatan_admin && <p className="text-body mt-1 text-xs dark:text-slate-300">{entry.catatan_admin}</p>}
                         </div>
                     )}
 
-                    {/* Admin notes textarea */}
-                    <div className="space-y-1">
-                        <Textarea
-                            label="Catatan Verifikasi Admin"
-                            value={adminNote}
-                            onChange={(e) => {
-                                setAdminNote(e.target.value);
-                                if (noteError && e.target.value.trim()) setNoteError(null);
-                            }}
-                            placeholder="Tuliskan catatan arahan atau tindak lanjut untuk PIC unit kerja..."
-                            rows={3}
-                            hint="Wajib diisi jika Anda mengubah status kepatuhan entri."
-                        />
-                        {noteError && <p className="text-xs font-semibold text-rose-600 dark:text-rose-400">{noteError}</p>}
-                    </div>
+                    {/* Admin notes textarea — only visible for reject flow */}
+                    {confirmAction !== 'approve' && (
+                        <div className="space-y-1">
+                            <Textarea
+                                label="Catatan Verifikasi Admin"
+                                value={adminNote}
+                                onChange={(e) => {
+                                    setAdminNote(e.target.value);
+                                    if (noteError && e.target.value.trim()) setNoteError(null);
+                                }}
+                                placeholder="Tuliskan alasan penolakan dan arahan tindak lanjut untuk PIC unit kerja..."
+                                rows={3}
+                                hint="Wajib diisi saat menolak entri."
+                            />
+                            {noteError && <p className="text-xs font-semibold text-rose-600 dark:text-rose-400">{noteError}</p>}
+                        </div>
+                    )}
                 </div>
 
                 {/* Footer action bar */}
@@ -364,39 +377,56 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
                     <div className="border-border bg-surface/60 flex items-center gap-3 border-t px-5 py-4 dark:border-slate-700 dark:bg-slate-900/60">
                         <button
                             type="button"
+                            disabled={actionSubmitting !== null}
                             onClick={() => handleActionClick('approve')}
-                            className="bg-success hover:bg-success/90 inline-flex flex-1 items-center justify-center gap-2 rounded-[10px] px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-colors"
+                            className="bg-success hover:bg-success/90 inline-flex flex-1 items-center justify-center gap-2 rounded-[10px] px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-all active:scale-[0.98] disabled:opacity-50"
                         >
-                            <CheckCircle2 className="h-4 w-4" />
-                            Setujui (Patuh)
+                            {actionSubmitting === 'approve' ? (
+                                <>
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    Menyetujui...
+                                </>
+                            ) : (
+                                <>
+                                    <CheckCircle2 className="h-4 w-4" />
+                                    Setujui (Patuh)
+                                </>
+                            )}
                         </button>
                         <button
                             type="button"
+                            disabled={actionSubmitting !== null}
                             onClick={() => handleActionClick('reject')}
-                            className="bg-danger hover:bg-danger/90 inline-flex flex-1 items-center justify-center gap-2 rounded-[10px] px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-colors"
+                            className="bg-danger hover:bg-danger/90 inline-flex flex-1 items-center justify-center gap-2 rounded-[10px] px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-all active:scale-[0.98] disabled:opacity-50"
                         >
-                            <XCircle className="h-4 w-4" />
-                            Tolak (Tidak Patuh)
+                            {actionSubmitting === 'reject' ? (
+                                <>
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    Menolak...
+                                </>
+                            ) : (
+                                <>
+                                    <XCircle className="h-4 w-4" />
+                                    Tolak (Tidak Patuh)
+                                </>
+                            )}
                         </button>
                     </div>
                 )}
             </aside>
 
             <ConfirmDialog
-                open={confirmAction !== null}
-                title={confirmAction === 'approve' ? 'Setujui Kontrol Ini?' : 'Tolak Kontrol Ini?'}
-                description={
-                    confirmAction === 'approve'
-                        ? 'Tandai entri kontrol ini sebagai Patuh? Catatan verifikasi akan dikirimkan ke PIC.'
-                        : 'Tandai entri kontrol ini sebagai Tidak Patuh? PIC unit kerja perlu menindaklanjuti.'
-                }
-                confirmLabel={confirmAction === 'approve' ? 'Setujui (Patuh)' : 'Tolak (Tidak Patuh)'}
-                variant={confirmAction === 'approve' ? 'info' : 'danger'}
-                busy={busy}
+                open={confirmAction === 'reject'}
+                title="Tolak Kontrol Ini?"
+                description="Tandai entri kontrol ini sebagai Tidak Patuh? PIC unit kerja perlu menindaklanjuti."
+                confirmLabel="Tolak (Tidak Patuh)"
+                variant="danger"
+                busy={actionSubmitting === 'reject'}
                 onCancel={() => setConfirmAction(null)}
-                onConfirm={submitDecision}
+                onConfirm={() => executeVerify('reject')}
             />
-        </>
+        </>,
+        document.body,
     );
 }
 
@@ -428,6 +458,11 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
 
     // ── Lightbox Evidence Modal State ─────────────────────────────────────────
     const [previewEvidence, setPreviewEvidence] = useState<{ file_url: string; nama_file?: string } | null>(null);
+    const [evidenceLoading, setEvidenceLoading] = useState(true);
+
+    useEffect(() => {
+        setEvidenceLoading(previewEvidence !== null);
+    }, [previewEvidence]);
 
     // ── Checkbox Selection State ──────────────────────────────────────────────
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -435,8 +470,6 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
     const [bulkAdminNote, setBulkAdminNote] = useState('');
     const [bulkNoteError, setBulkNoteError] = useState<string | null>(null);
     const [bulkBusy, setBulkBusy] = useState(false);
-
-    const bulkForm = useForm({ entry_ids: [] as number[], status: '', admin_notes: '' });
 
     function clearSelection() {
         setSelectedIds(new Set());
@@ -522,21 +555,24 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
         if (!bulkConfirmAction || selectedIds.size === 0) return;
 
         const targetStatus = bulkConfirmAction === 'approve' ? 'compliant' : 'non_compliant';
-        const hasStatusChange = items.some((e) => selectedIds.has(e.id) && e.status !== targetStatus);
 
-        if (hasStatusChange && !bulkAdminNote.trim()) {
-            setBulkNoteError('Catatan verifikasi admin wajib diisi karena terdapat perubahan status pada entri terpilih.');
+        if (bulkConfirmAction === 'reject' && !bulkAdminNote.trim()) {
+            setBulkNoteError('Catatan verifikasi admin wajib diisi sebelum menolak secara massal.');
             return;
         }
 
         setBulkBusy(true);
-        bulkForm.setData({
-            entry_ids: Array.from(selectedIds),
-            status: targetStatus,
-            admin_notes: bulkAdminNote,
-        });
-        bulkForm.post('/admin/kepatuhan/bulk-verify', {
+        // Approve (compliant) must not carry an admin note — catatan is only
+        // for the bulk reject path. Backend also nulls catatan_admin on approve.
+        const bulkPayload =
+            bulkConfirmAction === 'reject'
+                ? { entry_ids: Array.from(selectedIds), status: targetStatus, admin_notes: bulkAdminNote.trim() || undefined }
+                : { entry_ids: Array.from(selectedIds), status: targetStatus };
+
+        router.post('/admin/kepatuhan/bulk-verify', bulkPayload, {
             preserveScroll: true,
+            preserveState: true,
+            only: ['entries', 'session', 'flash'],
             onSuccess: () => {
                 setBulkBusy(false);
                 setBulkNoteError(null);
@@ -623,7 +659,9 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                         {session.periode && (
                             <div className="border-l border-slate-100 pl-3.5 dark:border-slate-800">
                                 <span className="block text-[10px] font-bold text-slate-400 uppercase">Periode</span>
-                                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{session.periode}</span>
+                                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                    {formatPeriodeIndonesian(session.periode)}
+                                </span>
                             </div>
                         )}
                     </div>
@@ -702,7 +740,7 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                 <div className="overflow-x-auto">
                     <table className="w-full min-w-[850px] text-left text-xs sm:text-sm">
                         <thead>
-                            <tr className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold tracking-wider text-slate-500 uppercase dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-400">
+                            <tr className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-bold tracking-wider text-slate-600 uppercase dark:border-slate-800 dark:bg-[#001f38] dark:text-slate-300">
                                 <th className="w-12 px-4 py-3.5 text-center">
                                     <input
                                         type="checkbox"
@@ -714,23 +752,22 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                                 </th>
                                 <th className="px-4 py-3.5">Kode Klausul</th>
                                 <th className="px-4 py-3.5">Kontrol / Klausul</th>
-                                <th className="px-4 py-3.5">Unit Kerja</th>
-                                <th className="px-4 py-3.5">PIC</th>
+                                <th className="px-4 py-3.5">Unit Kerja / PIC</th>
                                 <th className="px-4 py-3.5">Status PIC</th>
                                 <th className="px-4 py-3.5">Bukti (Evidence)</th>
                                 <th className="px-4 py-3.5">Status Verifikasi</th>
                                 <th className="px-4 py-3.5 text-right">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
                             {items.length === 0 ? (
                                 <tr>
-                                    <td colSpan={9} className="px-4 py-12">
+                                    <td colSpan={8} className="px-4 py-12">
                                         <EmptyState message="Tidak ada entri checklist yang cocok dengan kriteria filter ini." />
                                     </td>
                                 </tr>
                             ) : (
-                                items.map((entry) => {
+                                items.map((entry, idx) => {
                                     const code = entry.control?.kode_klausul ?? '—';
                                     const title = entry.control?.judul ?? t('common.noData');
                                     const framework = entry.control?.framework
@@ -739,19 +776,22 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                                     const hasEvidence = Boolean(entry.active_evidence?.file_url);
                                     const isChecked = selectedIds.has(entry.id);
                                     const isPanelActive = activeEntry?.id === entry.id;
+                                    const isEven = idx % 2 === 0;
 
                                     return (
                                         <tr
                                             key={entry.id}
                                             id={`verify-row-${entry.id}`}
                                             onClick={() => setActiveEntry(isPanelActive ? null : entry)}
-                                            className={`cursor-pointer transition-all ${
+                                            className={`cursor-pointer transition-colors ${
                                                 isChecked
-                                                    ? 'bg-primary-50/70 dark:bg-navy-900/40'
+                                                    ? 'bg-primary-100/70 dark:bg-navy-800/90'
                                                     : isPanelActive
-                                                      ? 'bg-primary-50/50 dark:bg-navy-900/30'
-                                                      : 'hover:bg-slate-50/60 dark:hover:bg-slate-800/40'
-                                            }`}
+                                                      ? 'bg-primary-50/80 dark:bg-navy-700/60'
+                                                      : isEven
+                                                        ? 'bg-white dark:bg-[#00223d]/70'
+                                                        : 'bg-slate-50/75 dark:bg-[#00172b]/80'
+                                            } hover:bg-primary-50/40 dark:hover:bg-[#0a3b63]/60`}
                                         >
                                             <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
                                                 <input
@@ -767,8 +807,13 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                                                 <p className="truncate font-semibold text-slate-900 dark:text-white">{title}</p>
                                                 {framework && <p className="truncate text-[11px] text-slate-400">{framework}</p>}
                                             </td>
-                                            <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{entry.unit?.nama ?? '—'}</td>
-                                            <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{entry.pic?.name ?? '—'}</td>
+                                            <td className="px-4 py-3">
+                                                <div className="font-medium text-slate-900 dark:text-slate-200">{entry.unit?.nama ?? '—'}</div>
+                                                <div className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                                                    <User className="h-3 w-3 shrink-0 text-slate-400" />
+                                                    <span>{entry.pic?.name ?? '—'}</span>
+                                                </div>
+                                            </td>
                                             <td className="px-4 py-3">
                                                 <StatusBadge tone={statusTone(entry.status)}>
                                                     {t(`status.${entry.status ?? 'pending'}` as never)}
@@ -797,7 +842,7 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                                                 {entry.tanggal_verifikasi ? (
                                                     <div className="flex flex-col">
                                                         <span className="text-xs font-semibold text-slate-900 dark:text-slate-200">
-                                                            {fmtDate(entry.tanggal_verifikasi)}
+                                                            {fmtDateTime(entry.tanggal_verifikasi)}
                                                         </span>
                                                         {entry.admin?.name && (
                                                             <span className="text-[11px] text-slate-400">oleh {entry.admin.name}</span>
@@ -936,11 +981,20 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                 {previewEvidence && (
                     <div className="flex flex-col items-center justify-center">
                         {isImageFile(previewEvidence.nama_file) ? (
-                            <div className="flex max-h-[65vh] w-full items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-950">
+                            <div
+                                className={`relative flex max-h-[65vh] w-full items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-950 ${evidenceLoading ? 'min-h-[60vh]' : ''}`}
+                            >
+                                {evidenceLoading && (
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+                                    </div>
+                                )}
                                 <img
                                     src={previewEvidence.file_url}
                                     alt={previewEvidence.nama_file}
-                                    className="max-h-[60vh] max-w-full rounded-lg object-contain"
+                                    onLoad={() => setEvidenceLoading(false)}
+                                    onError={() => setEvidenceLoading(false)}
+                                    className={`max-h-[60vh] max-w-full rounded-lg object-contain transition-opacity ${evidenceLoading ? 'opacity-0' : 'opacity-100'}`}
                                 />
                             </div>
                         ) : (
@@ -958,82 +1012,79 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
 
             {/* Bulk Verification Modal Dialog with Optional/Required Admin Notes */}
             {bulkConfirmAction !== null &&
-                (() => {
-                    const targetStatus = bulkConfirmAction === 'approve' ? 'compliant' : 'non_compliant';
-                    const hasStatusChange = items.some((e) => selectedIds.has(e.id) && e.status !== targetStatus);
-
-                    return (
-                        <div className="animate-in fade-in fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px] duration-150">
-                            <div className="w-full max-w-[480px] rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
-                                <div className="mb-4 flex items-center gap-3">
-                                    <div
-                                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
-                                            bulkConfirmAction === 'approve'
-                                                ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400'
-                                                : 'bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400'
-                                        }`}
-                                    >
-                                        {bulkConfirmAction === 'approve' ? <CheckCircle2 className="h-5 w-5" /> : <XCircle className="h-5 w-5" />}
-                                    </div>
-                                    <div>
-                                        <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                                            {bulkConfirmAction === 'approve' ? 'Setujui Entri Terpilih?' : 'Tolak Entri Terpilih?'}
-                                        </h3>
-                                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                                            {selectedIds.size} entri kontrol checklist akan ditandai sebagai{' '}
-                                            <span className="font-semibold text-slate-900 dark:text-white">
-                                                {bulkConfirmAction === 'approve' ? 'Patuh' : 'Tidak Patuh'}
-                                            </span>
-                                            .
-                                        </p>
-                                    </div>
+                createPortal(
+                    <div className="animate-in fade-in fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px] duration-150">
+                        <div className="w-full max-w-[480px] rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+                            <div className="mb-4 flex items-center gap-3">
+                                <div
+                                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                                        bulkConfirmAction === 'approve'
+                                            ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400'
+                                            : 'bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400'
+                                    }`}
+                                >
+                                    {bulkConfirmAction === 'approve' ? <CheckCircle2 className="h-5 w-5" /> : <XCircle className="h-5 w-5" />}
                                 </div>
+                                <div>
+                                    <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                                        {bulkConfirmAction === 'approve' ? 'Verifikasi & Setujui Kontrol' : 'Tolak & Minta Perbaikan'}
+                                    </h3>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                                        {selectedIds.size} entri checklist dipilih untuk diproses sekaligus.
+                                    </p>
+                                </div>
+                            </div>
 
-                                <div className="mb-5 space-y-1">
+                            <p className="mb-4 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                                {bulkConfirmAction === 'approve'
+                                    ? `Tandai ${selectedIds.size} entri kontrol terpilih sebagai Patuh (Compliant) dan telah terverifikasi secara resmi.`
+                                    : `Tandai ${selectedIds.size} entri kontrol terpilih sebagai Tidak Patuh / Ditolak. PIC terkait akan diminta untuk memperbarui bukti dukung.`}
+                            </p>
+
+                            {bulkConfirmAction === 'reject' && (
+                                <div className="mb-4">
                                     <Textarea
-                                        label="Catatan Verifikasi Admin"
+                                        label="Catatan Arahan Verifikator"
+                                        required
                                         value={bulkAdminNote}
                                         onChange={(e) => {
                                             setBulkAdminNote(e.target.value);
-                                            if (bulkNoteError && e.target.value.trim()) setBulkNoteError(null);
+                                            if (e.target.value.trim()) setBulkNoteError(null);
                                         }}
-                                        placeholder="Tuliskan arahan atau catatan tindak lanjut yang akan disertakan pada seluruh entri terpilih..."
+                                        placeholder="Tuliskan alasan penolakan dan arahan tindak lanjut yang akan disertakan pada seluruh entri terpilih..."
                                         rows={3}
-                                        hint={
-                                            hasStatusChange
-                                                ? 'Wajib diisi karena terdapat perubahan status kepatuhan pada entri yang dipilih.'
-                                                : 'Opsional jika tidak ada perubahan status.'
-                                        }
+                                        hint="Wajib diisi saat menolak entri."
                                     />
                                     {bulkNoteError && <p className="text-xs font-semibold text-rose-600 dark:text-rose-400">{bulkNoteError}</p>}
                                 </div>
+                            )}
 
-                                <div className="flex items-center justify-end gap-2.5">
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setBulkConfirmAction(null);
-                                            setBulkNoteError(null);
-                                        }}
-                                        className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
-                                    >
-                                        Batal
-                                    </button>
-                                    <button
-                                        type="button"
-                                        disabled={bulkBusy}
-                                        onClick={submitBulkDecision}
-                                        className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all active:scale-95 ${
-                                            bulkConfirmAction === 'approve' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-rose-600 hover:bg-rose-500'
-                                        } disabled:opacity-50`}
-                                    >
-                                        {bulkBusy ? 'Memproses…' : 'Konfirmasi & Simpan'}
-                                    </button>
-                                </div>
+                            <div className="flex items-center justify-end gap-2.5">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setBulkConfirmAction(null);
+                                        setBulkNoteError(null);
+                                    }}
+                                    className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={bulkBusy}
+                                    onClick={submitBulkDecision}
+                                    className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all active:scale-95 ${
+                                        bulkConfirmAction === 'approve' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-rose-600 hover:bg-rose-500'
+                                    } disabled:opacity-50`}
+                                >
+                                    {bulkBusy ? 'Memproses…' : 'Konfirmasi & Simpan'}
+                                </button>
                             </div>
                         </div>
-                    );
-                })()}
+                    </div>,
+                    document.body,
+                )}
         </AppLayout>
     );
 }

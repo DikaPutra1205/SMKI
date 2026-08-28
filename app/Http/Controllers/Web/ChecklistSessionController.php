@@ -6,9 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\ChecklistEntry;
 use App\Models\ChecklistSession;
 use App\Models\Control;
+use App\Models\Framework;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -94,6 +97,141 @@ class ChecklistSessionController extends Controller
 
         return redirect()->route('admin.pic.checklist.show', $session)
             ->with('flash', ['type' => 'success', 'message' => 'Assessment berhasil dibuat.']);
+    }
+
+    /**
+     * Admin manual generation — mirrors smki:generate-monthly-checklist.
+     * One session per (unit, framework, periode): rejects a duplicate month.
+     * Seeds one ChecklistEntry per Control with no PIC assigned yet.
+     */
+    public function generate(Request $request): RedirectResponse
+    {
+        Gate::authorize('checklist-session.create');
+
+        $validated = $request->validate([
+            'konteks_penilaian' => 'required|string|max:255',
+            'periode' => 'nullable|string|max:100',
+            'unit_id' => 'required|exists:work_units,id',
+            'framework_id' => 'nullable|exists:frameworks,id',
+        ]);
+
+        $user = $request->user();
+        $period = $validated['periode'] ?: now()->format('Y-m');
+        $frameworkId = $validated['framework_id'] ?: null;
+
+        // One session per month per (unit, framework).
+        $duplicate = ChecklistSession::withTrashed()
+            ->where('unit_id', $validated['unit_id'])
+            ->where('framework_id', $frameworkId)
+            ->where('periode', $period)
+            ->exists();
+
+        if ($duplicate) {
+            $frameworkLabel = $frameworkId ? Framework::find($frameworkId)?->nama : 'tanpa framework';
+            $request->session()->flash('flash', [
+                'type' => 'error',
+                'message' => "Sesi untuk unit ini pada periode {$period} ({$frameworkLabel}) sudah ada. Hanya satu sesi per bulan yang diizinkan.",
+            ]);
+
+            return redirect()->route('admin.kepatuhan.sessions')->withInput();
+        }
+
+        $label = $frameworkId ? Framework::find($frameworkId)?->nama : null;
+
+        $session = ChecklistSession::create([
+            'unit_id' => $validated['unit_id'],
+            'framework_id' => $frameworkId,
+            'periode' => $period,
+            'konteks_penilaian' => $validated['konteks_penilaian'],
+            'created_by' => $user->id,
+            'updated_by' => $user->id,
+            'catatan' => $label ? "Manual: {$label} ({$period})" : "Manual: {$period}",
+        ]);
+
+        // Assign the unit's PIC so the entries are editable by that PIC
+        // (the edit/evidence gates filter on pic_id = auth user).
+        $pic = User::where('unit_id', $session->unit_id)
+            ->whereHas('role', fn ($q) => $q->where('name', User::ROLE_PIC))
+            ->first()
+            ?? User::whereHas('role', fn ($q) => $q->where('name', User::ROLE_PIC))->first();
+
+        $query = Control::query();
+        if ($session->framework_id) {
+            $query->where('framework_id', $session->framework_id);
+        }
+        $controls = $query->get();
+
+        if ($controls->isNotEmpty()) {
+            $existing = ChecklistEntry::where('session_id', $session->id)
+                ->pluck('control_id')
+                ->flip()
+                ->toArray();
+
+            $insertData = [];
+            $now = now();
+            foreach ($controls as $ctrl) {
+                if (isset($existing[$ctrl->id])) {
+                    continue;
+                }
+                $insertData[] = [
+                    'session_id' => $session->id,
+                    'control_id' => $ctrl->id,
+                    'unit_id' => $session->unit_id,
+                    'pic_id' => $pic?->id,
+                    'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+                    'catatan' => 'Belum diisi oleh PIC.',
+                    'tanggal_input' => null,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+
+            foreach (array_chunk($insertData, 100) as $chunk) {
+                ChecklistEntry::insert($chunk);
+            }
+        }
+
+        return redirect()->route('admin.kepatuhan.sessions')
+            ->with('flash', ['type' => 'success', 'message' => 'Sesi checklist berhasil dibuat.']);
+    }
+
+    /**
+     * Manual replica of the monthly worker (smki:generate-monthly-checklist) for
+     * the current month, in case the scheduled run failed. Loops every unit ×
+     * framework, one session per (unit, framework, periode), assigns each unit's PIC.
+     */
+    public function generateMonthly(Request $request): RedirectResponse
+    {
+        Gate::authorize('checklist-session.create');
+
+        Artisan::call('smki:generate-monthly-checklist');
+        $output = trim(Artisan::output());
+
+        return redirect()->route('admin.kepatuhan.sessions')
+            ->with('flash', ['type' => 'success', 'message' => $output ?: 'Generate bulanan selesai.']);
+    }
+
+    public function destroy(Request $request, ChecklistSession $checklistSession): RedirectResponse
+    {
+        Gate::authorize('checklist-session.delete');
+
+        $checklistSession->entries()->delete();
+        $checklistSession->delete();
+
+        return redirect()->route('admin.kepatuhan.sessions')
+            ->with('flash', ['type' => 'success', 'message' => 'Sesi checklist berhasil dihapus.']);
+    }
+
+    public function restore(Request $request, int $id): RedirectResponse
+    {
+        Gate::authorize('checklist-session.restore');
+
+        $session = ChecklistSession::withTrashed()->findOrFail($id);
+        $session->restore();
+        $session->entries()->withTrashed()->restore();
+
+        return redirect()->route('admin.kepatuhan.sessions')
+            ->with('flash', ['type' => 'success', 'message' => 'Sesi checklist berhasil dipulihkan.']);
     }
 
     public function show(ChecklistSession $checklistSession): Response
@@ -246,11 +384,18 @@ class ChecklistSessionController extends Controller
                 ->with('flash', ['type' => 'error', 'message' => "{$incomplete} kontrol belum diisi catatan untuk status Sebagian Patuh/Ketidaksesuaian/Tidak Berlaku."]);
         }
 
-        // Mark all entries with tanggal_input
+        // Stamp submission time on every entry in the session.
+        $checklistSession->entries()->update(['tanggal_input' => now()]);
+
+        // Reset verification only for entries the admin rejected (left a note).
+        // Approved entries with no admin note stay verified — no follow-up needed.
         $checklistSession->entries()
-            ->whereNull('tanggal_input')
+            ->whereNotNull('catatan_admin')
+            ->where('catatan_admin', '<>', '')
             ->update([
-                'tanggal_input' => now(),
+                'tanggal_verifikasi' => null,
+                'catatan_admin' => null,
+                'admin_id' => null,
             ]);
 
         $checklistSession->update([
@@ -265,7 +410,11 @@ class ChecklistSessionController extends Controller
     {
         Gate::authorize('checklist-session.update');
 
-        if ($checklistSession->unit_id !== $request->user()->unit_id) {
+        // Admins (superadmin / admin_kepatuhan) may edit any session; PICs are
+        // scoped to their own unit elsewhere. This screen is admin-only.
+        $user = $request->user();
+        if ($user->role !== User::ROLE_SUPERADMIN && $user->role !== User::ROLE_ADMIN_KEPATUHAN
+            && $checklistSession->unit_id !== $user->unit_id) {
             abort(403);
         }
 
@@ -275,7 +424,7 @@ class ChecklistSessionController extends Controller
             'catatan' => 'nullable|string',
         ]);
 
-        $validated['updated_by'] = $request->user()->id;
+        $validated['updated_by'] = $user->id;
 
         $checklistSession->update($validated);
 

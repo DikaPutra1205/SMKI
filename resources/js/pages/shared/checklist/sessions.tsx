@@ -1,11 +1,14 @@
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
 import { Select } from '@/components/ui/Select';
 import AppLayout from '@/layouts/AppLayout';
+import { useCan } from '@/lib/can';
 import { t } from '@/lib/i18n';
 import { formatDateIndonesian, formatPeriodeIndonesian } from '@/lib/utils';
-import { Head, router, usePage } from '@inertiajs/react';
-import { CheckCircle2, Search, Send, ShieldCheck, UserRound } from 'lucide-react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { CalendarClock, CheckCircle2, Pencil, Plus, Search, Send, ShieldCheck, Trash2, UserRound } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 interface SessionItem {
@@ -18,6 +21,7 @@ interface SessionItem {
     framework_nama: string;
     creator_id: number | null;
     creator_name: string;
+    catatan: string | null;
     total_entries: number;
     compliant_entries: number;
     partial_entries: number;
@@ -48,7 +52,18 @@ interface SessionsProps {
     filters: Record<string, string>;
 }
 
+type ModalMode = 'create' | 'edit' | null;
+
+type SessionFormData = {
+    unit_id: string;
+    framework_id: string;
+    periode: string;
+    konteks_penilaian: string;
+    catatan: string;
+};
+
 export default function Sessions({ sessions, workUnits, frameworks, periodeOptions, filters }: SessionsProps) {
+    const can = useCan();
     const { flash } = usePage<{ flash?: { type: string; message: string } }>().props;
     const [flashVisible, setFlashVisible] = useState(false);
 
@@ -95,6 +110,110 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
         return () => clearTimeout(timer);
     }, [search, unitId, frameworkId, periode]);
 
+    // ── Create / Edit modal ──────────────────────────────────────────────────
+    const [modalMode, setModalMode] = useState<ModalMode>(null);
+    const [editingId, setEditingId] = useState<number | null>(null);
+
+    const form = useForm<SessionFormData>({
+        unit_id: '',
+        framework_id: '',
+        periode: new Date().toISOString().slice(0, 7),
+        konteks_penilaian: '',
+        catatan: '',
+    });
+
+    function openCreate() {
+        form.reset();
+        form.clearErrors();
+        form.setData('periode', new Date().toISOString().slice(0, 7));
+        setEditingId(null);
+        setModalMode('create');
+    }
+
+    function openEdit(item: SessionItem) {
+        form.setData({
+            unit_id: String(item.unit_id),
+            framework_id: item.framework_id ? String(item.framework_id) : '',
+            periode: item.periode || '',
+            konteks_penilaian: item.konteks_penilaian,
+            catatan: item.catatan ?? '',
+        });
+        form.clearErrors();
+        setEditingId(item.id);
+        setModalMode('edit');
+    }
+
+    function closeModal() {
+        setModalMode(null);
+        setEditingId(null);
+        form.reset();
+        form.clearErrors();
+    }
+
+    function submitForm(e: React.FormEvent) {
+        e.preventDefault();
+        form.transform((data) => ({
+            ...data,
+            framework_id: data.framework_id || null,
+        }));
+        if (modalMode === 'create') {
+            form.post('/admin/kepatuhan/checklist-sessions', {
+                onSuccess: closeModal,
+                preserveScroll: true,
+            });
+        } else if (modalMode === 'edit' && editingId !== null) {
+            form.patch(`/admin/kepatuhan/checklist-sessions/${editingId}`, {
+                onSuccess: closeModal,
+                preserveScroll: true,
+            });
+        }
+    }
+
+    // ── Delete ───────────────────────────────────────────────────────────────
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState<SessionItem | null>(null);
+    const [deleteBusy, setDeleteBusy] = useState(false);
+
+    // ── Generate Bulanan ──────────────────────────────────────────────────────
+    const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
+    const [generateBusy, setGenerateBusy] = useState(false);
+
+    function confirmGenerateMonthly() {
+        setGenerateBusy(true);
+        router.post(
+            '/admin/kepatuhan/generate-monthly',
+            {},
+            {
+                onFinish: () => {
+                    setGenerateBusy(false);
+                    setGenerateDialogOpen(false);
+                },
+            },
+        );
+    }
+
+    function handleDelete(item: SessionItem) {
+        setDeleteTarget(item);
+        setDeleteDialogOpen(true);
+    }
+
+    function confirmDelete() {
+        if (!deleteTarget) return;
+        setDeleteBusy(true);
+        router.delete(`/admin/kepatuhan/checklist-sessions/${deleteTarget.id}`, {
+            onFinish: () => {
+                setDeleteBusy(false);
+                setDeleteDialogOpen(false);
+                setDeleteTarget(null);
+            },
+        });
+    }
+
+    function cancelDelete() {
+        setDeleteDialogOpen(false);
+        setDeleteTarget(null);
+    }
+
     const totalItems = sessions.length;
     const effectivePerPage = perPage === 'all' ? totalItems || 1 : perPage;
     const totalPages = perPage === 'all' || totalItems === 0 ? 1 : Math.ceil(totalItems / effectivePerPage);
@@ -103,11 +222,11 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
     const endIndex = perPage === 'all' ? totalItems : Math.min(startIndex + effectivePerPage, totalItems);
     const paginatedSessions = perPage === 'all' ? sessions : sessions.slice(startIndex, endIndex);
 
-    const breadcrumbs = [{ label: t('common.dashboard'), href: '/admin/kepatuhan/dashboard' }, { label: 'Assessment PIC' }];
+    const breadcrumbs = [{ label: t('common.dashboard'), href: '/admin/kepatuhan/dashboard' }, { label: 'Manajemen Sesi Checklist' }];
 
     return (
         <AppLayout breadcrumbs={breadcrumbs} currentPath="/admin/kepatuhan/sessions">
-            <Head title="Assessment PIC - Admin Kepatuhan" />
+            <Head title="Manajemen Sesi Checklist - Admin Kepatuhan" />
 
             {flash?.message && flashVisible && (
                 <div className="border-border mb-4 flex items-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium shadow-sm dark:border-slate-700">
@@ -127,11 +246,31 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
 
             <div className="page-head flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Assessment PIC</h1>
+                    <h1 className="text-2xl font-bold tracking-tight">Manajemen Sesi Checklist</h1>
                     <p className="text-muted mt-1 text-xs sm:text-sm dark:text-slate-400">
-                        Pantau seluruh session pengecekan mandiri dari setiap satuan kerja.
+                        Buat dan kelola sesi pengecekan mandiri untuk setiap satuan kerja.
                     </p>
                 </div>
+                {can('checklist-session.create') && (
+                    <>
+                        <button
+                            type="button"
+                            onClick={() => setGenerateDialogOpen(true)}
+                            className="border-border-strong text-navy hover:bg-surface inline-flex items-center gap-2 rounded-[10px] border bg-white px-4 py-2 text-xs font-semibold transition-colors sm:text-sm dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:hover:bg-slate-800"
+                        >
+                            <CalendarClock className="h-4 w-4" />
+                            <span>Generate Bulanan</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={openCreate}
+                            className="bg-primary shadow-blue hover:bg-primary-700 inline-flex items-center gap-2 rounded-[10px] px-4 py-2 text-xs font-semibold text-white transition-colors sm:text-sm"
+                        >
+                            <Plus className="h-4 w-4" />
+                            <span>Buat Sesi</span>
+                        </button>
+                    </>
+                )}
             </div>
 
             {/* Toolbar */}
@@ -177,7 +316,7 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
 
             {/* Sessions */}
             {paginatedSessions.length === 0 ? (
-                <EmptyState message="Belum ada session assessment yang cocok dengan filter ini." />
+                <EmptyState message="Belum ada sesi checklist yang cocok dengan filter ini." />
             ) : (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {paginatedSessions.map((s) => {
@@ -245,7 +384,32 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
                                     </div>
                                 </div>
 
-                                <div className="border-border text-faint mt-auto flex flex-wrap items-center justify-between gap-2 border-t pt-3 text-[11px] dark:border-slate-700 dark:text-slate-500">
+                                {(can('checklist-session.update') || can('checklist-session.delete')) && (
+                                    <div className="border-border text-faint mt-auto flex flex-wrap items-center justify-end gap-1.5 border-t pt-3 dark:border-slate-700">
+                                        {can('checklist-session.update') && (
+                                            <button
+                                                type="button"
+                                                onClick={() => openEdit(s)}
+                                                className="border-border-strong text-navy hover:bg-surface inline-flex items-center gap-1.5 rounded-[10px] border bg-white px-3 py-1.5 text-xs font-semibold transition-colors dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:hover:bg-slate-800"
+                                            >
+                                                <Pencil className="h-3.5 w-3.5" />
+                                                Edit
+                                            </button>
+                                        )}
+                                        {can('checklist-session.delete') && (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDelete(s)}
+                                                className="border-danger-border bg-danger-bg text-danger hover:bg-danger/10 inline-flex items-center gap-1.5 rounded-[10px] border px-3 py-1.5 text-xs font-semibold transition-colors dark:border-red-800 dark:text-red-400"
+                                            >
+                                                <Trash2 className="h-3.5 w-3.5" />
+                                                Hapus
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+
+                                <div className="border-border text-faint mt-3 flex flex-wrap items-center justify-between gap-2 border-t pt-3 text-[11px] dark:border-slate-700 dark:text-slate-500">
                                     <span className="inline-flex items-center gap-1">
                                         <ShieldCheck className="h-3.5 w-3.5" />
                                         {s.verified_entries}/{s.total_entries} terverifikasi
@@ -270,6 +434,127 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
                     onPerPageChange={setPerPage}
                 />
             )}
+
+            <Modal
+                open={modalMode !== null}
+                title={modalMode === 'create' ? 'Buat Sesi Checklist' : 'Edit Sesi Checklist'}
+                onClose={closeModal}
+                maxWidth="lg"
+                footer={
+                    <>
+                        <button
+                            type="button"
+                            onClick={closeModal}
+                            className="border-border-strong text-body hover:bg-surface rounded-[10px] border bg-white px-4 py-2 text-sm font-medium transition-colors dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            type="submit"
+                            form="session-form"
+                            disabled={form.processing}
+                            className="bg-primary hover:bg-primary-700 inline-flex items-center gap-2 rounded-[10px] px-5 py-2 text-sm font-semibold text-white transition-colors disabled:opacity-50"
+                        >
+                            {form.processing ? 'Menyimpan...' : modalMode === 'create' ? 'Buat' : 'Simpan'}
+                        </button>
+                    </>
+                }
+            >
+                <form id="session-form" onSubmit={submitForm} className="space-y-4">
+                    <div>
+                        <label className="text-body mb-1 block text-xs font-semibold dark:text-slate-300">Unit Kerja</label>
+                        <Select value={form.data.unit_id} onChange={(e) => form.setData('unit_id', e.target.value)} disabled={modalMode === 'edit'}>
+                            <option value="">Pilih Unit Kerja</option>
+                            {workUnits.map((u) => (
+                                <option key={u.id} value={String(u.id)}>
+                                    {u.nama}
+                                </option>
+                            ))}
+                        </Select>
+                        {form.errors.unit_id && <p className="text-danger mt-1 text-[11px] font-medium dark:text-red-400">{form.errors.unit_id}</p>}
+                    </div>
+
+                    <div>
+                        <label className="text-body mb-1 block text-xs font-semibold dark:text-slate-300">Framework</label>
+                        <Select
+                            value={form.data.framework_id}
+                            onChange={(e) => form.setData('framework_id', e.target.value)}
+                            disabled={modalMode === 'edit'}
+                        >
+                            <option value="">Tanpa Framework</option>
+                            {frameworks.map((f) => (
+                                <option key={f.id} value={String(f.id)}>
+                                    {f.nama} ({f.versi})
+                                </option>
+                            ))}
+                        </Select>
+                        {form.errors.framework_id && (
+                            <p className="text-danger mt-1 text-[11px] font-medium dark:text-red-400">{form.errors.framework_id}</p>
+                        )}
+                    </div>
+
+                    <div>
+                        <label className="text-body mb-1 block text-xs font-semibold dark:text-slate-300">Periode (YYYY-MM)</label>
+                        <input
+                            type="text"
+                            value={form.data.periode}
+                            onChange={(e) => form.setData('periode', e.target.value)}
+                            placeholder="2026-08"
+                            disabled={modalMode === 'edit'}
+                            className="border-border-strong text-ink placeholder:text-faint focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white px-3 text-sm focus:ring-2 focus:outline-none disabled:opacity-60 dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
+                        />
+                        {form.errors.periode && <p className="text-danger mt-1 text-[11px] font-medium dark:text-red-400">{form.errors.periode}</p>}
+                    </div>
+
+                    <div>
+                        <label className="text-body mb-1 block text-xs font-semibold dark:text-slate-300">Konteks Penilaian</label>
+                        <input
+                            type="text"
+                            value={form.data.konteks_penilaian}
+                            onChange={(e) => form.setData('konteks_penilaian', e.target.value)}
+                            placeholder="Penilaian Bulanan SMKI - Agustus 2026"
+                            className="border-border-strong text-ink placeholder:text-faint focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white px-3 text-sm focus:ring-2 focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
+                        />
+                        {form.errors.konteks_penilaian && (
+                            <p className="text-danger mt-1 text-[11px] font-medium dark:text-red-400">{form.errors.konteks_penilaian}</p>
+                        )}
+                    </div>
+
+                    <div>
+                        <label className="text-body mb-1 block text-xs font-semibold dark:text-slate-300">Catatan</label>
+                        <textarea
+                            value={form.data.catatan}
+                            onChange={(e) => form.setData('catatan', e.target.value)}
+                            rows={3}
+                            className="border-border-strong text-ink placeholder:text-faint focus:border-primary focus:ring-primary/20 w-full rounded-[10px] border bg-white px-3 py-2 text-sm focus:ring-2 focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
+                        />
+                        {form.errors.catatan && <p className="text-danger mt-1 text-[11px] font-medium dark:text-red-400">{form.errors.catatan}</p>}
+                    </div>
+                </form>
+            </Modal>
+
+            <ConfirmDialog
+                open={deleteDialogOpen}
+                title="Hapus Sesi Checklist"
+                description={deleteTarget ? `Hapus sesi "${deleteTarget.konteks_penilaian}" beserta seluruh lembar checklist?` : ''}
+                confirmLabel="Hapus"
+                cancelLabel="Batal"
+                variant="danger"
+                busy={deleteBusy}
+                onCancel={cancelDelete}
+                onConfirm={confirmDelete}
+            />
+
+            <ConfirmDialog
+                open={generateDialogOpen}
+                title="Generate Bulanan"
+                description="Buat sesi checklist untuk seluruh satuan kerja periode bulan ini? Sesi yang sudah ada akan dilewati."
+                confirmLabel="Generate"
+                cancelLabel="Batal"
+                busy={generateBusy}
+                onCancel={() => setGenerateDialogOpen(false)}
+                onConfirm={confirmGenerateMonthly}
+            />
         </AppLayout>
     );
 }

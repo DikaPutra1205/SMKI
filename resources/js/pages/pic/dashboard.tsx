@@ -1,7 +1,9 @@
+import ComplianceAreaChart, { type TrendPoint } from '@/components/dashboards/ComplianceAreaChart';
+import { ChartSkeleton } from '@/components/skeletons/ChartSkeleton';
 import AppLayout from '@/layouts/AppLayout';
 import { formatDateIndonesian, formatPeriodeIndonesian } from '@/lib/utils';
 import { type SharedData } from '@/types';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Deferred, Head, Link, usePage } from '@inertiajs/react';
 import { AlertCircle, ArrowUpRight, ClipboardCheck, Clock, FileEdit, Layers, Shield, ShieldCheck, TrendingUp } from 'lucide-react';
 import { useMemo } from 'react';
 
@@ -42,9 +44,10 @@ interface PicDashboardProps {
         };
     };
     recent_sessions?: RecentSession[];
+    trends?: TrendPoint[];
 }
 
-export default function PicDashboard({ summary, recent_sessions = [] }: PicDashboardProps) {
+export default function PicDashboard({ summary, recent_sessions = [], trends = [] }: PicDashboardProps) {
     const { auth } = usePage<SharedData>().props;
     const userName = auth.user?.name || 'Petugas PIC';
     const userUnit = auth.user?.unit?.nama || 'Unit Kerja';
@@ -253,6 +256,83 @@ export default function PicDashboard({ summary, recent_sessions = [] }: PicDashb
                 </div>
             </div>
 
+            {/* Row 3: Tren Kepatuhan & Tindakan Checklist */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-7">
+                {/* Tren Kepatuhan Organisasi */}
+                <div className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm lg:col-span-4 dark:border-slate-800 dark:bg-slate-900">
+                    <div className="flex items-start justify-between border-b border-slate-100 pb-3.5 dark:border-slate-800">
+                        <div>
+                            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Tren Kepatuhan Organisasi</h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">Riwayat perkembangan kepatuhan bulanan unit Anda</p>
+                        </div>
+                        {/* Legend */}
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                            <span className="flex items-center gap-1.5">
+                                <span className="h-2 w-4 rounded-full" style={{ background: '#0284c7' }} />
+                                Rata-rata
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                                <span className="h-0.5 w-4" style={{ borderTop: '2px dashed #196ecd', display: 'block' }} />
+                                ISO 27001
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                                <span className="h-0.5 w-4" style={{ borderTop: '2px dashed #0f4c81', display: 'block' }} />
+                                ISO 27701
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="pt-4">
+                        <Deferred data="trends" fallback={<ChartSkeleton height="h-[200px]" />}>
+                            <ComplianceAreaChart trends={trends} />
+                        </Deferred>
+                    </div>
+                </div>
+
+                <div className="flex flex-col rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm lg:col-span-3 dark:border-slate-800 dark:bg-slate-900">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 dark:border-slate-800">
+                        <div>
+                            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Tindakan & Checklist PIC</h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">Item prioritas yang menunggu penyelesaian Anda</p>
+                        </div>
+                    </div>
+
+                    <div className="mt-3 space-y-3">
+                        <Link
+                            href="/checklist"
+                            className="group hover:border-primary-300 hover:bg-primary-50/30 flex items-start gap-3 rounded-xl border border-slate-200/70 p-3.5 transition-colors dark:border-slate-800 dark:hover:border-slate-700 dark:hover:bg-slate-800/40"
+                        >
+                            <div className="bg-primary-50 text-primary dark:bg-navy-900/50 dark:text-primary-200 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl">
+                                <FileEdit className="h-4.5 w-4.5" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <h4 className="group-hover:text-primary dark:group-hover:text-primary-300 text-xs font-bold text-slate-900 dark:text-white">
+                                    Lengkapi Bukti Evidence Kontrol
+                                </h4>
+                                <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                                    Unggah dokumen pendukung untuk setiap kontrol kepatuhan SMKI.
+                                </p>
+                            </div>
+                        </Link>
+
+                        <div className="rounded-xl border border-slate-200/70 p-3.5 dark:border-slate-800">
+                            <div className="flex items-start gap-3">
+                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400">
+                                    <Clock className="h-4.5 w-4.5" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">Pantau Status Verifikasi Admin</h4>
+                                    <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                                        Setelah checklist diajukan, Admin Kepatuhan akan memeriksa kelengkapan berkas Anda.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Row 4: Sesi Penilaian Aktif Unit Anda */}
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-7">
                 <div className="flex flex-col rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm lg:col-span-4 dark:border-slate-800 dark:bg-slate-900">
                     <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 dark:border-slate-800">
@@ -314,48 +394,6 @@ export default function PicDashboard({ summary, recent_sessions = [] }: PicDashb
                                 <p className="mt-1 text-[11px] text-slate-500">Mulai asesmen baru untuk unit kerja Anda.</p>
                             </div>
                         )}
-                    </div>
-                </div>
-
-                <div className="flex flex-col rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm lg:col-span-3 dark:border-slate-800 dark:bg-slate-900">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 dark:border-slate-800">
-                        <div>
-                            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Tindakan & Checklist PIC</h3>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">Item prioritas yang menunggu penyelesaian Anda</p>
-                        </div>
-                    </div>
-
-                    <div className="mt-3 space-y-3">
-                        <Link
-                            href="/checklist"
-                            className="group hover:border-primary-300 hover:bg-primary-50/30 flex items-start gap-3 rounded-xl border border-slate-200/70 p-3.5 transition-colors dark:border-slate-800 dark:hover:border-slate-700 dark:hover:bg-slate-800/40"
-                        >
-                            <div className="bg-primary-50 text-primary dark:bg-navy-900/50 dark:text-primary-200 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl">
-                                <FileEdit className="h-4.5 w-4.5" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                                <h4 className="group-hover:text-primary dark:group-hover:text-primary-300 text-xs font-bold text-slate-900 dark:text-white">
-                                    Lengkapi Bukti Evidence Kontrol
-                                </h4>
-                                <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
-                                    Unggah dokumen pendukung untuk setiap kontrol kepatuhan SMKI.
-                                </p>
-                            </div>
-                        </Link>
-
-                        <div className="rounded-xl border border-slate-200/70 p-3.5 dark:border-slate-800">
-                            <div className="flex items-start gap-3">
-                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400">
-                                    <Clock className="h-4.5 w-4.5" />
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">Pantau Status Verifikasi Admin</h4>
-                                    <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
-                                        Setelah checklist diajukan, Admin Kepatuhan akan memeriksa kelengkapan berkas Anda.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>

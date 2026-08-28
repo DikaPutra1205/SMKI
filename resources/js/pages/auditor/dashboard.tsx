@@ -389,19 +389,24 @@ export default function AuditorDashboard({ summary, trends = [], recent_activiti
                 <div className="mt-3 flex-1 overflow-x-auto">
                     <Deferred data="recent_activities" fallback={<ActivitySkeleton count={6} />}>
                         <table className="w-full text-left text-xs">
-                            <thead className="border-b border-slate-100 text-[11px] font-bold tracking-wider text-slate-500 uppercase dark:border-slate-800 dark:text-slate-400">
+                            <thead className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-bold tracking-wider text-slate-600 uppercase dark:border-slate-800 dark:bg-[#001f38] dark:text-slate-300">
                                 <tr>
-                                    <th className="py-2.5 pr-3">Waktu</th>
+                                    <th className="px-3 py-2.5">Waktu</th>
                                     <th className="px-3 py-2.5">Pengguna</th>
                                     <th className="px-3 py-2.5">Aktivitas</th>
-                                    <th className="py-2.5 pl-3 text-right">Status</th>
+                                    <th className="px-3 py-2.5 text-right">Status</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
                                 {recent_activities.length > 0 ? (
-                                    recent_activities.slice(0, 6).map((act) => (
-                                        <tr key={act.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
-                                            <td className="py-3 pr-3 whitespace-nowrap text-slate-500 dark:text-slate-400">
+                                    recent_activities.slice(0, 6).map((act, idx) => (
+                                        <tr
+                                            key={act.id}
+                                            className={`transition-colors ${
+                                                idx % 2 === 0 ? 'bg-white dark:bg-[#00223d]/70' : 'bg-slate-50/75 dark:bg-[#00172b]/80'
+                                            } hover:bg-primary-50/40 dark:hover:bg-[#0a3b63]/60`}
+                                        >
+                                            <td className="px-3 py-3 whitespace-nowrap text-slate-500 dark:text-slate-400">
                                                 {act.created_at ? formatDateTimeIndonesian(act.created_at) : act.time_ago}
                                             </td>
                                             <td className="px-3 py-3 font-semibold whitespace-nowrap text-slate-900 dark:text-white">

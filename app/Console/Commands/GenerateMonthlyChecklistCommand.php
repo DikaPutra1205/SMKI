@@ -9,6 +9,7 @@ use App\Models\Framework;
 use App\Models\User;
 use App\Models\WorkUnit;
 use Illuminate\Console\Command;
+use Illuminate\Support\Carbon;
 
 class GenerateMonthlyChecklistCommand extends Command
 {
@@ -41,7 +42,7 @@ class GenerateMonthlyChecklistCommand extends Command
 
         $now = now();
         $period = $this->option('periode') ?: $now->format('Y-m');
-        $periodLabel = $now->translatedFormat('F Y');
+        $periodLabel = Carbon::parse($period)->translatedFormat('F Y');
 
         $frameworks = Framework::whereHas('controls')->get();
         if ($frameworks->isEmpty()) {

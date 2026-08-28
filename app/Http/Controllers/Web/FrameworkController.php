@@ -35,6 +35,7 @@ class FrameworkController extends Controller
             'frameworks' => Framework::withCount('controls')->orderBy('id')->get(),
             'summary' => $user ? $this->analyticsService->getSummary($user) : null,
             'recent_activities' => $user ? $this->analyticsService->getRecentActivities($user, 6) : [],
+            'trends' => $user ? $this->analyticsService->getTrends($user) : [],
         ]);
     }
 

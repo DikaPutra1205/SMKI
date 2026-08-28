@@ -1,6 +1,8 @@
+import ComplianceAreaChart, { type TrendPoint } from '@/components/dashboards/ComplianceAreaChart';
+import { ChartSkeleton } from '@/components/skeletons/ChartSkeleton';
 import AppLayout from '@/layouts/AppLayout';
 import { formatDateIndonesian, formatDateTimeIndonesian } from '@/lib/utils';
-import { Head, Link } from '@inertiajs/react';
+import { Deferred, Head, Link } from '@inertiajs/react';
 import { ArrowUpRight, Database, KeyRound, Layers, Shield, ShieldAlert, ShieldCheck, TrendingUp, Users } from 'lucide-react';
 import { useMemo } from 'react';
 
@@ -42,6 +44,7 @@ interface SuperadminDashboardProps {
         risks_summary: { total_active: number; critical: number; high: number; medium: number; low: number };
     };
     recent_activities?: RecentActivity[];
+    trends?: TrendPoint[];
 }
 
 export default function SuperadminDashboard({
@@ -51,6 +54,7 @@ export default function SuperadminDashboard({
     frameworks,
     summary,
     recent_activities = [],
+    trends = [],
 }: SuperadminDashboardProps) {
     const breadcrumbs = [{ label: 'Command Center' }];
 
@@ -267,67 +271,36 @@ export default function SuperadminDashboard({
                 </div>
             </div>
 
-            {/* Row 3: Audit Trail & Asesmen Risiko */}
+            {/* Row 3: Tren Kepatuhan & Status Risiko Keamanan */}
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-7">
-                {/* Audit Trail */}
-                <div className="flex flex-col rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm lg:col-span-4 dark:border-slate-800 dark:bg-slate-900">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 dark:border-slate-800">
+                {/* Tren Kepatuhan Organisasi */}
+                <div className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm lg:col-span-4 dark:border-slate-800 dark:bg-slate-900">
+                    <div className="flex items-start justify-between border-b border-slate-100 pb-3.5 dark:border-slate-800">
                         <div>
-                            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Audit Trail & Aktivitas Sistem</h3>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">Rekam jejak tindakan seluruh pengguna sistem</p>
+                            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Tren Kepatuhan Organisasi</h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">Riwayat perkembangan kepatuhan bulanan</p>
                         </div>
-                        <Link
-                            href="/audit-logs"
-                            className="text-primary hover:text-primary dark:text-primary-200 inline-flex items-center gap-1 text-xs font-semibold"
-                        >
-                            Lihat Semua
-                            <ArrowUpRight className="h-3.5 w-3.5" />
-                        </Link>
+                        {/* Legend */}
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                            <span className="flex items-center gap-1.5">
+                                <span className="h-2 w-4 rounded-full" style={{ background: '#0284c7' }} />
+                                Rata-rata
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                                <span className="h-0.5 w-4" style={{ borderTop: '2px dashed #196ecd', display: 'block' }} />
+                                ISO 27001
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                                <span className="h-0.5 w-4" style={{ borderTop: '2px dashed #0f4c81', display: 'block' }} />
+                                ISO 27701
+                            </span>
+                        </div>
                     </div>
 
-                    <div className="mt-3 flex-1 overflow-x-auto">
-                        <table className="w-full text-left text-xs">
-                            <thead className="border-b border-slate-100 text-[11px] font-bold tracking-wider text-slate-500 uppercase dark:border-slate-800 dark:text-slate-400">
-                                <tr>
-                                    <th className="py-2.5 pr-3">Waktu</th>
-                                    <th className="px-3 py-2.5">Pengguna</th>
-                                    <th className="px-3 py-2.5">Aktivitas</th>
-                                    <th className="py-2.5 pl-3 text-right">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                                {recent_activities.length > 0 ? (
-                                    recent_activities.slice(0, 5).map((act) => (
-                                        <tr key={act.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
-                                            <td className="py-3 pr-3 whitespace-nowrap text-slate-500 dark:text-slate-400">
-                                                {act.created_at ? formatDateTimeIndonesian(act.created_at) : act.time_ago}
-                                            </td>
-                                            <td className="px-3 py-3 font-semibold whitespace-nowrap text-slate-900 dark:text-white">
-                                                {act.actor_name}
-                                                <span className="block text-[10.5px] font-normal text-slate-400">{act.actor_role}</span>
-                                            </td>
-                                            <td className="px-3 py-3 text-slate-700 dark:text-slate-300">
-                                                <span className="font-medium">{act.action}</span>
-                                                {act.entity_name && (
-                                                    <span className="block text-[11px] text-slate-400 dark:text-slate-500">{act.entity_name}</span>
-                                                )}
-                                            </td>
-                                            <td className="py-3 pl-3 text-right whitespace-nowrap">
-                                                <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
-                                                    Tercatat
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan={4} className="py-8 text-center text-xs text-slate-500 dark:text-slate-400">
-                                            Belum ada log aktivitas baru.
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
+                    <div className="pt-4">
+                        <Deferred data="trends" fallback={<ChartSkeleton height="h-[200px]" />}>
+                            <ComplianceAreaChart trends={trends} />
+                        </Deferred>
                     </div>
                 </div>
 
@@ -412,6 +385,75 @@ export default function SuperadminDashboard({
 
                     <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-600 dark:border-slate-800 dark:bg-slate-800/50 dark:text-slate-300">
                         Pencatatan rekam jejak audit trail bersifat permanen (immutable) dan tidak dapat dimanipulasi.
+                    </div>
+                </div>
+            </div>
+
+            {/* Row 4: Audit Trail & Aktivitas Sistem */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-7">
+                <div className="flex flex-col rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm lg:col-span-4 dark:border-slate-800 dark:bg-slate-900">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 dark:border-slate-800">
+                        <div>
+                            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Audit Trail & Aktivitas Sistem</h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">Rekam jejak tindakan seluruh pengguna sistem</p>
+                        </div>
+                        <Link
+                            href="/audit-logs"
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-500 dark:text-blue-400"
+                        >
+                            Lihat Semua
+                            <ArrowUpRight className="h-3.5 w-3.5" />
+                        </Link>
+                    </div>
+
+                    <div className="mt-3 flex-1 overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                            <thead className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-bold tracking-wider text-slate-600 uppercase dark:border-slate-800 dark:bg-[#001f38] dark:text-slate-300">
+                                <tr>
+                                    <th className="px-3 py-2.5">Waktu</th>
+                                    <th className="px-3 py-2.5">Pengguna</th>
+                                    <th className="px-3 py-2.5">Aktivitas</th>
+                                    <th className="px-3 py-2.5 text-right">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
+                                {recent_activities.length > 0 ? (
+                                    recent_activities.slice(0, 5).map((act, idx) => (
+                                        <tr
+                                            key={act.id}
+                                            className={`transition-colors ${
+                                                idx % 2 === 0 ? 'bg-white dark:bg-[#00223d]/70' : 'bg-slate-50/75 dark:bg-[#00172b]/80'
+                                            } hover:bg-primary-50/40 dark:hover:bg-[#0a3b63]/60`}
+                                        >
+                                            <td className="px-3 py-3 whitespace-nowrap text-slate-500 dark:text-slate-400">
+                                                {act.created_at ? formatDateTimeIndonesian(act.created_at) : act.time_ago}
+                                            </td>
+                                            <td className="px-3 py-3 font-semibold whitespace-nowrap text-slate-900 dark:text-white">
+                                                {act.actor_name}
+                                                <span className="block text-[10.5px] font-normal text-slate-400">{act.actor_role}</span>
+                                            </td>
+                                            <td className="px-3 py-3 text-slate-700 dark:text-slate-300">
+                                                <span className="font-medium">{act.action}</span>
+                                                {act.entity_name && (
+                                                    <span className="block text-[11px] text-slate-400 dark:text-slate-500">{act.entity_name}</span>
+                                                )}
+                                            </td>
+                                            <td className="py-3 pl-3 text-right whitespace-nowrap">
+                                                <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
+                                                    Tercatat
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={4} className="py-8 text-center text-xs text-slate-500 dark:text-slate-400">
+                                            Belum ada log aktivitas baru.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>

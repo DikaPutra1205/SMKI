@@ -340,6 +340,7 @@ export const id = {
         severity: 'Severity',
         workUnit: 'Unit',
         assignee: 'Assignee',
+        workUnitPic: 'Unit Kerja / PIC',
         status: 'Status',
         deadline: 'Deadline',
         ref: 'Ref',

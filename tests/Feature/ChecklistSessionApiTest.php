@@ -293,6 +293,96 @@ class ChecklistSessionApiTest extends TestCase
             ->assertSessionHas('flash.type', 'success');
     }
 
+    public function test_web_resubmit_clears_verification_and_admin_notes(): void
+    {
+        extract($this->setupData());
+
+        $session = ChecklistSession::create([
+            'konteks_penilaian' => 'Sesi Resubmit Test',
+            'unit_id' => $unit->id,
+            'framework_id' => $fw->id,
+            'status' => 'in_progress',
+        ]);
+
+        $entry = ChecklistEntry::create([
+            'session_id' => $session->id,
+            'control_id' => $control1->id,
+            'unit_id' => $unit->id,
+            'pic_id' => $pic->id,
+            'admin_id' => $admin->id,
+            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'catatan' => 'Sudah diperbaiki sesuai catatan admin.',
+            'catatan_admin' => 'Tolak sebelumnya: SOP belum disahkan.',
+            'tanggal_verifikasi' => now()->subDay(),
+        ]);
+
+        $this->actingAs($pic)
+            ->from('/admin/pic/checklist')
+            ->post("/admin/pic/checklist/{$session->id}/submit")
+            ->assertRedirect('/admin/pic/checklist')
+            ->assertSessionHas('flash.type', 'success');
+
+        $fresh = $entry->fresh();
+        $this->assertNotNull($fresh->tanggal_input);
+        $this->assertNull($fresh->tanggal_verifikasi);
+        $this->assertNull($fresh->catatan_admin);
+        $this->assertNull($fresh->admin_id);
+    }
+
+    public function test_web_resubmit_keeps_verified_entries_without_admin_note(): void
+    {
+        extract($this->setupData());
+
+        $session = ChecklistSession::create([
+            'konteks_penilaian' => 'Sesi Resubmit Keep Verified',
+            'unit_id' => $unit->id,
+            'framework_id' => $fw->id,
+            'status' => 'in_progress',
+        ]);
+
+        // Approved, no admin note — should stay verified on resubmission.
+        $approved = ChecklistEntry::create([
+            'session_id' => $session->id,
+            'control_id' => $control1->id,
+            'unit_id' => $unit->id,
+            'pic_id' => $pic->id,
+            'admin_id' => $admin->id,
+            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'catatan' => 'Sudah patuh sepenuhnya.',
+            'catatan_admin' => null,
+            'tanggal_verifikasi' => now()->subDay(),
+        ]);
+
+        // Rejected, has admin note — should be reset for re-review.
+        $rejected = ChecklistEntry::create([
+            'session_id' => $session->id,
+            'control_id' => $control2->id,
+            'unit_id' => $unit->id,
+            'pic_id' => $pic->id,
+            'admin_id' => $admin->id,
+            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'catatan' => 'Sudah diperbaiki sesuai catatan admin.',
+            'catatan_admin' => 'Tolak sebelumnya: SOP belum disahkan.',
+            'tanggal_verifikasi' => now()->subDay(),
+        ]);
+
+        $this->actingAs($pic)
+            ->from('/admin/pic/checklist')
+            ->post("/admin/pic/checklist/{$session->id}/submit")
+            ->assertRedirect('/admin/pic/checklist')
+            ->assertSessionHas('flash.type', 'success');
+
+        $approvedFresh = $approved->fresh();
+        $this->assertNotNull($approvedFresh->tanggal_input);
+        $this->assertNotNull($approvedFresh->tanggal_verifikasi, 'verified entry without note must stay verified');
+        $this->assertNotNull($approvedFresh->admin_id);
+
+        $rejectedFresh = $rejected->fresh();
+        $this->assertNull($rejectedFresh->tanggal_verifikasi, 'rejected entry must be reset on resubmit');
+        $this->assertNull($rejectedFresh->catatan_admin);
+        $this->assertNull($rejectedFresh->admin_id);
+    }
+
     public function test_closed_session_locks_checklist_entries_from_updates(): void
     {
         extract($this->setupData());
@@ -408,15 +498,15 @@ class ChecklistSessionApiTest extends TestCase
     {
         extract($this->setupData());
 
-        $this->actingAs($pic)->postJson('/api/checklist-sessions', [
+        $this->actingAs($admin)->postJson('/api/checklist-sessions', [
             'konteks_penilaian' => 'Sesi dengan creator default',
             'unit_id' => $unit->id,
             'framework_id' => $fw->id,
         ])->assertCreated();
 
         $session = ChecklistSession::first();
-        $this->assertSame($pic->id, $session->created_by);
-        $this->assertSame($pic->id, $session->updated_by);
+        $this->assertSame($admin->id, $session->created_by);
+        $this->assertSame($admin->id, $session->updated_by);
     }
 
     public function test_index_filters_by_unit_framework_and_trashed(): void
@@ -514,7 +604,9 @@ class ChecklistSessionApiTest extends TestCase
             'pic_id' => $pic->id,
         ]);
 
-        $this->actingAs($pic)
+        // PIC may no longer delete sessions (checklist-session.delete removed);
+        // admin_kepatuhan performs the delete on its behalf.
+        $this->actingAs($admin)
             ->deleteJson("/api/checklist-sessions/{$session->id}")
             ->assertOk();
 
@@ -550,9 +642,9 @@ class ChecklistSessionApiTest extends TestCase
         $this->actingAs($pic)->get("/admin/pic/checklist/{$session->id}")->assertStatus(403);
     }
 
-    // D-gap — web assessments.store validates unit_id as "exists" only: a PIC can
-    // create a session (and its provisioned entries) for another unit.
-    public function test_web_pic_assessments_store_allows_cross_unit_creation(): void
+    // PIC may no longer create checklist sessions — generation is system-only.
+    // Manual create must be forbidden for PIC; admins/superadmin keep that ability.
+    public function test_web_pic_assessments_store_is_forbidden(): void
     {
         extract($this->setupData());
         $otherUnit = WorkUnit::create(['nama' => 'Biro Keuangan']);
@@ -564,11 +656,8 @@ class ChecklistSessionApiTest extends TestCase
             'framework_id' => $fw->id,
         ]);
 
-        $res->assertRedirect();
-        $session = ChecklistSession::where('konteks_penilaian', 'Sesi silang unit')->first();
-        $this->assertNotNull($session);
-        $this->assertSame($otherUnit->id, $session->unit_id);
-        $this->assertDatabaseHas('checklist_entries', ['session_id' => $session->id, 'unit_id' => $otherUnit->id]);
+        $res->assertForbidden();
+        $this->assertDatabaseMissing('checklist_sessions', ['konteks_penilaian' => 'Sesi silang unit']);
     }
 
     // Fixed: web assessments.update now enforces unit scoping (403 cross-unit).
@@ -588,14 +677,13 @@ class ChecklistSessionApiTest extends TestCase
 
     // routes/web.php:58-59 point to Web\ChecklistSessionController@destroy/@restore,
     // which do not exist in that controller -> 500.
-    public function test_web_admin_checklist_session_destroy_and_restore_routes_broken(): void
+    public function test_web_admin_checklist_session_destroy_soft_deletes(): void
     {
         extract($this->setupData());
         $session = ChecklistSession::create(['konteks_penilaian' => 'Sesi admin web', 'unit_id' => $unit->id, 'framework_id' => $fw->id]);
 
-        $this->actingAs($admin)->delete("/admin/kepatuhan/checklist-sessions/{$session->id}")->assertStatus(500);
-        $this->actingAs($admin)->post("/admin/kepatuhan/checklist-sessions/{$session->id}/restore")->assertStatus(500);
-        $this->assertNotSoftDeleted('checklist_sessions', ['id' => $session->id]);
+        $this->actingAs($admin)->delete("/admin/kepatuhan/checklist-sessions/{$session->id}")->assertRedirect('/admin/kepatuhan/sessions');
+        $this->assertSoftDeleted('checklist_sessions', ['id' => $session->id]);
     }
 
     public function test_store_rejects_missing_konteks_penilaian(): void

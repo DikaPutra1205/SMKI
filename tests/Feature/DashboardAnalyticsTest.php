@@ -181,15 +181,30 @@ class DashboardAnalyticsTest extends TestCase
     {
         $ctrl1 = Control::factory()->create(['framework_id' => $this->iso27001->id]);
 
-        // Entry for Unit A (PIC's unit)
+        // Unit A's most-recent session (PIC's unit) — compliant entry.
+        $sessionA = ChecklistSession::factory()->create([
+            'unit_id' => $this->unitA->id,
+            'framework_id' => $this->iso27001->id,
+            'periode' => now()->format('Y-m'),
+        ]);
+
         ChecklistEntry::factory()->create([
+            'session_id' => $sessionA->id,
             'control_id' => $ctrl1->id,
             'unit_id' => $this->unitA->id,
             'status' => ChecklistEntry::STATUS_COMPLIANT,
         ]);
 
-        // Entry for Unit B (Other unit)
+        // Unit B's own most-recent session — non-compliant entry. The PIC is
+        // scoped away from Unit B, so this must not influence the PIC's 100%.
+        $sessionB = ChecklistSession::factory()->create([
+            'unit_id' => $this->unitB->id,
+            'framework_id' => $this->iso27001->id,
+            'periode' => now()->format('Y-m'),
+        ]);
+
         ChecklistEntry::factory()->create([
+            'session_id' => $sessionB->id,
             'control_id' => $ctrl1->id,
             'unit_id' => $this->unitB->id,
             'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
@@ -321,6 +336,19 @@ class DashboardAnalyticsTest extends TestCase
         $ctrlA = Control::factory()->create(['framework_id' => $this->iso27001->id]);
         $ctrlB = Control::factory()->create(['framework_id' => $this->iso27701->id]);
 
+        // Entries are scoped to the most-recent session per (unit, framework),
+        // so they must belong to an explicit, distinct latest session each.
+        $sessionA = ChecklistSession::factory()->create([
+            'unit_id' => $this->unitA->id,
+            'framework_id' => $this->iso27001->id,
+            'periode' => now()->format('Y-m'),
+        ]);
+        $sessionB = ChecklistSession::factory()->create([
+            'unit_id' => $this->unitA->id,
+            'framework_id' => $this->iso27701->id,
+            'periode' => now()->format('Y-m'),
+        ]);
+
         // Framework 1: 1 compliant + 1 partial + 1 non-compliant => applicable 3, rate round(1/3*100)=33
         foreach ([
             ChecklistEntry::STATUS_COMPLIANT,
@@ -328,6 +356,7 @@ class DashboardAnalyticsTest extends TestCase
             ChecklistEntry::STATUS_NON_COMPLIANT,
         ] as $status) {
             ChecklistEntry::factory()->create([
+                'session_id' => $sessionA->id,
                 'control_id' => $ctrlA->id,
                 'unit_id' => $this->unitA->id,
                 'status' => $status,
@@ -336,6 +365,7 @@ class DashboardAnalyticsTest extends TestCase
 
         // Framework 2: only NA => applicable 0, rate 0
         ChecklistEntry::factory()->create([
+            'session_id' => $sessionB->id,
             'control_id' => $ctrlB->id,
             'unit_id' => $this->unitA->id,
             'status' => ChecklistEntry::STATUS_NA,
@@ -357,11 +387,154 @@ class DashboardAnalyticsTest extends TestCase
         $this->assertEquals(2, $data['total_controls_active']);
     }
 
+    public function test_pic_dashboard_uses_most_recent_session_for_unit(): void
+    {
+        // PIC is locked to unitA via resolveScopedUnitId.
+        $this->pic->update(['unit_id' => $this->unitA->id]);
+
+        $ctrl = Control::factory()->create(['framework_id' => $this->iso27001->id]);
+
+        // Older session (compliant) and newest session (non-compliant) for unitA.
+        $older = ChecklistSession::factory()->create([
+            'unit_id' => $this->unitA->id,
+            'framework_id' => $this->iso27001->id,
+            'periode' => now()->subMonth()->format('Y-m'),
+        ]);
+        $newest = ChecklistSession::factory()->create([
+            'unit_id' => $this->unitA->id,
+            'framework_id' => $this->iso27001->id,
+            'periode' => now()->format('Y-m'),
+        ]);
+
+        ChecklistEntry::factory()->create([
+            'session_id' => $older->id,
+            'control_id' => $ctrl->id,
+            'unit_id' => $this->unitA->id,
+            'status' => ChecklistEntry::STATUS_COMPLIANT,
+        ]);
+        ChecklistEntry::factory()->create([
+            'session_id' => $newest->id,
+            'control_id' => $ctrl->id,
+            'unit_id' => $this->unitA->id,
+            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+        ]);
+
+        $response = $this->actingAs($this->pic)->getJson('/api/v1/dashboard/summary');
+
+        $response->assertOk();
+        $data = $response->json('data');
+
+        // Only the newest periode session counts: 0 compliant of 1 applicable.
+        $this->assertEquals(0, $data['overall_compliance_rate']);
+        $this->assertEquals(0, $data['frameworks_breakdown'][0]['compliant_count']);
+        $this->assertEquals(1, $data['frameworks_breakdown'][0]['non_compliant_count']);
+    }
+
+    public function test_non_unit_role_averages_per_unit_compliant_counts(): void
+    {
+        // admin_kepatuhan is a non-unit-scoped role (no ?unit_id) => overall is
+        // the average of each unit's compliant-control count from its latest session.
+        $ctrlA = Control::factory()->create(['framework_id' => $this->iso27001->id]);
+        $ctrlB = Control::factory()->create(['framework_id' => $this->iso27001->id]);
+        $ctrlC = Control::factory()->create(['framework_id' => $this->iso27001->id]);
+
+        $sessionA = ChecklistSession::factory()->create([
+            'unit_id' => $this->unitA->id,
+            'framework_id' => $this->iso27001->id,
+            'periode' => now()->format('Y-m'),
+        ]);
+        $sessionB = ChecklistSession::factory()->create([
+            'unit_id' => $this->unitB->id,
+            'framework_id' => $this->iso27001->id,
+            'periode' => now()->format('Y-m'),
+        ]);
+
+        // unitA: 2 of 3 controls compliant; unitB: 1 of 3 compliant.
+        foreach ([$ctrlA, $ctrlB] as $c) {
+            ChecklistEntry::factory()->create([
+                'session_id' => $sessionA->id, 'control_id' => $c->id,
+                'unit_id' => $this->unitA->id, 'status' => ChecklistEntry::STATUS_COMPLIANT,
+            ]);
+        }
+        ChecklistEntry::factory()->create([
+            'session_id' => $sessionA->id, 'control_id' => $ctrlC->id,
+            'unit_id' => $this->unitA->id, 'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+        ]);
+        ChecklistEntry::factory()->create([
+            'session_id' => $sessionB->id, 'control_id' => $ctrlA->id,
+            'unit_id' => $this->unitB->id, 'status' => ChecklistEntry::STATUS_COMPLIANT,
+        ]);
+        ChecklistEntry::factory()->create([
+            'session_id' => $sessionB->id, 'control_id' => $ctrlB->id,
+            'unit_id' => $this->unitB->id, 'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+        ]);
+        ChecklistEntry::factory()->create([
+            'session_id' => $sessionB->id, 'control_id' => $ctrlC->id,
+            'unit_id' => $this->unitB->id, 'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+        ]);
+
+        $response = $this->actingAs($this->admin)->getJson('/api/v1/dashboard/summary');
+
+        $response->assertOk();
+        $data = $response->json('data');
+
+        // Average of per-unit compliant counts: round((2 + 1) / 2) = 2.
+        $this->assertEquals(2, $data['frameworks_breakdown'][0]['compliant_count']);
+        // compliance_rate = average of per-unit rates: (2/3 + 1/3) / 2 = 0.5 => 50.
+        $this->assertEquals(50, $data['frameworks_breakdown'][0]['compliance_rate']);
+    }
+
+    public function test_pic_full_compliance_shows_total_controls_out_of_total(): void
+    {
+        $this->pic->update(['unit_id' => $this->unitA->id]);
+
+        // All framework-1 controls compliant in unitA's latest session => 118/118.
+        // Create via the model to avoid the Control factory's unique kode_klausul
+        // generator (it exhausts its pool after many controls in one process).
+        $controls = collect(range(1, 118))->map(fn ($i) => Control::create([
+            'framework_id' => $this->iso27001->id,
+            'kode_klausul' => 'A.5.'.str_pad((string) $i, 3, '0', STR_PAD_LEFT),
+            'judul' => "Control {$i}",
+            'kategori' => 'annex_a',
+        ]));
+
+        $session = ChecklistSession::factory()->create([
+            'unit_id' => $this->unitA->id,
+            'framework_id' => $this->iso27001->id,
+            'periode' => now()->format('Y-m'),
+        ]);
+
+        foreach ($controls as $ctrl) {
+            ChecklistEntry::factory()->create([
+                'session_id' => $session->id,
+                'control_id' => $ctrl->id,
+                'unit_id' => $this->unitA->id,
+                'status' => ChecklistEntry::STATUS_COMPLIANT,
+            ]);
+        }
+
+        $response = $this->actingAs($this->pic)->getJson('/api/v1/dashboard/summary');
+
+        $response->assertOk();
+        $fw = $response->json('data.frameworks_breakdown')[0];
+
+        $this->assertEquals(118, $fw['total_controls']);
+        $this->assertEquals(118, $fw['compliant_count']);
+        $this->assertEquals(100, $fw['compliance_rate']);
+    }
+
     public function test_summary_growth_rate_compares_current_vs_last_month(): void
     {
         $ctrl = Control::factory()->create(['framework_id' => $this->iso27001->id]);
 
+        $session = ChecklistSession::factory()->create([
+            'unit_id' => $this->unitA->id,
+            'framework_id' => $this->iso27001->id,
+            'periode' => now()->format('Y-m'),
+        ]);
+
         ChecklistEntry::factory()->create([
+            'session_id' => $session->id,
             'control_id' => $ctrl->id,
             'unit_id' => $this->unitA->id,
             'status' => ChecklistEntry::STATUS_COMPLIANT,
@@ -369,6 +542,7 @@ class DashboardAnalyticsTest extends TestCase
         ]);
 
         ChecklistEntry::factory()->create([
+            'session_id' => $session->id,
             'control_id' => $ctrl->id,
             'unit_id' => $this->unitA->id,
             'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
@@ -507,8 +681,18 @@ class DashboardAnalyticsTest extends TestCase
     {
         $ctrl = Control::factory()->create(['framework_id' => $this->iso27001->id]);
 
-        $sessionA = ChecklistSession::factory()->create(['unit_id' => $this->unitA->id, 'framework_id' => $this->iso27001->id]);
-        $sessionB = ChecklistSession::factory()->create(['unit_id' => $this->unitA->id, 'framework_id' => $this->iso27001->id]);
+        // sessionB has the newest periode, so it is the "most-recent session".
+        // sessionA is an older period chosen explicitly via ?session_id.
+        $sessionA = ChecklistSession::factory()->create([
+            'unit_id' => $this->unitA->id,
+            'framework_id' => $this->iso27001->id,
+            'periode' => now()->subMonth()->format('Y-m'),
+        ]);
+        $sessionB = ChecklistSession::factory()->create([
+            'unit_id' => $this->unitA->id,
+            'framework_id' => $this->iso27001->id,
+            'periode' => now()->format('Y-m'),
+        ]);
 
         ChecklistEntry::factory()->create([
             'session_id' => $sessionA->id,
@@ -524,35 +708,56 @@ class DashboardAnalyticsTest extends TestCase
             'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
         ]);
 
+        // Explicit ?session_id override wins over the most-recent-session rule.
         $scoped = $this->actingAs($this->admin)
             ->getJson("/api/v1/dashboard/summary?unit_id={$this->unitA->id}&session_id={$sessionA->id}");
 
         $scoped->assertOk();
         $this->assertEquals(100, $scoped->json('data.overall_compliance_rate'));
 
+        // No session override: the most-recent session (sessionB, non-compliant)
+        // is used, not the older compliant sessionA.
         $unscoped = $this->actingAs($this->admin)
             ->getJson("/api/v1/dashboard/summary?unit_id={$this->unitA->id}");
 
         $unscoped->assertOk();
-        $this->assertEquals(50, $unscoped->json('data.overall_compliance_rate'));
+        $this->assertEquals(0, $unscoped->json('data.overall_compliance_rate'));
     }
 
-    public function test_trends_returns_expected_periods_and_rates(): void
+    public function test_trends_buckets_by_session_periode_not_tanggal_input(): void
     {
         $ctrl = Control::factory()->create(['framework_id' => $this->iso27001->id]);
 
+        // Session in the current assessment period: 1 compliant + 1 non-compliant.
+        $currentSession = ChecklistSession::factory()->create([
+            'unit_id' => $this->unitA->id,
+            'framework_id' => $this->iso27001->id,
+            'periode' => now()->format('Y-m'),
+        ]);
         ChecklistEntry::factory()->create([
+            'session_id' => $currentSession->id,
             'control_id' => $ctrl->id,
             'unit_id' => $this->unitA->id,
             'status' => ChecklistEntry::STATUS_COMPLIANT,
-            'tanggal_input' => now(),
         ]);
-
         ChecklistEntry::factory()->create([
+            'session_id' => $currentSession->id,
             'control_id' => $ctrl->id,
             'unit_id' => $this->unitA->id,
             'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
-            'tanggal_input' => now()->subMonths(2),
+        ]);
+
+        // A session two periods ago must NOT bleed into the current or middle bucket.
+        $oldSession = ChecklistSession::factory()->create([
+            'unit_id' => $this->unitA->id,
+            'framework_id' => $this->iso27001->id,
+            'periode' => now()->subMonths(2)->format('Y-m'),
+        ]);
+        ChecklistEntry::factory()->create([
+            'session_id' => $oldSession->id,
+            'control_id' => $ctrl->id,
+            'unit_id' => $this->unitA->id,
+            'status' => ChecklistEntry::STATUS_COMPLIANT,
         ]);
 
         $response = $this->actingAs($this->admin)->getJson('/api/v1/dashboard/trends?months=3');
@@ -564,10 +769,11 @@ class DashboardAnalyticsTest extends TestCase
         $this->assertEquals(now()->subMonths(2)->format('Y-m'), $data[0]['period']);
         $this->assertEquals(now()->subMonths(0)->format('Y-m'), $data[2]['period']);
 
-        // Oldest bucket: only the 2-months-ago entry (non-compliant) => 0.
-        // Current bucket: both entries, 1 compliant of 2 applicable => 50.
-        $this->assertEquals(0, $data[0]['iso27001_rate']);
+        // Oldest bucket: only its own session (1 compliant of 1 applicable) => 100.
+        $this->assertEquals(100, $data[0]['iso27001_rate']);
+        // Middle bucket: no session for that period => 0.
         $this->assertEquals(0, $data[1]['iso27001_rate']);
+        // Current bucket: its own session only (1 compliant of 2 applicable) => 50.
         $this->assertEquals(50, $data[2]['iso27001_rate']);
         $this->assertEquals(0, $data[2]['iso27701_rate']);
         $this->assertEquals($data[2]['iso27001_rate'], $data[2]['overall_rate']);
@@ -586,6 +792,58 @@ class DashboardAnalyticsTest extends TestCase
             $this->assertEquals(0, $period['iso27701_rate']);
             $this->assertEquals(0, $period['overall_rate']);
         }
+    }
+
+    public function test_trends_shows_per_period_rates_without_carry_over(): void
+    {
+        $ctrl = Control::factory()->create(['framework_id' => $this->iso27001->id]);
+
+        // May session: fully compliant.
+        $maySession = ChecklistSession::factory()->create([
+            'unit_id' => $this->unitA->id,
+            'framework_id' => $this->iso27001->id,
+            'periode' => now()->subMonths(3)->format('Y-m'),
+        ]);
+        ChecklistEntry::factory()->create([
+            'session_id' => $maySession->id,
+            'control_id' => $ctrl->id,
+            'unit_id' => $this->unitA->id,
+            'status' => ChecklistEntry::STATUS_COMPLIANT,
+        ]);
+
+        // August session: half compliant (different period, distinct rate).
+        $augSession = ChecklistSession::factory()->create([
+            'unit_id' => $this->unitA->id,
+            'framework_id' => $this->iso27001->id,
+            'periode' => now()->format('Y-m'),
+        ]);
+        ChecklistEntry::factory()->create([
+            'session_id' => $augSession->id,
+            'control_id' => $ctrl->id,
+            'unit_id' => $this->unitA->id,
+            'status' => ChecklistEntry::STATUS_COMPLIANT,
+        ]);
+        ChecklistEntry::factory()->create([
+            'session_id' => $augSession->id,
+            'control_id' => $ctrl->id,
+            'unit_id' => $this->unitA->id,
+            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+        ]);
+
+        $response = $this->actingAs($this->admin)->getJson('/api/v1/dashboard/trends?months=4');
+
+        $response->assertOk();
+        $data = $response->json('data');
+        $this->assertCount(4, $data);
+
+        // Map period => rate for easy assertion.
+        $rates = collect($data)->keyBy('period')->map(fn ($p) => $p['iso27001_rate']);
+
+        // Each period reports only its own session: May 100, Aug 50, gaps 0.
+        $this->assertEquals(100, $rates[now()->subMonths(3)->format('Y-m')]);
+        $this->assertEquals(0, $rates[now()->subMonths(2)->format('Y-m')]);
+        $this->assertEquals(0, $rates[now()->subMonths(1)->format('Y-m')]);
+        $this->assertEquals(50, $rates[now()->format('Y-m')]);
     }
 
     public function test_unit_comparison_returns_rates_for_all_units_with_zero_data_safe(): void
@@ -742,6 +1000,39 @@ class DashboardAnalyticsTest extends TestCase
             ->where('totalFrameworks', 2)
             ->where('totalControls', 3)
             ->has('frameworks', 2)
+            ->has('trends', 6)
+        );
+    }
+
+    public function test_pic_web_dashboard_trends_are_scoped_to_their_unit(): void
+    {
+        $ctrl = Control::factory()->create(['framework_id' => $this->iso27001->id]);
+
+        // Own-unit entry (compliant) vs other-unit entry (non-compliant).
+        ChecklistEntry::factory()->create([
+            'control_id' => $ctrl->id,
+            'unit_id' => $this->unitA->id,
+            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'tanggal_input' => now(),
+        ]);
+
+        ChecklistEntry::factory()->create([
+            'control_id' => $ctrl->id,
+            'unit_id' => $this->unitB->id,
+            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'tanggal_input' => now(),
+        ]);
+
+        $response = $this->actingAs($this->pic)->get('/admin/pic/dashboard');
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('pic/dashboard')
+            ->has('trends', 6)
+            ->where('trends.5.period', now()->format('Y-m'))
+            // Only the PIC's own unit entry counts: 100%, not blended 50%.
+            ->where('trends.5.iso27001_rate', 100)
+            ->where('trends.5.overall_rate', 100)
         );
     }
 }

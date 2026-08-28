@@ -1,4 +1,4 @@
-﻿import ChecklistDetailSkeleton from '@/components/skeletons/ChecklistDetailSkeleton';
+import ChecklistDetailSkeleton from '@/components/skeletons/ChecklistDetailSkeleton';
 import SyncWorker from '@/components/SyncWorker';
 import { Modal } from '@/components/ui/Modal';
 import { useAssessmentEntry, useAssessmentStore } from '@/hooks/useAssessmentStore';
@@ -17,6 +17,7 @@ import {
     ExternalLink,
     Eye,
     Filter,
+    Loader2,
     Search,
     Send,
     Shield,
@@ -187,16 +188,29 @@ function EntryItemRow({
     if (!entry) return null;
 
     const isVerified = entry.tanggal_verifikasi !== null;
+    const hasAdminCatatan = !!entry.catatan_admin;
     const missingStatus = !entry.status;
     const isEvidenceMissing = !entry.active_evidence;
     const isIncomplete = missingStatus || isEvidenceMissing;
     const showErrorLabels = highlight && isIncomplete;
 
+    // A verified entry's color is driven by whether the admin left a note,
+    // not by the PIC's live status — so it stays fixed on the PIC screen.
+    const verifiedRowTint = isVerified
+        ? hasAdminCatatan
+            ? 'rounded-lg border-l-4 border-l-red-400 bg-red-50/40 pr-2 pl-3 dark:bg-red-950/20'
+            : 'rounded-lg border-l-4 border-l-emerald-400 bg-emerald-50/40 pr-2 pl-3 dark:bg-emerald-950/20'
+        : '';
+
     return (
         <div
             id={`entry-row-${entryId}`}
             className={`border-b border-slate-100 py-5 last:border-b-0 dark:border-slate-800 ${
-                showErrorLabels ? 'rounded-lg border-l-4 border-l-red-400 bg-red-50/50 pr-2 pl-3 dark:bg-red-950/20' : ''
+                isVerified
+                    ? verifiedRowTint
+                    : showErrorLabels
+                      ? 'rounded-lg border-l-4 border-l-amber-400 bg-amber-50/50 pr-2 pl-3 dark:bg-amber-950/20'
+                      : ''
             }`}
         >
             <div className="mb-2 flex items-start justify-between">
@@ -204,7 +218,7 @@ function EntryItemRow({
                     <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600 dark:bg-slate-800">
                         {entry.control.kode_klausul}
                     </span>
-                    <h4 className={`text-sm font-bold ${showErrorLabels ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-white'}`}>
+                    <h4 className={`text-sm font-bold ${showErrorLabels ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white'}`}>
                         {entry.control.judul}
                     </h4>
                 </div>
@@ -218,16 +232,27 @@ function EntryItemRow({
 
             {entry.control.deskripsi && <p className="mb-3 text-xs leading-relaxed text-slate-500">{entry.control.deskripsi}</p>}
 
-            {isVerified && (
-                <div className="mb-3 flex items-center gap-1.5 text-xs text-emerald-600">
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    Sudah Diverifikasi oleh Pengelola
-                    {entry.catatan_admin && <span className="text-slate-400">&mdash; {entry.catatan_admin}</span>}
-                </div>
-            )}
+            {isVerified &&
+                (() => {
+                    const verifiedStatusColor = hasAdminCatatan ? 'text-red-700 dark:text-red-400' : 'text-emerald-700 dark:text-emerald-400';
+                    return (
+                        <div className={`mb-3 flex flex-col gap-1 text-xs ${verifiedStatusColor}`}>
+                            <div className="flex items-center gap-1.5 font-semibold">
+                                {hasAdminCatatan ? <XCircle className="h-3.5 w-3.5 shrink-0" /> : <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />}
+                                {hasAdminCatatan ? 'Ditolak Oleh Admin Kepatuhan' : 'Terverifikasi oleh Admin Kepatuhan'}
+                            </div>
+                            {entry.catatan_admin && (
+                                <p className={`ml-5 text-xs leading-relaxed font-medium ${verifiedStatusColor}`}>
+                                    <span className="font-semibold">Catatan: </span>
+                                    {entry.catatan_admin}
+                                </p>
+                            )}
+                        </div>
+                    );
+                })()}
 
             {showErrorLabels && missingStatus && (
-                <div className="mb-2 flex items-center gap-1 text-[11px] font-medium text-red-500">
+                <div className="mb-2 flex items-center gap-1 text-[11px] font-medium text-amber-500">
                     <XCircle className="h-3 w-3" />
                     Status wajib dipilih
                 </div>
@@ -319,7 +344,7 @@ function EntryItemRow({
                     </label>
                 </div>
                 {isEvidenceMissing && (
-                    <div className={`flex items-center gap-1 text-[11px] font-medium ${showErrorLabels ? 'text-red-500' : 'text-amber-500'}`}>
+                    <div className={`flex items-center gap-1 text-[11px] font-medium text-amber-500`}>
                         <XCircle className="h-3 w-3" />
                         Bukti wajib diunggah
                     </div>
@@ -352,7 +377,12 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
     const [searchQuery, setSearchQuery] = useState('');
     const [showOnlyIncomplete, setShowOnlyIncomplete] = useState(false);
     const [previewEvidence, setPreviewEvidence] = useState<{ nama_file: string; file_url: string } | null>(null);
+    const [evidenceLoading, setEvidenceLoading] = useState(true);
     const [highlightIncomplete, setHighlightIncomplete] = useState(false);
+
+    useEffect(() => {
+        setEvidenceLoading(previewEvidence !== null);
+    }, [previewEvidence]);
     // Checklist detail URLs are /admin/pic/checklist/{id} — use prefix matching
     const isLoading = usePageLoading('/admin/pic/checklist/');
 
@@ -750,6 +780,62 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
                 </div>
             </div>
 
+            {pageMeta.length > 0 && (
+                <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+                    <div className="flex items-center justify-between">
+                        <button
+                            type="button"
+                            onClick={handlePrevPage}
+                            disabled={currentPageIndex === 0 || pageLoading}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                        >
+                            <ArrowLeft className="h-4 w-4" />
+                            Sebelumnya
+                        </button>
+
+                        <div className="flex flex-col items-center gap-1">
+                            <span className="text-xs font-medium text-slate-500">
+                                Halaman {currentPageIndex + 1} dari {pageMeta.length}
+                            </span>
+                            {currentPageMeta && (
+                                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                    {currentPageMeta.framework_name} &bull; {formatKategori(currentPageMeta.kategori)}
+                                </span>
+                            )}
+                            {currentPageMeta && <span className="text-[11px] text-slate-400">{currentPageMeta.entry_count} kontrol</span>}
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={handleNextPage}
+                            disabled={currentPageIndex >= pageMeta.length - 1 || pageLoading}
+                            title={!isCurrentPageComplete ? 'Masih ada kontrol yang belum lengkap — klik untuk menuju bagian yang belum diisi' : ''}
+                            className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium shadow-sm transition-colors ${
+                                !isCurrentPageComplete && currentPageIndex < pageMeta.length - 1
+                                    ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-400'
+                                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'
+                            }`}
+                        >
+                            Selanjutnya
+                            <ArrowRight className="h-4 w-4" />
+                        </button>
+                    </div>
+                    {pageLoading && (
+                        <div className="mt-2 flex justify-center">
+                            <span className="text-primary text-xs">Memuat halaman...</span>
+                        </div>
+                    )}
+                    {!pageLoading && !isCurrentPageComplete && (
+                        <div className="mt-2 flex justify-center">
+                            <span className="text-xs font-medium text-red-500">
+                                {incompleteCount} kontrol belum lengkap (status atau bukti pendukung)
+                                {currentPageIndex < pageMeta.length - 1 ? ' — klik "Selanjutnya" untuk menuju bagian yang belum diisi' : ''}
+                            </span>
+                        </div>
+                    )}
+                </div>
+            )}
+
             <div className="mt-8 flex flex-col items-center gap-3">
                 <button
                     type="button"
@@ -806,11 +892,20 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
                 {previewEvidence && (
                     <div className="flex flex-col items-center justify-center">
                         {isImageFile(previewEvidence.nama_file) ? (
-                            <div className="flex max-h-[65vh] w-full items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-950">
+                            <div
+                                className={`relative flex max-h-[65vh] w-full items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-950 ${evidenceLoading ? 'min-h-[60vh]' : ''}`}
+                            >
+                                {evidenceLoading && (
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+                                    </div>
+                                )}
                                 <img
                                     src={previewEvidence.file_url}
                                     alt={previewEvidence.nama_file}
-                                    className="max-h-[60vh] max-w-full rounded-lg object-contain"
+                                    onLoad={() => setEvidenceLoading(false)}
+                                    onError={() => setEvidenceLoading(false)}
+                                    className={`max-h-[60vh] max-w-full rounded-lg object-contain transition-opacity ${evidenceLoading ? 'opacity-0' : 'opacity-100'}`}
                                 />
                             </div>
                         ) : (

@@ -224,6 +224,14 @@ class AuditTrailTest extends TestCase
             'aksi' => 'delete',
             'actor_id' => $this->admin->id,
         ]);
+
+        $deleteLog = AuditLog::where('entity_type', 'Finding')
+            ->where('entity_id', $finding->id)
+            ->where('aksi', 'delete')
+            ->first();
+
+        $this->assertNotNull($deleteLog);
+        $this->assertEquals($finding->id, $deleteLog->detail_perubahan['data']['id'] ?? null);
     }
 
     public function test_framework_control_user_and_role_are_audited(): void

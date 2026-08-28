@@ -391,7 +391,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
         <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs sm:text-sm">
-                    <thead className="border-b border-slate-100 bg-slate-50/70 text-[11px] font-bold tracking-wider text-slate-500 uppercase dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400">
+                    <thead className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-bold tracking-wider text-slate-600 uppercase dark:border-slate-800 dark:bg-[#001f38] dark:text-slate-300">
                         <tr>
                             <th scope="col" className="px-5 py-3 text-left font-semibold">
                                 {t('temuan.ref')}
@@ -403,10 +403,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                                 {t('temuan.severity')}
                             </th>
                             <th scope="col" className="px-5 py-3 text-left font-semibold">
-                                {t('temuan.workUnit')}
-                            </th>
-                            <th scope="col" className="px-5 py-3 text-left font-semibold">
-                                {t('temuan.assignee')}
+                                {t('temuan.workUnitPic')}
                             </th>
                             <th scope="col" className="px-5 py-3 text-left font-semibold">
                                 {t('temuan.status')}
@@ -419,10 +416,15 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                             </th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
                         {items.length > 0 ? (
-                            items.map((f) => (
-                                <tr key={f.id} className="transition-colors hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
+                            items.map((f, idx) => (
+                                <tr
+                                    key={f.id}
+                                    className={`transition-colors ${
+                                        idx % 2 === 0 ? 'bg-white dark:bg-[#00223d]/70' : 'bg-slate-50/75 dark:bg-[#00172b]/80'
+                                    } hover:bg-primary-50/40 dark:hover:bg-[#0a3b63]/60`}
+                                >
                                     <td className="px-5 py-4 whitespace-nowrap">
                                         <code className="text-primary dark:text-primary-200 text-xs font-bold">FND-{findingRef(f)}</code>
                                     </td>
@@ -437,18 +439,20 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                                     <td className="px-5 py-4 whitespace-nowrap">
                                         <StatusBadge tone={SEVERITY_TONE[f.kategori] ?? 'gray'}>{severityLabel(f.kategori)}</StatusBadge>
                                     </td>
-                                    <td className="px-5 py-4 whitespace-nowrap text-slate-700 dark:text-slate-300">{f.unit?.nama || '—'}</td>
-                                    <td className="px-5 py-4 whitespace-nowrap text-slate-700 dark:text-slate-300">
-                                        {f.pic?.name ? (
-                                            <div className="flex items-center gap-1.5">
-                                                <span className="bg-primary grid h-5 w-5 place-items-center rounded-full text-[9px] font-bold text-white">
-                                                    {initials(f.pic.name)}
-                                                </span>
-                                                <span>{f.pic.name}</span>
-                                            </div>
-                                        ) : (
-                                            '—'
-                                        )}
+                                    <td className="px-5 py-4 whitespace-nowrap">
+                                        <div className="font-medium text-slate-900 dark:text-white">{f.unit?.nama || '—'}</div>
+                                        <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                                            {f.pic?.name ? (
+                                                <>
+                                                    <span className="bg-primary grid h-4 w-4 shrink-0 place-items-center rounded-full text-[8px] font-bold text-white">
+                                                        {initials(f.pic.name)}
+                                                    </span>
+                                                    <span>{f.pic.name}</span>
+                                                </>
+                                            ) : (
+                                                <span className="text-slate-400">—</span>
+                                            )}
+                                        </div>
                                     </td>
                                     <td className="px-5 py-4 whitespace-nowrap">
                                         <StatusBadge tone={STATUS_TONE[f.status] ?? 'gray'}>
@@ -470,7 +474,7 @@ export default function Findings({ findings, workUnits = [], filters = {} }: Fin
                             ))
                         ) : (
                             <tr>
-                                <td colSpan={8}>
+                                <td colSpan={7}>
                                     <EmptyState message={t('temuan.noFindings')} />{' '}
                                 </td>
                             </tr>

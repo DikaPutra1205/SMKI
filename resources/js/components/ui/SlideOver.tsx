@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
 import { X } from 'lucide-react';
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 export interface SlideOverProps {
     open: boolean;
@@ -51,7 +52,7 @@ export function SlideOver({
 
     if (!open) return null;
 
-    return (
+    return createPortal(
         <div className="fixed inset-0 z-50 overflow-hidden" role="dialog" aria-modal="true">
             {/* Backdrop */}
             <div
@@ -112,6 +113,7 @@ export function SlideOver({
                     )}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body,
     );
 }
