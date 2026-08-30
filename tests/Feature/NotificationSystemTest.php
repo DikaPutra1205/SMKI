@@ -88,7 +88,8 @@ class NotificationSystemTest extends TestCase
             function ($notification) {
                 $mail = $notification->toMail($this->picA);
                 $this->assertStringContainsString('A.8.8', $mail->subject);
-                $this->assertStringContainsString('Admin Kepatuhan', $mail->introLines[0]);
+                $this->assertEquals('emails.finding-created', $mail->view);
+                $this->assertEquals($this->admin->name, $mail->viewData['actorName']);
 
                 $dbData = $notification->toDatabase($this->picA);
                 $this->assertEquals('finding_created', $dbData['type']);

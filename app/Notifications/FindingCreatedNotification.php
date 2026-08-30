@@ -41,14 +41,17 @@ class FindingCreatedNotification extends Notification implements ShouldQueue
 
         return (new MailMessage)
             ->subject("[SMKI] Temuan Audit Baru: {$kodeKlausul} ({$kategoriLabel})")
-            ->greeting("Halo, {$notifiable->name}")
-            ->line("Admin Kepatuhan ({$this->actor->name}) telah menerbitkan temuan audit ketidaksesuaian baru untuk unit kerja Anda.")
-            ->line("Kontrol: {$kodeKlausul} - {$judulKontrol}")
-            ->line("Tingkat Keparahan: {$kategoriLabel}")
-            ->line("Batas Waktu (Deadline): {$deadlineStr}")
-            ->when(! empty($this->catatan), fn ($mail) => $mail->line("Catatan Temuan: {$this->catatan}"))
-            ->action('Buka & Tindak Lanjuti Temuan', url("/temuan?id={$this->finding->id}"))
-            ->line('Mohon segera tindak lanjuti temuan ini sesuai batas waktu SLA yang telah ditentukan.');
+            ->view('emails.finding-created', [
+                'recipientName' => $notifiable->name,
+                'kodeKlausul' => $kodeKlausul,
+                'judulKontrol' => $judulKontrol,
+                'kategori' => $this->finding->kategori,
+                'kategoriLabel' => $kategoriLabel,
+                'deadlineStr' => $deadlineStr,
+                'actorName' => $this->actor->name,
+                'catatan' => $this->catatan,
+                'actionUrl' => url("/admin/kepatuhan/temuan?id={$this->finding->id}"),
+            ]);
     }
 
     /**

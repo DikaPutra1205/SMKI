@@ -17,6 +17,8 @@ use App\Http\Controllers\Web\RoleController;
 use App\Http\Controllers\Web\UserController;
 use App\Http\Controllers\Web\WorkUnitController;
 use App\Routing\PageDispatcher;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -165,3 +167,184 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout'])->name('logout');
+
+/*
+|--------------------------------------------------------------------------
+| Email Preview Routes (Local Development Only)
+|--------------------------------------------------------------------------
+*/
+if (app()->isLocal()) {
+    Route::prefix('email-preview')->group(function () {
+        // Main Interactive Gallery Hub
+        Route::get('/', function () {
+            return view('emails.preview-hub');
+        });
+
+        // 1.1 Temuan Baru Diterbitkan Admin -> PIC
+        Route::get('/1-1-finding-created', function () {
+            return view('emails.finding-created', [
+                'recipientName' => 'Dika Putra (PIC Unit TI)',
+                'kodeKlausul' => 'A.5.1',
+                'judulKontrol' => 'Kebijakan Keamanan Informasi',
+                'kategori' => 'major',
+                'kategoriLabel' => 'Mayor',
+                'deadlineStr' => now()->addDays(14)->format('d M Y'),
+                'actorName' => 'Admin Kepatuhan',
+                'catatan' => 'Dokumen kebijakan keamanan informasi belum ditandatangani oleh pimpinan manajemen puncak sesuai persyaratan klausul 5.1 ISO 27001.',
+                'actionUrl' => url('/admin/pic/temuan?id=1'),
+            ]);
+        });
+        Route::get('/finding-created', fn () => redirect('/email-preview/1-1-finding-created'));
+
+        // 1.2.a PIC Memperbarui Status (In Progress / Resolved) -> Admin Kepatuhan
+        Route::get('/1-2-finding-pic-to-admin-update', function () {
+            return view('emails.finding-status-pic-to-admin', [
+                'recipientName' => 'Admin Kepatuhan',
+                'kodeKlausul' => 'A.8.8',
+                'judulKontrol' => 'Pengelolaan Kerentanan Teknis',
+                'unitName' => 'Pusat Teknologi Informasi (TI)',
+                'fromStatus' => 'in_progress',
+                'fromLabel' => 'Dalam Penanganan (In Progress)',
+                'toLabel' => 'Selesai Ditindaklanjuti (Resolved)',
+                'toStatus' => 'resolved',
+                'actorName' => 'Dika Putra (PIC TI)',
+                'catatan' => 'Patch keamanan kernel Ubuntu telah diaplikasikan ke seluruh cluster server production dan laporan vulnerability scanning terbaru sudah diunggah.',
+                'actionUrl' => url('/admin/kepatuhan/temuan?id=1'),
+            ]);
+        });
+        Route::get('/1-2-finding-pic-to-admin', fn () => redirect('/email-preview/1-2-finding-pic-to-admin-update'));
+
+        // 1.2.b PIC Menutup Temuan (Closed) -> Admin Kepatuhan
+        Route::get('/1-2-finding-pic-to-admin-closed', function () {
+            return view('emails.finding-status-pic-to-admin', [
+                'recipientName' => 'Admin Kepatuhan',
+                'kodeKlausul' => 'A.8.8',
+                'judulKontrol' => 'Pengelolaan Kerentanan Teknis',
+                'unitName' => 'Pusat Teknologi Informasi (TI)',
+                'fromStatus' => 'resolved',
+                'fromLabel' => 'Selesai Ditindaklanjuti (Resolved)',
+                'toLabel' => 'Ditutup oleh PIC (Closed)',
+                'toStatus' => 'closed',
+                'actorName' => 'Dika Putra (PIC TI)',
+                'catatan' => 'Seluruh rekomendasi audit telah diselesaikan dan sistem telah beroperasi normal tanpa celah keamanan.',
+                'actionUrl' => url('/admin/kepatuhan/temuan?id=1'),
+            ]);
+        });
+
+        // 1.2.c PIC Mengembalikan Status (Resolved -> In Progress) -> Admin Kepatuhan
+        Route::get('/1-2-finding-pic-to-admin-reverted', function () {
+            return view('emails.finding-status-pic-to-admin', [
+                'recipientName' => 'Admin Kepatuhan',
+                'kodeKlausul' => 'A.8.8',
+                'judulKontrol' => 'Pengelolaan Kerentanan Teknis',
+                'unitName' => 'Pusat Teknologi Informasi (TI)',
+                'fromStatus' => 'resolved',
+                'fromLabel' => 'Selesai Ditindaklanjuti (Resolved)',
+                'toLabel' => 'Dalam Penanganan (In Progress)',
+                'toStatus' => 'in_progress',
+                'actorName' => 'Dika Putra (PIC TI)',
+                'catatan' => 'Ditemukan anomali konfigurasi tambahan saat testing ulang, sehingga status kami kembalikan ke Dalam Penanganan untuk perbaikan komprehensif.',
+                'actionUrl' => url('/admin/kepatuhan/temuan?id=1'),
+            ]);
+        });
+
+        // 1.3.a Admin Mengembalikan Status (Perlu Revisi) -> PIC
+        Route::get('/1-3-finding-admin-to-pic-revision', function () {
+            return view('emails.finding-status-admin-to-pic', [
+                'recipientName' => 'Dika Putra (PIC Unit TI)',
+                'kodeKlausul' => 'A.8.8',
+                'judulKontrol' => 'Pengelolaan Kerentanan Teknis',
+                'fromStatus' => 'resolved',
+                'fromLabel' => 'Selesai Ditindaklanjuti (Resolved)',
+                'toLabel' => 'Dalam Penanganan / Perlu Revisi (In Progress)',
+                'toStatus' => 'in_progress',
+                'actorName' => 'Admin Kepatuhan',
+                'catatan' => 'Laporan scanning kerentanan belum mencakup port database internal. Mohon lakukan scanning ulang dan lampirkan buktinya.',
+                'actionUrl' => url('/admin/pic/temuan?id=1'),
+            ]);
+        });
+
+        // 1.3.b Admin Mengubah/Verifikasi Status (Closed) -> PIC
+        Route::get('/1-3-finding-admin-to-pic-closed', function () {
+            return view('emails.finding-status-admin-to-pic', [
+                'recipientName' => 'Dika Putra (PIC Unit TI)',
+                'kodeKlausul' => 'A.8.8',
+                'judulKontrol' => 'Pengelolaan Kerentanan Teknis',
+                'fromStatus' => 'resolved',
+                'fromLabel' => 'Selesai Ditindaklanjuti (Resolved)',
+                'toLabel' => 'Ditutup & Terverifikasi (Closed)',
+                'toStatus' => 'closed',
+                'actorName' => 'Admin Kepatuhan',
+                'catatan' => 'Bukti laporan scanning kerentanan dan log patching telah diperiksa dan dinyatakan memenuhi standar kepatuhan ISO 27001. Temuan resmi ditutup.',
+                'actionUrl' => url('/admin/pic/temuan?id=1'),
+            ]);
+        });
+
+        // 1.3.c Admin Memperbarui Progres (In Progress / Resolved) -> PIC
+        Route::get('/1-3-finding-admin-to-pic-progress', function () {
+            return view('emails.finding-status-admin-to-pic', [
+                'recipientName' => 'Dika Putra (PIC Unit TI)',
+                'kodeKlausul' => 'A.8.8',
+                'judulKontrol' => 'Pengelolaan Kerentanan Teknis',
+                'fromStatus' => 'open',
+                'fromLabel' => 'Terbuka (Open)',
+                'toLabel' => 'Dalam Penanganan (In Progress)',
+                'toStatus' => 'in_progress',
+                'actorName' => 'Admin Kepatuhan',
+                'catatan' => 'Admin telah memulai asistensi teknis dan mengarahkan rencana penanganan mitigasi untuk unit Anda.',
+                'actionUrl' => url('/admin/pic/temuan?id=1'),
+            ]);
+        });
+        Route::get('/1-3-finding-admin-to-pic', fn () => redirect('/email-preview/1-3-finding-admin-to-pic-closed'));
+        Route::get('/finding-status-changed', fn () => redirect('/email-preview/1-3-finding-admin-to-pic-closed'));
+
+        // 2.1 Entri Checklist Ditolak / Tidak Patuh -> PIC
+        Route::get('/2-1-checklist-rejected', function () {
+            return view('emails.checklist-rejected', [
+                'recipientName' => 'Dika Putra (PIC Unit TI)',
+                'kodeKlausul' => 'A.8.1',
+                'judulKontrol' => 'Inventarisasi Aset Pengguna & Informasi',
+                'catatanAdmin' => 'Berkas daftar inventaris aset yang diunggah belum mencantumkan klasifikasi informasi (Confidential/Internal/Public) dan penanggung jawab aset.',
+                'actorName' => 'Admin Kepatuhan',
+                'actionUrl' => url('/admin/pic/checklist/1'),
+            ]);
+        });
+        Route::get('/checklist-rejected', fn () => redirect('/email-preview/2-1-checklist-rejected'));
+
+        // 4.1 Permintaan Reset Kata Sandi Akun
+        Route::get('/4-1-auth-reset-password', function () {
+            return view('emails.auth-reset-password', [
+                'recipientName' => 'Dika Putra',
+                'resetUrl' => url('/reset-password?token=sample-secure-token-12345&email=dika.putra12@gmail.com'),
+                'count' => 60,
+            ]);
+        });
+
+        // Interactive Send Test Email Endpoint
+        Route::post('/send-test', function (Request $request) {
+            $email = $request->input('email');
+            $template = $request->input('template', '1-1');
+
+            if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                return response()->json(['success' => false, 'message' => 'Alamat email tidak valid.'], 422);
+            }
+
+            try {
+                Artisan::call('smki:test-email', [
+                    '--to' => $email,
+                    '--template' => $template,
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => "Email uji coba template [{$template}] berhasil dikirim ke {$email}!",
+                ]);
+            } catch (Throwable $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal mengirim email: '.$e->getMessage(),
+                ], 500);
+            }
+        });
+    });
+}

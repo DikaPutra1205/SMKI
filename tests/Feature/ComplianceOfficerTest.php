@@ -835,7 +835,10 @@ class ComplianceOfficerTest extends TestCase
             'level_risiko' => Risk::LEVEL_HIGH,
         ]);
 
-        $controlB = Control::factory()->create(['framework_id' => $this->control->framework_id]);
+        $controlB = Control::factory()->create([
+            'framework_id' => $this->control->framework_id,
+            'kode_klausul' => 'A.99.99',
+        ]);
         ChecklistEntry::factory()->create([
             'control_id' => $controlB->id,
             'unit_id' => $this->unitB->id,
@@ -866,7 +869,10 @@ class ComplianceOfficerTest extends TestCase
             'level_risiko' => Risk::LEVEL_CRITICAL,
         ]);
 
-        $controlB = Control::factory()->create(['framework_id' => $this->control->framework_id]);
+        $controlB = Control::factory()->create([
+            'framework_id' => $this->control->framework_id,
+            'kode_klausul' => 'A.99.99',
+        ]);
         ChecklistEntry::factory()->create([
             'control_id' => $controlB->id,
             'unit_id' => $this->unitB->id,

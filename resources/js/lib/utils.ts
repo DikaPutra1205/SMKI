@@ -114,3 +114,31 @@ export function formatPeriodeIndonesian(periode: string | null | undefined): str
 
     return result;
 }
+
+/**
+ * Format timestamp into Indonesian relative time (e.g. "Baru saja", "5 mnt lalu", "2 jam lalu", "Kemarin", "3 hr lalu").
+ */
+export function formatTimeAgoIndonesian(dateInput: string | Date | null | undefined): string {
+    if (!dateInput) return '—';
+    const d = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+    if (isNaN(d.getTime())) return String(dateInput);
+
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffSec = Math.floor(diffMs / 1000);
+
+    if (diffSec < 45) return 'Baru saja';
+    if (diffSec < 90) return '1 mnt lalu';
+
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return `${diffMin} mnt lalu`;
+
+    const diffHours = Math.floor(diffMin / 60);
+    if (diffHours < 24) return `${diffHours} jam lalu`;
+
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays === 1) return 'Kemarin';
+    if (diffDays < 7) return `${diffDays} hr lalu`;
+
+    return formatDateIndonesian(d, { showDay: true, shortMonth: true, withYear: d.getFullYear() !== now.getFullYear() });
+}

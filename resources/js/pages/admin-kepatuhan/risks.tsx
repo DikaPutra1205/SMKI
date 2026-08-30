@@ -1,11 +1,11 @@
-import { Modal } from '@/components/ui/Modal';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
 import { Select } from '@/components/ui/Select';
 import { SlideOver } from '@/components/ui/SlideOver';
 import AppLayout from '@/layouts/AppLayout';
-import { t } from '@/lib/i18n';
 import { useCan } from '@/lib/can';
+import { t } from '@/lib/i18n';
 import { formatDateTimeIndonesian } from '@/lib/utils';
 import { Head, router, useForm } from '@inertiajs/react';
 import {
@@ -409,9 +409,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
                                     {/* Card header */}
                                     <div className="flex items-start justify-between gap-2">
                                         <div className="min-w-0">
-                                            <code className="text-primary dark:text-primary-200 text-[11px] font-bold">
-                                                RSK-{riskRef(r)}
-                                            </code>
+                                            <code className="text-primary dark:text-primary-200 text-[11px] font-bold">RSK-{riskRef(r)}</code>
                                             <p className="mt-0.5 text-sm font-semibold text-slate-900 dark:text-white">
                                                 {r.control?.judul || t('common.noData')}
                                             </p>
@@ -474,12 +472,24 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
                         <table className="w-full text-left text-xs sm:text-sm">
                             <thead className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-bold tracking-wider text-slate-600 uppercase dark:border-slate-800 dark:bg-[#001f38] dark:text-slate-300">
                                 <tr>
-                                    <th scope="col" className="px-5 py-3.5">{t('risks.code')}</th>
-                                    <th scope="col" className="px-5 py-3.5">{t('risks.controlClause')}</th>
-                                    <th scope="col" className="px-5 py-3.5">{t('risks.levelLabel')}</th>
-                                    <th scope="col" className="px-5 py-3.5">{t('risks.owner')}</th>
-                                    <th scope="col" className="px-5 py-3.5">{t('risks.statusMitigation')}</th>
-                                    <th scope="col" className="px-5 py-3.5 text-right">{t('risks.actions')}</th>
+                                    <th scope="col" className="px-5 py-3.5">
+                                        {t('risks.code')}
+                                    </th>
+                                    <th scope="col" className="px-5 py-3.5">
+                                        {t('risks.controlClause')}
+                                    </th>
+                                    <th scope="col" className="px-5 py-3.5">
+                                        {t('risks.levelLabel')}
+                                    </th>
+                                    <th scope="col" className="px-5 py-3.5">
+                                        {t('risks.owner')}
+                                    </th>
+                                    <th scope="col" className="px-5 py-3.5">
+                                        {t('risks.statusMitigation')}
+                                    </th>
+                                    <th scope="col" className="px-5 py-3.5 text-right">
+                                        {t('risks.actions')}
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
@@ -503,7 +513,9 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
                                                     {r.control?.judul || t('common.noData')}
                                                 </button>
                                                 <div className="mt-1 flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
-                                                    <span className="font-semibold text-slate-700 dark:text-slate-300">{r.control?.kode_klausul}</span>
+                                                    <span className="font-semibold text-slate-700 dark:text-slate-300">
+                                                        {r.control?.kode_klausul}
+                                                    </span>
                                                     {r.control?.framework && <span>· {r.control.framework.nama}</span>}
                                                 </div>
                                                 {(r.mitigation_plan || r.rencana_mitigasi) && (
@@ -564,7 +576,6 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
                         endIndex={page.to ?? page.total}
                         onPageChange={goToPage}
                     />
-
                 </section>
             </div>
 
@@ -591,9 +602,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
                                 <option value="mitigated">{t('risks.mitigated')}</option>
                                 <option value="accepted">{t('risks.accepted')}</option>
                             </select>
-                            {updateForm.errors.status && (
-                                <p className="mt-1 text-xs text-red-500">{updateForm.errors.status}</p>
-                            )}
+                            {updateForm.errors.status && <p className="mt-1 text-xs text-red-500">{updateForm.errors.status}</p>}
                         </div>
 
                         {/* Level selector */}
@@ -611,16 +620,12 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
                                 <option value="high">{t('risks.high')}</option>
                                 <option value="critical">{t('risks.critical')}</option>
                             </select>
-                            {updateForm.errors.risk_level && (
-                                <p className="mt-1 text-xs text-red-500">{updateForm.errors.risk_level}</p>
-                            )}
+                            {updateForm.errors.risk_level && <p className="mt-1 text-xs text-red-500">{updateForm.errors.risk_level}</p>}
                         </div>
 
                         {/* Owner */}
                         <div>
-                            <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                                {t('risks.updateOwner')}
-                            </label>
+                            <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">{t('risks.updateOwner')}</label>
                             <input
                                 type="text"
                                 value={updateForm.data.risk_owner}
@@ -655,9 +660,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
                                     placeholder={t('risks.updateNotesPlaceholder')}
                                     className="w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none dark:border-amber-800/40 dark:bg-slate-800 dark:text-white"
                                 />
-                                <p className="mt-1.5 text-[11px] text-amber-700 dark:text-amber-400">
-                                    {t('risks.updateNotesRequired')}
-                                </p>
+                                <p className="mt-1.5 text-[11px] text-amber-700 dark:text-amber-400">{t('risks.updateNotesRequired')}</p>
                             </div>
                         )}
 
@@ -706,7 +709,10 @@ export default function Risks({ risks, matrix = {}, workUnits = [], filters = {}
                         {canUpdate && detailTarget && (
                             <button
                                 type="button"
-                                onClick={() => { setDetailTarget(null); openEditModal(detailTarget); }}
+                                onClick={() => {
+                                    setDetailTarget(null);
+                                    openEditModal(detailTarget);
+                                }}
                                 className="bg-primary hover:bg-primary-700 inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold text-white transition-colors"
                             >
                                 <Edit2 className="h-3.5 w-3.5" />

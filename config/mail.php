@@ -18,6 +18,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Universal Email Reroute (Testing / Development)
+    |--------------------------------------------------------------------------
+    |
+    | When specified, ALL outgoing emails will be delivered to this single address
+    | regardless of the intended recipient in the database. Useful for manual testing.
+    |
+    */
+    'always_to' => env('MAIL_ALWAYS_TO'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Mailer Configurations
     |--------------------------------------------------------------------------
     |

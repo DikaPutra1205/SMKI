@@ -47,7 +47,7 @@ if ($forceParallel && ! $useParallel) {
     exit(1);
 }
 
-$cmd = array_merge(['php', 'artisan', 'test'], $useParallel ? ['--parallel'] : [], $forward);
+$cmd = array_merge(['php', '-d', 'memory_limit=512M', 'artisan', 'test'], $useParallel ? ['--parallel'] : [], $forward);
 
 $process = proc_open(
     implode(' ', array_map('escapeshellarg', $cmd)),

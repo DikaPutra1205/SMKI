@@ -51,17 +51,49 @@ class FindingStatusChangedNotification extends Notification implements ShouldQue
     public function toMail(object $notifiable): MailMessage
     {
         $kodeKlausul = $this->finding->control?->kode_klausul ?? 'SMKI';
+        $judulKontrol = $this->finding->control?->judul ?? 'Kontrol Keamanan Informasi';
+        $unitName = $this->finding->unit?->nama ?? 'Unit Kerja Terkait';
         $fromLabel = $this->statusLabel($this->fromStatus);
         $toLabel = $this->statusLabel($this->toStatus);
 
+        $isPicReporting = $this->actor->isPic();
+
+        if ($isPicReporting) {
+            // Scenario 1.2: PIC updates status -> Sent to Admin Kepatuhan
+            return (new MailMessage)
+                ->subject("[SMKI] Laporan Tindak Lanjut Temuan: {$kodeKlausul} ({$toLabel}) - {$unitName}")
+                ->view('emails.finding-status-pic-to-admin', [
+                    'recipientName' => $notifiable->name,
+                    'kodeKlausul' => $kodeKlausul,
+                    'judulKontrol' => $judulKontrol,
+                    'unitName' => $unitName,
+                    'fromStatus' => $this->fromStatus,
+                    'fromLabel' => $fromLabel,
+                    'toLabel' => $toLabel,
+                    'toStatus' => $this->toStatus,
+                    'actorName' => $this->actor->name,
+                    'catatan' => $this->catatan,
+                    'actionUrl' => url("/admin/kepatuhan/temuan?id={$this->finding->id}"),
+                ]);
+        }
+
+        // Scenario 1.3: Admin updates/verifies status -> Sent to PIC
+        $decisionLabel = $this->toStatus === 'closed' ? 'Disetujui & Ditutup' : 'Perlu Revisi';
+
         return (new MailMessage)
-            ->subject("[SMKI] Pembaruan Status Temuan: {$kodeKlausul} -> {$toLabel}")
-            ->greeting("Halo, {$notifiable->name}")
-            ->line("Status temuan audit untuk kontrol {$kodeKlausul} telah diperbarui oleh {$this->actor->name}.")
-            ->line("Perubahan Status: {$fromLabel} ➔ {$toLabel}")
-            ->when(! empty($this->catatan), fn ($mail) => $mail->line("Catatan Tindak Lanjut: {$this->catatan}"))
-            ->action('Lihat Detail Temuan', url("/temuan?id={$this->finding->id}"))
-            ->line('Silakan periksa detail temuan dan riwayat status di sistem SMKI.');
+            ->subject("[SMKI] Hasil Verifikasi Temuan: {$kodeKlausul} ({$decisionLabel})")
+            ->view('emails.finding-status-admin-to-pic', [
+                'recipientName' => $notifiable->name,
+                'kodeKlausul' => $kodeKlausul,
+                'judulKontrol' => $judulKontrol,
+                'fromStatus' => $this->fromStatus,
+                'fromLabel' => $fromLabel,
+                'toLabel' => $toLabel,
+                'toStatus' => $this->toStatus,
+                'actorName' => $this->actor->name,
+                'catatan' => $this->catatan,
+                'actionUrl' => url("/admin/pic/temuan?id={$this->finding->id}"),
+            ]);
     }
 
     /**

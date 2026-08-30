@@ -16,6 +16,7 @@ use App\Observers\SmkiObserver;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -34,6 +35,11 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Carbon::setLocale('id');
+
+        // Universal Email Rerouting for manual testing without altering database
+        if (! $this->app->runningUnitTests() && $alwaysTo = config('mail.always_to')) {
+            Mail::alwaysTo($alwaysTo);
+        }
 
         // Daftarkan SmkiObserver ke semua model transaksi dan master data
         Framework::observe(SmkiObserver::class);

@@ -38,13 +38,15 @@ class ChecklistEntryRejectedNotification extends Notification implements ShouldQ
         $judulKontrol = $this->entry->control?->judul ?? 'Kontrol Keamanan Informasi';
 
         return (new MailMessage)
-            ->subject("[SMKI] Penilaian Kontrol Tidak Patuh: {$kodeKlausul}")
-            ->greeting("Halo, {$notifiable->name}")
-            ->line("Admin Kepatuhan ({$this->actor->name}) telah meninjau entri checklist kontrol untuk unit kerja Anda dan menetapkan status Tidak Patuh (Non-Compliant).")
-            ->line("Kontrol: {$kodeKlausul} - {$judulKontrol}")
-            ->when(! empty($this->catatanAdmin), fn ($mail) => $mail->line("Catatan / Alasan Verifikator: {$this->catatanAdmin}"))
-            ->action('Perbaiki & Unggah Ulang Bukti', url("/pic/checklist/{$this->entry->session_id}"))
-            ->line('Mohon lengkapi atau perbaiki bukti dukung kepatuhan sesuai catatan verifikator di atas.');
+            ->subject("[SMKI] Penilaian Kontrol Tidak Patuh (Perlu Perbaikan): {$kodeKlausul}")
+            ->view('emails.checklist-rejected', [
+                'recipientName' => $notifiable->name,
+                'kodeKlausul' => $kodeKlausul,
+                'judulKontrol' => $judulKontrol,
+                'catatanAdmin' => $this->catatanAdmin,
+                'actorName' => $this->actor->name,
+                'actionUrl' => url("/pic/checklist/{$this->entry->session_id}"),
+            ]);
     }
 
     /**
