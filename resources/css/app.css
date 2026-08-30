@@ -121,3 +121,13 @@ html.theme-transition-shrink::view-transition-old(root) {
 html.theme-transition-shrink::view-transition-new(root) {
     z-index: 1;
 }
+
+/* Toast auto-dismiss progress bar */
+@keyframes toast-progress {
+    from {
+        transform: scaleX(1);
+    }
+    to {
+        transform: scaleX(0);
+    }
+}

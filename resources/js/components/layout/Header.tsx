@@ -1,8 +1,9 @@
+import { useNotifications } from '@/components/layout/NotificationProvider';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { CommandPalette } from '@/components/ui/CommandPalette';
 import { t } from '@/lib/i18n';
 import { SharedData } from '@/types';
-import { Link, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { Bell, ChevronDown, ChevronRight, Menu, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -33,6 +34,7 @@ export function Header({ breadcrumbs = [], onToggleSidebar }: HeaderProps) {
 
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
     const [isPaletteOpen, setIsPaletteOpen] = useState(false);
+    const { unreadCount } = useNotifications();
 
     // Global Ctrl+K / Cmd+K listener
     useEffect(() => {
@@ -67,7 +69,7 @@ export function Header({ breadcrumbs = [], onToggleSidebar }: HeaderProps) {
                         </button>
                     )}
 
-                    <nav className="flex items-center gap-1.5 text-xs font-medium sm:text-sm">
+                    <nav className="hidden items-center gap-1.5 text-xs font-medium sm:flex sm:text-sm">
                         {activeBreadcrumbs.map((item, index) => {
                             const isLast = index === activeBreadcrumbs.length - 1;
 
@@ -108,13 +110,16 @@ export function Header({ breadcrumbs = [], onToggleSidebar }: HeaderProps) {
 
                     <button
                         type="button"
+                        onClick={() => router.visit('/notifications')}
                         className="border-border text-body hover:bg-surface hover:text-navy relative flex h-9 w-9 items-center justify-center rounded-[10px] border bg-white shadow-sm transition-colors dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
                         aria-label={t('layout.notifications')}
                     >
                         <Bell className="h-4.5 w-4.5" />
-                        <span className="bg-danger absolute -top-1 -right-1 flex h-4.5 w-4.5 items-center justify-center rounded-full text-[10px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-[#001a30]">
-                            5
-                        </span>
+                        {unreadCount > 0 && (
+                            <span className="bg-danger absolute -top-1 -right-1 flex h-4.5 min-w-4.5 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-[#001a30]">
+                                {unreadCount > 99 ? '99+' : unreadCount}
+                            </span>
+                        )}
                     </button>
 
                     <div className="relative">

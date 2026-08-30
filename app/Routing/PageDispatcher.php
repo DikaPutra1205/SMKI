@@ -107,6 +107,17 @@ class PageDispatcher
             ],
             'default' => 'kepatuhan/reports',
         ],
+        'notifications' => [
+            'permissions' => [],
+            'destinations' => [
+                'superadmin' => 'notifications',
+                'admin_kepatuhan' => 'notifications',
+                'koordinator_smki' => 'notifications',
+                'auditor' => 'notifications',
+                'pic' => 'notifications',
+            ],
+            'default' => 'notifications',
+        ],
     ];
 
     public function requiredPermissions(string $page): array

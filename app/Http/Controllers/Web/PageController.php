@@ -57,6 +57,11 @@ class PageController extends Controller
         return $this->render($request, 'audit-logs');
     }
 
+    public function notifications(Request $request)
+    {
+        return $this->render($request, 'notifications');
+    }
+
     private function render(Request $request, string $page)
     {
         $user = $request->user();
@@ -79,6 +84,7 @@ class PageController extends Controller
             'temuan' => app(ComplianceOfficerController::class)->temuan($request),
             'risks' => app(ComplianceOfficerController::class)->risks($request),
             'audit-logs' => app(AuditLogController::class)->index($request),
+            'notifications' => Inertia::render('notifications'),
             default => Inertia::render($resolution->component ?? 'welcome'),
         };
     }

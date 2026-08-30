@@ -765,8 +765,8 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                 </div>
 
                 {/* Filters */}
-                <div className="flex flex-wrap items-center gap-3">
-                    <div className="relative min-w-[240px] flex-1">
+                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                    <div className="relative w-full flex-1 sm:min-w-[240px]">
                         <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                         <input
                             type="text"
@@ -777,32 +777,34 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                         />
                     </div>
 
-                    <Select value={selectedSeverity} onChange={(e) => setSelectedSeverity(e.target.value)} className="min-w-[160px]">
-                        <option value="all">Semua Kategori</option>
-                        {SEVERITY_OPTIONS.map((s) => (
-                            <option key={s} value={s}>
-                                {severityLabel(s)}
-                            </option>
-                        ))}
-                    </Select>
+                    <div className="flex flex-col gap-3 sm:flex-none sm:flex-row">
+                        <Select value={selectedSeverity} onChange={(e) => setSelectedSeverity(e.target.value)} className="min-w-0 sm:min-w-[160px]">
+                            <option value="all">Semua Kategori</option>
+                            {SEVERITY_OPTIONS.map((s) => (
+                                <option key={s} value={s}>
+                                    {severityLabel(s)}
+                                </option>
+                            ))}
+                        </Select>
 
-                    <Select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className="min-w-[170px]">
-                        <option value="all">Semua Status</option>
-                        {STATUS_OPTIONS.map((s) => (
-                            <option key={s} value={s}>
-                                {STATUS_TEXT[s]}
-                            </option>
-                        ))}
-                    </Select>
+                        <Select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className="min-w-0 sm:min-w-[170px]">
+                            <option value="all">Semua Status</option>
+                            {STATUS_OPTIONS.map((s) => (
+                                <option key={s} value={s}>
+                                    {STATUS_TEXT[s]}
+                                </option>
+                            ))}
+                        </Select>
 
-                    <Select value={selectedUnit} onChange={(e) => setSelectedUnit(e.target.value)} className="min-w-[170px]">
-                        <option value="all">Semua Unit Kerja</option>
-                        {workUnits.map((u) => (
-                            <option key={u.id} value={String(u.id)}>
-                                {u.nama}
-                            </option>
-                        ))}
-                    </Select>
+                        <Select value={selectedUnit} onChange={(e) => setSelectedUnit(e.target.value)} className="min-w-0 sm:min-w-[170px]">
+                            <option value="all">Semua Unit Kerja</option>
+                            {workUnits.map((u) => (
+                                <option key={u.id} value={String(u.id)}>
+                                    {u.nama}
+                                </option>
+                            ))}
+                        </Select>
+                    </div>
                 </div>
 
                 {/* Content View */}
