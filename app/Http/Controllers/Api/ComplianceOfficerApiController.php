@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BulkVerifyChecklistRequest;
+use App\Http\Requests\StoreFindingRequest;
 use App\Http\Requests\UpdateFindingRequest;
 use App\Http\Requests\UpdateRiskRequest;
 use App\Models\Finding;
@@ -33,6 +34,21 @@ class ComplianceOfficerApiController extends Controller
             'status' => 'success',
             'data' => $findings,
         ]);
+    }
+
+    /**
+     * POST /api/v1/compliance-officer/findings
+     */
+    public function storeFinding(StoreFindingRequest $request): JsonResponse
+    {
+        $user = $request->user();
+        $finding = $this->complianceOfficerService->storeFinding($user, $request->validated());
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Temuan audit baru berhasil diterbitkan.',
+            'data' => $finding,
+        ], 201);
     }
 
     /**

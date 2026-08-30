@@ -35,10 +35,12 @@ class Finding extends Model
 
     const KATEGORI_OBSERVASI = 'observasi';
 
-    // status: open, in_progress, closed
+    // status: open, in_progress, resolved, closed
     const STATUS_OPEN = 'open';
 
     const STATUS_IN_PROGRESS = 'in_progress';
+
+    const STATUS_RESOLVED = 'resolved';
 
     const STATUS_CLOSED = 'closed';
 
@@ -60,5 +62,10 @@ class Finding extends Model
     public function admin(): BelongsTo
     {
         return $this->belongsTo(User::class, 'admin_id');
+    }
+
+    public function histories()
+    {
+        return $this->hasMany(FindingStatusHistory::class)->orderBy('created_at', 'asc')->orderBy('id', 'asc');
     }
 }

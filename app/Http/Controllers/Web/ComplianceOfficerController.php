@@ -4,12 +4,16 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BulkVerifyChecklistRequest;
+use App\Http\Requests\StoreFindingRequest;
 use App\Http\Requests\UpdateFindingRequest;
 use App\Http\Requests\UpdateRiskRequest;
 use App\Models\ChecklistEntry;
 use App\Models\ChecklistSession;
+use App\Models\Control;
 use App\Models\Finding;
 use App\Models\Risk;
+use App\Models\User;
+use App\Notifications\ChecklistEntryRejectedNotification;
 use App\Services\ComplianceOfficerService;
 use App\Services\ComplianceService;
 use Illuminate\Http\RedirectResponse;
@@ -34,15 +38,41 @@ class ComplianceOfficerController extends Controller
         $findings = $this->complianceOfficerService->getFindings($user, $filters, 20);
         $workUnits = $this->complianceService->getWorkUnits();
 
+        $controls = Control::with('framework:id,nama,versi')
+            ->select('id', 'framework_id', 'kode_klausul', 'judul')
+            ->orderBy('kode_klausul')
+            ->get();
+
+        $pics = User::whereHas('role', fn ($q) => $q->where('name', User::ROLE_PIC))
+            ->select('id', 'name', 'unit_id')
+            ->orderBy('name')
+            ->get();
+
         return Inertia::render('admin-kepatuhan/temuan', [
             'findings' => $findings,
             'workUnits' => $workUnits,
+            'controls' => $controls,
+            'pics' => $pics,
             'filters' => $filters,
         ]);
     }
 
     /**
-     * Update finding status / deadline.
+     * Store new finding (Compliance Admin / Superadmin only).
+     */
+    public function storeFinding(StoreFindingRequest $request): RedirectResponse
+    {
+        $user = $request->user();
+        $this->complianceOfficerService->storeFinding($user, $request->validated());
+
+        return back()->with('flash', [
+            'type' => 'success',
+            'message' => 'Temuan audit baru berhasil diterbitkan.',
+        ]);
+    }
+
+    /**
+     * Update finding status / deadline / notes.
      */
     public function updateFinding(UpdateFindingRequest $request, Finding $finding): RedirectResponse
     {
@@ -225,12 +255,21 @@ class ComplianceOfficerController extends Controller
         // Approving (compliant) must not attach a note — a note drives the
         // red "Ditolak" cue on the PIC screen, so approval stays catatan-free.
         $isReject = $validated['status'] === 'non_compliant';
+        $adminNotes = $isReject && ! empty(trim($validated['admin_notes'] ?? '')) ? trim($validated['admin_notes']) : null;
+
         $entry->update([
             'status' => $validated['status'],
-            'catatan_admin' => $isReject && ! empty(trim($validated['admin_notes'] ?? '')) ? trim($validated['admin_notes']) : null,
+            'catatan_admin' => $adminNotes,
             'tanggal_verifikasi' => now(),
             'admin_id' => $user->id,
         ]);
+
+        if ($isReject) {
+            $targetPic = $entry->pic ?? User::where('unit_id', $entry->unit_id)->whereHas('role', fn ($q) => $q->where('name', User::ROLE_PIC))->first();
+            if ($targetPic && $targetPic->id !== $user->id) {
+                $targetPic->notify(new ChecklistEntryRejectedNotification($entry->fresh(['control', 'session']), $user, $adminNotes));
+            }
+        }
 
         $statusLabel = $validated['status'] === 'compliant' ? 'Patuh' : 'Tidak Patuh';
 

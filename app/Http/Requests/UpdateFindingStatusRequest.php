@@ -18,8 +18,9 @@ class UpdateFindingStatusRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => 'required|in:open,in_progress,closed',
-            'admin_id' => 'required|exists:users,id',
+            'status' => 'required|in:open,in_progress,resolved,closed',
+            'catatan' => 'required|string|min:3|max:2000',
+            'admin_id' => 'sometimes|nullable|exists:users,id',
         ];
     }
 }

@@ -20,12 +20,14 @@ class StoreFindingRequest extends FormRequest
         return [
             'control_id' => 'required|exists:controls,id',
             'unit_id' => 'required|exists:work_units,id',
-            'pic_id' => 'required|exists:users,id',
+            'pic_id' => 'nullable|exists:users,id',
             'admin_id' => 'nullable|exists:users,id',
             'kategori' => 'required|in:major,minor,observasi',
-            'status' => 'sometimes|in:open,in_progress,closed',
-            'deadline' => 'nullable|date|after:today',
-            'catatan_admin' => 'nullable|string',
+            'status' => 'sometimes|in:open,in_progress,resolved,closed',
+            'deadline' => 'nullable|date',
+            'catatan' => 'nullable|string|max:2000',
+            'catatan_admin' => 'nullable|string|max:2000',
+            'admin_notes' => 'nullable|string|max:2000',
         ];
     }
 }

@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\ControlController;
 use App\Http\Controllers\Api\DashboardApiController;
 use App\Http\Controllers\Api\FindingController;
 use App\Http\Controllers\Api\FrameworkController;
+use App\Http\Controllers\Api\NotificationApiController;
 use App\Http\Controllers\Api\ReportExportApiController;
 use App\Http\Controllers\Api\RiskController;
 use App\Http\Controllers\Api\UserController;
@@ -113,6 +114,7 @@ Route::middleware('auth')->group(function () {
     // ── Compliance Officer (Findings, Risk Management & Bulk Verification) ───────
     Route::prefix('v1/compliance-officer')->group(function () {
         Route::get('findings', [ComplianceOfficerApiController::class, 'indexFindings']);
+        Route::post('findings', [ComplianceOfficerApiController::class, 'storeFinding']);
         Route::get('findings/{id}', [ComplianceOfficerApiController::class, 'showFinding']);
         Route::put('findings/{id}', [ComplianceOfficerApiController::class, 'updateFinding']);
         Route::get('risks', [ComplianceOfficerApiController::class, 'indexRisks']);
@@ -133,6 +135,15 @@ Route::middleware('auth')->group(function () {
         Route::get('/compliance-summary', [ReportExportApiController::class, 'complianceSummary']);
         Route::get('/export-pdf', [ReportExportApiController::class, 'exportPdf']);
         Route::get('/export-csv', [ReportExportApiController::class, 'exportCsv']);
+    });
+
+    // ── Notifications (In-App & Preferences) ──────────────────────────────────
+    Route::prefix('v1/notifications')->group(function () {
+        Route::get('/', [NotificationApiController::class, 'index']);
+        Route::get('/unread-count', [NotificationApiController::class, 'unreadCount']);
+        Route::post('/read-all', [NotificationApiController::class, 'markAllAsRead']);
+        Route::post('/{id}/read', [NotificationApiController::class, 'markAsRead']);
+        Route::delete('/{id}', [NotificationApiController::class, 'destroy']);
     });
 
     // ── Test Upload ─────────────────────────────────────────────────────────────

@@ -10,6 +10,7 @@ use App\Models\Control;
 use App\Models\Framework;
 use App\Models\User;
 use App\Models\WorkUnit;
+use App\Notifications\ChecklistEntryRejectedNotification;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -317,6 +318,14 @@ class ChecklistEntryController extends Controller
             'status' => $data['status'],
             'tanggal_verifikasi' => now(),
         ]);
+
+        if ($data['status'] === 'non_compliant') {
+            $user = $request->user() ?? User::find($data['admin_id']);
+            $targetPic = $checklistEntry->pic ?? User::where('unit_id', $checklistEntry->unit_id)->whereHas('role', fn ($q) => $q->where('name', User::ROLE_PIC))->first();
+            if ($targetPic && $user && $targetPic->id !== $user->id) {
+                $targetPic->notify(new ChecklistEntryRejectedNotification($checklistEntry->fresh(['control', 'session']), $user, $data['catatan_admin'] ?? null));
+            }
+        }
 
         return $this->success($checklistEntry->fresh(['session', 'control', 'unit', 'pic', 'admin']), 'Checklist berhasil diverifikasi oleh Admin');
     }

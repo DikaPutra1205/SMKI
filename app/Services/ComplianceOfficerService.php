@@ -5,8 +5,12 @@ namespace App\Services;
 use App\Models\AuditLog;
 use App\Models\ChecklistEntry;
 use App\Models\Finding;
+use App\Models\FindingStatusHistory;
 use App\Models\Risk;
 use App\Models\User;
+use App\Notifications\ChecklistEntryRejectedNotification;
+use App\Notifications\FindingCreatedNotification;
+use App\Notifications\FindingStatusChangedNotification;
 use Carbon\Carbon;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -34,9 +38,10 @@ class ComplianceOfficerService
     {
         $scopedUnitId = $this->resolveScopedUnitId($user, $filters['unit_id'] ?? null);
 
-        $query = Finding::with(['control.framework', 'unit:id,nama', 'pic:id,name', 'admin:id,name'])
+        $query = Finding::with(['control.framework', 'unit:id,nama', 'pic:id,name', 'admin:id,name', 'histories.user.role', 'histories.user.unit'])
             ->orderByRaw("CASE WHEN status = 'closed' THEN 1 ELSE 0 END")
-            ->orderBy('deadline', 'asc');
+            ->orderBy('deadline', 'asc')
+            ->orderByDesc('id');
 
         if ($scopedUnitId) {
             $query->where('unit_id', $scopedUnitId);
@@ -90,9 +95,9 @@ class ComplianceOfficerService
      */
     public function getFinding(User $user, int $id): Finding
     {
-        $finding = Finding::with(['control.framework', 'unit', 'pic', 'admin'])->findOrFail($id);
+        $finding = Finding::with(['control.framework', 'unit', 'pic', 'admin', 'histories.user.role', 'histories.user.unit'])->findOrFail($id);
 
-        if ($user->isPic() && $finding->unit_id !== $user->unit_id) {
+        if ($user->isPic() && (int) $finding->unit_id !== (int) $user->unit_id) {
             throw new AuthorizationException('Anda tidak memiliki hak akses untuk temuan unit lain.');
         }
 
@@ -100,46 +105,140 @@ class ComplianceOfficerService
     }
 
     /**
-     * Update finding details (status, category, deadline, admin notes).
+     * Store new finding (Compliance Admin / Superadmin only).
+     */
+    public function storeFinding(User $user, array $data): Finding
+    {
+        if ($user->isPic()) {
+            throw new AuthorizationException('Hanya Admin Kepatuhan yang memiliki wewenang untuk membuat temuan baru.');
+        }
+
+        return DB::transaction(function () use ($user, $data) {
+            $unitId = (int) $data['unit_id'];
+            $picId = $data['pic_id'] ?? null;
+
+            if (! $picId) {
+                $unitPic = User::where('unit_id', $unitId)
+                    ->whereHas('role', fn ($q) => $q->where('name', User::ROLE_PIC))
+                    ->first();
+                $picId = $unitPic?->id ?? $user->id;
+            }
+
+            $note = $data['catatan'] ?? $data['catatan_admin'] ?? $data['admin_notes'] ?? 'Temuan awal dicatat oleh Admin Kepatuhan.';
+
+            $finding = Finding::create([
+                'control_id' => $data['control_id'],
+                'unit_id' => $unitId,
+                'pic_id' => $picId,
+                'admin_id' => $user->id,
+                'kategori' => $data['kategori'] ?? Finding::KATEGORI_OBSERVASI,
+                'status' => $data['status'] ?? Finding::STATUS_OPEN,
+                'deadline' => $data['deadline'] ?? null,
+                'catatan_admin' => $note,
+                'tanggal_verifikasi' => ($data['status'] ?? Finding::STATUS_OPEN) === Finding::STATUS_CLOSED ? now() : null,
+            ]);
+
+            FindingStatusHistory::create([
+                'finding_id' => $finding->id,
+                'user_id' => $user->id,
+                'from_status' => null,
+                'to_status' => $finding->status,
+                'catatan' => $note,
+            ]);
+
+            $fresh = $finding->fresh(['control.framework', 'unit:id,nama', 'pic:id,name', 'admin:id,name', 'histories.user.role', 'histories.user.unit']);
+
+            // Notify PIC about new finding
+            $targetPic = $fresh->pic ?? User::where('unit_id', $fresh->unit_id)->whereHas('role', fn ($q) => $q->where('name', User::ROLE_PIC))->first();
+            if ($targetPic && $targetPic->id !== $user->id) {
+                $targetPic->notify(new FindingCreatedNotification($fresh, $user, $note));
+            }
+
+            return $this->formatFindingResource($fresh, Carbon::today());
+        });
+    }
+
+    /**
+     * Update finding details (status, category, deadline, admin notes) and track history.
      */
     public function updateFinding(User $user, Finding $finding, array $data): Finding
     {
-        if ($user->isPic() && $finding->unit_id !== $user->unit_id) {
+        if ($user->isPic() && (int) $finding->unit_id !== (int) $user->unit_id) {
             throw new AuthorizationException('Anda tidak memiliki wewenang untuk mengubah temuan unit lain.');
         }
 
-        $oldValues = $finding->only(['status', 'kategori', 'deadline', 'catatan_admin', 'admin_id', 'tanggal_verifikasi']);
+        return DB::transaction(function () use ($user, $finding, $data) {
+            $oldStatus = $finding->status;
+            $newStatus = $data['status'] ?? null;
+            $statusChanged = $newStatus !== null && $newStatus !== $oldStatus;
+            $updateData = [];
 
-        $updateData = [];
+            $note = $data['catatan'] ?? $data['notes'] ?? $data['admin_notes'] ?? $data['catatan_admin'] ?? null;
 
-        if (isset($data['status'])) {
-            $updateData['status'] = $data['status'];
-            if ($data['status'] === Finding::STATUS_CLOSED) {
-                $updateData['tanggal_verifikasi'] = now();
-                $updateData['admin_id'] = $user->id;
+            if ($statusChanged) {
+                $updateData['status'] = $newStatus;
+
+                if ($newStatus === Finding::STATUS_CLOSED) {
+                    $updateData['tanggal_verifikasi'] = now();
+                    $updateData['admin_id'] = $user->id;
+                } elseif ($oldStatus === Finding::STATUS_CLOSED) {
+                    // Re-opened from closed to in_progress / resolved / open
+                    $updateData['tanggal_verifikasi'] = null;
+                }
+
+                FindingStatusHistory::create([
+                    'finding_id' => $finding->id,
+                    'user_id' => $user->id,
+                    'from_status' => $oldStatus,
+                    'to_status' => $newStatus,
+                    'catatan' => $note ?: "Status diubah dari {$oldStatus} menjadi {$newStatus}.",
+                ]);
             }
-        }
 
-        if (isset($data['category'])) {
-            $updateData['kategori'] = $data['category'];
-        } elseif (isset($data['kategori'])) {
-            $updateData['kategori'] = $data['kategori'];
-        }
+            if (isset($data['category'])) {
+                $updateData['kategori'] = $data['category'];
+            } elseif (isset($data['kategori'])) {
+                $updateData['kategori'] = $data['kategori'];
+            }
 
-        if (array_key_exists('deadline', $data)) {
-            $updateData['deadline'] = $data['deadline'];
-        }
+            if (array_key_exists('deadline', $data)) {
+                $updateData['deadline'] = $data['deadline'];
+            }
 
-        if (array_key_exists('admin_notes', $data)) {
-            $updateData['catatan_admin'] = $data['admin_notes'];
-        } elseif (array_key_exists('catatan_admin', $data)) {
-            $updateData['catatan_admin'] = $data['catatan_admin'];
-        }
+            if (array_key_exists('pic_id', $data) && $data['pic_id'] !== null) {
+                $updateData['pic_id'] = $data['pic_id'];
+            }
 
-        $finding->update($updateData);
-        $freshFinding = $finding->fresh(['control.framework', 'unit', 'pic', 'admin']);
+            if ($note !== null) {
+                $updateData['catatan_admin'] = $note;
+            }
 
-        return $this->formatFindingResource($freshFinding, Carbon::today());
+            if (! empty($updateData)) {
+                $finding->update($updateData);
+            }
+
+            $freshFinding = $finding->fresh(['control.framework', 'unit:id,nama', 'pic:id,name', 'admin:id,name', 'histories.user.role', 'histories.user.unit']);
+
+            if ($statusChanged) {
+                if ($user->isPic()) {
+                    // Actor is PIC -> Notify all Compliance Admins
+                    $admins = User::whereHas('role', fn ($q) => $q->where('name', User::ROLE_ADMIN_KEPATUHAN))->get();
+                    foreach ($admins as $admin) {
+                        if ($admin->id !== $user->id) {
+                            $admin->notify(new FindingStatusChangedNotification($freshFinding, $user, $oldStatus, $newStatus, $note ?: ''));
+                        }
+                    }
+                } else {
+                    // Actor is Admin / Superadmin -> Notify target PIC
+                    $targetPic = $freshFinding->pic ?? User::where('unit_id', $freshFinding->unit_id)->whereHas('role', fn ($q) => $q->where('name', User::ROLE_PIC))->first();
+                    if ($targetPic && $targetPic->id !== $user->id) {
+                        $targetPic->notify(new FindingStatusChangedNotification($freshFinding, $user, $oldStatus, $newStatus, $note ?: ''));
+                    }
+                }
+            }
+
+            return $this->formatFindingResource($freshFinding, Carbon::today());
+        });
     }
 
     /**
@@ -303,6 +402,16 @@ class ComplianceOfficerService
                     'entry_ids' => $entryIds,
                 ]
             );
+
+            if ($status === 'non_compliant') {
+                $rejectedEntries = ChecklistEntry::with(['control', 'pic'])->whereIn('id', $entryIds)->get();
+                foreach ($rejectedEntries as $entry) {
+                    $targetPic = $entry->pic ?? User::where('unit_id', $entry->unit_id)->whereHas('role', fn ($q) => $q->where('name', User::ROLE_PIC))->first();
+                    if ($targetPic && $targetPic->id !== $user->id) {
+                        $targetPic->notify(new ChecklistEntryRejectedNotification($entry, $user, $adminNotes));
+                    }
+                }
+            }
 
             return $updatedCount;
         });

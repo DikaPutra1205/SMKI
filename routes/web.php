@@ -53,6 +53,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/checklist', [PageController::class, 'checklist'])->name('checklist');
     Route::get('/compliance', [PageController::class, 'compliance'])->name('compliance');
     Route::get('/temuan', [PageController::class, 'temuan'])->name('temuan.index');
+    Route::post('/temuan', [ComplianceOfficerController::class, 'storeFinding'])->name('temuan.store.direct');
+    Route::put('/temuan/{finding}', [ComplianceOfficerController::class, 'updateFinding'])->name('temuan.update.direct');
     Route::get('/risks', [PageController::class, 'risks'])->name('risks.index');
     Route::get('/audit-logs', [PageController::class, 'auditLogs'])->name('audit-logs.index');
 
@@ -84,6 +86,7 @@ Route::middleware('auth')->group(function () {
 
         // ── Compliance Officer (Temuan, Risks & Verification) ────────────────────
         Route::get('/temuan', [ComplianceOfficerController::class, 'temuan'])->name('temuan.index');
+        Route::post('/temuan', [ComplianceOfficerController::class, 'storeFinding'])->name('temuan.store');
         Route::put('/temuan/{finding}', [ComplianceOfficerController::class, 'updateFinding'])->name('temuan.update');
         Route::get('/risks', [ComplianceOfficerController::class, 'risks'])->name('risks.index');
         Route::put('/risks/{risk}', [ComplianceOfficerController::class, 'updateRisk'])->name('risks.update');
