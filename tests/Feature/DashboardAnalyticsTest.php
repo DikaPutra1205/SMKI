@@ -984,7 +984,8 @@ class DashboardAnalyticsTest extends TestCase
             ->where('summary.overall_compliance_rate', 50)
             ->where('filters.unit_id', $this->unitA->id)
             ->where('filters.session_id', $session->id)
-            ->has('trends', 6)
+            ->where('filters.months', 'all')
+            ->has('trends', 12)
             ->has('unit_comparisons', 2)
             ->has('workUnits', 2)
         );
@@ -1007,7 +1008,7 @@ class DashboardAnalyticsTest extends TestCase
             ->where('totalFrameworks', 2)
             ->where('totalControls', 3)
             ->has('frameworks', 2)
-            ->has('trends', 6)
+            ->has('trends', 12)
         );
     }
 
@@ -1035,11 +1036,62 @@ class DashboardAnalyticsTest extends TestCase
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
             ->component('pic/dashboard')
-            ->has('trends', 6)
-            ->where('trends.5.period', now()->format('Y-m'))
+            ->has('trends', 12)
+            ->where('trends.11.period', now()->format('Y-m'))
             // Only the PIC's own unit entry counts: 100%, not blended 50%.
-            ->where('trends.5.iso27001_rate', 100)
-            ->where('trends.5.overall_rate', 100)
+            ->where('trends.11.iso27001_rate', 100)
+            ->where('trends.11.overall_rate', 100)
+        );
+    }
+
+    public function test_dashboard_routes_support_timeframe_filtering(): void
+    {
+        // Admin kepatuhan dashboard with default (all) and 3 months filter
+        $responseAll = $this->actingAs($this->admin)->get('/admin/kepatuhan/dashboard');
+        $responseAll->assertOk();
+        $responseAll->assertInertia(fn ($page) => $page
+            ->component('admin-kepatuhan/dashboard')
+            ->has('trends', 12)
+            ->where('filters.months', 'all')
+        );
+
+        $response = $this->actingAs($this->admin)->get('/admin/kepatuhan/dashboard?months=3');
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('admin-kepatuhan/dashboard')
+            ->has('trends', 3)
+            ->where('filters.months', '3')
+        );
+
+        // Auditor dashboard with 12 months filter
+        $auditor = User::factory()->create(['role' => 'auditor', 'unit_id' => $this->unitA->id]);
+
+        $response = $this->actingAs($auditor)->get('/admin/auditor/dashboard?months=12');
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('auditor/dashboard')
+            ->has('trends', 12)
+            ->where('filters.months', '12')
+        );
+
+        // PIC dashboard with 3 months filter
+        $response = $this->actingAs($this->pic)->get('/admin/pic/dashboard?months=3');
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('pic/dashboard')
+            ->has('trends', 3)
+            ->where('filters.months', '3')
+        );
+
+        // Superadmin dashboard with 12 months filter
+        $superadmin = User::factory()->create(['role' => 'superadmin', 'unit_id' => $this->unitA->id]);
+
+        $response = $this->actingAs($superadmin)->get('/admin/superadmin/dashboard?months=12');
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('superadmin/dashboard')
+            ->has('trends', 12)
+            ->where('filters.months', '12')
         );
     }
 }

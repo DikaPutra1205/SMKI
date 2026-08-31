@@ -55,11 +55,13 @@ class ComplianceController extends Controller
         $user = $request->user();
         $unitId = $request->filled('unit_id') ? (int) $request->input('unit_id') : null;
         $sessionId = $request->filled('session_id') ? (int) $request->input('session_id') : null;
+        $timeframe = $request->input('months');
+        $months = in_array((string) $timeframe, ['3', '6', '12'], true) ? (int) $timeframe : null;
 
-        $summary = $this->analyticsService->getSummary($user, $unitId, $sessionId);
-        $trends = $this->analyticsService->getTrends($user, $unitId);
-        $unitComparisons = $this->analyticsService->getUnitComparisons($user);
-        $recentActivities = $this->analyticsService->getRecentActivities($user);
+        $summary = $this->analyticsService->getSummary($user, $unitId, $sessionId, $months);
+        $trends = $this->analyticsService->getTrends($user, $unitId, $months);
+        $unitComparisons = $this->analyticsService->getUnitComparisons($user, $months);
+        $recentActivities = $this->analyticsService->getRecentActivities($user, 6, $months);
         $workUnits = $this->complianceService->getWorkUnits();
 
         return Inertia::render('admin-kepatuhan/dashboard', [
@@ -71,6 +73,7 @@ class ComplianceController extends Controller
             'filters' => [
                 'unit_id' => $unitId,
                 'session_id' => $sessionId,
+                'months' => $months ? (string) $months : 'all',
             ],
         ]);
     }

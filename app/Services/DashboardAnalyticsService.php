@@ -29,9 +29,11 @@ class DashboardAnalyticsService
     /**
      * Get complete dashboard summary analytics.
      */
-    public function getSummary(User $user, ?int $unitId = null, ?int $sessionId = null): array
+    public function getSummary(User $user, ?int $unitId = null, ?int $sessionId = null, ?int $months = null): array
     {
         $scopedUnitId = $this->resolveScopedUnitId($user, $unitId);
+        $cutoffDate = $months ? Carbon::now()->startOfMonth()->subMonths($months - 1)->startOfMonth() : null;
+        $cutoffPeriode = $months ? Carbon::now()->startOfMonth()->subMonths($months - 1)->format('Y-m') : null;
 
         // 1. Frameworks Breakdown & Overall Compliance Rate via Single SQL Aggregation
         $frameworks = Framework::withCount('controls')->orderBy('id')->get();
@@ -66,13 +68,13 @@ class DashboardAnalyticsService
         } else {
             // Scope entries to the most-recent session per (unit, framework) by
             // `periode` (yyyy-mm), so each control is counted once in the latest
-            // assessment rather than across every historical session. Sessions are
-            // soft-deletable, hence deleted_at IS NULL.
-            $latestSessionSql = '
+            // assessment rather than across every historical session.
+            $periodeConstraint = $cutoffPeriode ? "AND periode >= '{$cutoffPeriode}'" : '';
+            $latestSessionSql = "
                 SELECT id, unit_id, framework_id,
                        ROW_NUMBER() OVER (PARTITION BY unit_id, framework_id ORDER BY periode DESC) AS rn
                 FROM checklist_sessions
-                WHERE deleted_at IS NULL';
+                WHERE deleted_at IS NULL {$periodeConstraint}";
 
             $entryQuery = ChecklistEntry::from(\DB::raw("({$latestSessionSql}) AS ms"))
                 ->join('checklist_entries', 'checklist_entries.session_id', '=', 'ms.id')
@@ -170,6 +172,9 @@ class DashboardAnalyticsService
         if ($scopedUnitId) {
             $findingQuery->where('unit_id', $scopedUnitId);
         }
+        if ($cutoffDate) {
+            $findingQuery->where('created_at', '>=', $cutoffDate);
+        }
 
         $findingStats = $findingQuery->selectRaw('
             SUM(CASE WHEN status IN (?, ?) THEN 1 ELSE 0 END) as total_active,
@@ -197,6 +202,9 @@ class DashboardAnalyticsService
         $riskQuery = Risk::query();
         if ($scopedUnitId) {
             $riskQuery->whereHas('control.checklistEntries', fn ($q) => $q->where('unit_id', $scopedUnitId));
+        }
+        if ($cutoffDate) {
+            $riskQuery->where('created_at', '>=', $cutoffDate);
         }
 
         $riskStats = $riskQuery->selectRaw('
@@ -228,16 +236,18 @@ class DashboardAnalyticsService
             'frameworks_breakdown' => $frameworksBreakdown,
             'findings_summary' => $findingsSummary,
             'risks_summary' => $risksSummary,
+            'months' => $months ? (string) $months : 'all',
         ];
     }
 
     /**
      * Get monthly compliance trends over the last N months.
+     * When $months is null (all-time), defaults to 12 months for comprehensive trend display.
      */
-    public function getTrends(User $user, ?int $unitId = null, int $months = 6): array
+    public function getTrends(User $user, ?int $unitId = null, ?int $months = null): array
     {
         $scopedUnitId = $this->resolveScopedUnitId($user, $unitId);
-        $safeMonths = max(1, min($months, 24));
+        $safeMonths = $months ? max(1, min($months, 24)) : 12;
         $trends = [];
 
         for ($i = $safeMonths - 1; $i >= 0; $i--) {
@@ -297,9 +307,11 @@ class DashboardAnalyticsService
     /**
      * Get compliance comparison across all work units.
      */
-    public function getUnitComparisons(User $user): array
+    public function getUnitComparisons(User $user, ?int $months = null): array
     {
         $scopedUnitId = $this->resolveScopedUnitId($user);
+        $cutoffDate = $months ? Carbon::now()->startOfMonth()->subMonths($months - 1)->startOfMonth() : null;
+        $cutoffPeriode = $months ? Carbon::now()->startOfMonth()->subMonths($months - 1)->format('Y-m') : null;
 
         $unitsQuery = WorkUnit::select('id', 'nama')->orderBy('nama');
         if ($scopedUnitId) {
@@ -309,24 +321,35 @@ class DashboardAnalyticsService
         $units = $unitsQuery->get();
         $unitIds = $units->pluck('id');
 
-        $entriesByUnit = ChecklistEntry::whereIn('unit_id', $unitIds)
+        $entriesQuery = ChecklistEntry::whereIn('checklist_entries.unit_id', $unitIds);
+        if ($cutoffPeriode) {
+            $entriesQuery->join('checklist_sessions', 'checklist_entries.session_id', '=', 'checklist_sessions.id')
+                ->where('checklist_sessions.periode', '>=', $cutoffPeriode);
+        }
+
+        $entriesByUnit = $entriesQuery
             ->selectRaw('
-                unit_id,
+                checklist_entries.unit_id,
                 COUNT(*) as total_entries,
-                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as compliant_count,
-                SUM(CASE WHEN status IN (?, ?, ?) THEN 1 ELSE 0 END) as applicable_count
+                SUM(CASE WHEN checklist_entries.status = ? THEN 1 ELSE 0 END) as compliant_count,
+                SUM(CASE WHEN checklist_entries.status IN (?, ?, ?) THEN 1 ELSE 0 END) as applicable_count
             ', [
                 ChecklistEntry::STATUS_COMPLIANT,
                 ChecklistEntry::STATUS_COMPLIANT,
                 ChecklistEntry::STATUS_PARTIAL,
                 ChecklistEntry::STATUS_NON_COMPLIANT,
             ])
-            ->groupBy('unit_id')
+            ->groupBy('checklist_entries.unit_id')
             ->get()
             ->keyBy('unit_id');
 
-        $findingsByUnit = Finding::whereIn('unit_id', $unitIds)
-            ->whereIn('status', [Finding::STATUS_OPEN, Finding::STATUS_IN_PROGRESS])
+        $findingsQuery = Finding::whereIn('unit_id', $unitIds)
+            ->whereIn('status', [Finding::STATUS_OPEN, Finding::STATUS_IN_PROGRESS]);
+        if ($cutoffDate) {
+            $findingsQuery->where('created_at', '>=', $cutoffDate);
+        }
+
+        $findingsByUnit = $findingsQuery
             ->selectRaw('unit_id, COUNT(*) as open_count')
             ->groupBy('unit_id')
             ->get()
@@ -356,15 +379,21 @@ class DashboardAnalyticsService
      * Get recent audit activity logs.
      * Accessible only by superadmin, admin_kepatuhan, koordinator_smki, and auditor.
      */
-    public function getRecentActivities(User $user, int $limit = 6): array
+    public function getRecentActivities(User $user, int $limit = 6, ?int $months = null): array
     {
         if (! $user->hasPermissionTo('audit-log.view')) {
             return [];
         }
 
         $safeLimit = max(1, min((int) ($limit ?: 6), 100));
+        $cutoffDate = $months ? Carbon::now()->startOfMonth()->subMonths($months - 1)->startOfMonth() : null;
 
-        return AuditLog::with(['actor.workUnit', 'actor.role'])
+        $query = AuditLog::with(['actor.workUnit', 'actor.role']);
+        if ($cutoffDate) {
+            $query->where('created_at', '>=', $cutoffDate);
+        }
+
+        return $query
             ->orderByDesc('id')
             ->limit($safeLimit)
             ->get()

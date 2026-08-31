@@ -1,4 +1,5 @@
 import ComplianceAreaChart, { type TrendPoint } from '@/components/dashboards/ComplianceAreaChart';
+import TimeframeFilter from '@/components/dashboards/TimeframeFilter';
 import { ChartSkeleton } from '@/components/skeletons/ChartSkeleton';
 import AppLayout from '@/layouts/AppLayout';
 import { formatDateIndonesian, formatDateTimeIndonesian } from '@/lib/utils';
@@ -45,6 +46,9 @@ interface SuperadminDashboardProps {
     };
     recent_activities?: RecentActivity[];
     trends?: TrendPoint[];
+    filters?: {
+        months?: number | string;
+    };
 }
 
 export default function SuperadminDashboard({
@@ -55,6 +59,7 @@ export default function SuperadminDashboard({
     summary,
     recent_activities = [],
     trends = [],
+    filters = {},
 }: SuperadminDashboardProps) {
     const breadcrumbs = [{ label: 'Command Center' }];
 
@@ -94,7 +99,8 @@ export default function SuperadminDashboard({
                     </p>
                 </div>
 
-                <div className="flex items-center gap-2.5">
+                <div className="flex flex-wrap items-center gap-2.5">
+                    <TimeframeFilter value={filters.months || 'all'} basePath="/admin/superadmin/dashboard" />
                     <Link
                         href="/admin/superadmin/frameworks"
                         className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"

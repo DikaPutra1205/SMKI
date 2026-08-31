@@ -1,4 +1,5 @@
 import ComplianceAreaChart, { type TrendPoint } from '@/components/dashboards/ComplianceAreaChart';
+import TimeframeFilter from '@/components/dashboards/TimeframeFilter';
 import { ChartSkeleton } from '@/components/skeletons/ChartSkeleton';
 import AppLayout from '@/layouts/AppLayout';
 import { formatDateIndonesian, formatPeriodeIndonesian } from '@/lib/utils';
@@ -45,9 +46,12 @@ interface PicDashboardProps {
     };
     recent_sessions?: RecentSession[];
     trends?: TrendPoint[];
+    filters?: {
+        months?: number | string;
+    };
 }
 
-export default function PicDashboard({ summary, recent_sessions = [], trends = [] }: PicDashboardProps) {
+export default function PicDashboard({ summary, recent_sessions = [], trends = [], filters = {} }: PicDashboardProps) {
     const { auth } = usePage<SharedData>().props;
     const userName = auth.user?.name || 'Petugas PIC';
     const userUnit = auth.user?.unit?.nama || 'Unit Kerja';
@@ -85,13 +89,14 @@ export default function PicDashboard({ summary, recent_sessions = [], trends = [
                     </p>
                 </div>
 
-                <div className="flex items-center gap-2.5">
+                <div className="flex flex-wrap items-center gap-2.5">
+                    <TimeframeFilter value={filters.months || 'all'} basePath="/dashboard" />
                     <Link
                         href="/checklist"
-                        className="bg-primary hover:bg-primary-700 inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all active:scale-95 sm:text-sm"
+                        className="bg-primary hover:bg-primary inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all active:scale-95 sm:text-sm"
                     >
                         <ClipboardCheck className="h-4 w-4" />
-                        Daftar Penilaian
+                        Mulai Asesmen
                     </Link>
                 </div>
             </div>

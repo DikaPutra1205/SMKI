@@ -1,4 +1,5 @@
 import ComplianceAreaChart, { type TrendPoint } from '@/components/dashboards/ComplianceAreaChart';
+import TimeframeFilter from '@/components/dashboards/TimeframeFilter';
 import { ActivitySkeleton } from '@/components/skeletons/ActivitySkeleton';
 import { ChartSkeleton } from '@/components/skeletons/ChartSkeleton';
 import AppLayout from '@/layouts/AppLayout';
@@ -35,9 +36,14 @@ interface AuditorDashboardProps {
     };
     trends?: TrendPoint[];
     recent_activities?: RecentActivity[];
+    filters?: {
+        unit_id?: number | string;
+        session_id?: number | string;
+        months?: number | string;
+    };
 }
 
-export default function AuditorDashboard({ summary, trends = [], recent_activities = [] }: AuditorDashboardProps) {
+export default function AuditorDashboard({ summary, trends = [], recent_activities = [], filters = {} }: AuditorDashboardProps) {
     const { auth } = usePage<SharedData>().props;
     const userName = auth.user?.name || 'Auditor Kepatuhan';
 
@@ -79,7 +85,12 @@ export default function AuditorDashboard({ summary, trends = [], recent_activiti
                     </p>
                 </div>
 
-                <div className="flex items-center gap-2.5">
+                <div className="flex flex-wrap items-center gap-2.5">
+                    <TimeframeFilter
+                        value={filters.months || 'all'}
+                        basePath="/admin/auditor/dashboard"
+                        extraParams={{ unit_id: filters.unit_id, session_id: filters.session_id }}
+                    />
                     <Link
                         href="/admin/auditor/findings"
                         className="bg-primary hover:bg-primary inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all active:scale-95 sm:text-sm"

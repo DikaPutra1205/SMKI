@@ -1,4 +1,5 @@
 import ComplianceAreaChart, { type TrendPoint } from '@/components/dashboards/ComplianceAreaChart';
+import TimeframeFilter from '@/components/dashboards/TimeframeFilter';
 import { ActivitySkeleton } from '@/components/skeletons/ActivitySkeleton';
 import { ChartSkeleton } from '@/components/skeletons/ChartSkeleton';
 import AppLayout from '@/layouts/AppLayout';
@@ -43,9 +44,14 @@ interface AdminDashboardProps {
     };
     trends?: TrendPoint[];
     recent_activities?: RecentActivity[];
+    filters?: {
+        unit_id?: number | string;
+        session_id?: number | string;
+        months?: number | string;
+    };
 }
 
-export default function Dashboard({ summary, trends = [], recent_activities = [] }: AdminDashboardProps) {
+export default function Dashboard({ summary, trends = [], recent_activities = [], filters = {} }: AdminDashboardProps) {
     const { auth } = usePage<SharedData>().props;
     const userName = auth.user?.name || 'Administrator';
 
@@ -88,7 +94,12 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                     </p>
                 </div>
 
-                <div className="flex items-center gap-2.5">
+                <div className="flex flex-wrap items-center gap-2.5">
+                    <TimeframeFilter
+                        value={filters.months || 'all'}
+                        basePath="/admin/kepatuhan/dashboard"
+                        extraParams={{ unit_id: filters.unit_id, session_id: filters.session_id }}
+                    />
                     <Link
                         href="/admin/kepatuhan/compliance"
                         className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"

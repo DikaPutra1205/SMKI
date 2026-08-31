@@ -24,16 +24,19 @@ class AuditorDashboardController extends Controller
         $user = $request->user();
         $unitId = $request->filled('unit_id') ? (int) $request->input('unit_id') : null;
         $sessionId = $request->filled('session_id') ? (int) $request->input('session_id') : null;
+        $timeframe = $request->input('months');
+        $months = in_array((string) $timeframe, ['3', '6', '12'], true) ? (int) $timeframe : null;
 
         return Inertia::render('auditor/dashboard', [
-            'summary' => $this->analyticsService->getSummary($user, $unitId, $sessionId),
-            'trends' => $this->analyticsService->getTrends($user, $unitId),
-            'unit_comparisons' => $this->analyticsService->getUnitComparisons($user),
-            'recent_activities' => $this->analyticsService->getRecentActivities($user),
+            'summary' => $this->analyticsService->getSummary($user, $unitId, $sessionId, $months),
+            'trends' => $this->analyticsService->getTrends($user, $unitId, $months),
+            'unit_comparisons' => $this->analyticsService->getUnitComparisons($user, $months),
+            'recent_activities' => $this->analyticsService->getRecentActivities($user, 6, $months),
             'workUnits' => $this->complianceService->getWorkUnits(),
             'filters' => [
                 'unit_id' => $unitId,
                 'session_id' => $sessionId,
+                'months' => $months ? (string) $months : 'all',
             ],
         ]);
     }

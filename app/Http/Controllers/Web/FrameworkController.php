@@ -27,15 +27,20 @@ class FrameworkController extends Controller
     public function dashboard(Request $request): Response
     {
         $user = $request->user();
+        $timeframe = $request->input('months');
+        $months = in_array((string) $timeframe, ['3', '6', '12'], true) ? (int) $timeframe : null;
 
         return Inertia::render('superadmin/dashboard', [
             'totalUsers' => User::count(),
             'totalFrameworks' => Framework::count(),
             'totalControls' => Control::count(),
             'frameworks' => Framework::withCount('controls')->orderBy('id')->get(),
-            'summary' => $user ? $this->analyticsService->getSummary($user) : null,
-            'recent_activities' => $user ? $this->analyticsService->getRecentActivities($user, 6) : [],
-            'trends' => $user ? $this->analyticsService->getTrends($user) : [],
+            'summary' => $user ? $this->analyticsService->getSummary($user, null, null, $months) : null,
+            'recent_activities' => $user ? $this->analyticsService->getRecentActivities($user, 6, $months) : [],
+            'trends' => $user ? $this->analyticsService->getTrends($user, null, $months) : [],
+            'filters' => [
+                'months' => $months ? (string) $months : 'all',
+            ],
         ]);
     }
 
