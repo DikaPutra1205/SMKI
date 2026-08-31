@@ -113,7 +113,10 @@ interface FindingsProps {
         kategori?: string;
         unit_id?: string;
         search?: string;
+        id?: string;
+        finding_id?: string;
     };
+    initialFinding?: FindingItem | null;
 }
 
 interface AuthUser {
@@ -230,7 +233,7 @@ function initials(name?: string) {
         .toUpperCase();
 }
 
-export default function Findings({ findings, workUnits = [], controls = [], pics = [], filters = {} }: FindingsProps) {
+export default function Findings({ findings, workUnits = [], controls = [], pics = [], filters = {}, initialFinding = null }: FindingsProps) {
     const can = useCan();
     const pageProps = usePage<{ auth?: { user?: AuthUser }; flash?: { type: string; message: string } }>().props;
     const authUser = pageProps.auth?.user;
@@ -242,12 +245,36 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
     const [selectedSeverity, setSelectedSeverity] = useState<string>(filters.category || filters.kategori || 'all');
     const [selectedStatus, setSelectedStatus] = useState<string>(filters.status || 'all');
     const [selectedUnit, setSelectedUnit] = useState<string>(filters.unit_id || 'all');
-    const [detailTarget, setDetailTarget] = useState<FindingItem | null>(null);
+    const [detailTarget, setDetailTarget] = useState<FindingItem | null>(() => {
+        if (initialFinding) return initialFinding;
+        const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+        const targetId = filters.id || filters.finding_id || urlParams?.get('id') || urlParams?.get('finding_id');
+        if (targetId) {
+            return (findings?.data || []).find((f) => String(f.id) === String(targetId)) || null;
+        }
+        return null;
+    });
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const isFirstRender = useRef(true);
 
     const page = findings ?? { data: [], current_page: 1, last_page: 1, per_page: 20, total: 0, from: null, to: null };
     const items = page.data;
+
+    // Auto-open finding in slide-over drawer if targeted via URL query (e.g. notification click)
+    useEffect(() => {
+        if (initialFinding) {
+            setDetailTarget(initialFinding);
+            return;
+        }
+        const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+        const targetId = filters.id || filters.finding_id || urlParams?.get('id') || urlParams?.get('finding_id');
+        if (targetId) {
+            const found = items.find((f) => String(f.id) === String(targetId));
+            if (found) {
+                setDetailTarget(found);
+            }
+        }
+    }, [initialFinding, filters.id, filters.finding_id, items]);
 
     // Check permissions
     const userRoleStr = typeof authUser?.role === 'string' ? authUser.role : authUser?.role?.name;

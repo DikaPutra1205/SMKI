@@ -73,7 +73,7 @@ class FindingStatusChangedNotification extends Notification implements ShouldQue
                     'toStatus' => $this->toStatus,
                     'actorName' => $this->actor->name,
                     'catatan' => $this->catatan,
-                    'actionUrl' => url("/admin/kepatuhan/temuan?id={$this->finding->id}"),
+                    'actionUrl' => url("/temuan?id={$this->finding->id}"),
                 ]);
         }
 
@@ -92,7 +92,7 @@ class FindingStatusChangedNotification extends Notification implements ShouldQue
                 'toStatus' => $this->toStatus,
                 'actorName' => $this->actor->name,
                 'catatan' => $this->catatan,
-                'actionUrl' => url("/admin/pic/temuan?id={$this->finding->id}"),
+                'actionUrl' => url("/temuan?id={$this->finding->id}"),
             ]);
     }
 

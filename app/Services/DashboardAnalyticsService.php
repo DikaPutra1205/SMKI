@@ -241,7 +241,7 @@ class DashboardAnalyticsService
         $trends = [];
 
         for ($i = $safeMonths - 1; $i >= 0; $i--) {
-            $date = Carbon::now()->subMonths($i);
+            $date = Carbon::now()->startOfMonth()->subMonths($i);
             $yearMonth = $date->format('Y-m');
             $label = $date->translatedFormat('F Y');
 

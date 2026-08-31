@@ -45,7 +45,7 @@ class ChecklistEntryRejectedNotification extends Notification implements ShouldQ
                 'judulKontrol' => $judulKontrol,
                 'catatanAdmin' => $this->catatanAdmin,
                 'actorName' => $this->actor->name,
-                'actionUrl' => url("/pic/checklist/{$this->entry->session_id}"),
+                'actionUrl' => url("/admin/pic/checklist/{$this->entry->session_id}"),
             ]);
     }
 
@@ -67,7 +67,7 @@ class ChecklistEntryRejectedNotification extends Notification implements ShouldQ
             'session_id' => $this->entry->session_id,
             'control_id' => $this->entry->control_id,
             'catatan_admin' => $this->catatanAdmin,
-            'url' => "/pic/checklist/{$this->entry->session_id}",
+            'url' => "/admin/pic/checklist/{$this->entry->session_id}",
             'actor_id' => $this->actor->id,
             'actor_name' => $this->actor->name,
             'severity' => 'danger',

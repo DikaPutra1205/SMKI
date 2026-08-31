@@ -1,7 +1,8 @@
 import { useNotifications } from '@/hooks/useNotifications';
 import { cn, formatTimeAgoIndonesian } from '@/lib/utils';
+import { SharedData } from '@/types';
 import { NotificationItem, NotificationSeverity } from '@/types/notification';
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { AlertCircle, AlertTriangle, Bell, CheckCheck, CheckCircle2, ExternalLink, Info, Trash2, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
@@ -10,6 +11,8 @@ interface NotificationDropdownProps {
 }
 
 export function NotificationDropdown({ userId }: NotificationDropdownProps) {
+    const page = usePage<SharedData>();
+    const effectiveUserId = userId ?? page.props.auth?.user?.id;
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -23,7 +26,7 @@ export function NotificationDropdown({ userId }: NotificationDropdownProps) {
         markAllAsRead,
         deleteNotification,
         dismissLatestNotification,
-    } = useNotifications(userId);
+    } = useNotifications(effectiveUserId);
 
     // Close on click outside or Escape
     useEffect(() => {

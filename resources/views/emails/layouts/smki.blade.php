@@ -21,8 +21,8 @@
             padding: 0 !important;
             height: 100% !important;
             width: 100% !important;
-            background-color: #f8fafc;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f1f5f9;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             color: #334155;
@@ -39,8 +39,6 @@
         table {
             border-spacing: 0 !important;
             border-collapse: collapse !important;
-            table-layout: fixed !important;
-            margin: 0 auto !important;
         }
         img {
             -ms-interpolation-mode: bicubic;
@@ -51,13 +49,12 @@
         a {
             text-decoration: none;
         }
-        @media screen and (max-width: 600px) {
+        @media screen and (max-width: 640px) {
             .email-container {
                 width: 100% !important;
                 margin: auto !important;
                 border-radius: 0 !important;
-                border-left: none !important;
-                border-right: none !important;
+                border: none !important;
             }
             .mobile-padding {
                 padding-left: 20px !important;
@@ -69,7 +66,7 @@
         }
     </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #f8fafc; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;">
+<body style="margin: 0; padding: 0; background-color: #f1f5f9; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;">
     <!-- Preview Preheader Text (Hidden) -->
     <div style="display: none; font-size: 1px; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden; mso-hide: all; font-family: sans-serif;">
         {{ $preheader ?? 'Pemberitahuan resmi Sistem Manajemen Keamanan Informasi (SMKI).' }}
@@ -77,36 +74,46 @@
     </div>
 
     <!-- Outer Background Wrapper -->
-    <table role="presentation" aria-hidden="true" cellspacing="0" cellpadding="0" border="0" align="center" width="100%" style="background-color: #f8fafc; table-layout: fixed; padding: 40px 12px;">
+    <table role="presentation" aria-hidden="true" cellspacing="0" cellpadding="0" border="0" align="center" width="100%" style="background-color: #f1f5f9; padding: 36px 12px; margin: 0 auto;">
         <tr>
             <td align="center">
-                <!-- Main Card Container (Max 580px) -->
+                <!-- Main Card Container (Max 620px) -->
                 <!--[if (gte mso 9)|(IE)]>
-                <table align="center" border="0" cellspacing="0" cellpadding="0" width="580">
+                <table align="center" border="0" cellspacing="0" cellpadding="0" width="620">
                 <tr>
-                <td align="center" valign="top" width="580">
+                <td align="center" valign="top" width="620">
                 <![endif]-->
-                <table role="presentation" aria-hidden="true" cellspacing="0" cellpadding="0" border="0" width="100%" class="email-container" style="max-width: 580px; background-color: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden;">
+                <table role="presentation" aria-hidden="true" cellspacing="0" cellpadding="0" border="0" width="100%" class="email-container" style="max-width: 620px; background-color: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05); margin: 0 auto;">
                     
-                    <!-- Clean Elegant Header -->
+                    <!-- Decorative Top Gradient Line -->
                     <tr>
-                        <td class="mobile-header-padding" style="padding: 24px 32px 20px 32px; border-bottom: 1px solid #f1f5f9; background-color: #ffffff;">
+                        <td style="height: 4px; background: linear-gradient(90deg, #0284c7 0%, #38bdf8 100%); line-height: 4px; font-size: 4px;">
+                            &nbsp;
+                        </td>
+                    </tr>
+
+                    <!-- Elegant Minimalist Brand Header -->
+                    <tr>
+                        <td class="mobile-header-padding" style="padding: 22px 36px 18px 36px; border-bottom: 1px solid #f1f5f9; background-color: #ffffff;">
                             <table role="presentation" aria-hidden="true" border="0" cellpadding="0" cellspacing="0" width="100%">
                                 <tr>
                                     <td align="left" style="vertical-align: middle;">
                                         <table role="presentation" aria-hidden="true" border="0" cellpadding="0" cellspacing="0">
                                             <tr>
-                                                <td style="background-color: #0f172a; border-radius: 4px; padding: 4px 8px; vertical-align: middle;">
-                                                    <span style="color: #ffffff; font-size: 11px; font-weight: 700; letter-spacing: 0.5px;">SMKI</span>
+                                                <td style="vertical-align: middle;">
+                                                    <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 15px; font-weight: 800; color: #0f172a; letter-spacing: 0.5px; display: inline-block;">SMKI</span>
                                                 </td>
-                                                <td style="padding-left: 10px; vertical-align: middle;">
-                                                    <span style="color: #0f172a; font-size: 13.5px; font-weight: 600; letter-spacing: -0.2px;">Portal Kepatuhan</span>
+                                                <td style="padding: 0 10px; vertical-align: middle; color: #cbd5e1; font-size: 14px; font-weight: 300;">
+                                                    |
+                                                </td>
+                                                <td style="vertical-align: middle;">
+                                                    <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 13px; font-weight: 600; color: #64748b; letter-spacing: -0.1px;">Portal Kepatuhan</span>
                                                 </td>
                                             </tr>
                                         </table>
                                     </td>
                                     <td align="right" style="vertical-align: middle;">
-                                        <span style="color: #94a3b8; font-size: 11.5px; font-weight: 500;">
+                                        <span style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 9999px; padding: 3px 10px; color: #64748b; font-size: 10.5px; font-weight: 600; letter-spacing: 0.3px; display: inline-block;">
                                             ISO/IEC 27001
                                         </span>
                                     </td>
@@ -117,32 +124,36 @@
 
                     <!-- Body Content Slot -->
                     <tr>
-                        <td class="mobile-padding" style="padding: 32px 32px 28px 32px; background-color: #ffffff;">
+                        <td class="mobile-padding" style="padding: 32px 36px 28px 36px; background-color: #ffffff;">
                             @yield('content')
                         </td>
                     </tr>
 
-                    <!-- Discreet Confidentiality Note -->
+                    <!-- Discreet Security & Confidentiality Note -->
                     <tr>
-                        <td class="mobile-padding" style="padding: 16px 32px; background-color: #ffffff; border-top: 1px solid #f8fafc;">
-                            <p style="margin: 0; color: #94a3b8; font-size: 11.5px; line-height: 1.5;">
-                                <strong style="color: #64748b; font-weight: 600;">Kerahasiaan:</strong> Pesan ini ditujukan otomatis untuk personel berwenang dalam lingkup audit Sistem Manajemen Keamanan Informasi.
-                            </p>
+                        <td class="mobile-padding" style="padding: 18px 36px; background-color: #f8fafc; border-top: 1px solid #f1f5f9;">
+                            <table role="presentation" aria-hidden="true" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td style="color: #94a3b8; font-size: 11.5px; line-height: 1.6;">
+                                        <strong style="color: #64748b; font-weight: 600;">Pemberitahuan Otomatis:</strong> Pesan ini diterbitkan secara otomatis oleh sistem untuk personel berwenang. Mohon tidak membalas langsung ke alamat email pengirim ini.
+                                    </td>
+                                </tr>
+                            </table>
                         </td>
                     </tr>
 
-                    <!-- Minimalist Footer -->
+                    <!-- Sleek Clean Footer -->
                     <tr>
-                        <td class="mobile-padding" style="background-color: #f8fafc; padding: 24px 32px; border-top: 1px solid #f1f5f9; text-align: center;">
-                            <p style="color: #64748b; font-size: 12px; font-weight: 500; margin: 0 0 8px 0;">
-                                &copy; {{ date('Y') }} Sistem Manajemen Keamanan Informasi (SMKI)
+                        <td class="mobile-padding" style="background-color: #f8fafc; padding: 24px 36px 28px 36px; border-top: 1px solid #f1f5f9; text-align: center;">
+                            <p style="color: #64748b; font-size: 12px; font-weight: 500; margin: 0 0 10px 0;">
+                                &copy; {{ date('Y') }} Sistem Manajemen Keamanan Informasi (SMKI) &bull; Seluruh Hak Cipta Dilindungi
                             </p>
-                            <p style="margin: 0;">
-                                <a href="{{ url('/') }}" style="color: #64748b; font-size: 12px; font-weight: 500; text-decoration: none; margin: 0 8px;">Beranda</a>
+                            <p style="margin: 0; font-size: 12px;">
+                                <a href="{{ url('/') }}" style="color: #196ecd; font-weight: 600; text-decoration: none; margin: 0 8px;">Beranda</a>
                                 <span style="color: #cbd5e1;">&bull;</span>
-                                <a href="{{ url('/admin/kepatuhan/dashboard') }}" style="color: #64748b; font-size: 12px; font-weight: 500; text-decoration: none; margin: 0 8px;">Dashboard</a>
+                                <a href="{{ url('/dashboard') }}" style="color: #196ecd; font-weight: 600; text-decoration: none; margin: 0 8px;">Dashboard</a>
                                 <span style="color: #cbd5e1;">&bull;</span>
-                                <a href="{{ url('/login') }}" style="color: #64748b; font-size: 12px; font-weight: 500; text-decoration: none; margin: 0 8px;">Masuk Akun</a>
+                                <a href="{{ url('/login') }}" style="color: #196ecd; font-weight: 600; text-decoration: none; margin: 0 8px;">Masuk Portal</a>
                             </p>
                         </td>
                     </tr>

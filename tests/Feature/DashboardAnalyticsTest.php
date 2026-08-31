@@ -751,7 +751,7 @@ class DashboardAnalyticsTest extends TestCase
         $oldSession = ChecklistSession::factory()->create([
             'unit_id' => $this->unitA->id,
             'framework_id' => $this->iso27001->id,
-            'periode' => now()->subMonths(2)->format('Y-m'),
+            'periode' => now()->startOfMonth()->subMonths(2)->format('Y-m'),
         ]);
         ChecklistEntry::factory()->create([
             'session_id' => $oldSession->id,
@@ -766,8 +766,8 @@ class DashboardAnalyticsTest extends TestCase
         $data = $response->json('data');
 
         $this->assertCount(3, $data);
-        $this->assertEquals(now()->subMonths(2)->format('Y-m'), $data[0]['period']);
-        $this->assertEquals(now()->subMonths(0)->format('Y-m'), $data[2]['period']);
+        $this->assertEquals(now()->startOfMonth()->subMonths(2)->format('Y-m'), $data[0]['period']);
+        $this->assertEquals(now()->startOfMonth()->subMonths(0)->format('Y-m'), $data[2]['period']);
 
         // Oldest bucket: only its own session (1 compliant of 1 applicable) => 100.
         $this->assertEquals(100, $data[0]['iso27001_rate']);
@@ -796,20 +796,27 @@ class DashboardAnalyticsTest extends TestCase
 
     public function test_trends_shows_per_period_rates_without_carry_over(): void
     {
-        $ctrl = Control::factory()->create(['framework_id' => $this->iso27001->id]);
+        $ctrl = Control::first() ?? Control::factory()->create(['framework_id' => $this->iso27001->id]);
 
-        // May session: fully compliant.
-        $maySession = ChecklistSession::factory()->create([
+        $sessionOld = ChecklistSession::factory()->create([
             'unit_id' => $this->unitA->id,
             'framework_id' => $this->iso27001->id,
-            'periode' => now()->subMonths(3)->format('Y-m'),
+            'periode' => now()->startOfMonth()->subMonths(3)->format('Y-m'),
         ]);
         ChecklistEntry::factory()->create([
-            'session_id' => $maySession->id,
+            'session_id' => $sessionOld->id,
             'control_id' => $ctrl->id,
             'unit_id' => $this->unitA->id,
             'status' => ChecklistEntry::STATUS_COMPLIANT,
         ]);
+
+        $response = $this->actingAs($this->admin)->getJson('/api/v1/dashboard/trends?months=4');
+        $response->assertOk();
+
+        $rates = collect($response->json('data'))->pluck('iso27001_rate', 'period');
+        $this->assertEquals(100, $rates[now()->startOfMonth()->subMonths(3)->format('Y-m')]);
+        $this->assertEquals(0, $rates[now()->startOfMonth()->subMonths(2)->format('Y-m')]);
+        $this->assertEquals(0, $rates[now()->startOfMonth()->subMonths(1)->format('Y-m')]);
 
         // August session: half compliant (different period, distinct rate).
         $augSession = ChecklistSession::factory()->create([

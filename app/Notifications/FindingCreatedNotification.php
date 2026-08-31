@@ -50,7 +50,7 @@ class FindingCreatedNotification extends Notification implements ShouldQueue
                 'deadlineStr' => $deadlineStr,
                 'actorName' => $this->actor->name,
                 'catatan' => $this->catatan,
-                'actionUrl' => url("/admin/kepatuhan/temuan?id={$this->finding->id}"),
+                'actionUrl' => url("/temuan?id={$this->finding->id}"),
             ]);
     }
 

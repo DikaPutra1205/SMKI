@@ -16,6 +16,8 @@ use App\Http\Controllers\Web\ReportExportController;
 use App\Http\Controllers\Web\RoleController;
 use App\Http\Controllers\Web\UserController;
 use App\Http\Controllers\Web\WorkUnitController;
+use App\Models\ChecklistSession;
+use App\Models\Finding;
 use App\Routing\PageDispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -53,13 +55,17 @@ Route::middleware('auth')->group(function () {
     Route::get('/users', [PageController::class, 'users'])->name('users.index');
     Route::get('/roles', [PageController::class, 'roles'])->name('roles.index');
     Route::get('/checklist', [PageController::class, 'checklist'])->name('checklist');
+    Route::get('/checklist/{checklistSession}', [ChecklistSessionController::class, 'show'])->name('checklist.show.alias');
+    Route::get('/pic/checklist/{checklistSession}', [ChecklistSessionController::class, 'show'])->name('pic.checklist.show.alias');
     Route::get('/compliance', [PageController::class, 'compliance'])->name('compliance');
     Route::get('/temuan', [PageController::class, 'temuan'])->name('temuan.index');
+    Route::get('/admin/pic/temuan', function () {
+        return redirect('/temuan'.(request()->getQueryString() ? '?'.request()->getQueryString() : ''));
+    })->name('admin.pic.temuan.alias');
     Route::post('/temuan', [ComplianceOfficerController::class, 'storeFinding'])->name('temuan.store.direct');
     Route::put('/temuan/{finding}', [ComplianceOfficerController::class, 'updateFinding'])->name('temuan.update.direct');
     Route::get('/risks', [PageController::class, 'risks'])->name('risks.index');
     Route::get('/audit-logs', [PageController::class, 'auditLogs'])->name('audit-logs.index');
-    Route::get('/notifications', [PageController::class, 'notifications'])->name('notifications.index');
 
     Route::prefix('admin/kepatuhan')->name('admin.kepatuhan.')->group(function () {
         Route::get('/', function () {
@@ -182,6 +188,8 @@ if (app()->isLocal()) {
 
         // 1.1 Temuan Baru Diterbitkan Admin -> PIC
         Route::get('/1-1-finding-created', function () {
+            $findingId = Finding::value('id') ?? 8;
+
             return view('emails.finding-created', [
                 'recipientName' => 'Dika Putra (PIC Unit TI)',
                 'kodeKlausul' => 'A.5.1',
@@ -191,13 +199,15 @@ if (app()->isLocal()) {
                 'deadlineStr' => now()->addDays(14)->format('d M Y'),
                 'actorName' => 'Admin Kepatuhan',
                 'catatan' => 'Dokumen kebijakan keamanan informasi belum ditandatangani oleh pimpinan manajemen puncak sesuai persyaratan klausul 5.1 ISO 27001.',
-                'actionUrl' => url('/admin/pic/temuan?id=1'),
+                'actionUrl' => url("/temuan?id={$findingId}"),
             ]);
         });
         Route::get('/finding-created', fn () => redirect('/email-preview/1-1-finding-created'));
 
         // 1.2.a PIC Memperbarui Status (In Progress / Resolved) -> Admin Kepatuhan
         Route::get('/1-2-finding-pic-to-admin-update', function () {
+            $findingId = Finding::value('id') ?? 8;
+
             return view('emails.finding-status-pic-to-admin', [
                 'recipientName' => 'Admin Kepatuhan',
                 'kodeKlausul' => 'A.8.8',
@@ -209,13 +219,15 @@ if (app()->isLocal()) {
                 'toStatus' => 'resolved',
                 'actorName' => 'Dika Putra (PIC TI)',
                 'catatan' => 'Patch keamanan kernel Ubuntu telah diaplikasikan ke seluruh cluster server production dan laporan vulnerability scanning terbaru sudah diunggah.',
-                'actionUrl' => url('/admin/kepatuhan/temuan?id=1'),
+                'actionUrl' => url("/temuan?id={$findingId}"),
             ]);
         });
         Route::get('/1-2-finding-pic-to-admin', fn () => redirect('/email-preview/1-2-finding-pic-to-admin-update'));
 
         // 1.2.b PIC Menutup Temuan (Closed) -> Admin Kepatuhan
         Route::get('/1-2-finding-pic-to-admin-closed', function () {
+            $findingId = Finding::value('id') ?? 8;
+
             return view('emails.finding-status-pic-to-admin', [
                 'recipientName' => 'Admin Kepatuhan',
                 'kodeKlausul' => 'A.8.8',
@@ -227,12 +239,14 @@ if (app()->isLocal()) {
                 'toStatus' => 'closed',
                 'actorName' => 'Dika Putra (PIC TI)',
                 'catatan' => 'Seluruh rekomendasi audit telah diselesaikan dan sistem telah beroperasi normal tanpa celah keamanan.',
-                'actionUrl' => url('/admin/kepatuhan/temuan?id=1'),
+                'actionUrl' => url("/temuan?id={$findingId}"),
             ]);
         });
 
         // 1.2.c PIC Mengembalikan Status (Resolved -> In Progress) -> Admin Kepatuhan
         Route::get('/1-2-finding-pic-to-admin-reverted', function () {
+            $findingId = Finding::value('id') ?? 8;
+
             return view('emails.finding-status-pic-to-admin', [
                 'recipientName' => 'Admin Kepatuhan',
                 'kodeKlausul' => 'A.8.8',
@@ -244,12 +258,14 @@ if (app()->isLocal()) {
                 'toStatus' => 'in_progress',
                 'actorName' => 'Dika Putra (PIC TI)',
                 'catatan' => 'Ditemukan anomali konfigurasi tambahan saat testing ulang, sehingga status kami kembalikan ke Dalam Penanganan untuk perbaikan komprehensif.',
-                'actionUrl' => url('/admin/kepatuhan/temuan?id=1'),
+                'actionUrl' => url("/temuan?id={$findingId}"),
             ]);
         });
 
         // 1.3.a Admin Mengembalikan Status (Perlu Revisi) -> PIC
         Route::get('/1-3-finding-admin-to-pic-revision', function () {
+            $findingId = Finding::value('id') ?? 8;
+
             return view('emails.finding-status-admin-to-pic', [
                 'recipientName' => 'Dika Putra (PIC Unit TI)',
                 'kodeKlausul' => 'A.8.8',
@@ -260,12 +276,14 @@ if (app()->isLocal()) {
                 'toStatus' => 'in_progress',
                 'actorName' => 'Admin Kepatuhan',
                 'catatan' => 'Laporan scanning kerentanan belum mencakup port database internal. Mohon lakukan scanning ulang dan lampirkan buktinya.',
-                'actionUrl' => url('/admin/pic/temuan?id=1'),
+                'actionUrl' => url("/temuan?id={$findingId}"),
             ]);
         });
 
         // 1.3.b Admin Mengubah/Verifikasi Status (Closed) -> PIC
         Route::get('/1-3-finding-admin-to-pic-closed', function () {
+            $findingId = Finding::value('id') ?? 8;
+
             return view('emails.finding-status-admin-to-pic', [
                 'recipientName' => 'Dika Putra (PIC Unit TI)',
                 'kodeKlausul' => 'A.8.8',
@@ -276,12 +294,14 @@ if (app()->isLocal()) {
                 'toStatus' => 'closed',
                 'actorName' => 'Admin Kepatuhan',
                 'catatan' => 'Bukti laporan scanning kerentanan dan log patching telah diperiksa dan dinyatakan memenuhi standar kepatuhan ISO 27001. Temuan resmi ditutup.',
-                'actionUrl' => url('/admin/pic/temuan?id=1'),
+                'actionUrl' => url("/temuan?id={$findingId}"),
             ]);
         });
 
         // 1.3.c Admin Memperbarui Progres (In Progress / Resolved) -> PIC
         Route::get('/1-3-finding-admin-to-pic-progress', function () {
+            $findingId = Finding::value('id') ?? 8;
+
             return view('emails.finding-status-admin-to-pic', [
                 'recipientName' => 'Dika Putra (PIC Unit TI)',
                 'kodeKlausul' => 'A.8.8',
@@ -292,7 +312,7 @@ if (app()->isLocal()) {
                 'toStatus' => 'in_progress',
                 'actorName' => 'Admin Kepatuhan',
                 'catatan' => 'Admin telah memulai asistensi teknis dan mengarahkan rencana penanganan mitigasi untuk unit Anda.',
-                'actionUrl' => url('/admin/pic/temuan?id=1'),
+                'actionUrl' => url("/temuan?id={$findingId}"),
             ]);
         });
         Route::get('/1-3-finding-admin-to-pic', fn () => redirect('/email-preview/1-3-finding-admin-to-pic-closed'));
@@ -300,13 +320,15 @@ if (app()->isLocal()) {
 
         // 2.1 Entri Checklist Ditolak / Tidak Patuh -> PIC
         Route::get('/2-1-checklist-rejected', function () {
+            $sessionId = ChecklistSession::value('id') ?? 1;
+
             return view('emails.checklist-rejected', [
                 'recipientName' => 'Dika Putra (PIC Unit TI)',
                 'kodeKlausul' => 'A.8.1',
                 'judulKontrol' => 'Inventarisasi Aset Pengguna & Informasi',
                 'catatanAdmin' => 'Berkas daftar inventaris aset yang diunggah belum mencantumkan klasifikasi informasi (Confidential/Internal/Public) dan penanggung jawab aset.',
                 'actorName' => 'Admin Kepatuhan',
-                'actionUrl' => url('/admin/pic/checklist/1'),
+                'actionUrl' => url("/admin/pic/checklist/{$sessionId}"),
             ]);
         });
         Route::get('/checklist-rejected', fn () => redirect('/email-preview/2-1-checklist-rejected'));

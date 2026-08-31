@@ -34,7 +34,7 @@ class ComplianceOfficerController extends Controller
     public function temuan(Request $request): Response
     {
         $user = $request->user();
-        $filters = $request->only(['status', 'category', 'kategori', 'unit_id', 'is_overdue', 'search']);
+        $filters = $request->only(['status', 'category', 'kategori', 'unit_id', 'is_overdue', 'search', 'id', 'finding_id']);
         $findings = $this->complianceOfficerService->getFindings($user, $filters, 20);
         $workUnits = $this->complianceService->getWorkUnits();
 
@@ -48,12 +48,30 @@ class ComplianceOfficerController extends Controller
             ->orderBy('name')
             ->get();
 
+        $targetFindingId = $request->query('id') ?? $request->query('finding_id');
+        $initialFinding = null;
+        if ($targetFindingId) {
+            try {
+                $initialFinding = $this->complianceOfficerService->getFinding($user, (int) $targetFindingId);
+            } catch (\Throwable $e) {
+                $initialFinding = Finding::with([
+                    'control.framework:id,nama,versi',
+                    'unit:id,nama',
+                    'pic:id,name',
+                    'admin:id,name',
+                    'histories.user.role',
+                    'histories.user.unit',
+                ])->find($targetFindingId);
+            }
+        }
+
         return Inertia::render('admin-kepatuhan/temuan', [
             'findings' => $findings,
             'workUnits' => $workUnits,
             'controls' => $controls,
             'pics' => $pics,
             'filters' => $filters,
+            'initialFinding' => $initialFinding,
         ]);
     }
 

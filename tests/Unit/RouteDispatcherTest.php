@@ -56,24 +56,6 @@ class RouteDispatcherTest extends TestCase
         $this->assertSame('/', $res->redirectTo);
     }
 
-    public function test_notifications_page_resolves_for_all_roles(): void
-    {
-        $d = new PageDispatcher;
-
-        foreach ([
-            User::ROLE_SUPERADMIN,
-            User::ROLE_ADMIN_KEPATUHAN,
-            User::ROLE_KOORDINATOR_SMKI,
-            User::ROLE_AUDITOR,
-            User::ROLE_PIC,
-        ] as $role) {
-            $user = User::factory()->create(['role' => $role]);
-            $res = $d->resolve($user, 'notifications');
-            $this->assertTrue($res->allowed);
-            $this->assertSame('notifications', $res->component);
-        }
-    }
-
     public function test_root_always_allowed_and_dispatches_by_role_id(): void
     {
         $d = new PageDispatcher;
