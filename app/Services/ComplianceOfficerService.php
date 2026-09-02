@@ -244,14 +244,20 @@ class ComplianceOfficerService
     /**
      * Get paginated risks register list.
      */
+    /**
+     * Get paginated risks register list.
+     */
     public function getRisks(User $user, array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
         $scopedUnitId = $this->resolveScopedUnitId($user, $filters['unit_id'] ?? null);
 
-        $query = Risk::with(['control.framework'])->orderByDesc('id');
+        $query = Risk::with(['control.framework', 'unit:id,nama'])->orderByDesc('id');
 
         if ($scopedUnitId) {
-            $query->whereHas('control.checklistEntries', fn ($q) => $q->where('unit_id', $scopedUnitId));
+            $query->where(function ($q) use ($scopedUnitId) {
+                $q->where('unit_id', $scopedUnitId)
+                    ->orWhereHas('control.checklistEntries', fn ($cq) => $cq->where('unit_id', $scopedUnitId));
+            });
         }
 
         $riskLevel = $filters['risk_level'] ?? ($filters['level_risiko'] ?? null);
@@ -290,7 +296,10 @@ class ComplianceOfficerService
 
         $query = Risk::query();
         if ($scopedUnitId) {
-            $query->whereHas('control.checklistEntries', fn ($q) => $q->where('unit_id', $scopedUnitId));
+            $query->where(function ($q) use ($scopedUnitId) {
+                $q->where('unit_id', $scopedUnitId)
+                    ->orWhereHas('control.checklistEntries', fn ($cq) => $cq->where('unit_id', $scopedUnitId));
+            });
         }
 
         $risks = $query->get();
@@ -320,46 +329,122 @@ class ComplianceOfficerService
      */
     public function getRisk(User $user, int $id): Risk
     {
-        $risk = Risk::with(['control.framework'])->findOrFail($id);
+        $risk = Risk::with(['control.framework', 'unit:id,nama'])->findOrFail($id);
 
         return $this->formatRiskResource($risk);
     }
 
     /**
-     * Update risk mitigation plan and status.
+     * Store a new risk item into the register.
+     */
+    public function storeRisk(User $user, array $data): Risk
+    {
+        return DB::transaction(function () use ($user, $data) {
+            $unitId = $data['unit_id'] ?? null;
+            if ($user->isPic()) {
+                $unitId = $user->unit_id;
+            }
+
+            $risk = Risk::create([
+                'control_id' => $data['control_id'],
+                'unit_id' => $unitId,
+                'level_risiko' => $data['level_risiko'] ?? $data['risk_level'] ?? Risk::LEVEL_LOW,
+                'pemilik_risiko' => $data['pemilik_risiko'] ?? $data['risk_owner'] ?? $user->name,
+                'rencana_mitigasi' => $data['rencana_mitigasi'] ?? $data['mitigation_plan'] ?? null,
+                'status' => $data['status'] ?? Risk::STATUS_OPEN,
+                'deadline' => $data['deadline'] ?? null,
+                'catatan_admin' => $data['catatan_admin'] ?? $data['admin_notes'] ?? null,
+            ]);
+
+            AuditLog::catat(
+                'Risk',
+                $risk->id,
+                'created',
+                $user->id,
+                [
+                    'control_id' => $risk->control_id,
+                    'unit_id' => $risk->unit_id,
+                    'level_risiko' => $risk->level_risiko,
+                    'status' => $risk->status,
+                    'deadline' => $risk->deadline?->toDateString(),
+                ]
+            );
+
+            $fresh = $risk->fresh(['control.framework', 'unit:id,nama']);
+
+            return $this->formatRiskResource($fresh);
+        });
+    }
+
+    /**
+     * Update risk mitigation plan, status, deadline, and notes.
      */
     public function updateRisk(User $user, Risk $risk, array $data): Risk
     {
-        $oldValues = $risk->only(['level_risiko', 'pemilik_risiko', 'rencana_mitigasi', 'status']);
-
-        $updateData = [];
-
-        if (isset($data['risk_level'])) {
-            $updateData['level_risiko'] = $data['risk_level'];
-        } elseif (isset($data['level_risiko'])) {
-            $updateData['level_risiko'] = $data['level_risiko'];
+        if ($user->isPic() && $risk->unit_id && (int) $risk->unit_id !== (int) $user->unit_id) {
+            throw new AuthorizationException('Anda tidak memiliki wewenang untuk mengubah risiko unit lain.');
         }
 
-        if (isset($data['status'])) {
-            $updateData['status'] = $data['status'];
-        }
+        return DB::transaction(function () use ($user, $risk, $data) {
+            $oldValues = $risk->only(['level_risiko', 'pemilik_risiko', 'rencana_mitigasi', 'status', 'deadline', 'catatan_admin']);
 
-        if (array_key_exists('mitigation_plan', $data)) {
-            $updateData['rencana_mitigasi'] = $data['mitigation_plan'];
-        } elseif (array_key_exists('rencana_mitigasi', $data)) {
-            $updateData['rencana_mitigasi'] = $data['rencana_mitigasi'];
-        }
+            $updateData = [];
 
-        if (isset($data['risk_owner'])) {
-            $updateData['pemilik_risiko'] = $data['risk_owner'];
-        } elseif (isset($data['pemilik_risiko'])) {
-            $updateData['pemilik_risiko'] = $data['pemilik_risiko'];
-        }
+            if (isset($data['risk_level'])) {
+                $updateData['level_risiko'] = $data['risk_level'];
+            } elseif (isset($data['level_risiko'])) {
+                $updateData['level_risiko'] = $data['level_risiko'];
+            }
 
-        $risk->update($updateData);
-        $freshRisk = $risk->fresh(['control.framework']);
+            if (isset($data['status'])) {
+                $updateData['status'] = $data['status'];
+            }
 
-        return $this->formatRiskResource($freshRisk);
+            if (array_key_exists('mitigation_plan', $data)) {
+                $updateData['rencana_mitigasi'] = $data['mitigation_plan'];
+            } elseif (array_key_exists('rencana_mitigasi', $data)) {
+                $updateData['rencana_mitigasi'] = $data['rencana_mitigasi'];
+            }
+
+            if (isset($data['risk_owner'])) {
+                $updateData['pemilik_risiko'] = $data['risk_owner'];
+            } elseif (isset($data['pemilik_risiko'])) {
+                $updateData['pemilik_risiko'] = $data['pemilik_risiko'];
+            }
+
+            if (array_key_exists('unit_id', $data) && $data['unit_id'] !== null) {
+                $updateData['unit_id'] = $data['unit_id'];
+            }
+
+            if (array_key_exists('deadline', $data)) {
+                $updateData['deadline'] = $data['deadline'];
+            }
+
+            if (array_key_exists('admin_notes', $data)) {
+                $updateData['catatan_admin'] = $data['admin_notes'];
+            } elseif (array_key_exists('catatan_admin', $data)) {
+                $updateData['catatan_admin'] = $data['catatan_admin'];
+            }
+
+            if (! empty($updateData)) {
+                $risk->update($updateData);
+
+                AuditLog::catat(
+                    'Risk',
+                    $risk->id,
+                    'updated',
+                    $user->id,
+                    [
+                        'old' => $oldValues,
+                        'new' => $updateData,
+                    ]
+                );
+            }
+
+            $freshRisk = $risk->fresh(['control.framework', 'unit:id,nama']);
+
+            return $this->formatRiskResource($freshRisk);
+        });
     }
 
     /**
@@ -507,9 +592,22 @@ class ComplianceOfficerService
      */
     protected function formatRiskResource(Risk $risk): Risk
     {
+        $today = Carbon::today();
+        $deadline = $risk->deadline ? Carbon::parse($risk->deadline) : null;
+        $isOverdue = false;
+        $daysRemaining = null;
+
+        if ($deadline) {
+            $isOverdue = ($risk->status === Risk::STATUS_OPEN) && $deadline->isBefore($today);
+            $daysRemaining = (int) $today->diffInDays($deadline, false);
+        }
+
         $risk->setAttribute('risk_level', $risk->level_risiko);
         $risk->setAttribute('risk_owner', $risk->pemilik_risiko);
         $risk->setAttribute('mitigation_plan', $risk->rencana_mitigasi);
+        $risk->setAttribute('admin_notes', $risk->catatan_admin);
+        $risk->setAttribute('is_overdue', $isOverdue);
+        $risk->setAttribute('days_remaining', $daysRemaining);
 
         return $risk;
     }

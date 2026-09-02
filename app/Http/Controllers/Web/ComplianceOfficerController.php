@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BulkVerifyChecklistRequest;
 use App\Http\Requests\StoreFindingRequest;
+use App\Http\Requests\StoreRiskRequest;
 use App\Http\Requests\UpdateFindingRequest;
 use App\Http\Requests\UpdateRiskRequest;
 use App\Models\ChecklistEntry;
@@ -113,17 +114,36 @@ class ComplianceOfficerController extends Controller
         $risks = $this->complianceOfficerService->getRisks($user, $filters, 20);
         $matrix = $this->complianceOfficerService->getRiskMatrix($user);
         $workUnits = $this->complianceService->getWorkUnits();
+        $controls = Control::with('framework:id,nama,versi')
+            ->select('id', 'framework_id', 'kode_klausul', 'judul')
+            ->orderBy('kode_klausul')
+            ->get();
 
         return Inertia::render('admin-kepatuhan/risks', [
             'risks' => $risks,
             'matrix' => $matrix,
             'workUnits' => $workUnits,
+            'controls' => $controls,
             'filters' => $filters,
         ]);
     }
 
     /**
-     * Update risk mitigation plan and status.
+     * Store new risk item.
+     */
+    public function storeRisk(StoreRiskRequest $request): RedirectResponse
+    {
+        $user = $request->user();
+        $this->complianceOfficerService->storeRisk($user, $request->validated());
+
+        return back()->with('flash', [
+            'type' => 'success',
+            'message' => 'Register risiko baru berhasil ditambahkan.',
+        ]);
+    }
+
+    /**
+     * Update risk mitigation plan, status, deadline, and notes.
      */
     public function updateRisk(UpdateRiskRequest $request, Risk $risk): RedirectResponse
     {

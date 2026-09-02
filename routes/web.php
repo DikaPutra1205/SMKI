@@ -98,6 +98,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/temuan', [ComplianceOfficerController::class, 'storeFinding'])->name('temuan.store');
         Route::put('/temuan/{finding}', [ComplianceOfficerController::class, 'updateFinding'])->name('temuan.update');
         Route::get('/risks', [ComplianceOfficerController::class, 'risks'])->name('risks.index');
+        Route::post('/risks', [ComplianceOfficerController::class, 'storeRisk'])->name('risks.store');
         Route::put('/risks/{risk}', [ComplianceOfficerController::class, 'updateRisk'])->name('risks.update');
         Route::get('/checklist/bulk-verify', [ComplianceOfficerController::class, 'bulkVerifyPage'])->name('checklist.bulk-verify');
         Route::post('/bulk-verify', [ComplianceOfficerController::class, 'bulkVerify'])->name('bulk-verify');

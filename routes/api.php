@@ -118,6 +118,7 @@ Route::middleware('auth')->group(function () {
         Route::get('findings/{id}', [ComplianceOfficerApiController::class, 'showFinding']);
         Route::put('findings/{id}', [ComplianceOfficerApiController::class, 'updateFinding']);
         Route::get('risks', [ComplianceOfficerApiController::class, 'indexRisks']);
+        Route::post('risks', [ComplianceOfficerApiController::class, 'storeRisk']);
         Route::get('risks/matrix', [ComplianceOfficerApiController::class, 'riskMatrix']);
         Route::get('risks/{id}', [ComplianceOfficerApiController::class, 'showRisk']);
         Route::put('risks/{id}', [ComplianceOfficerApiController::class, 'updateRisk']);

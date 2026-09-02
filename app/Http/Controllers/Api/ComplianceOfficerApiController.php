@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BulkVerifyChecklistRequest;
 use App\Http\Requests\StoreFindingRequest;
+use App\Http\Requests\StoreRiskRequest;
 use App\Http\Requests\UpdateFindingRequest;
 use App\Http\Requests\UpdateRiskRequest;
 use App\Models\Finding;
@@ -97,6 +98,21 @@ class ComplianceOfficerApiController extends Controller
             'status' => 'success',
             'data' => $risks,
         ]);
+    }
+
+    /**
+     * POST /api/v1/compliance-officer/risks
+     */
+    public function storeRisk(StoreRiskRequest $request): JsonResponse
+    {
+        $user = $request->user();
+        $risk = $this->complianceOfficerService->storeRisk($user, $request->validated());
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Register risiko baru berhasil ditambahkan.',
+            'data' => $risk,
+        ], 201);
     }
 
     /**
