@@ -191,4 +191,65 @@ class RiskManagementTest extends TestCase
 
         $response->assertForbidden();
     }
+
+    public function test_generic_risk_controller_enforces_unit_scoping_for_pic(): void
+    {
+        $riskA = Risk::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'pemilik_risiko' => 'Owner Unit A',
+        ]);
+
+        $riskB = Risk::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitB->id,
+            'pemilik_risiko' => 'Owner Unit B',
+        ]);
+
+        $response = $this->actingAs($this->picA)->getJson('/api/risks');
+
+        $response->assertOk();
+        $items = $response->json('data.data');
+
+        $this->assertTrue(collect($items)->contains('id', $riskA->id));
+        $this->assertFalse(collect($items)->contains('id', $riskB->id));
+    }
+
+    public function test_generic_risk_controller_prevents_pic_from_modifying_other_unit_risk(): void
+    {
+        $riskB = Risk::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitB->id,
+            'status' => Risk::STATUS_OPEN,
+        ]);
+
+        // PIC A tries to update Risk of Unit B via generic /api/risks
+        $this->actingAs($this->picA)
+            ->putJson("/api/risks/{$riskB->id}", [
+                'status' => Risk::STATUS_MITIGATED,
+            ])
+            ->assertForbidden();
+
+        // PIC A tries to delete Risk of Unit B via generic /api/risks
+        $this->actingAs($this->picA)
+            ->deleteJson("/api/risks/{$riskB->id}")
+            ->assertForbidden();
+    }
+
+    public function test_auditor_cannot_delete_risks_via_generic_api(): void
+    {
+        $auditor = User::factory()->create([
+            'role' => 'auditor',
+            'unit_id' => $this->unitA->id,
+        ]);
+
+        $risk = Risk::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+        ]);
+
+        $this->actingAs($auditor)
+            ->deleteJson("/api/risks/{$risk->id}")
+            ->assertForbidden();
+    }
 }

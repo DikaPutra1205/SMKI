@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Risk;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -9,7 +10,9 @@ class StoreRiskRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $unitId = $this->input('unit_id');
+
+        return $this->user()?->can('create', [Risk::class, $unitId ? (int) $unitId : null]) ?? false;
     }
 
     /**

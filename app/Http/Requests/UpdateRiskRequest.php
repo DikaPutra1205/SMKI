@@ -2,13 +2,27 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Risk;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateRiskRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $risk = $this->route('risk') ?? $this->route('id');
+
+        if ($risk instanceof Risk) {
+            return $this->user()?->can('update', $risk) ?? false;
+        }
+
+        if (is_numeric($risk)) {
+            $riskModel = Risk::find($risk);
+            if ($riskModel) {
+                return $this->user()?->can('update', $riskModel) ?? false;
+            }
+        }
+
+        return $this->user()?->hasPermissionTo('risk.update') || $this->user()?->isAdmin() || $this->user()?->isSuperAdmin() || $this->user()?->isKoordinator();
     }
 
     public function rules(): array
