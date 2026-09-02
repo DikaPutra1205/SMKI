@@ -19,10 +19,17 @@ class StoreRiskRequest extends FormRequest
     {
         return [
             'control_id' => 'required|exists:controls,id',
-            'level_risiko' => 'required|in:low,medium,high,critical',
-            'pemilik_risiko' => 'required|string|max:255',
-            'rencana_mitigasi' => 'nullable|string',
+            'unit_id' => 'nullable|exists:work_units,id',
+            'level_risiko' => 'sometimes|required_without:risk_level|in:low,medium,high,critical',
+            'risk_level' => 'sometimes|required_without:level_risiko|in:low,medium,high,critical',
+            'pemilik_risiko' => 'sometimes|required_without:risk_owner|string|max:255',
+            'risk_owner' => 'sometimes|required_without:pemilik_risiko|string|max:255',
+            'rencana_mitigasi' => 'nullable|string|max:3000',
+            'mitigation_plan' => 'nullable|string|max:3000',
             'status' => 'sometimes|in:open,mitigated,accepted',
+            'deadline' => 'nullable|date',
+            'catatan_admin' => 'nullable|string|max:3000',
+            'admin_notes' => 'nullable|string|max:3000',
         ];
     }
 }
