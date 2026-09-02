@@ -1094,4 +1094,313 @@ class DashboardAnalyticsTest extends TestCase
             ->where('filters.months', '12')
         );
     }
+
+    public function test_summary_months_filter_excludes_old_findings(): void
+    {
+        $ctrl = Control::factory()->create(['framework_id' => $this->iso27001->id]);
+
+        // Recent finding (within 3-month window)
+        Finding::factory()->create([
+            'control_id' => $ctrl->id,
+            'unit_id' => $this->unitA->id,
+            'status' => Finding::STATUS_OPEN,
+            'kategori' => Finding::KATEGORI_MAJOR,
+            'created_at' => now()->subMonth(),
+        ]);
+
+        // Old finding (outside 3-month window)
+        Finding::factory()->create([
+            'control_id' => $ctrl->id,
+            'unit_id' => $this->unitA->id,
+            'status' => Finding::STATUS_OPEN,
+            'kategori' => Finding::KATEGORI_MINOR,
+            'created_at' => now()->subMonths(4),
+        ]);
+
+        // All-time: should see both
+        $responseAll = $this->actingAs($this->admin)->get('/admin/kepatuhan/dashboard');
+        $responseAll->assertOk();
+        $responseAll->assertInertia(fn ($page) => $page
+            ->where('summary.findings_summary.total_active', 2)
+        );
+
+        // 3 months: should see only recent
+        $response3 = $this->actingAs($this->admin)->get('/admin/kepatuhan/dashboard?months=3');
+        $response3->assertOk();
+        $response3->assertInertia(fn ($page) => $page
+            ->where('summary.findings_summary.total_active', 1)
+            ->where('summary.findings_summary.major', 1)
+            ->where('summary.findings_summary.minor', 0)
+        );
+    }
+
+    public function test_summary_months_filter_excludes_old_risks(): void
+    {
+        $ctrl = Control::factory()->create(['framework_id' => $this->iso27001->id]);
+
+        // Recent risk
+        Risk::factory()->create([
+            'control_id' => $ctrl->id,
+            'level_risiko' => Risk::LEVEL_CRITICAL,
+            'status' => Risk::STATUS_OPEN,
+            'created_at' => now()->subMonth(),
+        ]);
+
+        // Old risk
+        Risk::factory()->create([
+            'control_id' => $ctrl->id,
+            'level_risiko' => Risk::LEVEL_LOW,
+            'status' => Risk::STATUS_OPEN,
+            'created_at' => now()->subMonths(4),
+        ]);
+
+        $responseAll = $this->actingAs($this->admin)->get('/admin/kepatuhan/dashboard');
+        $responseAll->assertOk();
+        $responseAll->assertInertia(fn ($page) => $page
+            ->where('summary.risks_summary.total_active', 2)
+        );
+
+        $response3 = $this->actingAs($this->admin)->get('/admin/kepatuhan/dashboard?months=3');
+        $response3->assertOk();
+        $response3->assertInertia(fn ($page) => $page
+            ->where('summary.risks_summary.total_active', 1)
+            ->where('summary.risks_summary.critical', 1)
+        );
+    }
+
+    public function test_summary_months_scopes_sessions_to_cutoff_periode(): void
+    {
+        $ctrl = Control::factory()->create(['framework_id' => $this->iso27001->id]);
+
+        // Current session: compliant
+        $current = ChecklistSession::factory()->create([
+            'unit_id' => $this->unitA->id,
+            'framework_id' => $this->iso27001->id,
+            'periode' => now()->format('Y-m'),
+        ]);
+        ChecklistEntry::factory()->create([
+            'session_id' => $current->id,
+            'control_id' => $ctrl->id,
+            'unit_id' => $this->unitA->id,
+            'status' => ChecklistEntry::STATUS_COMPLIANT,
+        ]);
+
+        // Old session (5 months ago): non-compliant
+        $old = ChecklistSession::factory()->create([
+            'unit_id' => $this->unitA->id,
+            'framework_id' => $this->iso27001->id,
+            'periode' => now()->subMonths(5)->format('Y-m'),
+        ]);
+        ChecklistEntry::factory()->create([
+            'session_id' => $old->id,
+            'control_id' => $ctrl->id,
+            'unit_id' => $this->unitA->id,
+            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+        ]);
+
+        // All-time: uses most-recent session (compliant) => 100%
+        $responseAll = $this->actingAs($this->admin)
+            ->get("/admin/kepatuhan/dashboard?unit_id={$this->unitA->id}");
+        $responseAll->assertOk();
+        $responseAll->assertInertia(fn ($page) => $page
+            ->where('summary.overall_compliance_rate', 100)
+        );
+
+        // 3 months: old session excluded, current session used => still 100%
+        $response3 = $this->actingAs($this->admin)
+            ->get("/admin/kepatuhan/dashboard?unit_id={$this->unitA->id}&months=3");
+        $response3->assertOk();
+        $response3->assertInertia(fn ($page) => $page
+            ->where('summary.overall_compliance_rate', 100)
+        );
+    }
+
+    public function test_unit_comparison_months_filters_entries_by_periode(): void
+    {
+        $ctrl = Control::factory()->create(['framework_id' => $this->iso27001->id]);
+
+        // Recent session: compliant
+        $recent = ChecklistSession::factory()->create([
+            'unit_id' => $this->unitA->id,
+            'framework_id' => $this->iso27001->id,
+            'periode' => now()->format('Y-m'),
+        ]);
+        ChecklistEntry::factory()->create([
+            'session_id' => $recent->id,
+            'control_id' => $ctrl->id,
+            'unit_id' => $this->unitA->id,
+            'status' => ChecklistEntry::STATUS_COMPLIANT,
+        ]);
+
+        // Old session: non-compliant
+        $old = ChecklistSession::factory()->create([
+            'unit_id' => $this->unitA->id,
+            'framework_id' => $this->iso27001->id,
+            'periode' => now()->subMonths(5)->format('Y-m'),
+        ]);
+        ChecklistEntry::factory()->create([
+            'session_id' => $old->id,
+            'control_id' => $ctrl->id,
+            'unit_id' => $this->unitA->id,
+            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+        ]);
+
+        // All-time: both entries counted => 1 compliant of 2 applicable = 50%
+        $responseAll = $this->actingAs($this->admin)->get('/admin/kepatuhan/dashboard');
+        $responseAll->assertOk();
+        $responseAll->assertInertia(fn ($page) => $page
+            ->where('unit_comparisons.1.compliance_rate', 50)
+            ->where('unit_comparisons.1.total_entries', 2)
+        );
+
+        // 3 months: old entry excluded => 1 of 1 = 100%
+        $response3 = $this->actingAs($this->admin)->get('/admin/kepatuhan/dashboard?months=3');
+        $response3->assertOk();
+        $response3->assertInertia(fn ($page) => $page
+            ->where('unit_comparisons.1.compliance_rate', 100)
+            ->where('unit_comparisons.1.total_entries', 1)
+        );
+    }
+
+    public function test_unit_comparison_months_filters_findings(): void
+    {
+        $ctrl = Control::factory()->create(['framework_id' => $this->iso27001->id]);
+
+        Finding::factory()->create([
+            'control_id' => $ctrl->id,
+            'unit_id' => $this->unitA->id,
+            'status' => Finding::STATUS_OPEN,
+            'created_at' => now()->subMonth(),
+        ]);
+
+        Finding::factory()->create([
+            'control_id' => $ctrl->id,
+            'unit_id' => $this->unitA->id,
+            'status' => Finding::STATUS_OPEN,
+            'created_at' => now()->subMonths(4),
+        ]);
+
+        $responseAll = $this->actingAs($this->admin)->get('/admin/kepatuhan/dashboard');
+        $responseAll->assertOk();
+        $responseAll->assertInertia(fn ($page) => $page
+            ->where('unit_comparisons.1.open_findings', 2)
+        );
+
+        $response3 = $this->actingAs($this->admin)->get('/admin/kepatuhan/dashboard?months=3');
+        $response3->assertOk();
+        $response3->assertInertia(fn ($page) => $page
+            ->where('unit_comparisons.1.open_findings', 1)
+        );
+    }
+
+    public function test_recent_activities_months_filters_by_created_at(): void
+    {
+        // Clear ALL audit logs to avoid SmkiObserver interference
+        \DB::table('audit_logs')->truncate();
+
+        $now = now();
+        for ($i = 1; $i <= 3; $i++) {
+            \DB::table('audit_logs')->insert([
+                'actor_id' => $this->admin->id,
+                'aksi' => "recent-{$i}",
+                'entity_type' => 'ChecklistEntry',
+                'entity_id' => $i,
+                'detail_perubahan' => '{}',
+                'created_at' => $now->copy()->subMonth(),
+            ]);
+        }
+        for ($i = 4; $i <= 8; $i++) {
+            \DB::table('audit_logs')->insert([
+                'actor_id' => $this->admin->id,
+                'aksi' => "old-{$i}",
+                'entity_type' => 'ChecklistEntry',
+                'entity_id' => $i,
+                'detail_perubahan' => '{}',
+                'created_at' => $now->copy()->subMonths(4),
+            ]);
+        }
+
+        // All-time: limit=6, returns 6 most recent
+        $responseAll = $this->actingAs($this->admin)->get('/admin/kepatuhan/dashboard');
+        $responseAll->assertOk();
+        $responseAll->assertInertia(fn ($page) => $page
+            ->has('recent_activities', 6)
+        );
+
+        // 3 months: old logs (created_at 4 months ago) filtered out, only 3 recent remain
+        $response3 = $this->actingAs($this->admin)->get('/admin/kepatuhan/dashboard?months=3');
+        $response3->assertOk();
+        $response3->assertInertia(fn ($page) => $page
+            ->has('recent_activities', 3)
+        );
+    }
+
+    public function test_pic_recent_sessions_months_filters_by_periode(): void
+    {
+        $ctrl = Control::factory()->create(['framework_id' => $this->iso27001->id]);
+
+        // Recent session
+        $recent = ChecklistSession::factory()->create([
+            'unit_id' => $this->unitA->id,
+            'framework_id' => $this->iso27001->id,
+            'periode' => now()->format('Y-m'),
+        ]);
+
+        // Old session
+        $old = ChecklistSession::factory()->create([
+            'unit_id' => $this->unitA->id,
+            'framework_id' => $this->iso27001->id,
+            'periode' => now()->subMonths(5)->format('Y-m'),
+        ]);
+
+        // All-time: should see both
+        $responseAll = $this->actingAs($this->pic)->get('/admin/pic/dashboard');
+        $responseAll->assertOk();
+        $responseAll->assertInertia(fn ($page) => $page
+            ->component('pic/dashboard')
+            ->has('recent_sessions', 2)
+        );
+
+        // 3 months: old session excluded
+        $response3 = $this->actingAs($this->pic)->get('/admin/pic/dashboard?months=3');
+        $response3->assertOk();
+        $response3->assertInertia(fn ($page) => $page
+            ->component('pic/dashboard')
+            ->has('recent_sessions', 1)
+        );
+    }
+
+    public function test_months_invalid_value_falls_back_to_all(): void
+    {
+        $ctrl = Control::factory()->create(['framework_id' => $this->iso27001->id]);
+        Finding::factory()->create([
+            'control_id' => $ctrl->id,
+            'unit_id' => $this->unitA->id,
+            'status' => Finding::STATUS_OPEN,
+            'created_at' => now()->subMonths(4),
+        ]);
+
+        // Invalid months value should behave as 'all' — finding still visible
+        $response = $this->actingAs($this->admin)
+            ->get('/admin/kepatuhan/dashboard?months=abc');
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->where('summary.findings_summary.total_active', 1)
+            ->where('filters.months', 'all')
+        );
+
+        $response0 = $this->actingAs($this->admin)
+            ->get('/admin/kepatuhan/dashboard?months=0');
+        $response0->assertOk();
+        $response0->assertInertia(fn ($page) => $page
+            ->where('summary.findings_summary.total_active', 1)
+        );
+
+        $responseNeg = $this->actingAs($this->admin)
+            ->get('/admin/kepatuhan/dashboard?months=-1');
+        $responseNeg->assertOk();
+        $responseNeg->assertInertia(fn ($page) => $page
+            ->where('summary.findings_summary.total_active', 1)
+        );
+    }
 }
