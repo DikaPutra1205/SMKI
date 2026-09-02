@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Finding;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -9,7 +10,20 @@ class UpdateFindingRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $finding = $this->route('finding') ?? $this->route('id');
+
+        if ($finding instanceof Finding) {
+            return $this->user()?->can('update', $finding) ?? false;
+        }
+
+        if (is_numeric($finding)) {
+            $findingModel = Finding::find($finding);
+            if ($findingModel) {
+                return $this->user()?->can('update', $findingModel) ?? false;
+            }
+        }
+
+        return $this->user()?->isAdmin() || $this->user()?->isSuperAdmin() || $this->user()?->hasPermissionTo('finding.update') ?? false;
     }
 
     /**

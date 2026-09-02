@@ -521,12 +521,10 @@ class FindingManagementTest extends TestCase
         $response->assertUnauthorized();
     }
 
-    // ── Auth gap: FindingPolicy UNWIRED tests ──────────────────────────────────
+    // ── Auth & Policy Enforcement tests ──────────────────────────────────
 
-    public function test_auth_gap_pic_can_create_finding_via_raw_api_despite_policy(): void
+    public function test_pic_cannot_create_finding_via_raw_api(): void
     {
-        // FindingPolicy::create() denies PIC, but policy is NOT wired.
-        // Any authed user can hit raw endpoints without authorization.
         $response = $this->actingAs($this->picA)->postJson('/api/findings', [
             'control_id' => $this->control->id,
             'unit_id' => $this->unitA->id,
@@ -535,11 +533,10 @@ class FindingManagementTest extends TestCase
             'status' => Finding::STATUS_OPEN,
         ]);
 
-        // This SHOULD be 403 if FindingPolicy were wired, but it succeeds (auth gap).
-        $response->assertCreated();
+        $response->assertForbidden();
     }
 
-    public function test_auth_gap_pic_from_other_unit_can_update_finding_via_raw_api(): void
+    public function test_pic_from_other_unit_cannot_update_finding_via_raw_api(): void
     {
         $finding = Finding::factory()->create([
             'control_id' => $this->control->id,
@@ -548,17 +545,15 @@ class FindingManagementTest extends TestCase
             'status' => Finding::STATUS_OPEN,
         ]);
 
-        // picB is from unitB — should be denied by FindingPolicy, but policy is unwired
         $response = $this->actingAs($this->picB)->putJson("/api/findings/{$finding->id}", [
             'status' => Finding::STATUS_CLOSED,
         ]);
 
-        // This SHOULD be 403 if FindingPolicy were wired
-        $response->assertOk();
-        $this->assertEquals(Finding::STATUS_CLOSED, $finding->fresh()->status);
+        $response->assertForbidden();
+        $this->assertEquals(Finding::STATUS_OPEN, $finding->fresh()->status);
     }
 
-    public function test_auth_gap_pic_from_other_unit_can_delete_finding_via_raw_api(): void
+    public function test_pic_from_other_unit_cannot_delete_finding_via_raw_api(): void
     {
         $finding = Finding::factory()->create([
             'control_id' => $this->control->id,
@@ -566,15 +561,13 @@ class FindingManagementTest extends TestCase
             'pic_id' => $this->picA->id,
         ]);
 
-        // picB from unitB should NOT be able to delete unitA's finding
         $response = $this->actingAs($this->picB)->deleteJson("/api/findings/{$finding->id}");
 
-        // This SHOULD be 403 if FindingPolicy were wired
-        $response->assertOk();
-        $this->assertSoftDeleted('findings', ['id' => $finding->id]);
+        $response->assertForbidden();
+        $this->assertDatabaseHas('findings', ['id' => $finding->id, 'deleted_at' => null]);
     }
 
-    public function test_auth_gap_any_user_can_delete_finding_via_raw_api(): void
+    public function test_unauthorized_user_cannot_delete_finding_via_raw_api(): void
     {
         $finding = Finding::factory()->create([
             'control_id' => $this->control->id,
@@ -582,7 +575,6 @@ class FindingManagementTest extends TestCase
             'pic_id' => $this->picA->id,
         ]);
 
-        // Create a completely unrelated user with a fresh role
         $auditorRole = Role::where('name', 'auditor')->first();
         $stranger = User::factory()->create([
             'role_id' => $auditorRole->id,
@@ -591,9 +583,50 @@ class FindingManagementTest extends TestCase
 
         $response = $this->actingAs($stranger)->deleteJson("/api/findings/{$finding->id}");
 
-        // This SHOULD be 403 if authorization were in place
-        $response->assertOk();
-        $this->assertSoftDeleted('findings', ['id' => $finding->id]);
+        $response->assertForbidden();
+        $this->assertDatabaseHas('findings', ['id' => $finding->id, 'deleted_at' => null]);
+    }
+
+    public function test_auditor_and_koordinator_can_view_findings_but_cannot_create_update_or_delete(): void
+    {
+        $finding = Finding::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'pic_id' => $this->picA->id,
+            'status' => Finding::STATUS_OPEN,
+        ]);
+
+        $auditorRole = Role::where('name', 'auditor')->first();
+        $koordinatorRole = Role::where('name', 'koordinator_smki')->first();
+
+        $auditor = User::factory()->create(['role_id' => $auditorRole->id]);
+        $koordinator = User::factory()->create(['role_id' => $koordinatorRole->id]);
+
+        // 1. Auditor read-only checks
+        $this->actingAs($auditor)->getJson('/api/findings')->assertOk();
+        $this->actingAs($auditor)->getJson("/api/findings/{$finding->id}")->assertOk();
+        $this->actingAs($auditor)->postJson('/api/findings', [
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'kategori' => Finding::KATEGORI_MINOR,
+        ])->assertForbidden();
+        $this->actingAs($auditor)->putJson("/api/findings/{$finding->id}", [
+            'status' => Finding::STATUS_IN_PROGRESS,
+        ])->assertForbidden();
+        $this->actingAs($auditor)->deleteJson("/api/findings/{$finding->id}")->assertForbidden();
+
+        // 2. Koordinator SMKI read-only checks
+        $this->actingAs($koordinator)->getJson('/api/findings')->assertOk();
+        $this->actingAs($koordinator)->getJson("/api/findings/{$finding->id}")->assertOk();
+        $this->actingAs($koordinator)->postJson('/api/findings', [
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'kategori' => Finding::KATEGORI_MINOR,
+        ])->assertForbidden();
+        $this->actingAs($koordinator)->putJson("/api/findings/{$finding->id}", [
+            'status' => Finding::STATUS_IN_PROGRESS,
+        ])->assertForbidden();
+        $this->actingAs($koordinator)->deleteJson("/api/findings/{$finding->id}")->assertForbidden();
     }
 
     public function test_web_routes_create_and_update_with_flash_message(): void

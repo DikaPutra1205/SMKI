@@ -151,6 +151,11 @@ class User extends Authenticatable
         return $this->role === self::ROLE_ADMIN_KEPATUHAN;
     }
 
+    public function isAdminKepatuhan(): bool
+    {
+        return $this->role === self::ROLE_ADMIN_KEPATUHAN;
+    }
+
     public function isPic(): bool
     {
         return $this->role === self::ROLE_PIC;

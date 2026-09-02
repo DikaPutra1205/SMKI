@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Finding;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -9,7 +10,7 @@ class StoreFindingRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->can('create', Finding::class) ?? false;
     }
 
     /**

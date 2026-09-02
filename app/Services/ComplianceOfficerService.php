@@ -109,7 +109,7 @@ class ComplianceOfficerService
      */
     public function storeFinding(User $user, array $data): Finding
     {
-        if ($user->isPic()) {
+        if (! ($user->isAdmin() || $user->isSuperAdmin() || $user->hasPermissionTo('finding.create'))) {
             throw new AuthorizationException('Hanya Admin Kepatuhan yang memiliki wewenang untuk membuat temuan baru.');
         }
 
@@ -163,8 +163,8 @@ class ComplianceOfficerService
      */
     public function updateFinding(User $user, Finding $finding, array $data): Finding
     {
-        if ($user->isPic() && (int) $finding->unit_id !== (int) $user->unit_id) {
-            throw new AuthorizationException('Anda tidak memiliki wewenang untuk mengubah temuan unit lain.');
+        if (! ($user->isAdmin() || $user->isSuperAdmin() || $user->hasPermissionTo('finding.update') || ($user->isPic() && (int) $finding->unit_id === (int) $user->unit_id))) {
+            throw new AuthorizationException('Anda tidak memiliki wewenang untuk mengubah temuan ini.');
         }
 
         return DB::transaction(function () use ($user, $finding, $data) {
