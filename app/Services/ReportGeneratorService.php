@@ -176,7 +176,36 @@ class ReportGeneratorService
         </tbody>
     </table>
 
-    <div class='section-title'>2. Parameter Audit &amp; Metadata</div>
+    <div class='section-title'>2. Rekapitulasi Temuan Audit &amp; Register Risiko</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Kategori Metrik Kepatuhan</th>
+                <th style='text-align: center;'>Total Terbuka / Aktif</th>
+                <th style='text-align: center;'>Kritis / Major</th>
+                <th style='text-align: center;'>Tinggi / Minor</th>
+                <th style='text-align: center;'>Status Batas Waktu (SLA)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style='padding: 8px 12px; border: 1px solid #cbd5e1; font-weight: 600;'>Temuan Audit (Findings)</td>
+                <td style='padding: 8px 12px; border: 1px solid #cbd5e1; text-align: center;'>".($findings['total_active'] ?? 0)."</td>
+                <td style='padding: 8px 12px; border: 1px solid #cbd5e1; text-align: center; color: #dc2626; font-weight: bold;'>".($findings['major'] ?? 0)."</td>
+                <td style='padding: 8px 12px; border: 1px solid #cbd5e1; text-align: center; color: #ea580c;'>".($findings['minor'] ?? 0)."</td>
+                <td style='padding: 8px 12px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold; color: ".((($findings['overdue'] ?? 0) > 0) ? '#dc2626' : '#16a34a').";'>".($findings['overdue'] ?? 0)." Overdue</td>
+            </tr>
+            <tr>
+                <td style='padding: 8px 12px; border: 1px solid #cbd5e1; font-weight: 600;'>Register Risiko (Risks)</td>
+                <td style='padding: 8px 12px; border: 1px solid #cbd5e1; text-align: center;'>".($risks['total_active'] ?? 0)."</td>
+                <td style='padding: 8px 12px; border: 1px solid #cbd5e1; text-align: center; color: #dc2626; font-weight: bold;'>".($risks['critical'] ?? 0)."</td>
+                <td style='padding: 8px 12px; border: 1px solid #cbd5e1; text-align: center; color: #ea580c;'>".($risks['high'] ?? 0)."</td>
+                <td style='padding: 8px 12px; border: 1px solid #cbd5e1; text-align: center; color: #16a34a;'>".($risks['mitigated'] ?? 0)." Termitigasi</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class='section-title'>3. Parameter Audit &amp; Metadata</div>
     <table>
         <tr>
             <td style='padding: 6px 12px; width: 25%; font-weight: 600; background: #f8fafc; border: 1px solid #cbd5e1;'>Cakupan Unit Kerja</td>
