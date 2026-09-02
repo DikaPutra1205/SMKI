@@ -242,6 +242,360 @@ class FindingManagementTest extends TestCase
         ]);
     }
 
+    // ── Raw FindingController tests (GET/POST/PUT/DELETE /api/findings/*) ──────
+
+    public function test_raw_api_index_returns_paginated_findings(): void
+    {
+        Finding::factory()->count(3)->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'pic_id' => $this->picA->id,
+        ]);
+
+        $response = $this->actingAs($this->picA)->getJson('/api/findings');
+
+        $response->assertOk()
+            ->assertJsonStructure([
+                'status',
+                'data' => ['data', 'current_page', 'last_page', 'per_page', 'total'],
+            ]);
+    }
+
+    public function test_raw_api_index_filters_by_status(): void
+    {
+        Finding::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'pic_id' => $this->picA->id,
+            'status' => Finding::STATUS_OPEN,
+        ]);
+        Finding::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'pic_id' => $this->picA->id,
+            'status' => Finding::STATUS_CLOSED,
+        ]);
+
+        $response = $this->actingAs($this->admin)->getJson('/api/findings?status=open');
+
+        $response->assertOk();
+        $this->assertCount(1, $response->json('data.data'));
+        $this->assertEquals(Finding::STATUS_OPEN, $response->json('data.data.0.status'));
+    }
+
+    public function test_raw_api_store_creates_finding_and_records_history(): void
+    {
+        $response = $this->actingAs($this->admin)->postJson('/api/findings', [
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'pic_id' => $this->picA->id,
+            'kategori' => Finding::KATEGORI_MAJOR,
+            'status' => Finding::STATUS_OPEN,
+            'deadline' => now()->addDays(14)->format('Y-m-d'),
+            'catatan' => 'Raw API finding creation.',
+        ]);
+
+        $response->assertCreated();
+        $findingId = $response->json('data.id');
+
+        $this->assertDatabaseHas('findings', [
+            'id' => $findingId,
+            'status' => Finding::STATUS_OPEN,
+            'kategori' => Finding::KATEGORI_MAJOR,
+        ]);
+
+        $this->assertDatabaseHas('finding_status_histories', [
+            'finding_id' => $findingId,
+            'from_status' => null,
+            'to_status' => Finding::STATUS_OPEN,
+            'catatan' => 'Raw API finding creation.',
+        ]);
+    }
+
+    public function test_raw_api_store_rejects_missing_required_fields(): void
+    {
+        $response = $this->actingAs($this->admin)->postJson('/api/findings', []);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['control_id', 'unit_id', 'kategori']);
+    }
+
+    public function test_raw_api_store_rejects_invalid_status(): void
+    {
+        $response = $this->actingAs($this->admin)->postJson('/api/findings', [
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'kategori' => Finding::KATEGORI_MAJOR,
+            'status' => 'invalid_status',
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['status']);
+    }
+
+    public function test_raw_api_store_rejects_invalid_kategori(): void
+    {
+        $response = $this->actingAs($this->admin)->postJson('/api/findings', [
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'kategori' => 'critical',
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['kategori']);
+    }
+
+    public function test_raw_api_show_returns_finding_with_histories(): void
+    {
+        $finding = Finding::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'pic_id' => $this->picA->id,
+        ]);
+
+        $response = $this->actingAs($this->picA)->getJson("/api/findings/{$finding->id}");
+
+        $response->assertOk()
+            ->assertJsonPath('data.id', $finding->id)
+            ->assertJsonStructure(['data' => ['histories']]);
+    }
+
+    public function test_raw_api_show_returns_404_for_nonexistent(): void
+    {
+        $response = $this->actingAs($this->admin)->getJson('/api/findings/99999');
+
+        $response->assertNotFound();
+    }
+
+    public function test_raw_api_update_modifies_finding_attributes(): void
+    {
+        $finding = Finding::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'pic_id' => $this->picA->id,
+            'status' => Finding::STATUS_OPEN,
+            'kategori' => Finding::KATEGORI_MINOR,
+        ]);
+
+        $response = $this->actingAs($this->admin)->putJson("/api/findings/{$finding->id}", [
+            'kategori' => Finding::KATEGORI_OBSERVASI,
+            'deadline' => now()->addDays(30)->format('Y-m-d'),
+        ]);
+
+        $response->assertOk();
+        $fresh = $finding->fresh();
+        $this->assertEquals(Finding::KATEGORI_OBSERVASI, $fresh->kategori);
+    }
+
+    public function test_raw_api_update_records_status_history_on_status_change(): void
+    {
+        $finding = Finding::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'pic_id' => $this->picA->id,
+            'status' => Finding::STATUS_OPEN,
+        ]);
+
+        $response = $this->actingAs($this->admin)->putJson("/api/findings/{$finding->id}", [
+            'status' => Finding::STATUS_RESOLVED,
+            'catatan' => 'Directly resolved via raw update.',
+        ]);
+
+        $response->assertOk();
+        $this->assertEquals(Finding::STATUS_RESOLVED, $finding->fresh()->status);
+
+        $this->assertDatabaseHas('finding_status_histories', [
+            'finding_id' => $finding->id,
+            'from_status' => Finding::STATUS_OPEN,
+            'to_status' => Finding::STATUS_RESOLVED,
+            'catatan' => 'Directly resolved via raw update.',
+        ]);
+    }
+
+    public function test_raw_api_update_sets_tanggal_verifikasi_on_close(): void
+    {
+        $finding = Finding::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'pic_id' => $this->picA->id,
+            'status' => Finding::STATUS_RESOLVED,
+        ]);
+
+        $this->actingAs($this->admin)->putJson("/api/findings/{$finding->id}", [
+            'status' => Finding::STATUS_CLOSED,
+        ]);
+
+        $this->assertNotNull($finding->fresh()->tanggal_verifikasi);
+    }
+
+    public function test_raw_api_update_clears_tanggal_verifikasi_when_reopening(): void
+    {
+        $finding = Finding::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'pic_id' => $this->picA->id,
+            'status' => Finding::STATUS_CLOSED,
+            'tanggal_verifikasi' => now(),
+        ]);
+
+        $this->actingAs($this->admin)->putJson("/api/findings/{$finding->id}", [
+            'status' => Finding::STATUS_IN_PROGRESS,
+        ]);
+
+        $this->assertNull($finding->fresh()->tanggal_verifikasi);
+    }
+
+    public function test_raw_api_update_status_endpoint_changes_status(): void
+    {
+        $finding = Finding::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'pic_id' => $this->picA->id,
+            'status' => Finding::STATUS_OPEN,
+        ]);
+
+        $response = $this->actingAs($this->admin)->patchJson("/api/findings/{$finding->id}/status", [
+            'status' => Finding::STATUS_IN_PROGRESS,
+        ]);
+
+        $response->assertOk();
+        $this->assertEquals(Finding::STATUS_IN_PROGRESS, $finding->fresh()->status);
+    }
+
+    public function test_raw_api_update_status_records_history_with_note(): void
+    {
+        $finding = Finding::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'pic_id' => $this->picA->id,
+            'status' => Finding::STATUS_IN_PROGRESS,
+        ]);
+
+        $this->actingAs($this->admin)->patchJson("/api/findings/{$finding->id}/status", [
+            'status' => Finding::STATUS_RESOLVED,
+            'catatan' => 'Status change via PATCH endpoint.',
+        ]);
+
+        $this->assertDatabaseHas('finding_status_histories', [
+            'finding_id' => $finding->id,
+            'from_status' => Finding::STATUS_IN_PROGRESS,
+            'to_status' => Finding::STATUS_RESOLVED,
+            'catatan' => 'Status change via PATCH endpoint.',
+        ]);
+    }
+
+    public function test_raw_api_update_status_rejects_invalid_status(): void
+    {
+        $finding = Finding::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'pic_id' => $this->picA->id,
+        ]);
+
+        $response = $this->actingAs($this->admin)->patchJson("/api/findings/{$finding->id}/status", [
+            'status' => 'bogus',
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['status']);
+    }
+
+    public function test_raw_api_destroy_deletes_finding(): void
+    {
+        $finding = Finding::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'pic_id' => $this->picA->id,
+        ]);
+
+        $response = $this->actingAs($this->admin)->deleteJson("/api/findings/{$finding->id}");
+
+        $response->assertOk();
+        $this->assertSoftDeleted('findings', ['id' => $finding->id]);
+    }
+
+    public function test_raw_api_unauthenticated_user_cannot_access_findings(): void
+    {
+        $response = $this->getJson('/api/findings');
+
+        $response->assertUnauthorized();
+    }
+
+    // ── Auth gap: FindingPolicy UNWIRED tests ──────────────────────────────────
+
+    public function test_auth_gap_pic_can_create_finding_via_raw_api_despite_policy(): void
+    {
+        // FindingPolicy::create() denies PIC, but policy is NOT wired.
+        // Any authed user can hit raw endpoints without authorization.
+        $response = $this->actingAs($this->picA)->postJson('/api/findings', [
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'pic_id' => $this->picA->id,
+            'kategori' => Finding::KATEGORI_MINOR,
+            'status' => Finding::STATUS_OPEN,
+        ]);
+
+        // This SHOULD be 403 if FindingPolicy were wired, but it succeeds (auth gap).
+        $response->assertCreated();
+    }
+
+    public function test_auth_gap_pic_from_other_unit_can_update_finding_via_raw_api(): void
+    {
+        $finding = Finding::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'pic_id' => $this->picA->id,
+            'status' => Finding::STATUS_OPEN,
+        ]);
+
+        // picB is from unitB — should be denied by FindingPolicy, but policy is unwired
+        $response = $this->actingAs($this->picB)->putJson("/api/findings/{$finding->id}", [
+            'status' => Finding::STATUS_CLOSED,
+        ]);
+
+        // This SHOULD be 403 if FindingPolicy were wired
+        $response->assertOk();
+        $this->assertEquals(Finding::STATUS_CLOSED, $finding->fresh()->status);
+    }
+
+    public function test_auth_gap_pic_from_other_unit_can_delete_finding_via_raw_api(): void
+    {
+        $finding = Finding::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'pic_id' => $this->picA->id,
+        ]);
+
+        // picB from unitB should NOT be able to delete unitA's finding
+        $response = $this->actingAs($this->picB)->deleteJson("/api/findings/{$finding->id}");
+
+        // This SHOULD be 403 if FindingPolicy were wired
+        $response->assertOk();
+        $this->assertSoftDeleted('findings', ['id' => $finding->id]);
+    }
+
+    public function test_auth_gap_any_user_can_delete_finding_via_raw_api(): void
+    {
+        $finding = Finding::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'pic_id' => $this->picA->id,
+        ]);
+
+        // Create a completely unrelated user with a fresh role
+        $auditorRole = Role::where('name', 'auditor')->first();
+        $stranger = User::factory()->create([
+            'role_id' => $auditorRole->id,
+            'unit_id' => null,
+        ]);
+
+        $response = $this->actingAs($stranger)->deleteJson("/api/findings/{$finding->id}");
+
+        // This SHOULD be 403 if authorization were in place
+        $response->assertOk();
+        $this->assertSoftDeleted('findings', ['id' => $finding->id]);
+    }
+
     public function test_web_routes_create_and_update_with_flash_message(): void
     {
         // Admin creates via web POST
