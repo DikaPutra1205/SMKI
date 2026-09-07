@@ -65,6 +65,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/temuan', [ComplianceOfficerController::class, 'storeFinding'])->name('temuan.store.direct');
     Route::put('/temuan/{finding}', [ComplianceOfficerController::class, 'updateFinding'])->name('temuan.update.direct');
     Route::get('/risks', [PageController::class, 'risks'])->name('risks.index');
+    Route::post('/risks', [ComplianceOfficerController::class, 'storeRisk'])->name('risks.store.direct');
+    Route::put('/risks/{risk}', [ComplianceOfficerController::class, 'updateRisk'])->name('risks.update.direct');
     Route::get('/audit-logs', [PageController::class, 'auditLogs'])->name('audit-logs.index');
 
     Route::prefix('admin/kepatuhan')->name('admin.kepatuhan.')->group(function () {

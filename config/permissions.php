@@ -249,6 +249,8 @@ return [
             'finding.read',
             'risk.view',
             'risk.read',
+            'risk.create',
+            'risk.update',
             'work-unit.read',
             'audit-log.view',
             'audit-log.read',
