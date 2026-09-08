@@ -22,6 +22,14 @@ class UpdateRiskRequest extends FormRequest
             }
         }
 
+        if ($this->user()?->isPic()) {
+            if ($this->filled('unit_id')) {
+                return (int) $this->input('unit_id') === (int) $this->user()->unit_id;
+            }
+
+            return true;
+        }
+
         return $this->user()?->hasPermissionTo('risk.update') || $this->user()?->isAdmin() || $this->user()?->isSuperAdmin() || $this->user()?->isKoordinator();
     }
 

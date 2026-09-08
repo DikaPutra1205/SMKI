@@ -14,6 +14,8 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
 
+        $this->withoutVite();
+
         // afterRefreshingDatabase seeds once but the per-test transaction
         // rollBack wipes role_permission rows, so reseed inside each test's
         // transaction to keep RBAC grants available for every test.

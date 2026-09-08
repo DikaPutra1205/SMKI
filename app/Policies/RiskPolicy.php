@@ -35,7 +35,7 @@ class RiskPolicy
             }
         }
 
-        return $user->hasPermissionTo('risk.read') || $user->hasPermissionTo('risk.view') || $user->isAdmin() || $user->isSuperAdmin() || $user->isKoordinator() || $user->isAuditor();
+        return $user->hasPermissionTo('risk.read') || $user->hasPermissionTo('risk.view') || $user->isAdmin() || $user->isSuperAdmin() || $user->isKoordinator() || $user->isAuditor() || $user->isPic();
     }
 
     /**
@@ -43,7 +43,7 @@ class RiskPolicy
      */
     public function view(User $user, Risk $risk): bool
     {
-        if (! ($user->hasPermissionTo('risk.read') || $user->hasPermissionTo('risk.view') || $user->isAdmin() || $user->isSuperAdmin() || $user->isKoordinator() || $user->isAuditor())) {
+        if (! ($user->hasPermissionTo('risk.read') || $user->hasPermissionTo('risk.view') || $user->isAdmin() || $user->isSuperAdmin() || $user->isKoordinator() || $user->isAuditor() || $user->isPic())) {
             return false;
         }
 
@@ -59,6 +59,8 @@ class RiskPolicy
             if ($targetUnitId !== null && (int) $targetUnitId !== (int) $user->unit_id) {
                 return false;
             }
+
+            return true;
         }
 
         return $user->hasPermissionTo('risk.create') || $user->isAdmin() || $user->isSuperAdmin() || $user->isKoordinator();
@@ -69,11 +71,19 @@ class RiskPolicy
      */
     public function update(User $user, Risk $risk): bool
     {
-        if (! ($user->hasPermissionTo('risk.update') || $user->isAdmin() || $user->isSuperAdmin() || $user->isKoordinator())) {
-            return false;
+        if ($user->isAdmin() || $user->isSuperAdmin() || $user->isKoordinator()) {
+            return true;
         }
 
-        return $this->isUserAuthorizedForRisk($user, $risk);
+        if ($user->isPic()) {
+            return $this->isUserAuthorizedForRisk($user, $risk);
+        }
+
+        if ($user->hasPermissionTo('risk.update')) {
+            return $this->isUserAuthorizedForRisk($user, $risk);
+        }
+
+        return false;
     }
 
     /**
@@ -81,6 +91,10 @@ class RiskPolicy
      */
     public function delete(User $user, Risk $risk): bool
     {
+        if ($user->isPic()) {
+            return false;
+        }
+
         if (! ($user->hasPermissionTo('risk.delete') || $user->isAdmin() || $user->isSuperAdmin())) {
             return false;
         }

@@ -331,6 +331,21 @@ class ComplianceOfficerService
     {
         $risk = Risk::with(['control.framework', 'unit:id,nama'])->findOrFail($id);
 
+        if ($user->isPic()) {
+            $isAuthorized = false;
+            if ($user->unit_id !== null && $risk->unit_id !== null) {
+                $isAuthorized = (int) $risk->unit_id === (int) $user->unit_id;
+            } elseif ($user->unit_id !== null) {
+                $isAuthorized = $risk->control?->checklistEntries()->where('unit_id', $user->unit_id)->exists() ?? false;
+            } else {
+                $isAuthorized = true;
+            }
+
+            if (! $isAuthorized) {
+                throw new AuthorizationException('Anda tidak memiliki wewenang untuk melihat risiko unit lain.');
+            }
+        }
+
         return $this->formatRiskResource($risk);
     }
 
@@ -381,8 +396,31 @@ class ComplianceOfficerService
      */
     public function updateRisk(User $user, Risk $risk, array $data): Risk
     {
-        if ($user->isPic() && $risk->unit_id && (int) $risk->unit_id !== (int) $user->unit_id) {
-            throw new AuthorizationException('Anda tidak memiliki wewenang untuk mengubah risiko unit lain.');
+        if ($user->isPic()) {
+            $isAuthorized = false;
+            if ($user->unit_id !== null && $risk->unit_id !== null) {
+                $isAuthorized = (int) $risk->unit_id === (int) $user->unit_id;
+            } elseif ($user->unit_id !== null) {
+                $isAuthorized = $risk->control?->checklistEntries()->where('unit_id', $user->unit_id)->exists() ?? false;
+            } else {
+                $isAuthorized = true;
+            }
+
+            if (! $isAuthorized) {
+                throw new AuthorizationException('Anda tidak memiliki wewenang untuk mengubah risiko unit lain.');
+            }
+
+            // PIC cannot edit level_risiko, pemilik_risiko, deadline, catatan_admin, or unit_id
+            unset(
+                $data['risk_level'],
+                $data['level_risiko'],
+                $data['risk_owner'],
+                $data['pemilik_risiko'],
+                $data['deadline'],
+                $data['admin_notes'],
+                $data['catatan_admin'],
+                $data['unit_id']
+            );
         }
 
         return DB::transaction(function () use ($user, $risk, $data) {

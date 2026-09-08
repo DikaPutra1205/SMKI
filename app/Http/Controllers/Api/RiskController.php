@@ -80,7 +80,22 @@ class RiskController extends Controller
 
     public function update(UpdateRiskRequest $request, Risk $risk): JsonResponse
     {
+        Gate::authorize('update', $risk);
+
         $data = $request->validated();
+
+        if ($request->user()?->isPic()) {
+            unset(
+                $data['risk_level'],
+                $data['level_risiko'],
+                $data['risk_owner'],
+                $data['pemilik_risiko'],
+                $data['deadline'],
+                $data['admin_notes'],
+                $data['catatan_admin'],
+                $data['unit_id']
+            );
+        }
 
         $updateData = [];
         if (isset($data['risk_level'])) {

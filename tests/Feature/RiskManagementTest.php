@@ -252,4 +252,106 @@ class RiskManagementTest extends TestCase
             ->deleteJson("/api/risks/{$risk->id}")
             ->assertForbidden();
     }
+
+    public function test_pic_cannot_view_other_unit_risk_via_compliance_officer_api(): void
+    {
+        $riskB = Risk::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitB->id,
+            'status' => Risk::STATUS_OPEN,
+        ]);
+
+        $this->actingAs($this->picA)
+            ->getJson("/api/v1/compliance-officer/risks/{$riskB->id}")
+            ->assertForbidden();
+    }
+
+    public function test_pic_can_view_own_unit_risk_via_compliance_officer_api(): void
+    {
+        $riskA = Risk::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'status' => Risk::STATUS_OPEN,
+        ]);
+
+        $this->actingAs($this->picA)
+            ->getJson("/api/v1/compliance-officer/risks/{$riskA->id}")
+            ->assertOk()
+            ->assertJsonPath('status', 'success')
+            ->assertJsonPath('data.id', $riskA->id);
+    }
+
+    public function test_pic_can_update_own_unit_risk_via_generic_api(): void
+    {
+        $riskA = Risk::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'status' => Risk::STATUS_OPEN,
+        ]);
+
+        $this->actingAs($this->picA)
+            ->putJson("/api/risks/{$riskA->id}", [
+                'status' => Risk::STATUS_MITIGATED,
+                'mitigation_plan' => 'Mitigasi unit sendiri via API.',
+            ])
+            ->assertOk()
+            ->assertJsonPath('status', 'success');
+
+        $this->assertEquals(Risk::STATUS_MITIGATED, $riskA->fresh()->status);
+    }
+
+    public function test_pic_cannot_view_other_unit_risk_via_generic_api(): void
+    {
+        $riskB = Risk::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitB->id,
+            'status' => Risk::STATUS_OPEN,
+        ]);
+
+        $this->actingAs($this->picA)
+            ->getJson("/api/risks/{$riskB->id}")
+            ->assertForbidden();
+    }
+
+    public function test_pic_cannot_modify_level_deadline_owner_or_admin_notes(): void
+    {
+        $originalDeadline = now()->addDays(10)->toDateString();
+        $risk = Risk::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'level_risiko' => Risk::LEVEL_CRITICAL,
+            'pemilik_risiko' => 'Original Owner',
+            'deadline' => $originalDeadline,
+            'catatan_admin' => 'Original Admin Note',
+            'rencana_mitigasi' => 'Original Mitigation',
+            'status' => Risk::STATUS_OPEN,
+        ]);
+
+        $tamperPayload = [
+            'status' => Risk::STATUS_MITIGATED,
+            'mitigation_plan' => 'Updated Mitigation by PIC',
+            'level_risiko' => Risk::LEVEL_LOW,
+            'risk_level' => Risk::LEVEL_LOW,
+            'pemilik_risiko' => 'Hacked Owner',
+            'risk_owner' => 'Hacked Owner',
+            'deadline' => now()->addDays(50)->toDateString(),
+            'admin_notes' => 'Tampered Admin Note',
+            'catatan_admin' => 'Tampered Admin Note',
+        ];
+
+        $response = $this->actingAs($this->picA)->putJson("/api/v1/compliance-officer/risks/{$risk->id}", $tamperPayload);
+
+        $response->assertOk();
+
+        $fresh = $risk->fresh();
+        // Allowed changes
+        $this->assertEquals(Risk::STATUS_MITIGATED, $fresh->status);
+        $this->assertEquals('Updated Mitigation by PIC', $fresh->rencana_mitigasi);
+
+        // Restricted fields MUST remain untampered
+        $this->assertEquals(Risk::LEVEL_CRITICAL, $fresh->level_risiko);
+        $this->assertEquals('Original Owner', $fresh->pemilik_risiko);
+        $this->assertEquals($originalDeadline, $fresh->deadline?->toDateString());
+        $this->assertEquals('Original Admin Note', $fresh->catatan_admin);
+    }
 }

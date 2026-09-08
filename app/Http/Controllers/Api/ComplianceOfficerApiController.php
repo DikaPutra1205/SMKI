@@ -13,6 +13,7 @@ use App\Models\Risk;
 use App\Services\ComplianceOfficerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class ComplianceOfficerApiController extends Controller
 {
@@ -135,11 +136,14 @@ class ComplianceOfficerApiController extends Controller
     public function showRisk(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        $risk = $this->complianceOfficerService->getRisk($user, $id);
+        $risk = Risk::findOrFail($id);
+        Gate::authorize('view', $risk);
+
+        $formatted = $this->complianceOfficerService->getRisk($user, $id);
 
         return response()->json([
             'status' => 'success',
-            'data' => $risk,
+            'data' => $formatted,
         ]);
     }
 
@@ -150,6 +154,7 @@ class ComplianceOfficerApiController extends Controller
     {
         $user = $request->user();
         $risk = Risk::findOrFail($id);
+        Gate::authorize('update', $risk);
 
         $updated = $this->complianceOfficerService->updateRisk($user, $risk, $request->validated());
 

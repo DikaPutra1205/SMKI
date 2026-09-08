@@ -118,7 +118,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
 
     const can = useCan();
     const canUpdate = can('risk.update') || isKoordinator || isAdmin || isPic;
-    const canCreate = can('risk.create') || isKoordinator || isAdmin;
+    const canCreate = !isPic && (isAdmin || isKoordinator || can('risk.create'));
 
     const [searchQuery, setSearchQuery] = useState(filters.search || '');
     const [selectedLevel, setSelectedLevel] = useState<string>(filters.risk_level || filters.level_risiko || 'all');
@@ -922,18 +922,24 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                             {/* Level selector */}
                             <div>
                                 <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                                    {t('risks.updateLevel')} <span className="text-red-500">*</span>
+                                    {t('risks.updateLevel')} {!isPic && <span className="text-red-500">*</span>}
                                 </label>
-                                <select
-                                    value={updateForm.data.risk_level}
-                                    onChange={(e) => updateForm.setData('risk_level', e.target.value)}
-                                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-primary focus:ring-1 focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                                >
-                                    <option value="low">{t('risks.low')}</option>
-                                    <option value="medium">{t('risks.medium')}</option>
-                                    <option value="high">{t('risks.high')}</option>
-                                    <option value="critical">{t('risks.critical')}</option>
-                                </select>
+                                {isPic ? (
+                                    <div className="flex h-[38px] items-center rounded-xl border border-slate-200 bg-slate-100/70 px-3 text-sm dark:border-slate-700 dark:bg-slate-800/60">
+                                        {getRiskLevelBadge(updateForm.data.risk_level)}
+                                    </div>
+                                ) : (
+                                    <select
+                                        value={updateForm.data.risk_level}
+                                        onChange={(e) => updateForm.setData('risk_level', e.target.value)}
+                                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-primary focus:ring-1 focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                    >
+                                        <option value="low">{t('risks.low')}</option>
+                                        <option value="medium">{t('risks.medium')}</option>
+                                        <option value="high">{t('risks.high')}</option>
+                                        <option value="critical">{t('risks.critical')}</option>
+                                    </select>
+                                )}
                                 {updateForm.errors.risk_level && <p className="mt-1 text-xs text-red-500">{updateForm.errors.risk_level}</p>}
                             </div>
                         </div>
@@ -946,8 +952,13 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                     type="text"
                                     value={updateForm.data.risk_owner}
                                     onChange={(e) => updateForm.setData('risk_owner', e.target.value)}
+                                    disabled={isPic}
                                     placeholder={t('risks.updateOwnerPlaceholder')}
-                                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                    className={`w-full rounded-xl border px-3 py-2 text-sm ${
+                                        isPic
+                                            ? 'cursor-not-allowed border-slate-200 bg-slate-100/70 text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400'
+                                            : 'border-slate-200 bg-white placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white'
+                                    }`}
                                 />
                             </div>
 
@@ -960,7 +971,12 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                     type="date"
                                     value={updateForm.data.deadline}
                                     onChange={(e) => updateForm.setData('deadline', e.target.value)}
-                                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-primary focus:ring-1 focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                    disabled={isPic}
+                                    className={`w-full rounded-xl border px-3 py-2 text-sm ${
+                                        isPic
+                                            ? 'cursor-not-allowed border-slate-200 bg-slate-100/70 text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400'
+                                            : 'border-slate-200 bg-white text-slate-800 focus:border-primary focus:ring-1 focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white'
+                                    }`}
                                 />
                             </div>
                         </div>
@@ -979,32 +995,43 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                             />
                         </div>
 
-                        {/* Admin notes — highlighted when returning to open, but can be added anytime */}
-                        <div
-                            className={`rounded-xl border p-3.5 ${
-                                needsNotes
-                                    ? 'border-amber-200 bg-amber-50 dark:border-amber-800/60 dark:bg-amber-950/30'
-                                    : 'border-slate-200/80 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-800/30'
-                            }`}
-                        >
-                            <label
-                                className={`mb-1.5 block text-xs font-semibold ${
-                                    needsNotes ? 'text-amber-800 dark:text-amber-300' : 'text-slate-700 dark:text-slate-300'
+                        {/* Admin notes — editable for Admin/Koordinator, read-only/hidden for PIC */}
+                        {!isPic ? (
+                            <div
+                                className={`rounded-xl border p-3.5 ${
+                                    needsNotes
+                                        ? 'border-amber-200 bg-amber-50 dark:border-amber-800/60 dark:bg-amber-950/30'
+                                        : 'border-slate-200/80 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-800/30'
                                 }`}
                             >
-                                {t('risks.updateNotes')} {needsNotes && <span className="text-red-500">*</span>}
-                            </label>
-                            <textarea
-                                rows={2}
-                                value={updateForm.data.admin_notes}
-                                onChange={(e) => updateForm.setData('admin_notes', e.target.value)}
-                                placeholder={t('risks.updateNotesPlaceholder')}
-                                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:border-primary focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                            />
-                            {needsNotes && (
-                                <p className="mt-1.5 text-[11px] text-amber-700 dark:text-amber-400">{t('risks.updateNotesRequired')}</p>
-                            )}
-                        </div>
+                                <label
+                                    className={`mb-1.5 block text-xs font-semibold ${
+                                        needsNotes ? 'text-amber-800 dark:text-amber-300' : 'text-slate-700 dark:text-slate-300'
+                                    }`}
+                                >
+                                    {t('risks.updateNotes')} {needsNotes && <span className="text-red-500">*</span>}
+                                </label>
+                                <textarea
+                                    rows={2}
+                                    value={updateForm.data.admin_notes}
+                                    onChange={(e) => updateForm.setData('admin_notes', e.target.value)}
+                                    placeholder={t('risks.updateNotesPlaceholder')}
+                                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:border-primary focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                />
+                                {needsNotes && (
+                                    <p className="mt-1.5 text-[11px] text-amber-700 dark:text-amber-400">{t('risks.updateNotesRequired')}</p>
+                                )}
+                            </div>
+                        ) : updateForm.data.admin_notes ? (
+                            <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3.5 dark:border-slate-800 dark:bg-slate-800/30">
+                                <label className="mb-1 block text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                    Catatan Admin
+                                </label>
+                                <p className="text-xs text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
+                                    {updateForm.data.admin_notes}
+                                </p>
+                            </div>
+                        ) : null}
 
                         {/* Footer actions */}
                         <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
