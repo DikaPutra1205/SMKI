@@ -88,7 +88,11 @@ export default function AuditorDashboard({ summary, trends = [], recent_activiti
                 <div className="flex flex-wrap items-center gap-2.5">
                     <TimeframeFilter
                         value={filters.months || 'all'}
-                        basePath="/admin/auditor/dashboard"
+                        basePath={
+                            typeof window !== 'undefined' && window.location.pathname.startsWith('/admin/auditor')
+                                ? '/admin/auditor/dashboard'
+                                : '/dashboard'
+                        }
                         extraParams={{ unit_id: filters.unit_id, session_id: filters.session_id }}
                     />
                     <Link

@@ -99,7 +99,11 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                 <div className="flex flex-wrap items-center gap-2.5">
                     <TimeframeFilter
                         value={filters.months || 'all'}
-                        basePath="/admin/kepatuhan/dashboard"
+                        basePath={
+                            typeof window !== 'undefined' && window.location.pathname.startsWith('/admin/kepatuhan')
+                                ? '/admin/kepatuhan/dashboard'
+                                : '/dashboard'
+                        }
                         extraParams={{ unit_id: filters.unit_id, session_id: filters.session_id }}
                     />
                     {can('control.view') && (
