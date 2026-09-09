@@ -85,6 +85,23 @@ class ComplianceOfficerApiController extends Controller
     }
 
     /**
+     * DELETE /api/v1/compliance-officer/findings/{id}
+     */
+    public function destroyFinding(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $finding = Finding::findOrFail($id);
+
+        Gate::authorize('delete', $finding);
+        $this->complianceOfficerService->deleteFinding($user, $finding);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Temuan audit berhasil dihapus.',
+        ]);
+    }
+
+    /**
      * GET /api/v1/compliance-officer/risks
      */
     public function indexRisks(Request $request): JsonResponse

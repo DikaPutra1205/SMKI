@@ -90,7 +90,7 @@ class NotificationApiController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Semua notifikasi berhasil ditandai telah dibaca.',
-            'unread_count' => 0,
+            'unread_count' => $request->user()->unreadNotifications()->count(),
         ]);
     }
 

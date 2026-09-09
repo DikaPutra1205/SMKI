@@ -8,7 +8,9 @@ use App\Models\Framework;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\WorkUnit;
+use App\Services\ComplianceOfficerService;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -657,5 +659,223 @@ class FindingManagementTest extends TestCase
 
         $updateResponse->assertRedirect();
         $this->assertEquals(Finding::STATUS_IN_PROGRESS, $finding->fresh()->status);
+    }
+
+    public function test_admin_can_delete_finding_via_web_route_with_flash_message(): void
+    {
+        $finding = Finding::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'pic_id' => $this->picA->id,
+            'admin_id' => $this->admin->id,
+            'status' => Finding::STATUS_OPEN,
+            'kategori' => Finding::KATEGORI_MAJOR,
+        ]);
+
+        $response = $this->actingAs($this->admin)->delete("/temuan/{$finding->id}");
+
+        $response->assertRedirect();
+        $response->assertSessionHas('flash.type', 'success');
+        $response->assertSessionHas('flash.message', 'Temuan audit berhasil dihapus.');
+        $this->assertSoftDeleted('findings', ['id' => $finding->id]);
+    }
+
+    public function test_pic_cannot_delete_finding_via_web_route(): void
+    {
+        $finding = Finding::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'pic_id' => $this->picA->id,
+            'admin_id' => $this->admin->id,
+            'status' => Finding::STATUS_OPEN,
+            'kategori' => Finding::KATEGORI_MAJOR,
+        ]);
+
+        $response = $this->actingAs($this->picA)->delete("/temuan/{$finding->id}");
+        $response->assertForbidden();
+        $this->assertDatabaseHas('findings', ['id' => $finding->id, 'deleted_at' => null]);
+    }
+
+    public function test_compliance_officer_api_destroy_deletes_finding(): void
+    {
+        $finding = Finding::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'pic_id' => $this->picA->id,
+            'admin_id' => $this->admin->id,
+            'status' => Finding::STATUS_OPEN,
+            'kategori' => Finding::KATEGORI_MAJOR,
+        ]);
+
+        $response = $this->actingAs($this->admin)->deleteJson("/api/v1/compliance-officer/findings/{$finding->id}");
+
+        $response->assertOk()
+            ->assertJson([
+                'status' => 'success',
+                'message' => 'Temuan audit berhasil dihapus.',
+            ]);
+
+        $this->assertSoftDeleted('findings', ['id' => $finding->id]);
+    }
+
+    public function test_store_finding_throws_exception_when_unit_has_no_pic_and_no_pic_provided(): void
+    {
+        $unitWithoutPic = WorkUnit::factory()->create(['nama' => 'Unit Tanpa PIC']);
+        $service = app(ComplianceOfficerService::class);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Unit kerja yang dipilih belum memiliki PIC terdaftar.');
+
+        $service->storeFinding($this->admin, [
+            'control_id' => $this->control->id,
+            'unit_id' => $unitWithoutPic->id,
+            'kategori' => Finding::KATEGORI_MAJOR,
+            'status' => Finding::STATUS_OPEN,
+        ]);
+    }
+
+    public function test_pic_cannot_create_finding_via_service(): void
+    {
+        $service = app(ComplianceOfficerService::class);
+
+        $this->expectException(AuthorizationException::class);
+
+        $service->storeFinding($this->picA, [
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'pic_id' => $this->picA->id,
+            'kategori' => Finding::KATEGORI_MAJOR,
+            'status' => Finding::STATUS_OPEN,
+        ]);
+    }
+
+    public function test_update_finding_request_rejects_non_numeric_or_invalid_finding(): void
+    {
+        $response = $this->actingAs($this->admin)->putJson('/api/findings/non-numeric-id', [
+            'status' => Finding::STATUS_IN_PROGRESS,
+        ]);
+
+        $this->assertTrue(in_array($response->status(), [403, 404], true));
+    }
+
+    public function test_update_finding_stores_null_when_catatan_empty(): void
+    {
+        $finding = Finding::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'pic_id' => $this->picA->id,
+            'admin_id' => $this->admin->id,
+            'status' => Finding::STATUS_OPEN,
+            'catatan_admin' => 'Initial note',
+        ]);
+
+        $service = app(ComplianceOfficerService::class);
+        $service->updateFinding($this->admin, $finding, [
+            'catatan' => '',
+        ]);
+
+        $this->assertNull($finding->fresh()->catatan_admin);
+    }
+
+    public function test_pic_cannot_change_finding_deadline(): void
+    {
+        $originalDeadline = now()->addDays(14)->format('Y-m-d');
+        $finding = Finding::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'pic_id' => $this->picA->id,
+            'admin_id' => $this->admin->id,
+            'status' => Finding::STATUS_OPEN,
+            'deadline' => $originalDeadline,
+        ]);
+
+        $service = app(ComplianceOfficerService::class);
+        $service->updateFinding($this->picA, $finding, [
+            'status' => Finding::STATUS_IN_PROGRESS,
+            'deadline' => now()->addDays(90)->format('Y-m-d'),
+            'catatan' => 'Mencoba mengubah deadline.',
+        ]);
+
+        $this->assertEquals($originalDeadline, $finding->fresh()->deadline->format('Y-m-d'));
+    }
+
+    public function test_pic_cannot_close_finding(): void
+    {
+        $finding = Finding::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'pic_id' => $this->picA->id,
+            'admin_id' => $this->admin->id,
+            'status' => Finding::STATUS_RESOLVED,
+        ]);
+
+        $service = app(ComplianceOfficerService::class);
+
+        $this->expectException(AuthorizationException::class);
+
+        $service->updateFinding($this->picA, $finding, [
+            'status' => Finding::STATUS_CLOSED,
+            'catatan' => 'PIC mencoba menutup sendiri.',
+        ]);
+    }
+
+    public function test_web_temuan_loads_initial_finding_when_id_queried(): void
+    {
+        $finding = Finding::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'pic_id' => $this->picA->id,
+            'admin_id' => $this->admin->id,
+            'status' => Finding::STATUS_OPEN,
+        ]);
+
+        $response = $this->actingAs($this->admin)->get("/temuan?id={$finding->id}");
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('admin-kepatuhan/temuan')
+            ->has('initialFinding')
+            ->where('initialFinding.id', $finding->id)
+        );
+    }
+
+    public function test_web_temuan_loads_soft_deleted_initial_finding_with_warning_flash(): void
+    {
+        $finding = Finding::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'pic_id' => $this->picA->id,
+            'admin_id' => $this->admin->id,
+            'status' => Finding::STATUS_OPEN,
+        ]);
+        $finding->delete();
+
+        $response = $this->actingAs($this->admin)->get("/temuan?id={$finding->id}");
+        $response->assertOk();
+        $response->assertSessionHas('flash.type', 'warning');
+        $response->assertInertia(fn ($page) => $page
+            ->component('admin-kepatuhan/temuan')
+            ->has('initialFinding')
+            ->where('initialFinding.id', $finding->id)
+            ->where('initialFinding.deleted_at', fn ($val) => ! empty($val))
+        );
+    }
+
+    public function test_admin_can_restore_soft_deleted_finding(): void
+    {
+        $finding = Finding::factory()->create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'pic_id' => $this->picA->id,
+            'admin_id' => $this->admin->id,
+            'status' => Finding::STATUS_OPEN,
+        ]);
+        $finding->delete();
+        $this->assertSoftDeleted('findings', ['id' => $finding->id]);
+
+        $response = $this->actingAs($this->admin)->post("/temuan/{$finding->id}/restore");
+        $response->assertRedirect();
+        $response->assertSessionHas('flash.type', 'success');
+
+        $this->assertNotSoftDeleted('findings', ['id' => $finding->id]);
     }
 }

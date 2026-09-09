@@ -3,6 +3,7 @@ import TimeframeFilter from '@/components/dashboards/TimeframeFilter';
 import { ActivitySkeleton } from '@/components/skeletons/ActivitySkeleton';
 import { ChartSkeleton } from '@/components/skeletons/ChartSkeleton';
 import AppLayout from '@/layouts/AppLayout';
+import { useCan } from '@/lib/can';
 import { formatDateIndonesian, formatDateTimeIndonesian } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { Deferred, Head, Link, usePage } from '@inertiajs/react';
@@ -52,6 +53,7 @@ interface AdminDashboardProps {
 }
 
 export default function Dashboard({ summary, trends = [], recent_activities = [], filters = {} }: AdminDashboardProps) {
+    const can = useCan();
     const { auth } = usePage<SharedData>().props;
     const userName = auth.user?.name || 'Administrator';
 
@@ -100,20 +102,24 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                         basePath="/admin/kepatuhan/dashboard"
                         extraParams={{ unit_id: filters.unit_id, session_id: filters.session_id }}
                     />
-                    <Link
-                        href="/admin/kepatuhan/compliance"
-                        className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-                    >
-                        <Layers className="h-4 w-4 text-slate-500" />
-                        Pustaka Kontrol
-                    </Link>
-                    <Link
-                        href="/admin/kepatuhan/checklist/verify"
-                        className="bg-primary hover:bg-primary inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all active:scale-95"
-                    >
-                        <FileCheck className="h-4 w-4" />
-                        Verifikasi Penilaian
-                    </Link>
+                    {can('control.view') && (
+                        <Link
+                            href="/admin/kepatuhan/compliance"
+                            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                        >
+                            <Layers className="h-4 w-4 text-slate-500" />
+                            Pustaka Kontrol
+                        </Link>
+                    )}
+                    {can('checklist.verify') && (
+                        <Link
+                            href="/admin/kepatuhan/checklist/verify"
+                            className="bg-primary hover:bg-primary inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all active:scale-95"
+                        >
+                            <FileCheck className="h-4 w-4" />
+                            Verifikasi Penilaian
+                        </Link>
+                    )}
                 </div>
             </div>
 

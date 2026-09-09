@@ -17,8 +17,10 @@ use App\Models\User;
 use App\Notifications\ChecklistEntryRejectedNotification;
 use App\Services\ComplianceOfficerService;
 use App\Services\ComplianceService;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -53,16 +55,24 @@ class ComplianceOfficerController extends Controller
         $initialFinding = null;
         if ($targetFindingId) {
             try {
-                $initialFinding = $this->complianceOfficerService->getFinding($user, (int) $targetFindingId);
+                // Support loading active findings as well as soft-deleted findings (for archive & notification references)
+                $initialFinding = $this->complianceOfficerService->getFinding($user, (int) $targetFindingId, true);
+                if ($initialFinding->trashed()) {
+                    session()->flash('flash', [
+                        'type' => 'warning',
+                        'message' => 'Temuan audit ini telah dihapus oleh Admin (arsip).',
+                    ]);
+                }
+            } catch (AuthorizationException $e) {
+                session()->flash('flash', [
+                    'type' => 'error',
+                    'message' => 'Anda tidak memiliki hak akses untuk melihat rincian temuan unit lain.',
+                ]);
             } catch (\Throwable $e) {
-                $initialFinding = Finding::with([
-                    'control.framework:id,nama,versi',
-                    'unit:id,nama',
-                    'pic:id,name',
-                    'admin:id,name',
-                    'histories.user.role',
-                    'histories.user.unit',
-                ])->find($targetFindingId);
+                session()->flash('flash', [
+                    'type' => 'warning',
+                    'message' => 'Temuan audit yang dituju tidak ditemukan atau telah dihapus secara permanen.',
+                ]);
             }
         }
 
@@ -101,6 +111,40 @@ class ComplianceOfficerController extends Controller
         return back()->with('flash', [
             'type' => 'success',
             'message' => 'Temuan audit berhasil diperbarui.',
+        ]);
+    }
+
+    /**
+     * Delete finding.
+     */
+    public function destroyFinding(Request $request, Finding $finding): RedirectResponse
+    {
+        Gate::authorize('delete', $finding);
+
+        $this->complianceOfficerService->deleteFinding($request->user(), $finding);
+
+        return back()->with('flash', [
+            'type' => 'success',
+            'message' => 'Temuan audit berhasil dihapus.',
+        ]);
+    }
+
+    /**
+     * Restore soft-deleted finding (Admin / Superadmin only).
+     */
+    public function restoreFinding(Request $request, int $id): RedirectResponse
+    {
+        $user = $request->user();
+        if ($user->isPic() || ! ($user->isAdmin() || $user->isSuperAdmin() || $user->hasPermissionTo('finding.delete'))) {
+            throw new AuthorizationException('Hanya Admin Kepatuhan atau Superadmin yang dapat memulihkan temuan.');
+        }
+
+        $finding = Finding::onlyTrashed()->findOrFail($id);
+        $finding->restore();
+
+        return back()->with('flash', [
+            'type' => 'success',
+            'message' => 'Temuan audit berhasil dipulihkan.',
         ]);
     }
 

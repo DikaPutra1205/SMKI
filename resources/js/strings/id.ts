@@ -363,6 +363,8 @@ export const id = {
         unitLabel: 'Unit Kerja',
         notesLabel: 'Catatan Admin',
         close: 'Tutup',
+        deleteFinding: 'Hapus Temuan',
+        deleteConfirm: (ref: string) => `Apakah Anda yakin ingin menghapus temuan FND-${ref}? Tindakan ini tidak dapat dibatalkan.`,
     },
     risks: {
         title: 'Risk Register',

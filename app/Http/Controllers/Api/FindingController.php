@@ -128,6 +128,10 @@ class FindingController extends Controller
         $oldStatus = $finding->status;
         $newStatus = $data['status'];
         $actorId = $request->user()?->id ?? $data['admin_id'] ?? null;
+        if (! $actorId) {
+            abort(401, 'Unauthenticated user or missing actor.');
+        }
+
         $note = $data['catatan'] ?? "Status diubah dari {$oldStatus} ke {$newStatus}";
 
         $update = ['status' => $newStatus];

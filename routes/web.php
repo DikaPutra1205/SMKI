@@ -62,8 +62,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/admin/pic/temuan', function () {
         return redirect('/temuan'.(request()->getQueryString() ? '?'.request()->getQueryString() : ''));
     })->name('admin.pic.temuan.alias');
+    Route::get('/admin/auditor/findings', function () {
+        return redirect('/temuan'.(request()->getQueryString() ? '?'.request()->getQueryString() : ''));
+    })->name('admin.auditor.findings.alias');
     Route::post('/temuan', [ComplianceOfficerController::class, 'storeFinding'])->name('temuan.store.direct');
     Route::put('/temuan/{finding}', [ComplianceOfficerController::class, 'updateFinding'])->name('temuan.update.direct');
+    Route::delete('/temuan/{finding}', [ComplianceOfficerController::class, 'destroyFinding'])->name('temuan.destroy.direct');
+    Route::post('/temuan/{id}/restore', [ComplianceOfficerController::class, 'restoreFinding'])->name('temuan.restore.direct');
     Route::get('/risks', [PageController::class, 'risks'])->name('risks.index');
     Route::post('/risks', [ComplianceOfficerController::class, 'storeRisk'])->name('risks.store.direct');
     Route::put('/risks/{risk}', [ComplianceOfficerController::class, 'updateRisk'])->name('risks.update.direct');
@@ -99,6 +104,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/temuan', [ComplianceOfficerController::class, 'temuan'])->name('temuan.index');
         Route::post('/temuan', [ComplianceOfficerController::class, 'storeFinding'])->name('temuan.store');
         Route::put('/temuan/{finding}', [ComplianceOfficerController::class, 'updateFinding'])->name('temuan.update');
+        Route::delete('/temuan/{finding}', [ComplianceOfficerController::class, 'destroyFinding'])->name('temuan.destroy');
+        Route::post('/temuan/{id}/restore', [ComplianceOfficerController::class, 'restoreFinding'])->name('temuan.restore');
         Route::get('/risks', [ComplianceOfficerController::class, 'risks'])->name('risks.index');
         Route::post('/risks', [ComplianceOfficerController::class, 'storeRisk'])->name('risks.store');
         Route::put('/risks/{risk}', [ComplianceOfficerController::class, 'updateRisk'])->name('risks.update');

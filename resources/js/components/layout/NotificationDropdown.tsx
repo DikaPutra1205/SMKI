@@ -63,15 +63,42 @@ export function NotificationDropdown({ userId }: NotificationDropdownProps) {
         }
     }, [latestNotification, dismissLatestNotification]);
 
-    const handleItemClick = async (item: NotificationItem) => {
+    const handleItemClick = (item: NotificationItem) => {
         if (!item.is_read) {
-            await markAsRead(item.id);
+            markAsRead(item.id);
         }
 
-        const targetUrl = item.data?.url;
+        let targetUrl = item.data?.url;
+        if (!targetUrl && item.data?.finding_id) {
+            targetUrl = `/temuan?id=${item.data.finding_id}`;
+        }
+
         if (targetUrl) {
+            // Strip domain if absolute to keep it as an internal Inertia transition
+            if (targetUrl.startsWith('http://') || targetUrl.startsWith('https://')) {
+                try {
+                    const parsed = new URL(targetUrl);
+                    targetUrl = parsed.pathname + parsed.search + parsed.hash;
+                } catch {
+                    // ignore
+                }
+            }
+
             setIsOpen(false);
-            router.visit(targetUrl);
+
+            // If it targets a finding, dispatch instant open event for currently open /temuan page
+            if (item.data?.finding_id) {
+                window.dispatchEvent(
+                    new CustomEvent('open-finding-target', {
+                        detail: { id: item.data.finding_id },
+                    }),
+                );
+            }
+
+            router.visit(targetUrl, {
+                preserveScroll: true,
+                preserveState: false,
+            });
         }
     };
 

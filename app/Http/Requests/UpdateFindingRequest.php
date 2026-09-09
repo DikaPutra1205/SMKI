@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Models\Finding;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class UpdateFindingRequest extends FormRequest
 {
@@ -18,12 +19,14 @@ class UpdateFindingRequest extends FormRequest
 
         if (is_numeric($finding)) {
             $findingModel = Finding::find($finding);
-            if ($findingModel) {
-                return $this->user()?->can('update', $findingModel) ?? false;
+            if (! $findingModel) {
+                throw new NotFoundHttpException('Temuan tidak ditemukan.');
             }
+
+            return $this->user()?->can('update', $findingModel) ?? false;
         }
 
-        return $this->user()?->isAdmin() || $this->user()?->isSuperAdmin() || $this->user()?->hasPermissionTo('finding.update') ?? false;
+        return false;
     }
 
     /**

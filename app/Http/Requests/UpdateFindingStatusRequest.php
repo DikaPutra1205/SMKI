@@ -23,7 +23,7 @@ class UpdateFindingStatusRequest extends FormRequest
             }
         }
 
-        return $this->user()?->isAdmin() || $this->user()?->isSuperAdmin() || $this->user()?->hasPermissionTo('finding.update-status') ?? false;
+        return false;
     }
 
     /**

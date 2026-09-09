@@ -1,3 +1,4 @@
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
@@ -11,7 +12,9 @@ import { t } from '@/lib/i18n';
 import { formatDateIndonesian, formatDateTimeIndonesian } from '@/lib/utils';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import {
+    AlertTriangle,
     ArrowRight,
+    Building2,
     Calendar,
     CheckCircle2,
     Clock,
@@ -22,6 +25,7 @@ import {
     Info,
     LayoutGrid,
     List as ListIcon,
+    Lock,
     MessageSquare,
     Plus,
     RotateCcw,
@@ -29,9 +33,10 @@ import {
     Search,
     Shield,
     ShieldAlert,
+    Trash2,
     UserCheck,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export interface FindingHistoryItem {
     id: number;
@@ -187,10 +192,25 @@ const STATUS_TEXT: Record<string, string> = {
 };
 
 const STEPS = [
-    { id: 'open', label: 'Terbuka', desc: 'Gap/temuan dicatat' },
-    { id: 'in_progress', label: 'Dalam Penanganan', desc: 'PIC melakukan tindakan perbaikan' },
-    { id: 'resolved', label: 'Selesai Ditindaklanjuti', desc: 'PIC telah menyelesaikan perbaikan' },
-    { id: 'closed', label: 'Ditutup & Diverifikasi', desc: 'Admin memverifikasi dan menutup temuan' },
+    { id: 'open', label: 'Terbuka', fullLabel: '1. Terbuka (Open)', desc: 'Ketidaksesuaian/temuan dicatat & menunggu tindakan perbaikan' },
+    {
+        id: 'in_progress',
+        label: 'Penanganan',
+        fullLabel: '2. Dalam Penanganan (In Progress)',
+        desc: 'Tindakan mitigasi atau perbaikan sedang dikerjakan oleh PIC',
+    },
+    {
+        id: 'resolved',
+        label: 'Selesai',
+        fullLabel: '3. Selesai Ditindaklanjuti (Resolved)',
+        desc: 'Tindakan perbaikan telah selesai dan menunggu verifikasi Admin',
+    },
+    {
+        id: 'closed',
+        label: 'Ditutup',
+        fullLabel: '4. Ditutup & Terverifikasi (Closed)',
+        desc: 'Bukti perbaikan telah diverifikasi dan temuan resmi ditutup',
+    },
 ];
 
 function severityLabel(kategori: string): string {
@@ -236,6 +256,7 @@ function initials(name?: string) {
 export default function Findings({ findings, workUnits = [], controls = [], pics = [], filters = {}, initialFinding = null }: FindingsProps) {
     const can = useCan();
     const pageProps = usePage<{ auth?: { user?: AuthUser }; flash?: { type: string; message: string } }>().props;
+    const currentUrl = usePage().url;
     const authUser = pageProps.auth?.user;
     const flash = pageProps.flash;
 
@@ -254,11 +275,23 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
         }
         return null;
     });
+    const [showNoteFormOnSameStatus, setShowNoteFormOnSameStatus] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const isFirstRender = useRef(true);
 
     const page = findings ?? { data: [], current_page: 1, last_page: 1, per_page: 20, total: 0, from: null, to: null };
     const items = page.data;
+
+    // Helper to close drawer and clean query param from URL cleanly
+    const closeDetailDrawer = useCallback(() => {
+        setDetailTarget(null);
+        if (typeof window !== 'undefined' && (window.location.search.includes('id=') || window.location.search.includes('finding_id='))) {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('id');
+            url.searchParams.delete('finding_id');
+            window.history.replaceState({}, '', url.pathname + (url.search ? url.search : ''));
+        }
+    }, []);
 
     // Auto-open finding in slide-over drawer if targeted via URL query (e.g. notification click)
     useEffect(() => {
@@ -266,20 +299,96 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
             setDetailTarget(initialFinding);
             return;
         }
-        const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-        const targetId = filters.id || filters.finding_id || urlParams?.get('id') || urlParams?.get('finding_id');
+        const searchStr = currentUrl.includes('?')
+            ? currentUrl.split('?')[1]
+            : typeof window !== 'undefined'
+              ? window.location.search.replace(/^\?/, '')
+              : '';
+        const urlParams = new URLSearchParams(searchStr);
+        const targetId = filters.id || filters.finding_id || urlParams.get('id') || urlParams.get('finding_id');
         if (targetId) {
             const found = items.find((f) => String(f.id) === String(targetId));
             if (found) {
                 setDetailTarget(found);
             }
         }
-    }, [initialFinding, filters.id, filters.finding_id, items]);
+    }, [initialFinding, currentUrl, filters.id, filters.finding_id, items]);
+
+    // Fast instant reaction when notification is clicked on the same page
+    useEffect(() => {
+        const handleOpenTarget = (e: Event) => {
+            const customEvent = e as CustomEvent<{ id: number | string }>;
+            const targetId = customEvent.detail?.id;
+            if (!targetId) return;
+            const found = items.find((f) => String(f.id) === String(targetId));
+            if (found) {
+                setDetailTarget(found);
+            }
+        };
+
+        window.addEventListener('open-finding-target', handleOpenTarget);
+        return () => window.removeEventListener('open-finding-target', handleOpenTarget);
+    }, [items]);
 
     // Check permissions
     const userRoleStr = typeof authUser?.role === 'string' ? authUser.role : authUser?.role?.name;
-    const isAdmin = userRoleStr === 'admin_kepatuhan' || userRoleStr === 'superadmin' || can('finding.create');
     const isUserPic = userRoleStr === 'pic';
+    const isAdmin = !isUserPic && (userRoleStr === 'admin_kepatuhan' || userRoleStr === 'superadmin' || can('finding.create'));
+    const canDelete = !isUserPic && (userRoleStr === 'admin_kepatuhan' || userRoleStr === 'superadmin' || can('finding.delete'));
+
+    const [deleteTarget, setDeleteTarget] = useState<FindingItem | null>(null);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [deleteBusy, setDeleteBusy] = useState(false);
+
+    function handleDelete(f: FindingItem) {
+        setDeleteTarget(f);
+        setDeleteDialogOpen(true);
+    }
+
+    function confirmDelete() {
+        if (!deleteTarget) return;
+        setDeleteBusy(true);
+        router.delete(`/temuan/${deleteTarget.id}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                if (detailTarget?.id === deleteTarget.id) {
+                    setDetailTarget(null);
+                }
+                setDeleteDialogOpen(false);
+                setDeleteTarget(null);
+            },
+            onFinish: () => {
+                setDeleteBusy(false);
+            },
+        });
+    }
+
+    function cancelDelete() {
+        setDeleteDialogOpen(false);
+        setDeleteTarget(null);
+    }
+
+    const [restoreBusy, setRestoreBusy] = useState(false);
+
+    function handleRestore(id: number | string) {
+        setRestoreBusy(true);
+        router.post(
+            `/temuan/${id}/restore`,
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setRestoreBusy(false);
+                },
+                onError: () => {
+                    setRestoreBusy(false);
+                },
+                onFinish: () => {
+                    setRestoreBusy(false);
+                },
+            },
+        );
+    }
 
     // Status Update Form
     const {
@@ -329,6 +438,7 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                 deadline: detailTarget.deadline ? detailTarget.deadline.substring(0, 10) : '',
                 catatan: '',
             });
+            setShowNoteFormOnSameStatus(false);
         }
     }, [detailTarget, setUpdateData]);
 
@@ -342,6 +452,18 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
         }
     }, [items, detailTarget]);
 
+    function handleCancelUpdate() {
+        if (detailTarget) {
+            setUpdateData({
+                status: detailTarget.status || 'open',
+                category: detailTarget.kategori || 'minor',
+                deadline: detailTarget.deadline ? detailTarget.deadline.substring(0, 10) : '',
+                catatan: '',
+            });
+        }
+        setShowNoteFormOnSameStatus(false);
+    }
+
     function handleUpdateFinding(e: React.FormEvent) {
         e.preventDefault();
         if (!detailTarget) return;
@@ -350,6 +472,7 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
             preserveScroll: true,
             onSuccess: () => {
                 setUpdateData('catatan', '');
+                setShowNoteFormOnSameStatus(false);
             },
         });
     }
@@ -396,8 +519,8 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
     const deadlineChip = (f: FindingItem) => {
         if (f.status === 'closed') {
             return (
-                <span className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400">
-                    <CheckCircle2 className="h-3.5 w-3.5" />
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400">
+                    <CheckCircle2 className="h-3 w-3" />
                     {f.verified_at ? t('temuan.verifiedOn', fmtDate(f.verified_at)) : 'Selesai & Terverifikasi'}
                 </span>
             );
@@ -405,8 +528,8 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
 
         if (f.status === 'resolved') {
             return (
-                <span className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
-                    <Clock className="h-3.5 w-3.5" />
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap text-blue-700 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
+                    <Clock className="h-3 w-3" />
                     Menunggu Verifikasi Admin
                 </span>
             );
@@ -414,7 +537,7 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
 
         if (!f.deadline) {
             return (
-                <span className="inline-flex items-center gap-1 text-[11px] text-slate-400 dark:text-slate-500">
+                <span className="inline-flex shrink-0 items-center gap-1 text-[10px] whitespace-nowrap text-slate-400 dark:text-slate-500">
                     <Calendar className="h-3 w-3" />
                     Belum ada deadline
                 </span>
@@ -423,8 +546,8 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
 
         if (f.is_overdue) {
             return (
-                <span className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-400">
-                    <Clock className="h-3.5 w-3.5 text-rose-600" />
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300">
+                    <Clock className="h-3 w-3 text-rose-600 dark:text-rose-400" />
                     {t('temuan.lateDays', Math.abs(f.days_remaining ?? 0))}
                 </span>
             );
@@ -433,16 +556,16 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
         const remaining = f.days_remaining ?? 0;
         if (remaining <= 3) {
             return (
-                <span className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-800 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
-                    <Clock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap text-amber-800 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                    <Clock className="h-3 w-3 text-amber-600 dark:text-amber-400" />
                     {remaining === 0 ? 'Hari Ini Jatuh Tempo' : `${remaining} Hari Tersisa`}
                 </span>
             );
         }
 
         return (
-            <span className="border-primary-200 bg-primary-50 text-primary-700 dark:border-primary-800/60 dark:bg-navy-900/40 dark:text-primary-200 inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-semibold">
-                <Calendar className="text-primary dark:text-primary-200 h-3.5 w-3.5" />
+            <span className="border-primary-200 bg-primary-50 text-primary-700 dark:border-primary-800/60 dark:bg-navy-900/40 dark:text-primary-200 inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium whitespace-nowrap">
+                <Calendar className="text-primary dark:text-primary-200 h-3 w-3" />
                 {remaining === 0 ? t('temuan.deadlineToday') : t('temuan.leftDays', remaining)}
             </span>
         );
@@ -458,59 +581,363 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
         return false;
     };
 
-    const renderStatusSteps = (status: string) => {
-        const currentIndex = STEPS.findIndex((s) => s.id === status);
+    const renderStatusWorkflowHub = (f: FindingItem) => {
+        const currentStatus = f.status;
+        const currentIdx = STEPS.findIndex((s) => s.id === currentStatus);
+        const selectedStatus = updateData.status || currentStatus;
+        const selectedIdx = STEPS.findIndex((s) => s.id === selectedStatus);
+        const selectedStep = STEPS[selectedIdx >= 0 ? selectedIdx : currentIdx >= 0 ? currentIdx : 0];
+        const isStatusChanging = selectedStatus !== currentStatus;
+        const isUpgrade = isStatusChanging && selectedIdx > currentIdx;
+        const isDowngrade = isStatusChanging && selectedIdx < currentIdx;
+        const canUpdate = canUpdateThisFinding(f);
+
+        const handleStepClick = (stepId: string) => {
+            if (!canUpdate) return;
+            if (isUserPic && stepId === 'closed') return; // Protected for Admin only
+
+            setUpdateData('status', stepId);
+            if (stepId === currentStatus) {
+                setShowNoteFormOnSameStatus(false);
+            }
+        };
+
+        if (f.deleted_at) {
+            return (
+                <div className="rounded-2xl border border-rose-200/80 bg-rose-50/50 p-4 shadow-2xs dark:border-rose-900/40 dark:bg-rose-950/20">
+                    <div className="flex items-center gap-2 text-xs font-bold text-rose-800 dark:text-rose-300">
+                        <AlertTriangle className="h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" />
+                        <span>Siklus Status Dinonaktifkan (Temuan Telah Dihapus)</span>
+                    </div>
+                    <p className="mt-1 text-xs leading-relaxed text-rose-700/80 dark:text-rose-400/80">
+                        Temuan audit ini telah dihapus oleh Admin pada {formatDateTimeIndonesian(f.deleted_at as string)}. Status tidak dapat diubah
+                        sebelum data dipulihkan kembali.
+                    </p>
+                </div>
+            );
+        }
 
         return (
-            <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/50">
-                <div className="mb-3 flex items-center justify-between">
-                    <span className="text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
-                        Tahapan Siklus Temuan (4 Status)
-                    </span>
+            <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4.5 shadow-2xs dark:border-slate-800 dark:bg-slate-900/50">
+                {/* Hub Header */}
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
+                            Siklus & Pembaruan Status
+                        </span>
+                        {isUserPic && (
+                            <span className="bg-primary-100 text-primary-800 dark:bg-primary-950 dark:text-primary-300 rounded-md px-2 py-0.5 text-[10px] font-bold">
+                                Mode PIC
+                            </span>
+                        )}
+                    </div>
                     <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                        Langkah {currentIndex >= 0 ? currentIndex + 1 : 1} dari 4
-                    </span>
-                </div>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                    {STEPS.map((step, idx) => {
-                        const isDone = idx < currentIndex;
-                        const isCurrent = idx === currentIndex;
-                        return (
-                            <div
-                                key={step.id}
-                                className={`flex flex-col rounded-xl border p-3 text-left transition-all ${
-                                    isCurrent
-                                        ? 'border-primary ring-primary/20 dark:border-primary bg-white shadow-sm ring-2 dark:bg-slate-800'
-                                        : isDone
-                                          ? 'border-emerald-200 bg-emerald-50/70 dark:border-emerald-900/40 dark:bg-emerald-950/30'
-                                          : 'border-slate-200/80 bg-white/60 opacity-60 dark:border-slate-800 dark:bg-slate-900/40'
+                        {isStatusChanging ? (
+                            <span
+                                className={`font-bold ${
+                                    isDowngrade ? 'text-amber-700 dark:text-amber-300' : 'text-emerald-700 dark:text-emerald-300'
                                 }`}
                             >
-                                <div className="flex items-center gap-1.5">
-                                    {isDone ? (
-                                        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                                    ) : isCurrent ? (
-                                        <Clock className="text-primary dark:text-primary-300 h-4 w-4 shrink-0" />
-                                    ) : (
-                                        <div className="h-3.5 w-3.5 shrink-0 rounded-full border-2 border-slate-300 dark:border-slate-600" />
-                                    )}
+                                Menuju Langkah {selectedIdx + 1} dari 4
+                            </span>
+                        ) : (
+                            <span>Langkah {currentIdx >= 0 ? currentIdx + 1 : 1} dari 4</span>
+                        )}
+                    </span>
+                </div>
+
+                {/* Interactive Stepper Progress Bar */}
+                <div className="relative mt-4 mb-2 px-3">
+                    {/* Connecting background track */}
+                    <div className="absolute top-4 right-6 left-6 -z-0 h-0.5 bg-slate-200 dark:bg-slate-700" />
+                    {/* Active progress track */}
+                    <div
+                        className={`absolute top-4 left-6 -z-0 h-0.5 transition-all duration-300 ${isDowngrade ? 'bg-amber-500' : 'bg-primary'}`}
+                        style={{
+                            width: `${(Math.max(0, isStatusChanging ? selectedIdx : currentIdx) / (STEPS.length - 1)) * 84}%`,
+                        }}
+                    />
+
+                    <div className="relative z-10 flex items-center justify-between">
+                        {STEPS.map((step, idx) => {
+                            const isCurrent = step.id === currentStatus;
+                            const isTarget = step.id === selectedStatus;
+                            const isDone = idx < currentIdx;
+                            const isPicRestricted = isUserPic && step.id === 'closed';
+
+                            let ringAndDotClass =
+                                'border-2 border-slate-300 bg-white text-slate-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-500';
+                            if (isTarget && isStatusChanging) {
+                                ringAndDotClass = isDowngrade
+                                    ? 'bg-amber-600 ring-4 ring-amber-300/40 text-white shadow-sm scale-105'
+                                    : 'bg-emerald-600 ring-4 ring-emerald-300/40 text-white shadow-sm scale-105';
+                            } else if (isCurrent) {
+                                ringAndDotClass = 'bg-primary ring-4 ring-primary/20 text-white shadow-sm';
+                            } else if (isDone) {
+                                ringAndDotClass = 'bg-emerald-600 text-white hover:bg-emerald-500 dark:bg-emerald-500';
+                            }
+
+                            return (
+                                <button
+                                    key={step.id}
+                                    type="button"
+                                    onClick={() => handleStepClick(step.id)}
+                                    disabled={!canUpdate || isPicRestricted}
+                                    className={`group flex flex-col items-center transition-all focus:outline-none ${
+                                        isPicRestricted
+                                            ? 'cursor-not-allowed opacity-45'
+                                            : canUpdate
+                                              ? 'cursor-pointer hover:opacity-100'
+                                              : 'cursor-default'
+                                    }`}
+                                    title={
+                                        isPicRestricted
+                                            ? 'Status Ditutup hanya dapat diverifikasi oleh Admin Kepatuhan'
+                                            : canUpdate
+                                              ? `Klik untuk beralih ke status ${step.label}`
+                                              : step.label
+                                    }
+                                >
+                                    <div
+                                        className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-all ${ringAndDotClass}`}
+                                    >
+                                        {isPicRestricted ? (
+                                            <Lock className="h-3.5 w-3.5" />
+                                        ) : isDone && !isTarget ? (
+                                            <CheckCircle2 className="h-4 w-4" />
+                                        ) : (
+                                            idx + 1
+                                        )}
+                                    </div>
                                     <span
-                                        className={`text-xs font-bold ${
-                                            isCurrent
-                                                ? 'text-primary dark:text-primary-200'
-                                                : isDone
-                                                  ? 'text-emerald-900 dark:text-emerald-200'
-                                                  : 'text-slate-600 dark:text-slate-400'
+                                        className={`mt-1.5 text-center text-[11px] whitespace-nowrap transition-colors ${
+                                            isTarget && isStatusChanging
+                                                ? isDowngrade
+                                                    ? 'font-bold text-amber-700 underline underline-offset-2 dark:text-amber-300'
+                                                    : 'font-bold text-emerald-700 underline underline-offset-2 dark:text-emerald-300'
+                                                : isCurrent
+                                                  ? 'text-primary dark:text-primary-300 font-bold'
+                                                  : isDone
+                                                    ? 'font-medium text-emerald-700 dark:text-emerald-400'
+                                                    : 'font-normal text-slate-400 dark:text-slate-500'
                                         }`}
                                     >
                                         {step.label}
                                     </span>
-                                </div>
-                                <span className="mt-1 line-clamp-2 text-[10px] text-slate-500 dark:text-slate-400">{step.desc}</span>
-                            </div>
-                        );
-                    })}
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
+
+                {/* Sub-text hint if interactive */}
+                {canUpdate && !isStatusChanging && !showNoteFormOnSameStatus && (
+                    <p className="mt-1 text-center text-[11px] text-slate-400 dark:text-slate-500">
+                        {isUserPic
+                            ? 'Pilih langkah (1 - 3) di atas untuk mengubah status temuan.'
+                            : 'Pilih langkah (1 - 4) di atas untuk mengubah status temuan.'}
+                    </p>
+                )}
+
+                {/* Dynamic Panel below Stepper */}
+                <div className="mt-3.5">
+                    {/* SCENARIO A: Status is being changed OR user explicitly opened note form */}
+                    {canUpdate && (isStatusChanging || showNoteFormOnSameStatus) ? (
+                        <form
+                            onSubmit={handleUpdateFinding}
+                            className={`space-y-4 rounded-xl border p-4 shadow-sm transition-all ${
+                                isDowngrade
+                                    ? 'border-amber-200/80 bg-white dark:border-amber-900/50 dark:bg-slate-900'
+                                    : isUpgrade
+                                      ? 'border-emerald-200/80 bg-white dark:border-emerald-900/50 dark:bg-slate-900'
+                                      : 'border-primary-200/80 dark:border-primary-900/60 bg-white dark:bg-slate-900'
+                            }`}
+                        >
+                            {/* Transition Header */}
+                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 dark:border-slate-800">
+                                {isStatusChanging ? (
+                                    <div className="flex items-center gap-2 text-xs">
+                                        <span className="font-bold text-slate-500 uppercase dark:text-slate-400">Rencana Perubahan:</span>
+                                        <div className="flex items-center gap-1.5 font-bold">
+                                            <span className="rounded-md bg-slate-100 px-2 py-0.5 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                                                {STATUS_TEXT[currentStatus] || currentStatus}
+                                            </span>
+                                            {isDowngrade ? (
+                                                <RotateCcw className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                                            ) : (
+                                                <ArrowRight className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                                            )}
+                                            <span
+                                                className={`rounded-md px-2 py-0.5 font-bold ${
+                                                    isDowngrade
+                                                        ? 'border border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                                                        : 'border border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                                                }`}
+                                            >
+                                                {STATUS_TEXT[selectedStatus] || selectedStatus}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-slate-200">
+                                        <Edit3 className="text-primary h-4 w-4" />
+                                        <span>Pembaruan Catatan Progres & SLA</span>
+                                    </div>
+                                )}
+
+                                <button
+                                    type="button"
+                                    onClick={handleCancelUpdate}
+                                    className="text-xs font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                                >
+                                    Batal
+                                </button>
+                            </div>
+
+                            {/* Transition contextual explanation with subtle tint */}
+                            <div
+                                className={`rounded-lg border p-2.5 text-xs ${
+                                    isDowngrade
+                                        ? 'border-amber-200/80 bg-amber-50/60 text-slate-700 dark:border-amber-900/50 dark:bg-amber-950/25 dark:text-slate-300'
+                                        : isUpgrade
+                                          ? 'border-emerald-200/80 bg-emerald-50/60 text-slate-700 dark:border-emerald-900/50 dark:bg-emerald-950/25 dark:text-slate-300'
+                                          : 'border-slate-200/80 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300'
+                                }`}
+                            >
+                                <span
+                                    className={`font-semibold ${
+                                        isDowngrade
+                                            ? 'text-amber-900 dark:text-amber-200'
+                                            : isUpgrade
+                                              ? 'text-emerald-900 dark:text-emerald-200'
+                                              : 'text-slate-800 dark:text-white'
+                                    }`}
+                                >
+                                    {selectedStep.fullLabel}:
+                                </span>{' '}
+                                {selectedStep.desc}
+                                {isDowngrade && (
+                                    <span className="ml-1 font-medium text-amber-700 dark:text-amber-400">
+                                        (Status dikembalikan ke tahap sebelumnya)
+                                    </span>
+                                )}
+                            </div>
+
+                            {/* SLA Target Date Input - Admin Only */}
+                            {isAdmin && (
+                                <div>
+                                    <label className="mb-1 block text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                                        Penyesuaian Target Batas SLA (Deadline)
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={updateData.deadline}
+                                        onChange={(e) => setUpdateData('deadline', e.target.value)}
+                                        className="focus:border-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                    />
+                                </div>
+                            )}
+
+                            {/* Mandatory Notes */}
+                            <div>
+                                <div className="mb-1 flex items-center justify-between">
+                                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                                        Catatan Tindak Lanjut / Alasan <span className="text-rose-500">*</span>
+                                    </label>
+                                    <span className="text-[10px] text-slate-400">Tercatat di Audit Trail</span>
+                                </div>
+                                <textarea
+                                    value={updateData.catatan}
+                                    onChange={(e) => setUpdateData('catatan', e.target.value)}
+                                    required
+                                    rows={3}
+                                    placeholder={
+                                        isDowngrade
+                                            ? 'Wajib diisi: Berikan alasan pengembalian status ke tahap ini...'
+                                            : isUserPic
+                                              ? 'Wajib diisi: Jelaskan tindakan mitigasi yang telah dilakukan atau status perbaikan...'
+                                              : 'Wajib diisi: Berikan penjelasan tindakan korektif, status implementasi, atau catatan hasil verifikasi...'
+                                    }
+                                    className="focus:border-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
+                                />
+                                {updateErrors.catatan && <p className="mt-1 text-xs text-rose-500">{updateErrors.catatan}</p>}
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex items-center justify-between pt-1">
+                                <button
+                                    type="button"
+                                    onClick={handleCancelUpdate}
+                                    className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={updateProcessing}
+                                    className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold text-white shadow-xs transition-colors disabled:opacity-50 ${
+                                        isDowngrade
+                                            ? 'bg-amber-600 hover:bg-amber-700 dark:bg-amber-600 dark:hover:bg-amber-700'
+                                            : isUpgrade
+                                              ? 'bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-700'
+                                              : 'bg-primary hover:bg-primary-700'
+                                    }`}
+                                >
+                                    <Save className="h-3.5 w-3.5" />
+                                    <span>{updateProcessing ? 'Menyimpan…' : 'Simpan Perubahan'}</span>
+                                </button>
+                            </div>
+                        </form>
+                    ) : (
+                        /* SCENARIO B: Current Status Info & Quick Action */
+                        <div className="flex flex-col gap-3 rounded-xl border border-slate-200/80 bg-white p-3.5 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800 dark:bg-slate-800/60">
+                            <div className="flex items-start gap-3">
+                                <div className="mt-0.5 shrink-0">
+                                    {currentStatus === 'closed' ? (
+                                        <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                                    ) : currentStatus === 'resolved' ? (
+                                        <Clock className="text-primary dark:text-primary-300 h-5 w-5" />
+                                    ) : (
+                                        <Info className="h-5 w-5 text-amber-500" />
+                                    )}
+                                </div>
+                                <div className="min-w-0">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <span className="text-xs font-bold text-slate-900 dark:text-white">{selectedStep.fullLabel}</span>
+                                        <StatusBadge tone={STATUS_TONE[currentStatus] ?? 'gray'}>
+                                            {STATUS_TEXT[currentStatus] ?? currentStatus}
+                                        </StatusBadge>
+                                    </div>
+                                    <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{selectedStep.desc}</p>
+                                </div>
+                            </div>
+
+                            {canUpdate ? (
+                                <button
+                                    type="button"
+                                    onClick={() => setShowNoteFormOnSameStatus(true)}
+                                    className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                                >
+                                    <Edit3 className="h-3.5 w-3.5 text-slate-500" />
+                                    <span>Catat Progres</span>
+                                </button>
+                            ) : (
+                                <span className="text-[11px] text-slate-400 italic sm:text-right">Hanya baca</span>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {/* Unauthorized Warning if user cannot update */}
+                {!canUpdate && (
+                    <div className="mt-3 flex items-start gap-2 rounded-xl border border-slate-200/80 bg-slate-100/70 p-3 text-xs text-slate-600 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-400">
+                        <Info className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                        <span>
+                            Akses ubah status terbatas. Hanya Admin Kepatuhan dan PIC unit <strong>{f.unit?.nama}</strong> yang berwenang mengubah
+                            status.
+                        </span>
+                    </div>
+                )}
             </div>
         );
     };
@@ -670,14 +1097,28 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                                     </td>
                                     <td className="px-5 py-4 whitespace-nowrap">{deadlineChip(f)}</td>
                                     <td className="px-5 py-4 text-right whitespace-nowrap">
-                                        <button
-                                            type="button"
-                                            onClick={() => setDetailTarget(f)}
-                                            className="text-primary hover:text-primary-700 dark:text-primary-300 dark:hover:text-primary-200 inline-flex items-center gap-1 text-xs font-semibold"
-                                        >
-                                            <Eye className="h-3.5 w-3.5" />
-                                            Detail & Review
-                                        </button>
+                                        <div className="flex items-center justify-end gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setDetailTarget(f)}
+                                                className="text-primary hover:text-primary-700 dark:text-primary-300 dark:hover:text-primary-200 inline-flex items-center gap-1 text-xs font-semibold"
+                                            >
+                                                <Eye className="h-3.5 w-3.5" />
+                                                Detail & Review
+                                            </button>
+                                            {canDelete && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDelete(f)}
+                                                    title={t('temuan.deleteFinding')}
+                                                    aria-label={`${t('temuan.deleteFinding')} FND-${findingRef(f)}`}
+                                                    className="inline-flex items-center gap-1 text-xs font-semibold text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-300"
+                                                >
+                                                    <Trash2 className="h-3.5 w-3.5" />
+                                                    <span>Hapus</span>
+                                                </button>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             ))
@@ -1019,154 +1460,172 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                             <code className="text-primary bg-primary-50 border-primary-200 dark:bg-navy-900 dark:border-primary-800 dark:text-primary-200 rounded border px-2 py-0.5 text-xs font-bold">
                                 FND-{findingRef(detailTarget)}
                             </code>
+                            {Boolean(detailTarget.deleted_at) && (
+                                <span className="rounded-md bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold text-rose-700 dark:bg-rose-950 dark:text-rose-300">
+                                    Dihapus
+                                </span>
+                            )}
                         </div>
                     ) : (
                         'Detail Temuan'
                     )
                 }
                 description={detailTarget?.control?.judul || 'Informasi lengkap siklus temuan audit ketidaksesuaian'}
-                onClose={() => setDetailTarget(null)}
+                onClose={closeDetailDrawer}
                 maxWidth="xl"
                 footer={
-                    <button
-                        type="button"
-                        onClick={() => setDetailTarget(null)}
-                        className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-                    >
-                        {t('temuan.close')}
-                    </button>
+                    <div className="flex w-full items-center justify-between">
+                        {Boolean(detailTarget?.deleted_at) && canDelete && detailTarget ? (
+                            <button
+                                type="button"
+                                disabled={restoreBusy}
+                                onClick={() => handleRestore(detailTarget.id)}
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-100 disabled:opacity-50 dark:border-emerald-900/60 dark:bg-emerald-950/50 dark:text-emerald-300 dark:hover:bg-emerald-900/60"
+                            >
+                                <RotateCcw className="h-3.5 w-3.5" />
+                                <span>{restoreBusy ? 'Memulihkan...' : 'Pulihkan Temuan'}</span>
+                            </button>
+                        ) : canDelete && detailTarget ? (
+                            <button
+                                type="button"
+                                onClick={() => handleDelete(detailTarget)}
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-600 transition-colors hover:bg-rose-50 dark:border-rose-900/60 dark:bg-slate-900 dark:text-rose-400 dark:hover:bg-rose-950/40"
+                            >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                <span>{t('temuan.deleteFinding')}</span>
+                            </button>
+                        ) : (
+                            <span />
+                        )}
+                        <button
+                            type="button"
+                            onClick={closeDetailDrawer}
+                            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                        >
+                            {t('temuan.close')}
+                        </button>
+                    </div>
                 }
             >
                 {detailTarget && (
-                    <div className="space-y-6">
-                        {/* Status Progression Tracker */}
-                        {renderStatusSteps(detailTarget.status)}
-
-                        {/* Top Information Cards */}
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="rounded-xl border border-slate-200/80 bg-white p-3.5 dark:border-slate-800 dark:bg-slate-900">
-                                <span className="text-[11px] font-medium text-slate-400">Tingkat Keparahan</span>
-                                <div className="mt-1.5 flex items-center gap-2">
-                                    <StatusBadge tone={SEVERITY_TONE[detailTarget.kategori] ?? 'gray'}>
-                                        {severityLabel(detailTarget.kategori)}
-                                    </StatusBadge>
+                    <div className="space-y-5">
+                        {/* Soft-deleted Alert Banner */}
+                        {Boolean(detailTarget.deleted_at) && (
+                            <div className="flex flex-col justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-800 shadow-2xs sm:flex-row sm:items-center dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-200">
+                                <div className="flex items-start gap-2.5 sm:items-center">
+                                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-rose-600 sm:mt-0 dark:text-rose-400" />
+                                    <div>
+                                        <span className="font-bold">Temuan Ini Telah Dihapus (Arsip)</span>
+                                        <p className="mt-0.5 text-[11px] text-rose-700/90 dark:text-rose-300/80">
+                                            Dihapus pada {formatDateTimeIndonesian(detailTarget.deleted_at as string)}. Status dan pembaruan
+                                            dinonaktifkan.
+                                        </p>
+                                    </div>
                                 </div>
+                                {canDelete && (
+                                    <button
+                                        type="button"
+                                        disabled={restoreBusy}
+                                        onClick={() => handleRestore(detailTarget.id)}
+                                        className="inline-flex items-center gap-1.5 self-start rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-emerald-700 disabled:opacity-50 sm:self-auto"
+                                    >
+                                        <RotateCcw className="h-3.5 w-3.5" />
+                                        <span>{restoreBusy ? 'Memulihkan...' : 'Pulihkan Temuan'}</span>
+                                    </button>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Primary Context: Klausul, Framework, Severity, & Catatan Awal Temuan */}
+                        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
+                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 dark:border-slate-800">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span className="border-primary-200 bg-primary-50 text-primary dark:border-primary-800 dark:bg-navy-900 dark:text-primary-200 inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-bold">
+                                        <Shield className="h-3.5 w-3.5" />
+                                        {detailTarget.control?.kode_klausul || 'Klausul SMKI'}
+                                    </span>
+                                    {detailTarget.control?.framework && (
+                                        <span className="rounded-lg bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                                            {detailTarget.control.framework.nama} ({detailTarget.control.framework.versi})
+                                        </span>
+                                    )}
+                                </div>
+                                <StatusBadge tone={SEVERITY_TONE[detailTarget.kategori] ?? 'gray'}>
+                                    {severityLabel(detailTarget.kategori)}
+                                </StatusBadge>
                             </div>
 
-                            <div className="rounded-xl border border-slate-200/80 bg-white p-3.5 dark:border-slate-800 dark:bg-slate-900">
-                                <span className="text-[11px] font-medium text-slate-400">Status Siklus Temuan</span>
-                                <div className="mt-1.5 flex items-center gap-2">
-                                    <StatusBadge tone={STATUS_TONE[detailTarget.status] ?? 'gray'}>
-                                        {STATUS_TEXT[detailTarget.status] ?? detailTarget.status}
-                                    </StatusBadge>
-                                </div>
+                            <div className="pt-3">
+                                <h3 className="text-sm leading-relaxed font-bold text-slate-900 dark:text-white">
+                                    {detailTarget.control?.judul || '—'}
+                                </h3>
+                                {detailTarget.control?.deskripsi && (
+                                    <p className="mt-1 line-clamp-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                                        {detailTarget.control.deskripsi}
+                                    </p>
+                                )}
                             </div>
-                        </div>
 
-                        {/* SLA & Deadline Information */}
-                        <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-900/60">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <Clock className="h-4 w-4 text-slate-500 dark:text-slate-400" />
-                                    <span className="text-xs font-bold text-slate-900 dark:text-white">Batas Waktu Penyelesaian (SLA)</span>
-                                </div>
-                                <div>{deadlineChip(detailTarget)}</div>
-                            </div>
-                            {detailTarget.deadline && (
-                                <div className="mt-2.5 text-xs text-slate-600 dark:text-slate-400">
-                                    Target Deadline:{' '}
-                                    <strong className="text-slate-900 dark:text-white">{formatDateIndonesian(detailTarget.deadline)}</strong>
+                            {/* Catatan Awal Temuan (Auditor / Admin) - placed prominently near the top */}
+                            {(detailTarget.admin_notes || detailTarget.catatan_admin) && (
+                                <div className="mt-3.5 rounded-xl border border-amber-200/90 bg-amber-50/60 p-3.5 dark:border-amber-900/50 dark:bg-amber-950/20">
+                                    <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900 dark:text-amber-300">
+                                        <FileText className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                                        <span>Catatan Awal Temuan</span>
+                                    </div>
+                                    <p className="mt-1.5 text-xs leading-relaxed whitespace-pre-line text-slate-700 dark:text-slate-300">
+                                        {detailTarget.admin_notes || detailTarget.catatan_admin}
+                                    </p>
                                 </div>
                             )}
                         </div>
 
-                        {/* Interactive Status & Action Update Form for Authorized Users */}
-                        {canUpdateThisFinding(detailTarget) ? (
-                            <form
-                                onSubmit={handleUpdateFinding}
-                                className="border-primary-200/80 bg-primary-50/40 dark:border-primary-900/40 dark:bg-navy-900/30 space-y-4 rounded-2xl border p-4 shadow-2xs"
-                            >
-                                <div className="text-primary dark:text-primary-200 flex items-center gap-2 text-xs font-bold tracking-wider uppercase">
-                                    <Edit3 className="h-4 w-4" />
-                                    <span>Ubah Status & Tindak Lanjut</span>
-                                </div>
-
-                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                    <div>
-                                        <label className="mb-1 block text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                                            Status Baru <span className="text-rose-500">*</span>
-                                        </label>
-                                        <select
-                                            value={updateData.status}
-                                            onChange={(e) => setUpdateData('status', e.target.value)}
-                                            required
-                                            className="focus:border-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-                                        >
-                                            <option value="open">1. Terbuka (Open)</option>
-                                            <option value="in_progress">2. Dalam Penanganan (In Progress)</option>
-                                            <option value="resolved">3. Selesai Ditindaklanjuti (Resolved)</option>
-                                            <option value="closed">4. Ditutup & Terverifikasi (Closed)</option>
-                                        </select>
+                        {/* Informasi Penugasan Unit & Batas Waktu SLA */}
+                        {/* Informasi Penugasan Unit & Batas Waktu SLA (Unified Card) */}
+                        <div className="divide-y divide-slate-100 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
+                            {/* Row 1: Unit Kerja & PIC */}
+                            <div className="flex items-center justify-between gap-3 pb-3.5">
+                                <div className="flex min-w-0 items-center gap-3">
+                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
+                                        <Building2 className="h-5 w-5" />
                                     </div>
-
-                                    <div>
-                                        <label className="mb-1 block text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                                            Penyesuaian Target SLA (Deadline)
-                                        </label>
-                                        <input
-                                            type="date"
-                                            value={updateData.deadline}
-                                            onChange={(e) => setUpdateData('deadline', e.target.value)}
-                                            className="focus:border-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-                                        />
+                                    <div className="min-w-0">
+                                        <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase dark:text-slate-500">
+                                            Unit Kerja Terkait
+                                        </span>
+                                        <p className="truncate text-sm font-bold text-slate-900 dark:text-white">{detailTarget.unit?.nama || '—'}</p>
                                     </div>
                                 </div>
-
-                                <div>
-                                    <div className="mb-1 flex items-center justify-between">
-                                        <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                                            Catatan Perubahan Status & Tindak Lanjut <span className="text-rose-500">*</span>
-                                        </label>
-                                        <span className="text-[10px] text-slate-500 dark:text-slate-400">Tercatat ke Riwayat Status</span>
-                                    </div>
-                                    <textarea
-                                        value={updateData.catatan}
-                                        onChange={(e) => setUpdateData('catatan', e.target.value)}
-                                        required
-                                        rows={3}
-                                        placeholder="Wajib diisi: Berikan penjelasan tindakan korektif, status implementasi, atau catatan hasil verifikasi..."
-                                        className="focus:border-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
-                                    />
-                                    {updateErrors.catatan && <p className="mt-1 text-xs text-rose-500">{updateErrors.catatan}</p>}
-                                </div>
-
-                                <div className="flex items-center justify-between pt-1">
-                                    <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
-                                        <Info className="h-3.5 w-3.5 text-slate-400" />
-                                        <span>Status dapat digerakkan maju atau mundur dengan alasan jelas.</span>
-                                    </div>
-                                    <button
-                                        type="submit"
-                                        disabled={updateProcessing}
-                                        className="bg-primary hover:bg-primary-700 inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold text-white shadow-sm transition-colors disabled:opacity-50"
-                                    >
-                                        <Save className="h-3.5 w-3.5" />
-                                        <span>{updateProcessing ? 'Menyimpan…' : 'Simpan Status & Catatan'}</span>
-                                    </button>
-                                </div>
-                            </form>
-                        ) : (
-                            <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50/70 p-3.5 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300">
-                                <Info className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                                <div>
-                                    <span className="font-bold">Akses Ubah Status Dibatasi</span>
-                                    <p className="mt-0.5 text-[11px] leading-relaxed opacity-90">
-                                        Hanya Admin Kepatuhan dan PIC yang ditugaskan untuk unit <strong>{detailTarget.unit?.nama}</strong> yang
-                                        berwenang mengubah status temuan ini.
-                                    </p>
+                                <div className="flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200/80 bg-slate-50 px-2.5 py-1 text-xs dark:border-slate-700 dark:bg-slate-800">
+                                    <UserCheck className="h-3.5 w-3.5 text-slate-400" />
+                                    <span className="text-[11px] text-slate-400">PIC:</span>
+                                    <span className="font-semibold text-slate-700 dark:text-slate-200">
+                                        {detailTarget.pic?.name || 'Belum ditugaskan'}
+                                    </span>
                                 </div>
                             </div>
-                        )}
+
+                            {/* Row 2: Target Batas SLA */}
+                            <div className="flex items-center justify-between gap-3 pt-3.5">
+                                <div className="flex min-w-0 items-center gap-3">
+                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
+                                        <Calendar className="h-5 w-5" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase dark:text-slate-500">
+                                            Target Batas SLA
+                                        </span>
+                                        <p className="text-sm font-bold text-slate-900 dark:text-white">
+                                            {detailTarget.deadline ? formatDateIndonesian(detailTarget.deadline) : 'Tidak ditentukan'}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="shrink-0">{deadlineChip(detailTarget)}</div>
+                            </div>
+                        </div>
+
+                        {/* Status & Alur Tindak Lanjut (Unified Interactive Stepper Hub) */}
+                        {renderStatusWorkflowHub(detailTarget)}
 
                         {/* Riwayat Perubahan Status (Status Audit Trail Timeline) */}
                         <div className="space-y-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
@@ -1271,59 +1730,6 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                             </div>
                         </div>
 
-                        {/* Control Klausul Details */}
-                        <div className="space-y-3 rounded-xl border border-slate-200/80 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                            <div className="flex items-center gap-2 text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
-                                <Shield className="text-primary dark:text-primary-200 h-4 w-4" />
-                                <span>Kontrol SMKI Terkait</span>
-                            </div>
-                            <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-800/60">
-                                <div className="text-primary dark:text-primary-200 text-xs font-bold">
-                                    {detailTarget.control?.kode_klausul}
-                                    {detailTarget.control?.framework && (
-                                        <span className="font-normal text-slate-500">
-                                            {' '}
-                                            · {detailTarget.control.framework.nama} ({detailTarget.control.framework.versi})
-                                        </span>
-                                    )}
-                                </div>
-                                <div className="mt-1 text-sm leading-relaxed font-semibold text-slate-900 dark:text-white">
-                                    {detailTarget.control?.judul || '—'}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Unit & Stakeholder Assignment */}
-                        <div className="space-y-3 rounded-xl border border-slate-200/80 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                            <div className="flex items-center gap-2 text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
-                                <UserCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                                <span>Penanggung Jawab & Unit Kerja</span>
-                            </div>
-                            <div className="grid grid-cols-2 gap-3 text-xs">
-                                <div className="rounded-lg border border-slate-100 p-2.5 dark:border-slate-800">
-                                    <span className="text-[11px] text-slate-400">Unit Kerja / Satuan Kerja</span>
-                                    <p className="mt-1 font-semibold text-slate-900 dark:text-white">{detailTarget.unit?.nama || '—'}</p>
-                                </div>
-                                <div className="rounded-lg border border-slate-100 p-2.5 dark:border-slate-800">
-                                    <span className="text-[11px] text-slate-400">PIC Penanggung Jawab</span>
-                                    <p className="mt-1 font-semibold text-slate-900 dark:text-white">{detailTarget.pic?.name || '—'}</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Initial Finding Note */}
-                        {(detailTarget.admin_notes || detailTarget.catatan_admin) && (
-                            <div className="space-y-2 rounded-xl border border-slate-200/80 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                                <div className="flex items-center gap-2 text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
-                                    <FileText className="h-4 w-4 text-amber-500" />
-                                    <span>Catatan Awal Temuan</span>
-                                </div>
-                                <p className="rounded-lg bg-slate-50 p-3 text-xs leading-relaxed text-slate-700 dark:bg-slate-800/60 dark:text-slate-300">
-                                    {detailTarget.admin_notes || detailTarget.catatan_admin}
-                                </p>
-                            </div>
-                        )}
-
                         {/* Audit Metadata Timeline */}
                         <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-[11px] text-slate-400 dark:border-slate-800">
                             <span>Dibuat: {detailTarget.created_at ? formatDateTimeIndonesian(detailTarget.created_at) : '—'}</span>
@@ -1332,6 +1738,18 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                     </div>
                 )}
             </SlideOver>
+
+            <ConfirmDialog
+                open={deleteDialogOpen}
+                title={t('temuan.deleteFinding')}
+                description={deleteTarget ? t('temuan.deleteConfirm', String(findingRef(deleteTarget))) : ''}
+                confirmLabel={t('temuan.deleteFinding')}
+                cancelLabel={t('common.cancel')}
+                variant="danger"
+                busy={deleteBusy}
+                onCancel={cancelDelete}
+                onConfirm={confirmDelete}
+            />
         </AppLayout>
     );
 }

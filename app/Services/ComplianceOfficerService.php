@@ -93,9 +93,13 @@ class ComplianceOfficerService
     /**
      * Get single finding detail.
      */
-    public function getFinding(User $user, int $id): Finding
+    public function getFinding(User $user, int $id, bool $withTrashed = false): Finding
     {
-        $finding = Finding::with(['control.framework', 'unit', 'pic', 'admin', 'histories.user.role', 'histories.user.unit'])->findOrFail($id);
+        $query = Finding::with(['control.framework', 'unit', 'pic', 'admin', 'histories.user.role', 'histories.user.unit']);
+        if ($withTrashed) {
+            $query->withTrashed();
+        }
+        $finding = $query->findOrFail($id);
 
         if ($user->isPic() && (int) $finding->unit_id !== (int) $user->unit_id) {
             throw new AuthorizationException('Anda tidak memiliki hak akses untuk temuan unit lain.');
@@ -109,7 +113,7 @@ class ComplianceOfficerService
      */
     public function storeFinding(User $user, array $data): Finding
     {
-        if (! ($user->isAdmin() || $user->isSuperAdmin() || $user->hasPermissionTo('finding.create'))) {
+        if ($user->isPic() || ! ($user->isAdmin() || $user->isSuperAdmin() || $user->hasPermissionTo('finding.create'))) {
             throw new AuthorizationException('Hanya Admin Kepatuhan yang memiliki wewenang untuk membuat temuan baru.');
         }
 
@@ -121,7 +125,10 @@ class ComplianceOfficerService
                 $unitPic = User::where('unit_id', $unitId)
                     ->whereHas('role', fn ($q) => $q->where('name', User::ROLE_PIC))
                     ->first();
-                $picId = $unitPic?->id ?? $user->id;
+                if (! $unitPic) {
+                    throw new \InvalidArgumentException('Unit kerja yang dipilih belum memiliki PIC terdaftar.');
+                }
+                $picId = $unitPic->id;
             }
 
             $note = $data['catatan'] ?? $data['catatan_admin'] ?? $data['admin_notes'] ?? 'Temuan awal dicatat oleh Admin Kepatuhan.';
@@ -176,6 +183,10 @@ class ComplianceOfficerService
             $note = $data['catatan'] ?? $data['notes'] ?? $data['admin_notes'] ?? $data['catatan_admin'] ?? null;
 
             if ($statusChanged) {
+                if ($user->isPic() && $newStatus === Finding::STATUS_CLOSED) {
+                    throw new AuthorizationException('PIC tidak berwenang menutup dan memverifikasi temuan. Penutupan temuan hanya dapat dilakukan oleh Admin Kepatuhan.');
+                }
+
                 $updateData['status'] = $newStatus;
 
                 if ($newStatus === Finding::STATUS_CLOSED) {
@@ -201,7 +212,7 @@ class ComplianceOfficerService
                 $updateData['kategori'] = $data['kategori'];
             }
 
-            if (array_key_exists('deadline', $data)) {
+            if (array_key_exists('deadline', $data) && ! $user->isPic()) {
                 $updateData['deadline'] = $data['deadline'];
             }
 
@@ -210,7 +221,7 @@ class ComplianceOfficerService
             }
 
             if ($note !== null) {
-                $updateData['catatan_admin'] = $note;
+                $updateData['catatan_admin'] = $note ?: null;
             }
 
             if (! empty($updateData)) {
@@ -242,8 +253,17 @@ class ComplianceOfficerService
     }
 
     /**
-     * Get paginated risks register list.
+     * Delete finding (Compliance Admin / Superadmin only).
      */
+    public function deleteFinding(User $user, Finding $finding): bool
+    {
+        if (! ($user->isAdmin() || $user->isSuperAdmin() || $user->hasPermissionTo('finding.delete'))) {
+            throw new AuthorizationException('Anda tidak memiliki wewenang untuk menghapus temuan ini.');
+        }
+
+        return (bool) $finding->delete();
+    }
+
     /**
      * Get paginated risks register list.
      */
@@ -605,7 +625,7 @@ class ComplianceOfficerService
     /**
      * Format finding model into consistent English resource representation.
      */
-    protected function formatFindingResource(Finding $finding, Carbon $today): Finding
+    public function formatFindingResource(Finding $finding, Carbon $today): Finding
     {
         $deadline = $finding->deadline ? Carbon::parse($finding->deadline) : null;
         $isOverdue = false;

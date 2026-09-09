@@ -92,7 +92,7 @@ export default function AuditorDashboard({ summary, trends = [], recent_activiti
                         extraParams={{ unit_id: filters.unit_id, session_id: filters.session_id }}
                     />
                     <Link
-                        href="/admin/auditor/findings"
+                        href="/temuan"
                         className="bg-primary hover:bg-primary inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all active:scale-95 sm:text-sm"
                     >
                         <FileSearch className="h-4 w-4" />

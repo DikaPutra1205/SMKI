@@ -607,4 +607,29 @@ class NotificationSystemTest extends TestCase
         $this->assertEquals($this->admin->name, $mail->viewData['actorName']);
         $this->assertEquals('Test catatan', $mail->viewData['catatan']);
     }
+
+    public function test_mark_all_as_read_returns_fresh_unread_count(): void
+    {
+        $this->picA->notify(new FindingCreatedNotification(
+            Finding::factory()->create([
+                'control_id' => $this->control->id,
+                'unit_id' => $this->unitA->id,
+                'pic_id' => $this->picA->id,
+            ]),
+            $this->admin,
+            'Catatan'
+        ));
+
+        $this->assertEquals(1, $this->picA->unreadNotifications()->count());
+
+        $response = $this->actingAs($this->picA)->postJson('/api/v1/notifications/read-all');
+
+        $response->assertOk()
+            ->assertJson([
+                'status' => 'success',
+                'unread_count' => 0,
+            ]);
+
+        $this->assertEquals(0, $this->picA->unreadNotifications()->count());
+    }
 }

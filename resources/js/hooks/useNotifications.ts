@@ -158,6 +158,7 @@ export function useNotifications(userId?: number | string): UseNotificationsRetu
                         event: 'DELETE',
                         schema: 'public',
                         table: 'notifications',
+                        filter: `notifiable_id=eq.${userId}`,
                     },
                     (payload) => {
                         const deletedId = (payload.old as { id?: string })?.id;
