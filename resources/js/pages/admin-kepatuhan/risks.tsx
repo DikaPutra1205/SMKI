@@ -1,3 +1,4 @@
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
@@ -25,6 +26,7 @@ import {
     Shield,
     ShieldAlert,
     ShieldCheck,
+    Trash2,
     UserCheck,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -119,6 +121,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
     const can = useCan();
     const canUpdate = can('risk.update') || isKoordinator || isAdmin || isPic;
     const canCreate = !isPic && (isAdmin || isKoordinator || can('risk.create'));
+    const canDelete = can('risk.delete') || isAdmin;
 
     const [searchQuery, setSearchQuery] = useState(filters.search || '');
     const [selectedLevel, setSelectedLevel] = useState<string>(filters.risk_level || filters.level_risiko || 'all');
@@ -127,6 +130,9 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
     const [detailTarget, setDetailTarget] = useState<RiskItem | null>(null);
     const [editTarget, setEditTarget] = useState<RiskItem | null>(null);
     const [createModalOpen, setCreateModalOpen] = useState(false);
+    const [delOpen, setDelOpen] = useState(false);
+    const [delTarget, setDelTarget] = useState<RiskItem | null>(null);
+    const [delBusy, setDelBusy] = useState(false);
     const isFirstRender = useRef(true);
 
     const createForm = useForm({
@@ -203,6 +209,19 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                 closeEditModal();
                 router.reload({ only: ['risks', 'matrix'] });
             },
+        });
+    };
+
+    const confirmDelete = () => {
+        if (!delTarget) return;
+        setDelBusy(true);
+        router.delete(`/api/risks/${delTarget.id}`, {
+            onSuccess: () => {
+                setDelOpen(false);
+                setDelTarget(null);
+                router.reload({ only: ['risks', 'matrix'] });
+            },
+            onFinish: () => setDelBusy(false),
         });
     };
 
@@ -599,6 +618,19 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                                 Perbarui
                                             </button>
                                         )}
+                                        {canDelete && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setDelTarget(r);
+                                                    setDelOpen(true);
+                                                }}
+                                                className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                                            >
+                                                <Trash2 className="h-3.5 w-3.5" />
+                                                Hapus
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             ))
@@ -700,6 +732,19 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                                         >
                                                             <Edit2 className="h-3.5 w-3.5" />
                                                             Perbarui
+                                                        </button>
+                                                    )}
+                                                    {canDelete && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setDelTarget(r);
+                                                                setDelOpen(true);
+                                                            }}
+                                                            className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                                                        >
+                                                            <Trash2 className="h-3.5 w-3.5" />
+                                                            Hapus
                                                         </button>
                                                     )}
                                                 </div>
@@ -1206,6 +1251,26 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                     </div>
                 )}
             </SlideOver>
+
+            {/* Confirm Delete Dialog */}
+            <ConfirmDialog
+                open={delOpen}
+                title="Hapus Risiko Ini?"
+                description={
+                    delTarget
+                        ? `Apakah Anda yakin ingin menghapus risiko "RSK-${String(delTarget.id).padStart(3, '0')}"? Tindakan ini tidak dapat dibatalkan.`
+                        : ''
+                }
+                confirmLabel="Hapus Risiko"
+                cancelLabel="Batal"
+                variant="danger"
+                busy={delBusy}
+                onCancel={() => {
+                    setDelOpen(false);
+                    setDelTarget(null);
+                }}
+                onConfirm={confirmDelete}
+            />
         </AppLayout>
     );
 }
