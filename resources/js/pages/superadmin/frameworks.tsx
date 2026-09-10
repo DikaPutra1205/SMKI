@@ -192,10 +192,14 @@ export default function Frameworks({ frameworks = [], filters = {} }: Frameworks
 
                 {paginatedFrameworks.length > 0 ? (
                     <div className="grid grid-cols-1 gap-4 p-5 md:grid-cols-2 xl:grid-cols-3">
-                        {paginatedFrameworks.map((item) => (
+                        {paginatedFrameworks.map((item, idx) => (
                             <div
                                 key={item.id}
-                                className="border-border bg-surface/40 hover:border-primary/40 flex flex-col rounded-[14px] border p-5 transition-all hover:shadow-md dark:border-slate-700 dark:bg-slate-900/40"
+                                className={`border-border hover:border-primary/40 flex flex-col rounded-[14px] border p-5 transition-all hover:shadow-md dark:border-slate-700 ${
+                                    idx % 2 === 0
+                                        ? 'bg-surface/40 dark:bg-slate-900/40'
+                                        : 'bg-surface/70 dark:bg-slate-900/60'
+                                }`}
                             >
                                 <div className="flex items-start justify-between gap-3">
                                     <div className="bg-primary shadow-blue flex h-11 w-11 items-center justify-center rounded-[12px] text-white">

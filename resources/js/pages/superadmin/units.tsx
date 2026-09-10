@@ -147,10 +147,14 @@ export default function Units({ units }: Props) {
                 </div>
 
                 {units.length > 0 ? (
-                    units.map((u) => (
+                    units.map((u, idx) => (
                         <div
                             key={u.id}
-                            className="grid grid-cols-[1fr_1fr_auto] items-center gap-4 border-b border-slate-100 px-5 py-3.5 last:border-0 hover:bg-slate-50/60 dark:border-slate-800 dark:hover:bg-slate-800/40"
+                            className={`grid grid-cols-[1fr_1fr_auto] items-center gap-4 border-b border-slate-100 px-5 py-3.5 last:border-0 dark:border-slate-800 ${
+                                idx % 2 === 0
+                                    ? 'hover:bg-slate-50/60 dark:hover:bg-slate-800/40'
+                                    : 'bg-slate-50/50 hover:bg-slate-100/60 dark:bg-slate-800/20 dark:hover:bg-slate-800/50'
+                            }`}
                         >
                             <div className="flex min-w-0 items-center gap-2.5">
                                 <div className="bg-primary-50 text-primary dark:bg-navy-900/50 dark:text-primary-200 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">

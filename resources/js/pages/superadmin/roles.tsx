@@ -310,14 +310,18 @@ export default function Roles({ roles, permissionCatalog }: Props) {
             {/* Role List Cards */}
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 {roles.length > 0 ? (
-                    roles.map((r) => {
+                    roles.map((r, idx) => {
                         const permCount = r.permissions.length;
                         const pct = Math.round((permCount / totalAvailablePermissions) * 100);
 
                         return (
                             <div
                                 key={r.id}
-                                className="hover:border-primary-200 flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition-all hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
+                                className={`hover:border-primary-200 flex flex-col justify-between rounded-2xl border border-slate-200/80 p-5 shadow-sm transition-all hover:shadow-md dark:border-slate-800 ${
+                                    idx % 2 === 0
+                                        ? 'bg-white dark:bg-slate-900'
+                                        : 'bg-slate-50/75 dark:bg-slate-900/60'
+                                }`}
                             >
                                 <div>
                                     <div className="flex items-start justify-between gap-3">

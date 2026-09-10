@@ -69,6 +69,7 @@ export interface FindingItem {
         id: number;
         kode_klausul: string;
         judul: string;
+        deskripsi?: string;
         framework?: { id: number; nama: string; versi: string } | null;
     } | null;
     unit?: { id: number; nama: string } | null;
