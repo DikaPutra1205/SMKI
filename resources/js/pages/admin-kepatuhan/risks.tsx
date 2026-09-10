@@ -1,4 +1,5 @@
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
@@ -854,11 +855,9 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                             <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">
                                 {t('risks.deadline')}
                             </label>
-                            <input
-                                type="date"
+                            <DatePicker
                                 value={createForm.data.deadline}
-                                onChange={(e) => createForm.setData('deadline', e.target.value)}
-                                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-primary focus:ring-1 focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                onChange={(val) => createForm.setData('deadline', val)}
                             />
                             {createForm.errors.deadline && (
                                 <p className="mt-1 text-xs text-red-500">{createForm.errors.deadline}</p>
@@ -1012,16 +1011,10 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                 <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">
                                     {t('risks.deadline')}
                                 </label>
-                                <input
-                                    type="date"
+                                <DatePicker
                                     value={updateForm.data.deadline}
-                                    onChange={(e) => updateForm.setData('deadline', e.target.value)}
+                                    onChange={(val) => updateForm.setData('deadline', val)}
                                     disabled={isPic}
-                                    className={`w-full rounded-xl border px-3 py-2 text-sm ${
-                                        isPic
-                                            ? 'cursor-not-allowed border-slate-200 bg-slate-100/70 text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400'
-                                            : 'border-slate-200 bg-white text-slate-800 focus:border-primary focus:ring-1 focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white'
-                                    }`}
                                 />
                             </div>
                         </div>

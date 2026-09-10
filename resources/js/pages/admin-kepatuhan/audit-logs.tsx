@@ -1,3 +1,4 @@
+import { DatePicker } from '@/components/ui/DatePicker';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Pagination } from '@/components/ui/Pagination';
 import { Select } from '@/components/ui/Select';
@@ -378,19 +379,15 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                             ))}
                         </Select>
 
-                        <input
-                            type="date"
+                        <DatePicker
                             value={dateFrom}
-                            onChange={(e) => setDateFrom(e.target.value)}
-                            className="focus:border-primary focus:ring-primary rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                            title="Tanggal Mulai"
+                            onChange={setDateFrom}
+                            placeholder="Tanggal Mulai"
                         />
-                        <input
-                            type="date"
+                        <DatePicker
                             value={dateTo}
-                            onChange={(e) => setDateTo(e.target.value)}
-                            className="focus:border-primary focus:ring-primary rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                            title="Tanggal Selesai"
+                            onChange={setDateTo}
+                            placeholder="Tanggal Selesai"
                         />
                     </div>
                 </div>

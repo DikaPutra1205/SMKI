@@ -1,4 +1,5 @@
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
@@ -830,11 +831,9 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                                     <label className="mb-1 block text-[11px] font-bold text-slate-700 dark:text-slate-300">
                                         Penyesuaian Target Batas SLA (Deadline)
                                     </label>
-                                    <input
-                                        type="date"
+                                    <DatePicker
                                         value={updateData.deadline}
-                                        onChange={(e) => setUpdateData('deadline', e.target.value)}
-                                        className="focus:border-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                        onChange={(val) => setUpdateData('deadline', val)}
                                     />
                                 </div>
                             )}
@@ -1406,11 +1405,9 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                             <label className="mb-1 block text-xs font-bold text-slate-700 dark:text-slate-300">
                                 Target Batas Waktu SLA (Deadline)
                             </label>
-                            <input
-                                type="date"
+                            <DatePicker
                                 value={createData.deadline}
-                                onChange={(e) => setCreateData('deadline', e.target.value)}
-                                className="focus:border-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                                onChange={(val) => setCreateData('deadline', val)}
                             />
                             {createErrors.deadline && <p className="mt-1 text-xs text-rose-500">{createErrors.deadline}</p>}
                         </div>
