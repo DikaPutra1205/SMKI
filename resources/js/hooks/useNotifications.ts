@@ -27,6 +27,8 @@ export function useNotifications(userId?: number | string): UseNotificationsRetu
     const [latestNotification, setLatestNotification] = useState<NotificationItem | null>(null);
     const [isRealtimeConnected, setIsRealtimeConnected] = useState<boolean>(false);
     const channelRef = useRef<ReturnType<NonNullable<typeof supabase>['channel']> | null>(null);
+    const notificationsAbortRef = useRef<AbortController | null>(null);
+    const unreadCountAbortRef = useRef<AbortController | null>(null);
 
     const fetchNotifications = useCallback(async () => {
         if (!userId) {
@@ -34,12 +36,17 @@ export function useNotifications(userId?: number | string): UseNotificationsRetu
             return;
         }
 
+        notificationsAbortRef.current?.abort();
+        const controller = new AbortController();
+        notificationsAbortRef.current = controller;
+
         try {
             const res = await fetch('/api/v1/notifications?limit=20', {
                 headers: {
                     Accept: 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
                 },
+                signal: controller.signal,
             });
 
             if (!res.ok) return;
@@ -50,6 +57,7 @@ export function useNotifications(userId?: number | string): UseNotificationsRetu
                 setUnreadCount(json.unread_count ?? 0);
             }
         } catch (error) {
+            if (controller.signal.aborted) return;
             console.error('[useNotifications] Gagal memuat notifikasi:', error);
         } finally {
             setIsLoading(false);
@@ -59,12 +67,17 @@ export function useNotifications(userId?: number | string): UseNotificationsRetu
     const fetchUnreadCount = useCallback(async () => {
         if (!userId) return;
 
+        unreadCountAbortRef.current?.abort();
+        const controller = new AbortController();
+        unreadCountAbortRef.current = controller;
+
         try {
             const res = await fetch('/api/v1/notifications/unread-count', {
                 headers: {
                     Accept: 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
                 },
+                signal: controller.signal,
             });
 
             if (!res.ok) return;
@@ -74,9 +87,18 @@ export function useNotifications(userId?: number | string): UseNotificationsRetu
                 setUnreadCount(json.unread_count);
             }
         } catch (error) {
+            if (controller.signal.aborted) return;
             console.error('[useNotifications] Gagal memuat unread count:', error);
         }
     }, [userId]);
+
+    // Abort in-flight requests on unmount (e.g. rapid navigation mid-load)
+    useEffect(() => {
+        return () => {
+            notificationsAbortRef.current?.abort();
+            unreadCountAbortRef.current?.abort();
+        };
+    }, []);
 
     // Initial load
     useEffect(() => {
