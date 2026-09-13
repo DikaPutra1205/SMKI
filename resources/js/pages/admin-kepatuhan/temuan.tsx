@@ -1131,7 +1131,7 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                                         <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
                                             {f.pic?.name ? (
                                                 <>
-                                                    <span className="bg-primary grid h-4 w-4 shrink-0 place-items-center rounded-full text-[8px] font-bold text-white">
+                                                    <span className="bg-primary inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[8px] font-bold text-white">
                                                         {initials(f.pic.name)}
                                                     </span>
                                                     <span>{f.pic.name}</span>
