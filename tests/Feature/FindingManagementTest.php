@@ -774,7 +774,8 @@ class FindingManagementTest extends TestCase
             'catatan' => '',
         ]);
 
-        $this->assertNull($finding->fresh()->catatan_admin);
+        // Empty note must NOT wipe the initial admin note — it is preserved.
+        $this->assertSame('Initial note', $finding->fresh()->catatan_admin);
     }
 
     public function test_pic_cannot_change_finding_deadline(): void

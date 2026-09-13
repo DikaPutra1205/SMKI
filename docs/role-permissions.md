@@ -53,10 +53,10 @@ Rule: for `pic`, every ✓ grant is limited to records owned by the PIC's own un
 | **finding** | | | | | |
 | finding.view | ✓ | ✓ | ✓ | ✓ | ✓ |
 | finding.read | ✓ | ✓ | ✓ | ✓ | ✓ |
-| finding.create | ✓ | ✓ | ✗ | ✗ | ✓ |
+| finding.create | ✓ | ✓ | ✗ | ✗ | ✗ |
 | finding.update | ✓ | ✓ | ✗ | ✗ | ✓ |
 | finding.update-status | ✓ | ✓ | ✗ | ✗ | ✓ |
-| finding.delete | ✓ | ✓ | ✗ | ✗ | ✓ |
+| finding.delete | ✓ | ✓ | ✗ | ✗ | ✗ |
 | **risk** | | | | | |
 | risk.view | ✓ | ✓ | ✓ | ✓ | ✓ |
 | risk.read | ✓ | ✓ | ✓ | ✓ | ✓ |

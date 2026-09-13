@@ -174,6 +174,19 @@ class ComplianceOfficerService
             throw new AuthorizationException('Anda tidak memiliki wewenang untuk mengubah temuan ini.');
         }
 
+        if ($user->isPic()) {
+            // PIC may only move the status (never 'closed') and attach their own notes.
+            // Deadline, severity, reassignment and admin notes stay admin-controlled.
+            unset(
+                $data['category'],
+                $data['kategori'],
+                $data['deadline'],
+                $data['pic_id'],
+                $data['admin_notes'],
+                $data['catatan_admin']
+            );
+        }
+
         return DB::transaction(function () use ($user, $finding, $data) {
             $oldStatus = $finding->status;
             $newStatus = $data['status'] ?? null;
@@ -182,11 +195,25 @@ class ComplianceOfficerService
 
             $note = $data['catatan'] ?? $data['notes'] ?? $data['admin_notes'] ?? $data['catatan_admin'] ?? null;
 
-            if ($statusChanged) {
-                if ($user->isPic() && $newStatus === Finding::STATUS_CLOSED) {
-                    throw new AuthorizationException('PIC tidak berwenang menutup dan memverifikasi temuan. Penutupan temuan hanya dapat dilakukan oleh Admin Kepatuhan.');
-                }
+            if ($statusChanged && $user->isPic() && $newStatus === Finding::STATUS_CLOSED) {
+                throw new AuthorizationException('PIC tidak berwenang menutup dan memverifikasi temuan. Penutupan temuan hanya dapat dilakukan oleh Admin Kepatuhan.');
+            }
 
+            // Every meaningful mutation gets an audit trail entry. A note attached
+            // without a status change (e.g. PIC "Catat Progres") is recorded as a
+            // same-status comment, while catatan_admin ("Catatan Awal Temuan") is
+            // preserved and never overwritten by later updates.
+            if ($statusChanged || ($note !== null && trim($note) !== '')) {
+                FindingStatusHistory::create([
+                    'finding_id' => $finding->id,
+                    'user_id' => $user->id,
+                    'from_status' => $statusChanged ? $oldStatus : $finding->status,
+                    'to_status' => $statusChanged ? $newStatus : $finding->status,
+                    'catatan' => $note ?: "Status diubah dari {$oldStatus} menjadi {$newStatus}.",
+                ]);
+            }
+
+            if ($statusChanged) {
                 $updateData['status'] = $newStatus;
 
                 if ($newStatus === Finding::STATUS_CLOSED) {
@@ -196,14 +223,6 @@ class ComplianceOfficerService
                     // Re-opened from closed to in_progress / resolved / open
                     $updateData['tanggal_verifikasi'] = null;
                 }
-
-                FindingStatusHistory::create([
-                    'finding_id' => $finding->id,
-                    'user_id' => $user->id,
-                    'from_status' => $oldStatus,
-                    'to_status' => $newStatus,
-                    'catatan' => $note ?: "Status diubah dari {$oldStatus} menjadi {$newStatus}.",
-                ]);
             }
 
             if (isset($data['category'])) {
@@ -218,10 +237,6 @@ class ComplianceOfficerService
 
             if (array_key_exists('pic_id', $data) && $data['pic_id'] !== null) {
                 $updateData['pic_id'] = $data['pic_id'];
-            }
-
-            if ($note !== null) {
-                $updateData['catatan_admin'] = $note ?: null;
             }
 
             if (! empty($updateData)) {

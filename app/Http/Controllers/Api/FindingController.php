@@ -9,6 +9,7 @@ use App\Http\Requests\UpdateFindingStatusRequest;
 use App\Models\Finding;
 use App\Models\FindingStatusHistory;
 use App\Models\User;
+use App\Services\ComplianceOfficerService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,6 +18,10 @@ use Illuminate\Support\Facades\Gate;
 class FindingController extends Controller
 {
     use ApiResponse;
+
+    public function __construct(
+        protected ComplianceOfficerService $complianceOfficerService
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -85,77 +90,26 @@ class FindingController extends Controller
 
     public function update(UpdateFindingRequest $request, Finding $finding): JsonResponse
     {
-        $data = $request->validated();
+        $user = $request->user();
+        $updated = $this->complianceOfficerService->updateFinding($user, $finding, $request->validated());
 
-        $oldStatus = $finding->status;
-        $newStatus = $data['status'] ?? null;
-
-        if ($newStatus !== null && $newStatus !== $oldStatus) {
-            $note = $data['catatan'] ?? $data['catatan_admin'] ?? $data['admin_notes'] ?? $data['notes'] ?? "Status diubah dari {$oldStatus} ke {$newStatus}";
-            FindingStatusHistory::create([
-                'finding_id' => $finding->id,
-                'user_id' => $request->user()?->id,
-                'from_status' => $oldStatus,
-                'to_status' => $newStatus,
-                'catatan' => $note,
-            ]);
-
-            if ($newStatus === 'closed') {
-                $data['tanggal_verifikasi'] = now();
-            } elseif ($oldStatus === 'closed') {
-                $data['tanggal_verifikasi'] = null;
-            }
-        }
-
-        if (isset($data['category']) && ! isset($data['kategori'])) {
-            $data['kategori'] = $data['category'];
-        }
-
-        if (isset($data['admin_notes']) && ! isset($data['catatan_admin'])) {
-            $data['catatan_admin'] = $data['admin_notes'];
-        }
-
-        $finding->update($data);
-
-        return $this->success($finding->fresh(['control', 'unit', 'pic:id,name', 'histories.user']), 'Temuan berhasil diperbarui');
+        return $this->success($updated, 'Temuan berhasil diperbarui');
     }
 
     /** Update status temuan saja */
     public function updateStatus(UpdateFindingStatusRequest $request, Finding $finding): JsonResponse
     {
+        $user = $request->user();
         $data = $request->validated();
 
-        $oldStatus = $finding->status;
-        $newStatus = $data['status'];
-        $actorId = $request->user()?->id ?? $data['admin_id'] ?? null;
-        if (! $actorId) {
-            abort(401, 'Unauthenticated user or missing actor.');
-        }
-
-        $note = $data['catatan'] ?? "Status diubah dari {$oldStatus} ke {$newStatus}";
-
-        $update = ['status' => $newStatus];
-        if ($actorId) {
-            $update['admin_id'] = $actorId;
-        }
-
-        if ($newStatus === 'closed') {
-            $update['tanggal_verifikasi'] = now();
-        } elseif ($oldStatus === 'closed') {
-            $update['tanggal_verifikasi'] = null;
-        }
-
-        FindingStatusHistory::create([
-            'finding_id' => $finding->id,
-            'user_id' => $actorId,
-            'from_status' => $oldStatus,
-            'to_status' => $newStatus,
-            'catatan' => $note,
+        // Delegated to the service so role rules apply uniformly: PIC may not
+        // close a finding, and every status change lands in the audit trail.
+        $updated = $this->complianceOfficerService->updateFinding($user, $finding, [
+            'status' => $data['status'],
+            'catatan' => $data['catatan'] ?? null,
         ]);
 
-        $finding->update($update);
-
-        return $this->success($finding->fresh(['control', 'unit', 'pic:id,name', 'histories.user']), 'Status temuan berhasil diperbarui');
+        return $this->success($updated, 'Status temuan berhasil diperbarui');
     }
 
     public function destroy(Finding $finding): JsonResponse

@@ -151,7 +151,13 @@ class ComplianceOfficerTest extends TestCase
             'id' => $finding->id,
             'status' => Finding::STATUS_CLOSED,
             'admin_id' => $this->admin->id,
-            'catatan_admin' => 'Telah ditutup oleh Admin Kepatuhan setelah audit',
+        ]);
+
+        // The closing note lands in the audit trail; the initial admin note
+        // field is preserved (no overwrite on status change).
+        $this->assertDatabaseHas('finding_status_histories', [
+            'finding_id' => $finding->id,
+            'catatan' => 'Telah ditutup oleh Admin Kepatuhan setelah audit',
         ]);
 
         // Assert exactly 1 update log created (no duplicate writes)
@@ -1116,8 +1122,13 @@ class ComplianceOfficerTest extends TestCase
 
         $fresh = $finding->fresh();
         $this->assertEquals(Finding::STATUS_CLOSED, $fresh->status);
-        $this->assertEquals('Diverifikasi lewat halaman web', $fresh->catatan_admin);
         $this->assertEquals($this->admin->id, $fresh->admin_id);
+
+        // Note persisted as an audit-trail entry, not by overwriting catatan_admin.
+        $this->assertDatabaseHas('finding_status_histories', [
+            'finding_id' => $finding->id,
+            'catatan' => 'Diverifikasi lewat halaman web',
+        ]);
     }
 
     public function test_web_update_risk_redirects_back_with_flash(): void

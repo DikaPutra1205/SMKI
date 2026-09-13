@@ -140,7 +140,6 @@ class NavigationService
                 'url' => '/temuan',
                 'icon' => 'AlertCircle',
                 'permissions' => ['finding.view'],
-                'denies' => ['work-unit.view'],
             ],
             [
                 'label' => 'Register Risiko',
