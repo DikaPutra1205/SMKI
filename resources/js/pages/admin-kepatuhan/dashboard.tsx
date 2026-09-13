@@ -115,13 +115,13 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                             Pustaka Kontrol
                         </Link>
                     )}
-                    {can('checklist.verify') && (
+                    {(can('checklist.bulk-verify') || (can('checklist.view') && can('audit-log.view'))) && (
                         <Link
                             href="/admin/kepatuhan/checklist/verify"
                             className="bg-primary hover:bg-primary inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all active:scale-95"
                         >
                             <FileCheck className="h-4 w-4" />
-                            Verifikasi Penilaian
+                            Verifikasi Checklists
                         </Link>
                     )}
                 </div>

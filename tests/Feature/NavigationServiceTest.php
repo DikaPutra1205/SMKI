@@ -60,6 +60,55 @@ class NavigationServiceTest extends TestCase
         }
     }
 
+    public function test_all_non_pic_roles_share_verifikasi_checklists_nav(): void
+    {
+        foreach ([User::ROLE_ADMIN_KEPATUHAN, User::ROLE_KOORDINATOR_SMKI, User::ROLE_AUDITOR] as $role) {
+            $user = User::factory()->create(['role' => $role]);
+            $labels = collect(app(NavigationService::class)->getForUser($user))->pluck('label')->all();
+
+            $this->assertContains('Verifikasi Checklists', $labels);
+        }
+    }
+
+    public function test_pic_does_not_see_verifikasi_checklists(): void
+    {
+        $pic = User::factory()->create(['role' => User::ROLE_PIC]);
+        $labels = collect(app(NavigationService::class)->getForUser($pic))->pluck('label')->all();
+
+        $this->assertNotContains('Verifikasi Checklists', $labels);
+    }
+
+    public function test_koordinator_and_auditor_lost_manajemen_sesi_checklist(): void
+    {
+        foreach ([User::ROLE_KOORDINATOR_SMKI, User::ROLE_AUDITOR] as $role) {
+            $user = User::factory()->create(['role' => $role]);
+            $urls = $this->urlsFor($user);
+
+            $this->assertNotContains('/admin/kepatuhan/sessions', $urls);
+            $this->assertContains('/admin/kepatuhan/checklist/verify', $urls);
+        }
+    }
+
+    public function test_admin_keeps_both_sessions_and_verify(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN_KEPATUHAN]);
+        $urls = $this->urlsFor($admin);
+
+        $this->assertContains('/admin/kepatuhan/sessions', $urls);
+        $this->assertContains('/admin/kepatuhan/checklist/verify', $urls);
+    }
+
+    public function test_superadmin_keeps_sessions_but_no_verify_nav(): void
+    {
+        // Superadmin can hit the verify URL via bulk-verify, but nav hides it
+        // via denies work-unit.view — same as the old Verifikasi Penilaian entry.
+        $superadmin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        $urls = $this->urlsFor($superadmin);
+
+        $this->assertContains('/admin/kepatuhan/sessions', $urls);
+        $this->assertNotContains('/admin/kepatuhan/checklist/verify', $urls);
+    }
+
     public function test_pic_gets_assessment_navigation_only(): void
     {
         $user = User::factory()->create(['role' => User::ROLE_PIC]);

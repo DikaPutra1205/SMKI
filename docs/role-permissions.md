@@ -25,7 +25,7 @@ Rule: for `pic`, every ✓ grant is limited to records owned by the PIC's own un
 | checklist.restore | ✓ | ✓ | ✗ | ✗ | ✗ |
 | checklist.generate-monthly | ✓ | ✓ | ✗ | ✗ | ✓ |
 | **checklist-session** | | | | | |
-| checklist-session.view | ✓ | ✓ | ✓ | ✓ | ✗ |
+| checklist-session.view | ✓ | ✓ | ✗ | ✗ | ✗ |
 | checklist-session.read | ✓ | ✓ | ✓ | ✓ | ✓ |
 | checklist-session.create | ✓ | ✓ | ✗ | ✗ | ✗ |
 | checklist-session.update | ✓ | ✓ | ✗ | ✗ | ✓ |
@@ -98,8 +98,9 @@ Route: `GET /admin/kepatuhan/sessions` (menu item "Manajemen Sesi Checklist", ga
 - **superadmin, admin_kepatuhan** — full CRUD. Create ("Buat Sesi") auto-generates the session
   by `(unit_id, framework_id, periode)` and seeds one `ChecklistEntry` per `Control` with
   `pic_id = null` (mirrors the artisan command). Edit/Delete/Restore also available.
-- **koordinator_smki, auditor** — `view`/`read` only: the page is visible but no
-  create/edit/delete controls render (gated by `useCan`).
+- **koordinator_smki, auditor** — no access to this screen (no `checklist-session.view`);
+  they view checklist entries read-only via "Verifikasi Checklists"
+  (`GET /admin/kepatuhan/checklist/verify`).
 - **pic** — no access to this screen (no `checklist-session.view`); PICs keep their own
   `/checklist` data via `checklist-session.read`/`update`.
 

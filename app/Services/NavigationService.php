@@ -118,10 +118,10 @@ class NavigationService
                 'denies' => ['work-unit.view'],
             ],
             [
-                'label' => 'Verifikasi Penilaian',
+                'label' => 'Verifikasi Checklists',
                 'url' => '/admin/kepatuhan/checklist/verify',
                 'icon' => 'ClipboardCheck',
-                'permissions' => ['checklist.bulk-verify'],
+                'permissions' => ['checklist.view', 'audit-log.view'],
                 'denies' => ['work-unit.view'],
             ],
 

@@ -475,7 +475,7 @@ export const id = {
         },
     },
     bulkVerify: {
-        title: 'Verifikasi Penilaian',
+        title: 'Verifikasi Checklists',
         subtitle: 'Tinjau dan verifikasi kepatuhan kontrol checklist yang diajukan oleh PIC unit kerja.',
         landingTitle: 'Pilih Sesi Penilaian',
         landingSubtitle: 'Pilih sesi penilaian unit kerja yang akan diverifikasi.',

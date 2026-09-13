@@ -3,6 +3,7 @@ import { Pagination } from '@/components/ui/Pagination';
 import { SegmentedProgressBar, complianceSegments } from '@/components/ui/SegmentedProgressBar';
 import { Select } from '@/components/ui/Select';
 import AppLayout from '@/layouts/AppLayout';
+import { useCan } from '@/lib/can';
 import { t } from '@/lib/i18n';
 import { formatDateIndonesian, formatPeriodeIndonesian } from '@/lib/utils';
 import { Head, router } from '@inertiajs/react';
@@ -131,6 +132,11 @@ function SessionCard({ session }: { session: SessionItem }) {
 /* ─── Page ───────────────────────────────────────────────────────────────── */
 
 export default function BulkVerifyLanding({ sessions, workUnits, frameworks, periodeOptions, filters }: BulkVerifyLandingProps) {
+    const can = useCan();
+    // ponytail: koordinator/auditor land on their flat /dashboard — the
+    // admin-kepatuhan dashboard URL 403s for them via PageDispatcher.
+    // canVerify roles (admin/superadmin) hold bulk-verify, so invert on that.
+    const dashboardHref = can('checklist.bulk-verify') ? '/admin/kepatuhan/dashboard' : '/dashboard';
     const [search, setSearch] = useState(filters.search || '');
     const [unitId, setUnitId] = useState(filters.unit_id || '');
     const [frameworkId, setFrameworkId] = useState(filters.framework_id || '');
@@ -172,7 +178,7 @@ export default function BulkVerifyLanding({ sessions, workUnits, frameworks, per
     const endIndex = perPage === 'all' ? totalItems : Math.min(startIndex + effectivePerPage, totalItems);
     const paginatedSessions = perPage === 'all' ? sessions : sessions.slice(startIndex, endIndex);
 
-    const breadcrumbs = [{ label: t('common.dashboard'), href: '/admin/kepatuhan/dashboard' }, { label: t('bulkVerify.title') }];
+    const breadcrumbs = [{ label: t('common.dashboard'), href: dashboardHref }, { label: t('bulkVerify.title') }];
 
     return (
         <AppLayout breadcrumbs={breadcrumbs} currentPath="/admin/kepatuhan/checklist/verify">

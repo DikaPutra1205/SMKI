@@ -3,10 +3,11 @@ import TimeframeFilter from '@/components/dashboards/TimeframeFilter';
 import { ActivitySkeleton } from '@/components/skeletons/ActivitySkeleton';
 import { ChartSkeleton } from '@/components/skeletons/ChartSkeleton';
 import AppLayout from '@/layouts/AppLayout';
+import { useCan } from '@/lib/can';
 import { formatDateIndonesian, formatDateTimeIndonesian } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { Deferred, Head, Link, usePage } from '@inertiajs/react';
-import { Clock, FileSearch, Shield, ShieldAlert, ShieldCheck, TrendingUp } from 'lucide-react';
+import { ClipboardCheck, Clock, FileSearch, Shield, ShieldAlert, ShieldCheck, TrendingUp } from 'lucide-react';
 import { useMemo } from 'react';
 
 interface RecentActivity {
@@ -45,6 +46,7 @@ interface AuditorDashboardProps {
 
 export default function AuditorDashboard({ summary, trends = [], recent_activities = [], filters = {} }: AuditorDashboardProps) {
     const { auth } = usePage<SharedData>().props;
+    const can = useCan();
     const userName = auth.user?.name || 'Auditor Kepatuhan';
 
     const breadcrumbs = [{ label: 'Dashboard Auditor' }];
@@ -102,6 +104,15 @@ export default function AuditorDashboard({ summary, trends = [], recent_activiti
                         <FileSearch className="h-4 w-4" />
                         Temuan Audit
                     </Link>
+                    {can('checklist.view') && can('audit-log.view') && (
+                        <Link
+                            href="/admin/kepatuhan/checklist/verify"
+                            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-xs transition-colors hover:bg-slate-50 sm:text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                        >
+                            <ClipboardCheck className="h-4 w-4" />
+                            Verifikasi Checklists
+                        </Link>
+                    )}
                 </div>
             </div>
 

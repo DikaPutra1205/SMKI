@@ -223,18 +223,32 @@ class ComplianceOfficerController extends Controller
     }
 
     /**
+     * Read-only roles (koordinator, auditor) may view the review queue
+     * without verify rights. POST actions keep the bulk-verify gate.
+     *
      * Compliance Officer Checklist Review / Bulk Verify page.
      *
      * - No session_id  → render the session-card landing grid so the user picks a session first.
      * - session_id set → render the per-session entry table/filter view with unified verification (single + bulk).
      */
+    private function ensureCanViewReviewQueue(User $user): void
+    {
+        if ($user->hasPermissionTo('checklist.bulk-verify')) {
+            return;
+        }
+
+        if ($user->hasPermissionTo('checklist.view') && $user->hasPermissionTo('audit-log.view')) {
+            return;
+        }
+
+        abort(403);
+    }
+
     public function bulkVerifyPage(Request $request): Response
     {
         $user = $request->user();
 
-        if (! $user->hasPermissionTo('checklist.bulk-verify')) {
-            abort(403);
-        }
+        $this->ensureCanViewReviewQueue($user);
 
         $sessionId = $request->filled('session_id') ? (int) $request->input('session_id') : null;
 
@@ -276,9 +290,7 @@ class ComplianceOfficerController extends Controller
     {
         $user = $request->user();
 
-        if (! $user->hasPermissionTo('checklist.bulk-verify')) {
-            abort(403);
-        }
+        $this->ensureCanViewReviewQueue($user);
 
         $sessionId = $request->filled('session_id') ? (int) $request->input('session_id') : null;
 

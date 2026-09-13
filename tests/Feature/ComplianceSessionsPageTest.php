@@ -53,6 +53,15 @@ class ComplianceSessionsPageTest extends TestCase
             ->has('periodeOptions'));
     }
 
+    public function test_koordinator_and_auditor_cannot_view_sessions_page(): void
+    {
+        foreach ([User::ROLE_KOORDINATOR_SMKI, User::ROLE_AUDITOR] as $role) {
+            $viewer = User::factory()->create(['role' => $role]);
+
+            $this->actingAs($viewer)->get('/admin/kepatuhan/sessions')->assertForbidden();
+        }
+    }
+
     public function test_sessions_page_search_filter_returns_only_matching(): void
     {
         $unit = WorkUnit::factory()->create(['nama' => 'Unit A']);

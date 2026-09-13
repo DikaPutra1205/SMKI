@@ -37,6 +37,12 @@ class ComplianceController extends Controller
 
     public function sessions(Request $request): Response
     {
+        $user = $request->user();
+
+        if (! $user->hasPermissionTo('checklist-session.view')) {
+            abort(403);
+        }
+
         $filters = $request->only(['search', 'unit_id', 'framework_id', 'periode']);
 
         $sessions = $this->complianceService->getAdminSessions($filters);

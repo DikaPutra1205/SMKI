@@ -21,6 +21,10 @@ class ComplianceOfficerTest extends TestCase
 
     private User $admin;
 
+    private User $koordinator;
+
+    private User $auditor;
+
     private User $picA;
 
     private User $picB;
@@ -40,6 +44,16 @@ class ComplianceOfficerTest extends TestCase
 
         $this->admin = User::factory()->create([
             'role' => 'admin_kepatuhan',
+            'unit_id' => $this->unitA->id,
+        ]);
+
+        $this->koordinator = User::factory()->create([
+            'role' => 'koordinator_smki',
+            'unit_id' => $this->unitA->id,
+        ]);
+
+        $this->auditor = User::factory()->create([
+            'role' => 'auditor',
             'unit_id' => $this->unitA->id,
         ]);
 
@@ -1286,6 +1300,45 @@ class ComplianceOfficerTest extends TestCase
     public function test_pic_cannot_access_bulk_verify_page(): void
     {
         $this->actingAs($this->picA)->get('/admin/kepatuhan/checklist/bulk-verify')->assertForbidden();
+    }
+
+    public function test_koordinator_and_auditor_can_view_but_not_verify_checklists(): void
+    {
+        $session = ChecklistSession::factory()->create(['unit_id' => $this->unitA->id]);
+        $entry = ChecklistEntry::factory()->create([
+            'session_id' => $session->id,
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unitA->id,
+            'pic_id' => $this->picA->id,
+            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+        ]);
+
+        foreach ([$this->koordinator, $this->auditor] as $viewer) {
+            // Landing + detail pages render read-only (same view as Verifikasi Checklists).
+            $this->actingAs($viewer)->get('/admin/kepatuhan/checklist/verify')->assertOk();
+            $this->actingAs($viewer)
+                ->get("/admin/kepatuhan/checklist/verify?session_id={$session->id}")
+                ->assertOk()
+                ->assertInertia(fn (Assert $page) => $page
+                    ->component('admin-kepatuhan/checklist/verify', false)
+                    ->has('entries.data', 1));
+
+            // Verify actions stay forbidden.
+            $this->actingAs($viewer)
+                ->from('/admin/kepatuhan/checklist/verify')
+                ->post("/admin/kepatuhan/checklist/verify/{$entry->id}", ['status' => 'compliant'])
+                ->assertForbidden();
+            $this->actingAs($viewer)
+                ->from('/admin/kepatuhan/checklist/verify')
+                ->post('/admin/kepatuhan/bulk-verify', [
+                    'entry_ids' => [$entry->id],
+                    'status' => 'compliant',
+                ])
+                ->assertForbidden();
+        }
+
+        // PIC still cannot view at all.
+        $this->actingAs($this->picA)->get('/admin/kepatuhan/checklist/verify')->assertForbidden();
     }
 
     public function test_single_verify_allows_catatan_when_status_changes(): void

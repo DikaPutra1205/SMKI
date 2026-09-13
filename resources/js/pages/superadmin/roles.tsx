@@ -99,7 +99,7 @@ function getPermissionLabel(key: string): { actionName: string; actionDesc: stri
     else if (actionKey === 'create') actionName = 'Tambah Data';
     else if (actionKey === 'update') actionName = 'Ubah / Edit';
     else if (actionKey === 'delete') actionName = 'Hapus Data';
-    else if (actionKey === 'bulk-verify') actionName = 'Verifikasi Penilaian';
+    else if (actionKey === 'bulk-verify') actionName = 'Verifikasi Checklists';
     else if (actionKey === 'upload') actionName = 'Unggah Bukti';
     else if (actionKey === 'export') actionName = 'Ekspor Laporan';
 

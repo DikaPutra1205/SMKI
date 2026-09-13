@@ -436,6 +436,9 @@ const STATUS_OPTIONS = ['compliant', 'partial', 'non_compliant', 'na'] as const;
 
 export default function Verify({ entries, session, workUnits = [], filters = {} }: VerifyProps) {
     const can = useCan();
+    // ponytail: read-only roles (koordinator/auditor, no bulk-verify) get no
+    // selection UI at all — checkboxes exist only to feed the verify dock.
+    const canVerify = can('checklist.bulk-verify');
     const page = entries ?? { data: [], current_page: 1, last_page: 1, per_page: 20, total: 0, from: null, to: null };
     const items = page.data;
 
@@ -582,8 +585,12 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
         });
     }
 
+    // ponytail: koordinator/auditor land on their flat /dashboard — the
+    // admin-kepatuhan dashboard URL 403s for them via PageDispatcher.
+    // canVerify roles (admin/superadmin) hold bulk-verify, so invert on that.
+    const dashboardHref = canVerify ? '/admin/kepatuhan/dashboard' : '/dashboard';
     const breadcrumbs = [
-        { label: t('common.dashboard'), href: '/admin/kepatuhan/dashboard' },
+        { label: t('common.dashboard'), href: dashboardHref },
         { label: t('bulkVerify.title'), href: '/admin/kepatuhan/checklist/verify' },
         ...(session?.konteks_penilaian ? [{ label: session.konteks_penilaian }] : []),
     ];
@@ -741,15 +748,17 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                     <table className="w-full min-w-[850px] text-left text-xs sm:text-sm">
                         <thead>
                             <tr className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-bold tracking-wider text-slate-600 uppercase dark:border-slate-800 dark:bg-[#001f38] dark:text-slate-300">
-                                <th className="w-12 px-4 py-3.5 text-center">
-                                    <input
-                                        type="checkbox"
-                                        checked={allSelectedOnPage}
-                                        onChange={toggleAll}
-                                        aria-label="Pilih semua baris pada halaman ini"
-                                        className="accent-primary h-4 w-4 cursor-pointer rounded dark:border-slate-600"
-                                    />
-                                </th>
+                                {canVerify && (
+                                    <th className="w-12 px-4 py-3.5 text-center">
+                                        <input
+                                            type="checkbox"
+                                            checked={allSelectedOnPage}
+                                            onChange={toggleAll}
+                                            aria-label="Pilih semua baris pada halaman ini"
+                                            className="accent-primary h-4 w-4 cursor-pointer rounded dark:border-slate-600"
+                                        />
+                                    </th>
+                                )}
                                 <th className="px-4 py-3.5">Kode Klausul</th>
                                 <th className="px-4 py-3.5">Kontrol / Klausul</th>
                                 <th className="px-4 py-3.5">Unit Kerja / PIC</th>
@@ -762,7 +771,7 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
                             {items.length === 0 ? (
                                 <tr>
-                                    <td colSpan={8} className="px-4 py-12">
+                                    <td colSpan={canVerify ? 8 : 7} className="px-4 py-12">
                                         <EmptyState message="Tidak ada entri checklist yang cocok dengan kriteria filter ini." />
                                     </td>
                                 </tr>
@@ -793,15 +802,17 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                                                         : 'bg-slate-200/70 dark:bg-[#00172b]/80'
                                             } hover:bg-primary-50/40 dark:hover:bg-[#0a3b63]/60`}
                                         >
-                                            <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
-                                                <input
-                                                    type="checkbox"
-                                                    checked={isChecked}
-                                                    onChange={() => toggleOne(entry.id)}
-                                                    aria-label={`Pilih baris ${code}`}
-                                                    className="accent-primary h-4 w-4 cursor-pointer rounded dark:border-slate-600"
-                                                />
-                                            </td>
+                                            {canVerify && (
+                                                <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={isChecked}
+                                                        onChange={() => toggleOne(entry.id)}
+                                                        aria-label={`Pilih baris ${code}`}
+                                                        className="accent-primary h-4 w-4 cursor-pointer rounded dark:border-slate-600"
+                                                    />
+                                                </td>
+                                            )}
                                             <td className="px-4 py-3 font-mono text-xs font-bold text-slate-900 dark:text-white">{code}</td>
                                             <td className="max-w-[280px] px-4 py-3">
                                                 <p className="truncate font-semibold text-slate-900 dark:text-white">{title}</p>
