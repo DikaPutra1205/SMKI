@@ -60,9 +60,9 @@ Rule: for `pic`, every ✓ grant is limited to records owned by the PIC's own un
 | **risk** | | | | | |
 | risk.view | ✓ | ✓ | ✓ | ✓ | ✓ |
 | risk.read | ✓ | ✓ | ✓ | ✓ | ✓ |
-| risk.create | ✓ | ✓ | ✗ | ✗ | ✓ |
-| risk.update | ✓ | ✓ | ✗ | ✗ | ✓ |
-| risk.delete | ✓ | ✓ | ✗ | ✗ | ✓ |
+| risk.create | ✓ | ✓ | ✓ | ✗ | ✗ |
+| risk.update | ✓ | ✓ | ✓ | ✗ | ✓ |
+| risk.delete | ✓ | ✓ | ✓ | ✗ | ✗ |
 | **work-unit** | | | | | |
 | work-unit.view | ✓ | ✗ | ✗ | ✗ | ✗ |
 | work-unit.read | ✓ | ✓ | ✓ | ✓ | ✓ |

@@ -56,11 +56,7 @@ class RiskPolicy
     public function create(User $user, ?int $targetUnitId = null): bool
     {
         if ($user->isPic()) {
-            if ($targetUnitId !== null && (int) $targetUnitId !== (int) $user->unit_id) {
-                return false;
-            }
-
-            return true;
+            return false;
         }
 
         return $user->hasPermissionTo('risk.create') || $user->isAdmin() || $user->isSuperAdmin() || $user->isKoordinator();
@@ -95,7 +91,7 @@ class RiskPolicy
             return false;
         }
 
-        if (! ($user->hasPermissionTo('risk.delete') || $user->isAdmin() || $user->isSuperAdmin())) {
+        if (! ($user->hasPermissionTo('risk.delete') || $user->isAdmin() || $user->isSuperAdmin() || $user->isKoordinator())) {
             return false;
         }
 

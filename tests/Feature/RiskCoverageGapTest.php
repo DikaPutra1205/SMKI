@@ -124,35 +124,25 @@ class RiskCoverageGapTest extends TestCase
             ->assertJsonStructure(['status', 'data' => ['total_risks', 'by_level', 'by_status']]);
     }
 
-    public function test_pic_create_forces_own_unit(): void
+    public function test_pic_cannot_create_risk(): void
     {
-        // PIC sends own unit → 201, stored as own
-        $res = $this->actingAs($this->picA)->postJson('/api/risks', [
+        // PIC loses create/delete entirely (own unit included)
+        $this->actingAs($this->picA)->postJson('/api/risks', [
             'control_id' => $this->control->id,
             'unit_id' => $this->unitA->id,
             'level_risiko' => Risk::LEVEL_HIGH,
             'pemilik_risiko' => 'PIC A',
-        ]);
-
-        $res->assertCreated();
-        $this->assertEquals($this->unitA->id, $res->json('data.unit_id'));
-        $this->assertDatabaseHas('risks', ['id' => $res->json('data.id'), 'unit_id' => $this->unitA->id]);
-
-        // PIC attempts cross-unit → 403 via StoreRiskRequest policy check
-        $this->actingAs($this->picA)->postJson('/api/risks', [
-            'control_id' => $this->control->id,
-            'unit_id' => $this->unitB->id,
-            'level_risiko' => Risk::LEVEL_HIGH,
-            'pemilik_risiko' => 'PIC A cross',
         ])->assertForbidden();
+
+        $this->assertDatabaseMissing('risks', ['control_id' => $this->control->id]);
     }
 
-    public function test_koordinator_cannot_delete_risk(): void
+    public function test_koordinator_can_delete_own_unit_risk(): void
     {
         $risk = Risk::factory()->create(['control_id' => $this->control->id, 'unit_id' => $this->unitA->id]);
 
-        $this->actingAs($this->koordinator)->deleteJson("/api/risks/{$risk->id}")->assertForbidden();
-        $this->assertDatabaseHas('risks', ['id' => $risk->id, 'deleted_at' => null]);
+        $this->actingAs($this->koordinator)->deleteJson("/api/risks/{$risk->id}")->assertOk();
+        $this->assertSoftDeleted('risks', ['id' => $risk->id]);
     }
 
     public function test_soft_deleted_risk_hidden(): void
