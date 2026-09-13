@@ -379,16 +379,8 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                             ))}
                         </Select>
 
-                        <DatePicker
-                            value={dateFrom}
-                            onChange={setDateFrom}
-                            placeholder="Tanggal Mulai"
-                        />
-                        <DatePicker
-                            value={dateTo}
-                            onChange={setDateTo}
-                            placeholder="Tanggal Selesai"
-                        />
+                        <DatePicker value={dateFrom} onChange={setDateFrom} placeholder="Tanggal Mulai" />
+                        <DatePicker value={dateTo} onChange={setDateTo} placeholder="Tanggal Selesai" />
                     </div>
                 </div>
 

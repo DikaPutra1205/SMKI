@@ -318,9 +318,7 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                             <div
                                 key={r.id}
                                 className={`hover:border-primary-200 flex flex-col justify-between rounded-2xl border border-slate-200/80 p-5 shadow-sm transition-all hover:shadow-md dark:border-slate-800 ${
-                                    idx % 2 === 0
-                                        ? 'bg-white dark:bg-slate-900'
-                                        : 'bg-slate-50/75 dark:bg-slate-900/60'
+                                    idx % 2 === 0 ? 'bg-white dark:bg-slate-900' : 'bg-slate-50/75 dark:bg-slate-900/60'
                                 }`}
                             >
                                 <div>

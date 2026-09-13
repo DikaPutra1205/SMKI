@@ -97,8 +97,8 @@ Route::middleware('auth')->group(function () {
     Route::post('evidences/{id}/restore', [ComplianceEvidenceController::class, 'restore']);
 
     // ── Temuan (Findings) ───────────────────────────────────────────────────────
-    Route::apiResource('findings', FindingController::class);
-    Route::patch('findings/{finding}/status', [FindingController::class, 'updateStatus']);
+    Route::apiResource('findings', FindingController::class)->whereNumber('finding');
+    Route::patch('findings/{finding}/status', [FindingController::class, 'updateStatus'])->whereNumber('finding');
 
     // ── Risiko (Risks) ──────────────────────────────────────────────────────────
     Route::apiResource('risks', RiskController::class);

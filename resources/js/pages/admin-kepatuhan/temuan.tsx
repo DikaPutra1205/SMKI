@@ -831,10 +831,7 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                                     <label className="mb-1 block text-[11px] font-bold text-slate-700 dark:text-slate-300">
                                         Penyesuaian Target Batas SLA (Deadline)
                                     </label>
-                                    <DatePicker
-                                        value={updateData.deadline}
-                                        onChange={(val) => setUpdateData('deadline', val)}
-                                    />
+                                    <DatePicker value={updateData.deadline} onChange={(val) => setUpdateData('deadline', val)} />
                                 </div>
                             )}
 
@@ -1405,10 +1402,7 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                             <label className="mb-1 block text-xs font-bold text-slate-700 dark:text-slate-300">
                                 Target Batas Waktu SLA (Deadline)
                             </label>
-                            <DatePicker
-                                value={createData.deadline}
-                                onChange={(val) => setCreateData('deadline', val)}
-                            />
+                            <DatePicker value={createData.deadline} onChange={(val) => setCreateData('deadline', val)} />
                             {createErrors.deadline && <p className="mt-1 text-xs text-rose-500">{createErrors.deadline}</p>}
                         </div>
                     </div>

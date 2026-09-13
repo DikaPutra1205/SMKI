@@ -373,11 +373,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
 
     const getDeadlineBadge = (r: RiskItem) => {
         if (!r.deadline) {
-            return (
-                <span className="text-xs italic text-slate-400 dark:text-slate-500">
-                    Belum ditentukan
-                </span>
-            );
+            return <span className="text-xs text-slate-400 italic dark:text-slate-500">Belum ditentukan</span>;
         }
 
         const dateStr = new Date(r.deadline).toLocaleDateString('id-ID', {
@@ -398,13 +394,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
             );
         }
 
-        if (
-            r.days_remaining !== null &&
-            r.days_remaining !== undefined &&
-            r.days_remaining <= 3 &&
-            r.days_remaining >= 0 &&
-            r.status === 'open'
-        ) {
+        if (r.days_remaining !== null && r.days_remaining !== undefined && r.days_remaining <= 3 && r.days_remaining >= 0 && r.status === 'open') {
             return (
                 <div className="inline-flex flex-col items-start gap-0.5">
                     <span className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300">
@@ -434,7 +424,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                     <div>
                         <div className="flex items-center gap-2">
                             <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{t('risks.title')}</h1>
-                            <span className="rounded-full border border-primary-200 bg-primary-50 px-2.5 py-0.5 text-xs font-bold text-primary-700 dark:border-primary-800 dark:bg-navy-900/60 dark:text-primary-200">
+                            <span className="border-primary-200 bg-primary-50 text-primary-700 dark:border-primary-800 dark:bg-navy-900/60 dark:text-primary-200 rounded-full border px-2.5 py-0.5 text-xs font-bold">
                                 {totalRisks} Risiko Terdaftar
                             </span>
                         </div>
@@ -470,7 +460,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                         setSelectedLevel(selectedLevel === kpi.key ? 'all' : kpi.key);
                                     }
                                 }}
-                                className={`flex flex-col rounded-2xl border border-slate-200/80 bg-white p-5 text-left shadow-sm transition-all hover:border-primary hover:shadow-md dark:border-slate-800 dark:bg-slate-900 ${kpi.borderClass}`}
+                                className={`hover:border-primary flex flex-col rounded-2xl border border-slate-200/80 bg-white p-5 text-left shadow-sm transition-all hover:shadow-md dark:border-slate-800 dark:bg-slate-900 ${kpi.borderClass}`}
                             >
                                 <div className="flex w-full items-center justify-between">
                                     <div className={`grid h-10 w-10 place-items-center rounded-xl ${kpi.iconClass}`}>
@@ -505,7 +495,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Cari deskripsi risiko, nomor klausul, atau pemilik risiko..."
-                                className="h-10 w-full rounded-xl border border-slate-200 bg-white py-2 pr-4 pl-9 text-xs text-slate-900 placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none sm:text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
+                                className="focus:border-primary focus:ring-primary/20 h-10 w-full rounded-xl border border-slate-200 bg-white py-2 pr-4 pl-9 text-xs text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:outline-none sm:text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
                             />
                         </div>
 
@@ -548,9 +538,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                     <div className="flex items-start justify-between gap-2">
                                         <div className="min-w-0">
                                             <div className="flex items-center gap-2">
-                                                <code className="text-[11px] font-bold text-primary dark:text-primary-200">
-                                                    RSK-{riskRef(r)}
-                                                </code>
+                                                <code className="text-primary dark:text-primary-200 text-[11px] font-bold">RSK-{riskRef(r)}</code>
                                                 {r.unit?.nama && (
                                                     <span className="inline-flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                                                         <Building2 className="h-2.5 w-2.5 text-slate-400" />
@@ -587,7 +575,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
 
                                     {/* Mitigation snippet */}
                                     {(r.mitigation_plan || r.rencana_mitigasi) && (
-                                        <p className="line-clamp-2 text-[11px] italic text-slate-500 dark:text-slate-400">
+                                        <p className="line-clamp-2 text-[11px] text-slate-500 italic dark:text-slate-400">
                                             Mitigasi: {r.mitigation_plan || r.rencana_mitigasi}
                                         </p>
                                     )}
@@ -604,7 +592,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                         <button
                                             type="button"
                                             onClick={() => setDetailTarget(r)}
-                                            className="inline-flex items-center gap-1 text-xs font-semibold text-primary dark:text-primary-200"
+                                            className="text-primary dark:text-primary-200 inline-flex items-center gap-1 text-xs font-semibold"
                                         >
                                             <Eye className="h-3.5 w-3.5" />
                                             Detail
@@ -675,16 +663,14 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                                 idx % 2 === 0 ? 'bg-white dark:bg-[#00223d]/70' : 'bg-slate-50/75 dark:bg-[#00172b]/80'
                                             } hover:bg-primary-50/40 dark:hover:bg-[#0a3b63]/60`}
                                         >
-                                            <td className="whitespace-nowrap px-5 py-4">
-                                                <code className="text-xs font-bold text-primary dark:text-primary-200">
-                                                    RSK-{riskRef(r)}
-                                                </code>
+                                            <td className="px-5 py-4 whitespace-nowrap">
+                                                <code className="text-primary dark:text-primary-200 text-xs font-bold">RSK-{riskRef(r)}</code>
                                             </td>
                                             <td className="px-5 py-4">
                                                 <button
                                                     type="button"
                                                     onClick={() => setDetailTarget(r)}
-                                                    className="line-clamp-1 text-left font-semibold text-slate-900 transition-colors hover:text-primary dark:text-white dark:hover:text-primary-300"
+                                                    className="hover:text-primary dark:hover:text-primary-300 line-clamp-1 text-left font-semibold text-slate-900 transition-colors dark:text-white"
                                                 >
                                                     {r.control?.judul || t('common.noData')}
                                                 </button>
@@ -694,33 +680,33 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                                     </span>
                                                     {r.control?.framework && <span>· {r.control.framework.nama}</span>}
                                                     {r.unit?.nama && (
-                                                        <span className="inline-flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.2 text-[10px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                                                        <span className="py-0.2 inline-flex items-center gap-1 rounded bg-slate-100 px-1.5 text-[10px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                                                             <Building2 className="h-2.5 w-2.5 text-slate-400" />
                                                             {r.unit.nama}
                                                         </span>
                                                     )}
                                                 </div>
                                                 {(r.mitigation_plan || r.rencana_mitigasi) && (
-                                                    <p className="mt-1 line-clamp-1 text-[11px] italic text-slate-400">
+                                                    <p className="mt-1 line-clamp-1 text-[11px] text-slate-400 italic">
                                                         Mitigasi: {r.mitigation_plan || r.rencana_mitigasi}
                                                     </p>
                                                 )}
                                             </td>
-                                            <td className="whitespace-nowrap px-5 py-4">{getRiskLevelBadge(r.risk_level || r.level_risiko)}</td>
-                                            <td className="whitespace-nowrap px-5 py-4 text-slate-700 dark:text-slate-300">
+                                            <td className="px-5 py-4 whitespace-nowrap">{getRiskLevelBadge(r.risk_level || r.level_risiko)}</td>
+                                            <td className="px-5 py-4 whitespace-nowrap text-slate-700 dark:text-slate-300">
                                                 <div className="flex items-center gap-1.5">
                                                     <UserCheck className="h-3.5 w-3.5 text-slate-400" />
                                                     <span>{r.risk_owner || r.pemilik_risiko || '—'}</span>
                                                 </div>
                                             </td>
-                                            <td className="whitespace-nowrap px-5 py-4">{getDeadlineBadge(r)}</td>
-                                            <td className="whitespace-nowrap px-5 py-4">{getMitigationStatus(r.status)}</td>
-                                            <td className="whitespace-nowrap px-5 py-4 text-right">
+                                            <td className="px-5 py-4 whitespace-nowrap">{getDeadlineBadge(r)}</td>
+                                            <td className="px-5 py-4 whitespace-nowrap">{getMitigationStatus(r.status)}</td>
+                                            <td className="px-5 py-4 text-right whitespace-nowrap">
                                                 <div className="inline-flex items-center gap-3">
                                                     <button
                                                         type="button"
                                                         onClick={() => setDetailTarget(r)}
-                                                        className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary-700 dark:text-primary-200"
+                                                        className="text-primary hover:text-primary-700 dark:text-primary-200 inline-flex items-center gap-1 text-xs font-semibold"
                                                     >
                                                         <Eye className="h-3.5 w-3.5" />
                                                         Detail
@@ -776,12 +762,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
             </div>
 
             {/* ── Create Risk Modal ── */}
-            <Modal
-                open={createModalOpen}
-                onClose={closeCreateModal}
-                title={t('risks.createTitle')}
-                description={t('risks.createDesc')}
-            >
+            <Modal open={createModalOpen} onClose={closeCreateModal} title={t('risks.createTitle')} description={t('risks.createDesc')}>
                 <form onSubmit={submitCreate} className="space-y-4 pt-1">
                     {/* Kontrol SMKI */}
                     <div>
@@ -792,7 +773,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                             value={createForm.data.control_id}
                             onChange={(e) => createForm.setData('control_id', e.target.value)}
                             required
-                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-primary focus:ring-1 focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                            className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                         >
                             <option value="">{t('risks.controlSelectPlaceholder')}</option>
                             {controls.map((c) => (
@@ -801,21 +782,17 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                 </option>
                             ))}
                         </select>
-                        {createForm.errors.control_id && (
-                            <p className="mt-1 text-xs text-red-500">{createForm.errors.control_id}</p>
-                        )}
+                        {createForm.errors.control_id && <p className="mt-1 text-xs text-red-500">{createForm.errors.control_id}</p>}
                     </div>
 
                     {/* Unit Kerja */}
                     <div>
-                        <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                            {t('risks.unitSelect')}
-                        </label>
+                        <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">{t('risks.unitSelect')}</label>
                         <select
                             value={createForm.data.unit_id}
                             onChange={(e) => createForm.setData('unit_id', e.target.value)}
                             disabled={isPic && !!authUser?.unit_id}
-                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-primary focus:ring-1 focus:ring-primary disabled:bg-slate-100 disabled:text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:disabled:bg-slate-800/50"
+                            className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:ring-1 disabled:bg-slate-100 disabled:text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:disabled:bg-slate-800/50"
                         >
                             <option value="">{t('risks.unitSelectPlaceholder')}</option>
                             {workUnits.map((u) => (
@@ -824,9 +801,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                 </option>
                             ))}
                         </select>
-                        {createForm.errors.unit_id && (
-                            <p className="mt-1 text-xs text-red-500">{createForm.errors.unit_id}</p>
-                        )}
+                        {createForm.errors.unit_id && <p className="mt-1 text-xs text-red-500">{createForm.errors.unit_id}</p>}
                     </div>
 
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -838,82 +813,61 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                             <select
                                 value={createForm.data.risk_level}
                                 onChange={(e) => createForm.setData('risk_level', e.target.value)}
-                                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-primary focus:ring-1 focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                             >
                                 <option value="low">{t('risks.low')}</option>
                                 <option value="medium">{t('risks.medium')}</option>
                                 <option value="high">{t('risks.high')}</option>
                                 <option value="critical">{t('risks.critical')}</option>
                             </select>
-                            {createForm.errors.risk_level && (
-                                <p className="mt-1 text-xs text-red-500">{createForm.errors.risk_level}</p>
-                            )}
+                            {createForm.errors.risk_level && <p className="mt-1 text-xs text-red-500">{createForm.errors.risk_level}</p>}
                         </div>
 
                         {/* Custom Deadline */}
                         <div>
-                            <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                                {t('risks.deadline')}
-                            </label>
-                            <DatePicker
-                                value={createForm.data.deadline}
-                                onChange={(val) => createForm.setData('deadline', val)}
-                            />
-                            {createForm.errors.deadline && (
-                                <p className="mt-1 text-xs text-red-500">{createForm.errors.deadline}</p>
-                            )}
+                            <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">{t('risks.deadline')}</label>
+                            <DatePicker value={createForm.data.deadline} onChange={(val) => createForm.setData('deadline', val)} />
+                            {createForm.errors.deadline && <p className="mt-1 text-xs text-red-500">{createForm.errors.deadline}</p>}
                         </div>
                     </div>
 
                     {/* Owner */}
                     <div>
-                        <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                            {t('risks.updateOwner')}
-                        </label>
+                        <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">{t('risks.updateOwner')}</label>
                         <input
                             type="text"
                             value={createForm.data.risk_owner}
                             onChange={(e) => createForm.setData('risk_owner', e.target.value)}
                             placeholder={t('risks.updateOwnerPlaceholder')}
-                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                            className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                         />
-                        {createForm.errors.risk_owner && (
-                            <p className="mt-1 text-xs text-red-500">{createForm.errors.risk_owner}</p>
-                        )}
+                        {createForm.errors.risk_owner && <p className="mt-1 text-xs text-red-500">{createForm.errors.risk_owner}</p>}
                     </div>
 
                     {/* Mitigation plan */}
                     <div>
-                        <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                            {t('risks.updateMitigation')}
-                        </label>
+                        <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">{t('risks.updateMitigation')}</label>
                         <textarea
                             value={createForm.data.mitigation_plan}
                             onChange={(e) => createForm.setData('mitigation_plan', e.target.value)}
                             placeholder={t('risks.updateMitigationPlaceholder')}
                             rows={3}
-                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                            className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                         />
-                        {createForm.errors.mitigation_plan && (
-                            <p className="mt-1 text-xs text-red-500">{createForm.errors.mitigation_plan}</p>
-                        )}
+                        {createForm.errors.mitigation_plan && <p className="mt-1 text-xs text-red-500">{createForm.errors.mitigation_plan}</p>}
                     </div>
 
                     {/* Admin notes */}
                     <div>
-                        <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                            {t('risks.adminNotes')}
-                        </label>
+                        <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">{t('risks.adminNotes')}</label>
                         <textarea
                             value={createForm.data.admin_notes}
                             onChange={(e) => createForm.setData('admin_notes', e.target.value)}
                             placeholder={t('risks.adminNotesPlaceholder')}
                             rows={2}
-                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                            className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                         />
-                        {createForm.errors.admin_notes && (
-                            <p className="mt-1 text-xs text-red-500">{createForm.errors.admin_notes}</p>
-                        )}
+                        {createForm.errors.admin_notes && <p className="mt-1 text-xs text-red-500">{createForm.errors.admin_notes}</p>}
                     </div>
 
                     {/* Footer actions */}
@@ -928,7 +882,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                         <button
                             type="submit"
                             disabled={createForm.processing}
-                            className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-primary-700 disabled:bg-primary/60"
+                            className="bg-primary hover:bg-primary-700 disabled:bg-primary/60 rounded-xl px-4 py-2 text-xs font-semibold text-white transition-colors"
                         >
                             {createForm.processing ? 'Menyimpan…' : t('risks.createSubmit')}
                         </button>
@@ -954,7 +908,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                 <select
                                     value={updateForm.data.status}
                                     onChange={(e) => updateForm.setData('status', e.target.value)}
-                                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-primary focus:ring-1 focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                    className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                                 >
                                     <option value="open">{t('risks.open')}</option>
                                     <option value="mitigated">{t('risks.mitigated')}</option>
@@ -976,7 +930,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                     <select
                                         value={updateForm.data.risk_level}
                                         onChange={(e) => updateForm.setData('risk_level', e.target.value)}
-                                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-primary focus:ring-1 focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                        className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                                     >
                                         <option value="low">{t('risks.low')}</option>
                                         <option value="medium">{t('risks.medium')}</option>
@@ -991,7 +945,9 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                             {/* Owner */}
                             <div>
-                                <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">{t('risks.updateOwner')}</label>
+                                <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                    {t('risks.updateOwner')}
+                                </label>
                                 <input
                                     type="text"
                                     value={updateForm.data.risk_owner}
@@ -1001,16 +957,14 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                     className={`w-full rounded-xl border px-3 py-2 text-sm ${
                                         isPic
                                             ? 'cursor-not-allowed border-slate-200 bg-slate-100/70 text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400'
-                                            : 'border-slate-200 bg-white placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white'
+                                            : 'focus:border-primary focus:ring-primary border-slate-200 bg-white placeholder:text-slate-400 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white'
                                     }`}
                                 />
                             </div>
 
                             {/* Custom Deadline */}
                             <div>
-                                <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                                    {t('risks.deadline')}
-                                </label>
+                                <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">{t('risks.deadline')}</label>
                                 <DatePicker
                                     value={updateForm.data.deadline}
                                     onChange={(val) => updateForm.setData('deadline', val)}
@@ -1029,7 +983,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                 onChange={(e) => updateForm.setData('mitigation_plan', e.target.value)}
                                 placeholder={t('risks.updateMitigationPlaceholder')}
                                 rows={3}
-                                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                             />
                         </div>
 
@@ -1054,7 +1008,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                     value={updateForm.data.admin_notes}
                                     onChange={(e) => updateForm.setData('admin_notes', e.target.value)}
                                     placeholder={t('risks.updateNotesPlaceholder')}
-                                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:border-primary focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                    className="focus:border-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                                 />
                                 {needsNotes && (
                                     <p className="mt-1.5 text-[11px] text-amber-700 dark:text-amber-400">{t('risks.updateNotesRequired')}</p>
@@ -1062,12 +1016,8 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                             </div>
                         ) : updateForm.data.admin_notes ? (
                             <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3.5 dark:border-slate-800 dark:bg-slate-800/30">
-                                <label className="mb-1 block text-xs font-semibold text-slate-500 dark:text-slate-400">
-                                    Catatan Admin
-                                </label>
-                                <p className="text-xs text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
-                                    {updateForm.data.admin_notes}
-                                </p>
+                                <label className="mb-1 block text-xs font-semibold text-slate-500 dark:text-slate-400">Catatan Admin</label>
+                                <p className="text-xs whitespace-pre-wrap text-slate-700 dark:text-slate-300">{updateForm.data.admin_notes}</p>
                             </div>
                         ) : null}
 
@@ -1084,7 +1034,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                 type="button"
                                 onClick={submitUpdate}
                                 disabled={updateForm.processing}
-                                className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-primary-700 disabled:bg-primary/60"
+                                className="bg-primary hover:bg-primary-700 disabled:bg-primary/60 rounded-xl px-4 py-2 text-xs font-semibold text-white transition-colors"
                             >
                                 {updateForm.processing ? 'Menyimpan…' : t('risks.updateSubmit')}
                             </button>
@@ -1100,7 +1050,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                     detailTarget ? (
                         <div className="flex items-center gap-2.5">
                             <span>Detail Risiko</span>
-                            <code className="rounded border border-primary-200 bg-primary-50 px-2 py-0.5 text-xs font-bold text-primary dark:border-primary-800 dark:bg-navy-900 dark:text-primary-200">
+                            <code className="border-primary-200 bg-primary-50 text-primary dark:border-primary-800 dark:bg-navy-900 dark:text-primary-200 rounded border px-2 py-0.5 text-xs font-bold">
                                 RSK-{riskRef(detailTarget)}
                             </code>
                         </div>
@@ -1121,7 +1071,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                     setDetailTarget(null);
                                     openEditModal(target);
                                 }}
-                                className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-primary-700"
+                                className="bg-primary hover:bg-primary-700 inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold text-white transition-colors"
                             >
                                 <Edit2 className="h-3.5 w-3.5" />
                                 Perbarui Status
@@ -1155,11 +1105,11 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                         {/* Control Klausul Association */}
                         <div className="space-y-3 rounded-xl border border-slate-200/80 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
                             <div className="flex items-center gap-2 text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
-                                <Shield className="h-4 w-4 text-primary dark:text-primary-200" />
+                                <Shield className="text-primary dark:text-primary-200 h-4 w-4" />
                                 <span>Kontrol SMKI Terkait</span>
                             </div>
                             <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-800/60">
-                                <div className="text-xs font-bold text-primary dark:text-primary-200">
+                                <div className="text-primary dark:text-primary-200 text-xs font-bold">
                                     {detailTarget.control?.kode_klausul}
                                     {detailTarget.control?.framework && (
                                         <span className="font-normal text-slate-500">
@@ -1193,9 +1143,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                 <Calendar className="h-4 w-4 text-rose-500" />
                                 <span>Tenggat Waktu Mitigasi (SLA)</span>
                             </div>
-                            <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-800/60">
-                                {getDeadlineBadge(detailTarget)}
-                            </div>
+                            <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-800/60">{getDeadlineBadge(detailTarget)}</div>
                         </div>
 
                         {/* Risk Owner Information */}

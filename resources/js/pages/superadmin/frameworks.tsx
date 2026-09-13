@@ -196,9 +196,7 @@ export default function Frameworks({ frameworks = [], filters = {} }: Frameworks
                             <div
                                 key={item.id}
                                 className={`border-border hover:border-primary/40 flex flex-col rounded-[14px] border p-5 transition-all hover:shadow-md dark:border-slate-700 ${
-                                    idx % 2 === 0
-                                        ? 'bg-surface/40 dark:bg-slate-900/40'
-                                        : 'bg-surface/70 dark:bg-slate-900/60'
+                                    idx % 2 === 0 ? 'bg-surface/40 dark:bg-slate-900/40' : 'bg-surface/70 dark:bg-slate-900/60'
                                 }`}
                             >
                                 <div className="flex items-start justify-between gap-3">
