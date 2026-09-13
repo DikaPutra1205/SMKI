@@ -790,7 +790,7 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                                                       ? 'bg-primary-50/80 dark:bg-navy-700/60'
                                                       : isEven
                                                         ? 'bg-white dark:bg-[#00223d]/70'
-                                                        : 'bg-slate-50/75 dark:bg-[#00172b]/80'
+                                                        : 'bg-slate-200/70 dark:bg-[#00172b]/80'
                                             } hover:bg-primary-50/40 dark:hover:bg-[#0a3b63]/60`}
                                         >
                                             <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>

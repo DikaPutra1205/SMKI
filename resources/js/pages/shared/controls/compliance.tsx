@@ -357,7 +357,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                                         key={item.id}
                                         onClick={() => setDetailTarget(item)}
                                         className={`cursor-pointer transition-colors ${
-                                            idx % 2 === 0 ? 'bg-white dark:bg-[#00223d]/70' : 'bg-slate-50/75 dark:bg-[#00172b]/80'
+                                            idx % 2 === 0 ? 'bg-white dark:bg-[#00223d]/70' : 'bg-slate-200/70 dark:bg-[#00172b]/80'
                                         } hover:bg-primary-50/40 dark:hover:bg-[#0a3b63]/60`}
                                     >
                                         <td className="text-primary dark:text-primary-200 px-5 py-4 font-bold whitespace-nowrap">{item.code}</td>

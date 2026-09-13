@@ -153,7 +153,7 @@ export default function Units({ units }: Props) {
                             className={`grid grid-cols-[1fr_1fr_auto] items-center gap-4 border-b border-slate-100 px-5 py-3.5 last:border-0 dark:border-slate-800 ${
                                 idx % 2 === 0
                                     ? 'hover:bg-slate-50/60 dark:hover:bg-slate-800/40'
-                                    : 'bg-slate-50/50 hover:bg-slate-100/60 dark:bg-slate-800/20 dark:hover:bg-slate-800/50'
+                                    : 'bg-slate-200/70 hover:bg-slate-300/70 dark:bg-slate-800/20 dark:hover:bg-slate-800/50'
                             }`}
                         >
                             <div className="flex min-w-0 items-center gap-2.5">

@@ -407,7 +407,7 @@ export const id = {
         controlSelectPlaceholder: '-- Pilih Kontrol Klausul SMKI --',
         unitSelect: 'Satuan Kerja / Unit Terkait',
         unitSelectPlaceholder: '-- Pilih Satuan Kerja --',
-        deadline: 'Tenggat Waktu (Custom Deadline)',
+        deadline: 'Tenggat Waktu',
         deadlinePlaceholder: 'Pilih batas waktu penanganan',
         adminNotes: 'Catatan Evaluasi / Admin',
         adminNotesPlaceholder: 'Catatan rekomendasi dari Koordinator SMKI atau Admin Kepatuhan…',

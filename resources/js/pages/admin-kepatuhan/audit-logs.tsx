@@ -415,7 +415,7 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                                         key={log.id}
                                         onClick={() => setDetailTarget(log)}
                                         className={`cursor-pointer transition-colors ${
-                                            idx % 2 === 0 ? 'bg-white dark:bg-[#00223d]/70' : 'bg-slate-50/75 dark:bg-[#00172b]/80'
+                                            idx % 2 === 0 ? 'bg-white dark:bg-[#00223d]/70' : 'bg-slate-200/70 dark:bg-[#00172b]/80'
                                         } hover:bg-primary-50/40 dark:hover:bg-[#0a3b63]/60`}
                                     >
                                         <td className="px-5 py-4 text-xs whitespace-nowrap text-slate-500 dark:text-slate-400">
