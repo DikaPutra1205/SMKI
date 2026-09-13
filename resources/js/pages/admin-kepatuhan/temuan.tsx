@@ -337,6 +337,7 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
     const isUserPic = userRoleStr === 'pic';
     const isAdmin = !isUserPic && (userRoleStr === 'admin_kepatuhan' || userRoleStr === 'superadmin' || can('finding.create'));
     const canDelete = !isUserPic && (userRoleStr === 'admin_kepatuhan' || userRoleStr === 'superadmin' || can('finding.delete'));
+    const isReadOnly = !isUserPic && !isAdmin;
 
     const [deleteTarget, setDeleteTarget] = useState<FindingItem | null>(null);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -585,10 +586,12 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
 
     const renderStatusWorkflowHub = (f: FindingItem) => {
         const currentStatus = f.status;
-        const currentIdx = STEPS.findIndex((s) => s.id === currentStatus);
+        // PIC only works the checkpoints they can actually move (closure is Admin's job).
+        const steps = isUserPic ? STEPS.slice(0, 3) : STEPS;
+        const currentIdx = steps.findIndex((s) => s.id === currentStatus);
         const selectedStatus = updateData.status || currentStatus;
-        const selectedIdx = STEPS.findIndex((s) => s.id === selectedStatus);
-        const selectedStep = STEPS[selectedIdx >= 0 ? selectedIdx : currentIdx >= 0 ? currentIdx : 0];
+        const selectedIdx = steps.findIndex((s) => s.id === selectedStatus);
+        const selectedStep = steps[selectedIdx >= 0 ? selectedIdx : currentIdx >= 0 ? currentIdx : 0];
         const isStatusChanging = selectedStatus !== currentStatus;
         const isUpgrade = isStatusChanging && selectedIdx > currentIdx;
         const isDowngrade = isStatusChanging && selectedIdx < currentIdx;
@@ -619,6 +622,55 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
             );
         }
 
+        if (isUserPic && currentStatus === 'closed') {
+            return (
+                <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/50 p-4 shadow-2xs dark:border-emerald-900/40 dark:bg-emerald-950/20">
+                    <div className="flex items-center gap-2 text-xs font-bold text-emerald-800 dark:text-emerald-300">
+                        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                        <span>Siklus & Pembaruan Status</span>
+                    </div>
+                    <p className="mt-1.5 text-xs leading-relaxed text-emerald-800/90 dark:text-emerald-300/80">
+                        Temuan telah ditutup &amp; diverifikasi oleh Admin Kepatuhan. Status tidak dapat diubah lagi.
+                    </p>
+                </div>
+            );
+        }
+
+        if (isReadOnly) {
+            const readonlyStep = STEPS[currentIdx >= 0 ? currentIdx : 0];
+            return (
+                <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4 shadow-2xs dark:border-slate-800 dark:bg-slate-900/50">
+                    <div className="mb-3 flex items-center gap-2">
+                        <span className="text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
+                            Siklus &amp; Pembaruan Status
+                        </span>
+                    </div>
+                    <div className="flex items-start gap-3 rounded-xl border border-slate-200/80 bg-white p-3.5 dark:border-slate-800 dark:bg-slate-800/60">
+                        <div className="mt-0.5 shrink-0">
+                            {currentStatus === 'closed' ? (
+                                <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                            ) : currentStatus === 'resolved' ? (
+                                <Clock className="text-primary dark:text-primary-300 h-5 w-5" />
+                            ) : (
+                                <Info className="h-5 w-5 text-amber-500" />
+                            )}
+                        </div>
+                        <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <span className="text-xs font-bold text-slate-900 dark:text-white">{readonlyStep.fullLabel}</span>
+                                <StatusBadge tone={STATUS_TONE[currentStatus] ?? 'gray'}>{STATUS_TEXT[currentStatus] ?? currentStatus}</StatusBadge>
+                            </div>
+                            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{readonlyStep.desc}</p>
+                        </div>
+                    </div>
+                    <p className="mt-2.5 flex items-start gap-1.5 text-[11px] text-slate-400 dark:text-slate-500">
+                        <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        Hanya baca. Status temuan hanya dapat diperbarui oleh Admin Kepatuhan atau PIC unit terkait.
+                    </p>
+                </div>
+            );
+        }
+
         return (
             <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4.5 shadow-2xs dark:border-slate-800 dark:bg-slate-900/50">
                 {/* Hub Header */}
@@ -640,10 +692,12 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                                     isDowngrade ? 'text-amber-700 dark:text-amber-300' : 'text-emerald-700 dark:text-emerald-300'
                                 }`}
                             >
-                                Menuju Langkah {selectedIdx + 1} dari 4
+                                Menuju Langkah {selectedIdx + 1} dari {steps.length}
                             </span>
                         ) : (
-                            <span>Langkah {currentIdx >= 0 ? currentIdx + 1 : 1} dari 4</span>
+                            <span>
+                                Langkah {currentIdx >= 0 ? currentIdx + 1 : 1} dari {steps.length}
+                            </span>
                         )}
                     </span>
                 </div>
@@ -656,12 +710,12 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                     <div
                         className={`absolute top-4 left-6 -z-0 h-0.5 transition-all duration-300 ${isDowngrade ? 'bg-amber-500' : 'bg-primary'}`}
                         style={{
-                            width: `${(Math.max(0, isStatusChanging ? selectedIdx : currentIdx) / (STEPS.length - 1)) * 84}%`,
+                            width: `${(Math.max(0, isStatusChanging ? selectedIdx : currentIdx) / (steps.length - 1)) * 84}%`,
                         }}
                     />
 
                     <div className="relative z-10 flex items-center justify-between">
-                        {STEPS.map((step, idx) => {
+                        {steps.map((step, idx) => {
                             const isCurrent = step.id === currentStatus;
                             const isTarget = step.id === selectedStatus;
                             const isDone = idx < currentIdx;
@@ -735,9 +789,7 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                 {/* Sub-text hint if interactive */}
                 {canUpdate && !isStatusChanging && !showNoteFormOnSameStatus && (
                     <p className="mt-1 text-center text-[11px] text-slate-400 dark:text-slate-500">
-                        {isUserPic
-                            ? 'Pilih langkah (1 - 3) di atas untuk mengubah status temuan.'
-                            : 'Pilih langkah (1 - 4) di atas untuk mengubah status temuan.'}
+                        Pilih langkah (1 - {steps.length}) di atas untuk mengubah status temuan.
                     </p>
                 )}
 
@@ -756,7 +808,7 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                             }`}
                         >
                             {/* Transition Header */}
-                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 dark:border-slate-800">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
                                 {isStatusChanging ? (
                                     <div className="flex items-center gap-2 text-xs">
                                         <span className="font-bold text-slate-500 uppercase dark:text-slate-400">Rencana Perubahan:</span>
@@ -1447,22 +1499,24 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                 open={detailTarget !== null}
                 title={
                     detailTarget ? (
-                        <div className="flex items-center gap-2.5">
-                            <span>Detail & Review Temuan</span>
-                            <code className="text-primary bg-primary-50 border-primary-200 dark:bg-navy-900 dark:border-primary-800 dark:text-primary-200 rounded border px-2 py-0.5 text-xs font-bold">
+                        <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                                <span>Detail & Review Temuan</span>
+                                {Boolean(detailTarget.deleted_at) && (
+                                    <span className="rounded-md bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold text-rose-700 dark:bg-rose-950 dark:text-rose-300">
+                                        Dihapus
+                                    </span>
+                                )}
+                            </div>
+                            <code className="text-primary bg-primary-50 border-primary-200 dark:bg-navy-900 dark:border-primary-800 dark:text-primary-200 w-fit rounded border px-2 py-0.5 text-xs font-bold">
                                 FND-{findingRef(detailTarget)}
                             </code>
-                            {Boolean(detailTarget.deleted_at) && (
-                                <span className="rounded-md bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold text-rose-700 dark:bg-rose-950 dark:text-rose-300">
-                                    Dihapus
-                                </span>
-                            )}
                         </div>
                     ) : (
                         'Detail Temuan'
                     )
                 }
-                description={detailTarget?.control?.judul || 'Informasi lengkap siklus temuan audit ketidaksesuaian'}
+                description={undefined}
                 onClose={closeDetailDrawer}
                 maxWidth="xl"
                 footer={
@@ -1530,7 +1584,7 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
 
                         {/* Primary Context: Klausul, Framework, Severity, & Catatan Awal Temuan */}
                         <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
-                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 dark:border-slate-800">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
                                 <div className="flex flex-wrap items-center gap-2">
                                     <span className="border-primary-200 bg-primary-50 text-primary dark:border-primary-800 dark:bg-navy-900 dark:text-primary-200 inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-bold">
                                         <Shield className="h-3.5 w-3.5" />
@@ -1547,7 +1601,7 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                                 </StatusBadge>
                             </div>
 
-                            <div className="pt-3">
+                            <div className="mt-2">
                                 <h3 className="text-sm leading-relaxed font-bold text-slate-900 dark:text-white">
                                     {detailTarget.control?.judul || '—'}
                                 </h3>
@@ -1616,15 +1670,12 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                             </div>
                         </div>
 
-                        {/* Status & Alur Tindak Lanjut (Unified Interactive Stepper Hub) */}
-                        {renderStatusWorkflowHub(detailTarget)}
-
-                        {/* Riwayat Perubahan Status (Status Audit Trail Timeline) */}
+                        {/* Riwayat Perubahan Status (Status Audit Trail Timeline) — shown above the status update UI */}
                         <div className="space-y-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
                             <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
                                 <div className="flex items-center gap-2 text-xs font-bold tracking-wider text-slate-800 uppercase dark:text-slate-200">
                                     <History className="text-primary dark:text-primary-300 h-4 w-4" />
-                                    <span>Riwayat Perubahan Status (Audit Trail)</span>
+                                    <span>Catatan Tindak Lanjut &amp; Riwayat Status</span>
                                 </div>
                                 <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                                     {detailTarget.histories?.length || 0} Entri
@@ -1716,11 +1767,14 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                                     </div>
                                 ) : (
                                     <div className="rounded-xl border border-dashed border-slate-200 p-4 text-center text-xs text-slate-400 dark:border-slate-800 dark:text-slate-500">
-                                        Belum ada riwayat status tercatat.
+                                        Belum ada catatan tindak lanjut atau riwayat status tercatat.
                                     </div>
                                 )}
                             </div>
                         </div>
+
+                        {/* Status & Alur Tindak Lanjut (Unified Interactive Stepper Hub) */}
+                        {renderStatusWorkflowHub(detailTarget)}
 
                         {/* Audit Metadata Timeline */}
                         <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-[11px] text-slate-400 dark:border-slate-800">
