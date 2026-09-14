@@ -20,6 +20,7 @@ class ControlFactory extends Factory
             'kode_klausul' => 'A.'.fake()->unique()->numerify('#.#'),
             'judul' => fake()->sentence(3),
             'kategori' => fake()->randomElement(['annex_a', 'klausul_4_10']),
+            'domain_peran' => fake()->optional()->randomElement(['controller', 'processor']),
             'deskripsi' => fake()->optional()->paragraph(),
         ];
     }

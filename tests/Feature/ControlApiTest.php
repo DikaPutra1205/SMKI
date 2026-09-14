@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Exports\ControlsSheet;
 use App\Models\Framework;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -169,6 +170,116 @@ class ControlApiTest extends TestCase
             ->assertJsonPath('data.kategori', 'klausul_4_10');
 
         $this->assertDatabaseHas('controls', ['kode_klausul' => '4.2.2', 'kategori' => 'klausul_4_10']);
+    }
+
+    public function test_store_accepts_domain_peran_values(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        $fw = $this->framework();
+
+        foreach (['controller', 'processor'] as $i => $peran) {
+            $this->actingAs($admin)
+                ->postJson('/api/controls', [
+                    'framework_id' => $fw->id,
+                    'kode_klausul' => "A.5.{$i}",
+                    'judul' => "Control {$peran}",
+                    'kategori' => 'annex_a',
+                    'domain_peran' => $peran,
+                ])
+                ->assertCreated()
+                ->assertJsonPath('data.domain_peran', $peran);
+
+            $this->assertDatabaseHas('controls', ['kode_klausul' => "A.5.{$i}", 'domain_peran' => $peran]);
+        }
+    }
+
+    public function test_store_accepts_missing_or_null_domain_peran(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        $fw = $this->framework();
+
+        $this->actingAs($admin)
+            ->postJson('/api/controls', [
+                'framework_id' => $fw->id,
+                'kode_klausul' => 'A.5.1',
+                'judul' => 'No peran',
+                'kategori' => 'annex_a',
+            ])
+            ->assertCreated();
+        $this->assertDatabaseHas('controls', ['kode_klausul' => 'A.5.1', 'domain_peran' => null]);
+
+        $this->actingAs($admin)
+            ->postJson('/api/controls', [
+                'framework_id' => $fw->id,
+                'kode_klausul' => 'A.5.2',
+                'judul' => 'Null peran',
+                'kategori' => 'annex_a',
+                'domain_peran' => null,
+            ])
+            ->assertCreated();
+        $this->assertDatabaseHas('controls', ['kode_klausul' => 'A.5.2', 'domain_peran' => null]);
+    }
+
+    public function test_store_rejects_bad_domain_peran(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        $fw = $this->framework();
+
+        $this->actingAs($admin)
+            ->postJson('/api/controls', [
+                'framework_id' => $fw->id,
+                'kode_klausul' => 'A.5.2',
+                'judul' => 'Bad peran',
+                'kategori' => 'annex_a',
+                'domain_peran' => 'owner',
+            ])
+            ->assertStatus(422);
+    }
+
+    public function test_update_sets_and_clears_domain_peran(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        $fw = $this->framework();
+        $control = $fw->controls()->create([
+            'kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a',
+        ]);
+
+        $this->actingAs($admin)
+            ->patchJson("/api/controls/{$control->id}", ['domain_peran' => 'processor'])
+            ->assertOk();
+        $this->assertDatabaseHas('controls', ['id' => $control->id, 'domain_peran' => 'processor']);
+
+        $this->actingAs($admin)
+            ->patchJson("/api/controls/{$control->id}", ['domain_peran' => null])
+            ->assertOk();
+        $this->assertDatabaseHas('controls', ['id' => $control->id, 'domain_peran' => null]);
+    }
+
+    public function test_index_filters_by_domain_peran(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        $fw = $this->framework();
+        $fw->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'C1', 'kategori' => 'annex_a', 'domain_peran' => 'controller']);
+        $fw->controls()->create(['kode_klausul' => 'A.5.2', 'judul' => 'P1', 'kategori' => 'annex_a', 'domain_peran' => 'processor']);
+
+        $this->actingAs($admin)
+            ->getJson('/api/controls?domain_peran=controller')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.kode_klausul', 'A.5.1');
+
+        $fw->controls()->create(['kode_klausul' => 'A.5.3', 'judul' => 'U1', 'kategori' => 'annex_a', 'domain_peran' => null]);
+
+        $this->actingAs($admin)
+            ->getJson('/api/controls?domain_peran=unknown')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.kode_klausul', 'A.5.3');
+    }
+
+    public function test_controls_export_headings_include_domain_peran(): void
+    {
+        $this->assertContains('domain_peran', (new ControlsSheet)->headings());
     }
 
     public function test_update_moves_control_to_another_framework(): void

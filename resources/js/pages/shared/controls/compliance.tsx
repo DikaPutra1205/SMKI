@@ -29,6 +29,7 @@ export interface ControlItem {
     title: string;
     description: string;
     category: string;
+    domain_peran?: string | null;
 }
 
 interface Paginator<T> {
@@ -56,6 +57,7 @@ interface ComplianceProps {
         unit_id?: string;
         framework_id?: string;
         kategori?: string;
+        domain_peran?: string;
     };
 }
 
@@ -66,6 +68,7 @@ interface ControlFormData {
     kode_klausul: string;
     judul: string;
     kategori: string;
+    domain_peran: string;
     deskripsi: string;
     [key: string]: string;
 }
@@ -86,11 +89,14 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
         filters.framework_id ? Number(filters.framework_id) : (frameworks[0]?.id ?? null),
     );
     const [selectedDomain, setSelectedDomain] = useState('all');
+    const [selectedPeran, setSelectedPeran] = useState(filters.domain_peran || 'all');
 
     const isFirstRender = useRef(true);
 
     const filteredItems = useMemo(() => {
-        const items = controls?.data ?? [];
+        let items = controls?.data ?? [];
+        if (selectedPeran === 'unknown') items = items.filter((item) => !item.domain_peran);
+        else if (selectedPeran !== 'all') items = items.filter((item) => item.domain_peran === selectedPeran);
         if (selectedDomain === 'all') return items;
         const tab = DOMAIN_TABS.find((t) => t.id === selectedDomain);
         if (!tab) return items;
@@ -98,7 +104,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
             return items.filter((item) => item.category !== 'Annex A' || !item.code.startsWith('A.'));
         }
         return items.filter((item) => item.code.startsWith(`A.${tab.prefix}`) || item.code.startsWith(tab.prefix));
-    }, [controls?.data, selectedDomain]);
+    }, [controls?.data, selectedDomain, selectedPeran]);
 
     const { flash } = usePage<{ flash?: { type: string; message: string } }>().props;
     const [flashVisible, setFlashVisible] = useState(false);
@@ -123,6 +129,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
         kode_klausul: '',
         judul: '',
         kategori: 'annex_a',
+        domain_peran: '',
         deskripsi: '',
     });
 
@@ -140,6 +147,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
             kode_klausul: item.code,
             judul: item.title,
             kategori: item.category === 'Annex A' ? 'annex_a' : 'klausul_4_10',
+            domain_peran: item.domain_peran ?? '',
             deskripsi: item.description,
         });
         form.clearErrors();
@@ -199,13 +207,14 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                 {
                     search: searchQuery || undefined,
                     framework_id: selectedFrameworkId ? String(selectedFrameworkId) : undefined,
+                    domain_peran: selectedPeran !== 'all' ? selectedPeran : undefined,
                 },
                 { preserveState: true, replace: true },
             );
         }, 350);
 
         return () => clearTimeout(timer);
-    }, [searchQuery, selectedFrameworkId]);
+    }, [searchQuery, selectedFrameworkId, selectedPeran]);
 
     const breadcrumbs = [{ label: t('common.dashboard'), href: '/admin/kepatuhan/dashboard' }, { label: t('compliance.title') }];
 
@@ -330,6 +339,17 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                             </button>
                         )}
                     </div>
+                    <select
+                        value={selectedPeran}
+                        onChange={(e) => setSelectedPeran(e.target.value)}
+                        aria-label="Filter peran domain"
+                        className="focus:border-primary focus:ring-primary shrink-0 rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-xs text-slate-700 transition-colors focus:bg-white focus:ring-1 sm:text-sm dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-300 dark:focus:bg-slate-900"
+                    >
+                        <option value="all">Semua Peran</option>
+                        <option value="controller">controller</option>
+                        <option value="processor">processor</option>
+                        <option value="unknown">Tidak diketahui</option>
+                    </select>
                 </div>
 
                 <div className="overflow-x-auto">
@@ -344,6 +364,9 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                                 </th>
                                 <th scope="col" className="px-5 py-3.5 text-left font-semibold">
                                     {t('compliance.category')}
+                                </th>
+                                <th scope="col" className="px-5 py-3.5 text-left font-semibold">
+                                    Peran Domain
                                 </th>
                                 <th scope="col" className="px-5 py-3.5 text-right font-semibold">
                                     {t('compliance.actions')}
@@ -369,6 +392,15 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                                             <span className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
                                                 {item.category === 'Annex A' ? 'Annex A' : 'Klausul 4-10'}
                                             </span>
+                                        </td>
+                                        <td className="px-5 py-4 text-left whitespace-nowrap">
+                                            {item.domain_peran ? (
+                                                <span className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 capitalize dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                                                    {item.domain_peran}
+                                                </span>
+                                            ) : (
+                                                <span className="text-xs text-slate-400">—</span>
+                                            )}
                                         </td>
                                         <td className="px-5 py-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                                             <div className="flex items-center justify-end gap-1.5">
@@ -406,7 +438,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={4}>
+                                    <td colSpan={5}>
                                         <EmptyState message={t('compliance.noResults')} />
                                     </td>
                                 </tr>
@@ -428,6 +460,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                             {
                                 search: searchQuery || undefined,
                                 framework_id: selectedFrameworkId ? String(selectedFrameworkId) : undefined,
+                                domain_peran: selectedPeran !== 'all' ? selectedPeran : undefined,
                                 page: target > 1 ? target : undefined,
                             },
                             { preserveState: true },
@@ -508,6 +541,12 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                                     <span className="text-slate-500">Kategori Kontrol</span>
                                     <span className="font-semibold text-slate-900 dark:text-white">{detailTarget.category}</span>
                                 </div>
+                                <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs sm:text-sm dark:border-slate-800">
+                                    <span className="text-slate-500">Peran Domain</span>
+                                    <span className="font-semibold text-slate-900 capitalize dark:text-white">
+                                        {detailTarget.domain_peran ?? '—'}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -564,6 +603,17 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                         >
                             <option value="annex_a">Annex A</option>
                             <option value="klausul_4_10">Klausul 4-10</option>
+                        </Select>
+
+                        <Select
+                            label="Peran Domain"
+                            value={form.data.domain_peran}
+                            onChange={(e) => form.setData('domain_peran', e.target.value)}
+                            error={form.errors.domain_peran}
+                        >
+                            <option value="">— Tidak diketahui —</option>
+                            <option value="controller">controller</option>
+                            <option value="processor">processor</option>
                         </Select>
                     </div>
 

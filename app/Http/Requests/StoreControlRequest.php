@@ -27,6 +27,7 @@ class StoreControlRequest extends FormRequest
             'judul' => ['required', 'string', 'max:255'],
             'deskripsi' => ['nullable', 'string'],
             'kategori' => ['required', Rule::in(['annex_a', 'klausul_4_10'])],
+            'domain_peran' => ['nullable', Rule::in(['controller', 'processor'])],
         ];
     }
 
@@ -37,6 +38,7 @@ class StoreControlRequest extends FormRequest
             'kode_klausul' => 'kode klausul',
             'judul' => 'judul kontrol',
             'kategori' => 'kategori',
+            'domain_peran' => 'peran domain',
         ];
     }
 }

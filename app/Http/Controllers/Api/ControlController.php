@@ -28,6 +28,14 @@ class ControlController extends Controller
             $query->where('kategori', $request->kategori);
         }
 
+        if ($request->filled('domain_peran')) {
+            if ($request->domain_peran === 'unknown') {
+                $query->whereNull('domain_peran');
+            } else {
+                $query->where('domain_peran', $request->domain_peran);
+            }
+        }
+
         if ($request->filled('search')) {
             $like = config('database.default') === 'pgsql' ? 'ilike' : 'like';
             $query->where(function ($q) use ($request, $like) {

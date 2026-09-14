@@ -39,6 +39,7 @@ class ControlsSheet implements Export, FromCollection, ShouldAutoSize, WithHeadi
             'judul',             // D
             'kategori',          // E — annex_a atau klausul_4_10
             'deskripsi',         // F — boleh kosong
+            'domain_peran',      // G — controller, processor, atau kosong
         ];
     }
 
@@ -51,13 +52,14 @@ class ControlsSheet implements Export, FromCollection, ShouldAutoSize, WithHeadi
             $control->judul,
             $control->kategori,
             $control->deskripsi ?? '',
+            $control->domain_peran ?? '',
         ];
     }
 
     public function styles(Worksheet $sheet): array
     {
         // Header row bold + background hijau
-        $sheet->getStyle('A1:F1')->applyFromArray([
+        $sheet->getStyle('A1:G1')->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => [
                 'fillType' => Fill::FILL_SOLID,

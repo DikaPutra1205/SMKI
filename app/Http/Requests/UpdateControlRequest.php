@@ -35,6 +35,7 @@ class UpdateControlRequest extends FormRequest
             'judul' => ['sometimes', 'required', 'string', 'max:255'],
             'deskripsi' => ['nullable', 'string'],
             'kategori' => ['sometimes', 'required', Rule::in(['annex_a', 'klausul_4_10'])],
+            'domain_peran' => ['sometimes', 'nullable', Rule::in(['controller', 'processor'])],
         ];
     }
 
@@ -45,6 +46,7 @@ class UpdateControlRequest extends FormRequest
             'kode_klausul' => 'kode klausul',
             'judul' => 'judul kontrol',
             'kategori' => 'kategori',
+            'domain_peran' => 'peran domain',
         ];
     }
 }

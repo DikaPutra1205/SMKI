@@ -241,6 +241,14 @@ class ComplianceService
             $query->where('kategori', $catSlug);
         }
 
+        if (! empty($filters['domain_peran'])) {
+            if ($filters['domain_peran'] === 'unknown') {
+                $query->whereNull('domain_peran');
+            } else {
+                $query->where('domain_peran', $filters['domain_peran']);
+            }
+        }
+
         if (! empty($filters['search'])) {
             $search = trim($filters['search']);
             $driver = \DB::connection()->getDriverName();
@@ -266,6 +274,7 @@ class ComplianceService
                     'title' => $ctrl->judul,
                     'description' => $ctrl->deskripsi ?? '',
                     'category' => $ctrl->kategori === 'annex_a' ? 'Annex A' : 'Klausul 4-10',
+                    'domain_peran' => $ctrl->domain_peran ?? null,
                 ];
             });
     }

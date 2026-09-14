@@ -29,6 +29,7 @@ class StoreControlRequest extends FormRequest
             'judul' => ['required', 'string', 'max:255'],
             'deskripsi' => ['nullable', 'string'],
             'kategori' => ['required', 'in:annex_a,klausul_4_10'],
+            'domain_peran' => 'nullable|in:controller,processor',
         ];
     }
 }

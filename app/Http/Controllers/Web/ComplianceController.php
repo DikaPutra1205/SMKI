@@ -18,7 +18,7 @@ class ComplianceController extends Controller
 
     public function index(Request $request): Response
     {
-        $filters = $request->only(['search', 'status', 'unit_id', 'framework_id', 'kategori']);
+        $filters = $request->only(['search', 'status', 'unit_id', 'framework_id', 'kategori', 'domain_peran']);
         $perPage = max(1, min(100, (int) $request->query('per_page', 20)));
 
         $frameworks = $this->complianceService->getFrameworkSummaries();

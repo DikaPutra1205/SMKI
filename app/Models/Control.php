@@ -18,6 +18,7 @@ class Control extends Model
         'judul',
         'deskripsi',
         'kategori',
+        'domain_peran',
     ];
 
     protected $appends = ['framework_name', 'framework_versi'];
