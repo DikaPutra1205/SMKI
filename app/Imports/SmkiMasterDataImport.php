@@ -29,7 +29,7 @@ class SmkiMasterDataImport implements Import, SkipsUnknownSheets, WithMultipleSh
     /** @var array<array{nama: string, versi: string}> */
     public array $frameworksDeleted = [];
 
-    /** @var array<array{kode_klausul: string, judul: string, kategori: string, deskripsi: ?string, framework_nama: string, framework_versi: string}> */
+    /** @var array<array{kode_klausul: string, judul: string, kategori: string, deskripsi: ?string, domain_peran: ?string, framework_nama: string, framework_versi: string}> */
     public array $controlsCreatedDetail = [];
 
     /** @var array<array{kode_klausul: string, judul: string, framework_nama: string, framework_versi: string, changes: array<array{field: string, from: mixed, to: mixed}>}> */
@@ -169,9 +169,15 @@ class SmkiMasterDataImport implements Import, SkipsUnknownSheets, WithMultipleSh
                         $kodeKlausul = trim((string) ($row['kode_klausul'] ?? ''));
                         $judul = trim((string) ($row['judul'] ?? ''));
                         $rawKategori = strtolower(trim((string) ($row['kategori'] ?? '')));
+                        $rawKategori = (string) preg_replace('/\s*\(.*\)\s*/', '', $rawKategori);
                         $kategori = match ($rawKategori) {
-                            'annex a', 'annex_a', 'annex-a' => 'annex_a',
-                            'klausul 4-10', 'klausul_4_10', 'klausul-4-10', 'klausul 4 10' => 'klausul_4_10',
+                            'organisasional', 'organisational' => 'organisasional',
+                            'orang', 'people' => 'orang',
+                            'fisik', 'physical' => 'fisik',
+                            'teknologi', 'technology' => 'teknologi',
+                            // 27701 role-flavoured aliases: kategori resolves via domain_peran col
+                            'pii controller' => 'organisasional',
+                            'pii processor' => 'teknologi',
                             default => $rawKategori,
                         };
 
@@ -179,7 +185,7 @@ class SmkiMasterDataImport implements Import, SkipsUnknownSheets, WithMultipleSh
                             continue;
                         }
 
-                        if (! in_array($kategori, ['annex_a', 'klausul_4_10'], true)) {
+                        if (! in_array($kategori, Control::KATEGORIS, true)) {
                             continue;
                         }
 
@@ -194,6 +200,18 @@ class SmkiMasterDataImport implements Import, SkipsUnknownSheets, WithMultipleSh
                             ? trim((string) $row['deskripsi'])
                             : null;
 
+                        $rawPeran = strtolower(trim((string) ($row['domain_peran'] ?? '')));
+                        $domainPeran = match ($rawPeran) {
+                            '', '-' => null,
+                            'controller', 'pii controller' => 'controller',
+                            'processor', 'pii processor' => 'processor',
+                            default => 'INVALID',
+                        };
+
+                        if ($domainPeran === 'INVALID') {
+                            continue;
+                        }
+
                         $controlKey = "{$framework->id}|{$kodeKlausul}";
                         $this->parent->seenControlKeys[] = $controlKey;
 
@@ -205,6 +223,7 @@ class SmkiMasterDataImport implements Import, SkipsUnknownSheets, WithMultipleSh
                             'judul' => $judul,
                             'kategori' => $kategori,
                             'deskripsi' => $deskripsi,
+                            'domain_peran' => $domainPeran,
                         ];
                     }
 
@@ -243,8 +262,16 @@ class SmkiMasterDataImport implements Import, SkipsUnknownSheets, WithMultipleSh
                             if ($existing->kategori !== $data['kategori']) {
                                 $changes[] = [
                                     'field' => 'Kategori',
-                                    'from' => $existing->kategori === 'annex_a' ? 'Annex A' : 'Klausul 4-10',
-                                    'to' => $data['kategori'] === 'annex_a' ? 'Annex A' : 'Klausul 4-10',
+                                    'from' => Control::kategoriLabel($existing->kategori),
+                                    'to' => Control::kategoriLabel($data['kategori']),
+                                ];
+                            }
+
+                            if (($existing->domain_peran ?? null) !== ($data['domain_peran'] ?? null)) {
+                                $changes[] = [
+                                    'field' => 'Domain Peran',
+                                    'from' => $existing->domain_peran ?? '(kosong)',
+                                    'to' => $data['domain_peran'] ?? '(kosong)',
                                 ];
                             }
 
@@ -274,6 +301,7 @@ class SmkiMasterDataImport implements Import, SkipsUnknownSheets, WithMultipleSh
                                         'judul' => $data['judul'],
                                         'kategori' => $data['kategori'],
                                         'deskripsi' => $data['deskripsi'],
+                                        'domain_peran' => $data['domain_peran'],
                                     ]);
                                 }
                             }
@@ -283,6 +311,7 @@ class SmkiMasterDataImport implements Import, SkipsUnknownSheets, WithMultipleSh
                                 'judul' => $data['judul'],
                                 'kategori' => $data['kategori'],
                                 'deskripsi' => $data['deskripsi'],
+                                'domain_peran' => $data['domain_peran'],
                                 'framework_nama' => $data['framework_nama'],
                                 'framework_versi' => $data['framework_versi'],
                             ];
@@ -294,6 +323,7 @@ class SmkiMasterDataImport implements Import, SkipsUnknownSheets, WithMultipleSh
                                     'judul' => $data['judul'],
                                     'kategori' => $data['kategori'],
                                     'deskripsi' => $data['deskripsi'],
+                                    'domain_peran' => $data['domain_peran'],
                                 ]);
                             }
                         }

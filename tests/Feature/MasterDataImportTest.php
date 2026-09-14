@@ -223,12 +223,12 @@ class MasterDataImportTest extends TestCase
                 'file' => $this->uploadXlsx([
                     'Controls' => [
                         ['framework_nama', 'framework_versi', 'kode_klausul', 'judul', 'kategori', 'deskripsi'],
-                        ['ISO 27001', '2022', 'A.5.1', 'Policies', 'annex_a', 'desc'],
+                        ['ISO 27001', '2022', 'A.5.1', 'Policies', 'teknologi', 'desc'],
                     ],
                 ]),
             ]);
 
-        $this->assertDatabaseHas('controls', ['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a']);
+        $this->assertDatabaseHas('controls', ['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'teknologi']);
     }
 
     public function test_normalizes_category_aliases(): void
@@ -240,14 +240,16 @@ class MasterDataImportTest extends TestCase
                 'file' => $this->uploadXlsx([
                     'Controls' => [
                         ['framework_nama', 'framework_versi', 'kode_klausul', 'judul', 'kategori', 'deskripsi'],
-                        ['ISO 27001', '2022', 'A.5.1', 'Policies', 'Annex A', 'd'],
-                        ['ISO 27001', '2022', '5.1', 'Leadership', 'Klausul 4-10', 'd'],
+                        ['ISO 27001', '2022', 'A.5.1', 'Policies', 'Organisasional', 'd'],
+                        ['ISO 27001', '2022', '5.1', 'Leadership', 'Teknologi', 'd'],
+                        ['ISO 27001', '2022', 'A.7.1', 'Perimeter', 'Fisik (Physical)', 'd'],
                     ],
                 ]),
             ]);
 
-        $this->assertDatabaseHas('controls', ['kode_klausul' => 'A.5.1', 'kategori' => 'annex_a']);
-        $this->assertDatabaseHas('controls', ['kode_klausul' => '5.1', 'kategori' => 'klausul_4_10']);
+        $this->assertDatabaseHas('controls', ['kode_klausul' => 'A.5.1', 'kategori' => 'organisasional']);
+        $this->assertDatabaseHas('controls', ['kode_klausul' => '5.1', 'kategori' => 'teknologi']);
+        $this->assertDatabaseHas('controls', ['kode_klausul' => 'A.7.1', 'kategori' => 'fisik']);
     }
 
     public function test_skips_rows_with_empty_code_or_title(): void
@@ -259,9 +261,9 @@ class MasterDataImportTest extends TestCase
                 'file' => $this->uploadXlsx([
                     'Controls' => [
                         ['framework_nama', 'framework_versi', 'kode_klausul', 'judul', 'kategori', 'deskripsi'],
-                        ['ISO 27001', '2022', '', 'No code', 'annex_a', 'd'],
-                        ['ISO 27001', '2022', 'A.5.1', '', 'annex_a', 'd'],
-                        ['ISO 27001', '2022', 'A.5.2', 'Ok', 'annex_a', 'd'],
+                        ['ISO 27001', '2022', '', 'No code', 'teknologi', 'd'],
+                        ['ISO 27001', '2022', 'A.5.1', '', 'teknologi', 'd'],
+                        ['ISO 27001', '2022', 'A.5.2', 'Ok', 'teknologi', 'd'],
                     ],
                 ]),
             ]);
@@ -280,7 +282,7 @@ class MasterDataImportTest extends TestCase
                     'Controls' => [
                         ['framework_nama', 'framework_versi', 'kode_klausul', 'judul', 'kategori', 'deskripsi'],
                         ['ISO 27001', '2022', 'A.5.1', 'Bad cat', 'other_cat', 'd'],
-                        ['ISO 27001', '2022', 'A.5.2', 'Ok', 'annex_a', 'd'],
+                        ['ISO 27001', '2022', 'A.5.2', 'Ok', 'teknologi', 'd'],
                     ],
                 ]),
             ]);
@@ -298,7 +300,7 @@ class MasterDataImportTest extends TestCase
                 'file' => $this->uploadXlsx([
                     'Controls' => [
                         ['framework_nama', 'framework_versi', 'kode_klausul', 'judul', 'kategori', 'deskripsi'],
-                        ['ISO 9999', '2022', 'A.5.1', 'Ghost fw', 'annex_a', 'd'],
+                        ['ISO 9999', '2022', 'A.5.1', 'Ghost fw', 'teknologi', 'd'],
                     ],
                 ]),
             ]);
@@ -341,7 +343,7 @@ class MasterDataImportTest extends TestCase
 
                         public function collection(): Collection
                         {
-                            return collect([['ISO 27001', '2022', 'A.5.1', 'Policies', 'annex_a', 'd']]);
+                            return collect([['ISO 27001', '2022', 'A.5.1', 'Policies', 'teknologi', 'd']]);
                         }
 
                         public function headings(): array
@@ -407,7 +409,7 @@ class MasterDataImportTest extends TestCase
             'framework_id' => $fw->id,
             'kode_klausul' => 'A.5.1',
             'judul' => 'Policies',
-            'kategori' => 'annex_a',
+            'kategori' => 'teknologi',
             'deskripsi' => 'desc',
             'domain_peran' => 'controller',
         ]);
@@ -432,7 +434,7 @@ class MasterDataImportTest extends TestCase
             ['framework_nama', 'framework_versi', 'kode_klausul', 'judul', 'kategori', 'deskripsi', 'domain_peran'],
             $ctrlRows[0]
         );
-        $this->assertSame(['ISO 27001', '2022', 'A.5.1', 'Policies', 'annex_a', 'desc', 'controller'], $ctrlRows[1]);
+        $this->assertSame(['ISO 27001', '2022', 'A.5.1', 'Policies', 'teknologi', 'desc', 'controller'], $ctrlRows[1]);
     }
 
     public function test_export_with_empty_database_has_headers_only(): void
@@ -469,7 +471,7 @@ class MasterDataImportTest extends TestCase
             'framework_id' => $fw->id,
             'kode_klausul' => 'A.5.1',
             'judul' => 'Policies',
-            'kategori' => 'annex_a',
+            'kategori' => 'teknologi',
             'deskripsi' => 'old',
         ]);
 
@@ -479,7 +481,7 @@ class MasterDataImportTest extends TestCase
                     'Frameworks' => [['nama', 'versi', 'url_file'], ['ISO 27001', '2022', null]],
                     'Controls' => [
                         ['framework_nama', 'framework_versi', 'kode_klausul', 'judul', 'kategori', 'deskripsi'],
-                        ['ISO 27001', '2022', 'A.5.1', 'Policies v2', 'Klausul 4-10', 'new'],
+                        ['ISO 27001', '2022', 'A.5.1', 'Policies v2', 'Teknologi', 'new'],
                     ],
                 ]),
             ])
@@ -489,7 +491,7 @@ class MasterDataImportTest extends TestCase
         $this->assertDatabaseHas('controls', [
             'kode_klausul' => 'A.5.1',
             'judul' => 'Policies v2',
-            'kategori' => 'klausul_4_10',
+            'kategori' => 'teknologi',
             'deskripsi' => 'new',
         ]);
         $this->assertDatabaseCount('controls', 1);
@@ -502,7 +504,7 @@ class MasterDataImportTest extends TestCase
             'framework_id' => $fw->id,
             'kode_klausul' => 'A.5.1',
             'judul' => 'Policies',
-            'kategori' => 'annex_a',
+            'kategori' => 'teknologi',
         ]);
 
         $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
@@ -511,7 +513,7 @@ class MasterDataImportTest extends TestCase
                     'Frameworks' => [['nama', 'versi', 'url_file'], ['ISO 27001', '2022', null]],
                     'Controls' => [
                         ['framework_nama', 'framework_versi', 'kode_klausul', 'judul', 'kategori', 'deskripsi'],
-                        ['ISO 27001', '2022', 'A.5.1', 'Policies', 'annex_a', ''],
+                        ['ISO 27001', '2022', 'A.5.1', 'Policies', 'teknologi', ''],
                     ],
                 ]),
             ])
@@ -530,7 +532,7 @@ class MasterDataImportTest extends TestCase
         // insert violates uniq_ctrl_fw_kode → the whole import fails and is
         // rolled back. Expected behavior would be to skip such rows.
         $fw = Framework::create(['nama' => 'ISO 27001', 'versi' => '2022']);
-        Control::create(['framework_id' => $fw->id, 'kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a']);
+        Control::create(['framework_id' => $fw->id, 'kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'teknologi']);
 
         // FIX VERIFIED: When framework is absent from Excel, controls referencing it
         // are skipped instead of crashing with a cascading unique violation.
@@ -539,7 +541,7 @@ class MasterDataImportTest extends TestCase
                 'file' => $this->uploadXlsx([
                     'Controls' => [
                         ['framework_nama', 'framework_versi', 'kode_klausul', 'judul', 'kategori', 'deskripsi'],
-                        ['ISO 27001', '2022', 'A.5.1', 'Policies', 'annex_a', ''],
+                        ['ISO 27001', '2022', 'A.5.1', 'Policies', 'teknologi', ''],
                     ],
                 ]),
             ])
@@ -559,8 +561,8 @@ class MasterDataImportTest extends TestCase
                     'Frameworks' => [['nama', 'versi', 'url_file'], ['ISO 27001', '2022', null]],
                     'Controls' => [
                         ['framework_nama', 'framework_versi', 'kode_klausul', 'judul', 'kategori', 'deskripsi'],
-                        ['ISO 27001', '2022', 'A.5.1', 'First', 'annex_a', ''],
-                        ['ISO 27001', '2022', 'A.5.1', 'Duplicate', 'annex_a', ''],
+                        ['ISO 27001', '2022', 'A.5.1', 'First', 'teknologi', ''],
+                        ['ISO 27001', '2022', 'A.5.1', 'Duplicate', 'teknologi', ''],
                     ],
                 ]),
             ])
@@ -576,8 +578,8 @@ class MasterDataImportTest extends TestCase
     public function test_import_soft_deletes_controls_missing_for_present_framework(): void
     {
         $fw = Framework::create(['nama' => 'ISO 27001', 'versi' => '2022']);
-        Control::create(['framework_id' => $fw->id, 'kode_klausul' => 'A.5.1', 'judul' => 'Kept', 'kategori' => 'annex_a']);
-        Control::create(['framework_id' => $fw->id, 'kode_klausul' => 'A.5.2', 'judul' => 'Absent', 'kategori' => 'annex_a']);
+        Control::create(['framework_id' => $fw->id, 'kode_klausul' => 'A.5.1', 'judul' => 'Kept', 'kategori' => 'teknologi']);
+        Control::create(['framework_id' => $fw->id, 'kode_klausul' => 'A.5.2', 'judul' => 'Absent', 'kategori' => 'teknologi']);
 
         $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
             ->post('/admin/kepatuhan/master-data/import', [
@@ -585,7 +587,7 @@ class MasterDataImportTest extends TestCase
                     'Frameworks' => [['nama', 'versi', 'url_file'], ['ISO 27001', '2022', null]],
                     'Controls' => [
                         ['framework_nama', 'framework_versi', 'kode_klausul', 'judul', 'kategori', 'deskripsi'],
-                        ['ISO 27001', '2022', 'A.5.1', 'Kept', 'annex_a', ''],
+                        ['ISO 27001', '2022', 'A.5.1', 'Kept', 'teknologi', ''],
                     ],
                 ]),
             ]);
@@ -599,7 +601,7 @@ class MasterDataImportTest extends TestCase
     public function test_import_soft_deletes_controls_of_absent_frameworks_via_cascade(): void
     {
         $legacy = Framework::create(['nama' => 'Legacy', 'versi' => '2005']);
-        Control::create(['framework_id' => $legacy->id, 'kode_klausul' => 'L.1', 'judul' => 'Old', 'kategori' => 'annex_a']);
+        Control::create(['framework_id' => $legacy->id, 'kode_klausul' => 'L.1', 'judul' => 'Old', 'kategori' => 'teknologi']);
 
         $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
             ->post('/admin/kepatuhan/master-data/import', [
@@ -677,7 +679,7 @@ class MasterDataImportTest extends TestCase
             'framework_id' => $fw->id,
             'kode_klausul' => 'A.5.1',
             'judul' => 'Policies',
-            'kategori' => 'annex_a',
+            'kategori' => 'teknologi',
             'deskripsi' => 'old',
         ]);
 
@@ -687,7 +689,7 @@ class MasterDataImportTest extends TestCase
                     'Frameworks' => [['nama', 'versi', 'url_file'], ['ISO 27001', '2022', 'https://new.test/a.pdf']],
                     'Controls' => [
                         ['framework_nama', 'framework_versi', 'kode_klausul', 'judul', 'kategori', 'deskripsi'],
-                        ['ISO 27001', '2022', 'A.5.1', 'Policies v2', 'klausul_4_10', 'new'],
+                        ['ISO 27001', '2022', 'A.5.1', 'Policies v2', 'organisasional', 'new'],
                     ],
                 ]),
             ])
@@ -702,6 +704,56 @@ class MasterDataImportTest extends TestCase
         // Dry-run: no side effects
         $this->assertDatabaseHas('frameworks', ['nama' => 'ISO 27001', 'versi' => '2022', 'url_file' => null]);
         $this->assertDatabaseHas('controls', ['kode_klausul' => 'A.5.1', 'judul' => 'Policies']);
+    }
+
+    public function test_imports_new_domain_kategoris_and_domain_peran(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
+            ->post('/admin/kepatuhan/master-data/import', [
+                'file' => $this->uploadXlsx([
+                    'Frameworks' => [
+                        ['nama', 'versi', 'url_file'],
+                        ['ISO 27001', '2022', null],
+                        ['ISO 27701', '2025', null],
+                    ],
+                    'Controls' => [
+                        ['framework_nama', 'framework_versi', 'kode_klausul', 'judul', 'kategori', 'deskripsi', 'domain_peran'],
+                        ['ISO 27001', '2022', 'A.5.1', 'Kebijakan', 'Organisasional', 'd1', ''],
+                        ['ISO 27001', '2022', 'A.8.1', 'Endpoint', 'Teknologi', 'd2', null],
+                        ['ISO 27701', '2025', '7.2.1', 'Tujuan', 'PII Controller', 'd3', 'controller'],
+                        ['ISO 27701', '2025', '8.2.1', 'Dukungan', 'PII Processor', 'd4', 'processor'],
+                    ],
+                ]),
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('flash.type', 'success');
+
+        $this->assertDatabaseHas('controls', ['kode_klausul' => 'A.5.1', 'kategori' => 'organisasional', 'domain_peran' => null]);
+        $this->assertDatabaseHas('controls', ['kode_klausul' => 'A.8.1', 'kategori' => 'teknologi']);
+        $this->assertDatabaseHas('controls', ['kode_klausul' => '7.2.1', 'kategori' => 'organisasional', 'domain_peran' => 'controller']);
+        $this->assertDatabaseHas('controls', ['kode_klausul' => '8.2.1', 'kategori' => 'teknologi', 'domain_peran' => 'processor']);
+    }
+
+    public function test_import_tracks_domain_peran_changes_in_diff(): void
+    {
+        $fw = Framework::create(['nama' => 'ISO 27001', 'versi' => '2022']);
+        Control::create([
+            'framework_id' => $fw->id, 'kode_klausul' => 'A.5.1',
+            'judul' => 'Kebijakan', 'kategori' => 'organisasional', 'domain_peran' => null,
+        ]);
+
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
+            ->post('/admin/kepatuhan/master-data/import/preview', [
+                'file' => $this->uploadXlsx([
+                    'Frameworks' => [['nama', 'versi', 'url_file'], ['ISO 27001', '2022', null]],
+                    'Controls' => [
+                        ['framework_nama', 'framework_versi', 'kode_klausul', 'judul', 'kategori', 'deskripsi', 'domain_peran'],
+                        ['ISO 27001', '2022', 'A.5.1', 'Kebijakan', 'Organisasional', '', 'controller'],
+                    ],
+                ]),
+            ])
+            ->assertOk()
+            ->assertJsonPath('controls.updated', 1);
     }
 
     private function soloControlsFile(): UploadedFile
@@ -720,7 +772,7 @@ class MasterDataImportTest extends TestCase
 
                         public function collection(): Collection
                         {
-                            return collect([['ISO 27001', '2022', 'A.5.1', 'Policies', 'annex_a', 'd']]);
+                            return collect([['ISO 27001', '2022', 'A.5.1', 'Policies', 'teknologi', 'd']]);
                         }
 
                         public function headings(): array
