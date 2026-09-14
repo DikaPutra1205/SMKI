@@ -233,11 +233,9 @@ class ComplianceService
         }
 
         if (! empty($filters['kategori']) && $filters['kategori'] !== 'Semua Kategori') {
-            $catSlug = match ($filters['kategori']) {
-                'Annex A' => 'annex_a',
-                'Klausul 4-10' => 'klausul_4_10',
-                default => $filters['kategori'],
-            };
+            $catSlug = array_key_exists($filters['kategori'], Control::KATEGORI_LABELS)
+                ? $filters['kategori']
+                : (array_search($filters['kategori'], Control::KATEGORI_LABELS, true) ?: $filters['kategori']);
             $query->where('kategori', $catSlug);
         }
 
@@ -273,7 +271,7 @@ class ComplianceService
                     'code' => $ctrl->kode_klausul,
                     'title' => $ctrl->judul,
                     'description' => $ctrl->deskripsi ?? '',
-                    'category' => $ctrl->kategori === 'annex_a' ? 'Annex A' : 'Klausul 4-10',
+                    'category' => Control::kategoriLabel($ctrl->kategori),
                     'domain_peran' => $ctrl->domain_peran ?? null,
                 ];
             });

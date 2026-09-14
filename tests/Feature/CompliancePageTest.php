@@ -73,7 +73,7 @@ class CompliancePageTest extends TestCase
         ]);
 
         $response = $this->actingAs($user)
-            ->get("/admin/kepatuhan/compliance?unit_id={$unit->id}&framework_id={$framework->id}&search=abc&status=compliant&kategori=Annex%20A");
+            ->get("/admin/kepatuhan/compliance?unit_id={$unit->id}&framework_id={$framework->id}&search=abc&status=compliant&kategori=Teknologi");
 
         $response->assertOk();
 
@@ -91,7 +91,7 @@ class CompliancePageTest extends TestCase
             ->where('filters.framework_id', (string) $framework->id)
             ->where('filters.search', 'abc')
             ->where('filters.status', 'compliant')
-            ->where('filters.kategori', 'Annex A')
+            ->where('filters.kategori', 'Teknologi')
         );
     }
 
@@ -104,14 +104,14 @@ class CompliancePageTest extends TestCase
             'framework_id' => $framework->id,
             'kode_klausul' => 'A.5.4',
             'judul' => 'Annex control',
-            'kategori' => 'annex_a',
+            'kategori' => 'teknologi',
         ]);
 
         Control::factory()->create([
             'framework_id' => $framework->id,
             'kode_klausul' => '4.2.1',
             'judul' => 'Klausul control',
-            'kategori' => 'klausul_4_10',
+            'kategori' => 'organisasional',
         ]);
 
         $response = $this->actingAs($user)->get('/admin/kepatuhan/compliance');
@@ -124,9 +124,9 @@ class CompliancePageTest extends TestCase
             ->where('controls.data.0.id', (string) $annexCtrl->id)
             ->where('controls.data.0.code', 'A.5.4')
             ->where('controls.data.0.title', 'Annex control')
-            ->where('controls.data.0.category', 'Annex A')
+            ->where('controls.data.0.category', 'Teknologi')
             ->where('controls.data.0.framework_nama', 'ISO/IEC 27701:2019')
-            ->where('controls.data.1.category', 'Klausul 4-10')
+            ->where('controls.data.1.category', 'Organisasional')
             ->where('controls.total', 2)
             ->where('controls.current_page', 1)
         );
@@ -200,18 +200,18 @@ class CompliancePageTest extends TestCase
             'framework_id' => $framework->id,
             'kode_klausul' => 'A.5.1',
             'judul' => 'Kebijakan keamanan informasi',
-            'kategori' => 'annex_a',
+            'kategori' => 'teknologi',
         ]);
 
         Control::factory()->create([
             'framework_id' => $framework->id,
             'kode_klausul' => '4.4.1',
             'judul' => 'Organisasi',
-            'kategori' => 'klausul_4_10',
+            'kategori' => 'organisasional',
         ]);
 
         $byCategory = $this->actingAs($user)
-            ->get('/admin/kepatuhan/compliance?kategori='.urlencode('Annex A'));
+            ->get('/admin/kepatuhan/compliance?kategori='.urlencode('Teknologi'));
 
         $byCategory->assertOk();
         $byCategory->assertInertia(fn (Assert $page) => $page
@@ -227,5 +227,18 @@ class CompliancePageTest extends TestCase
             ->has('controls.data', 1)
             ->where('controls.data.0.title', 'Organisasi')
         );
+    }
+
+    public function test_compliance_page_returns_new_domain_labels(): void
+    {
+        $fw = Framework::factory()->create(['nama' => 'ISO/IEC 27001', 'versi' => '2022']);
+        $fw->controls()->create(['kode_klausul' => 'A.7.1', 'judul' => 'Perimeter', 'kategori' => 'fisik']);
+
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
+            ->get('/admin/kepatuhan/compliance?kategori=fisik')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('controls.data.0.category', 'Fisik')
+                ->where('controls.data.0.code', 'A.7.1'));
     }
 }
