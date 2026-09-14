@@ -20,6 +20,7 @@ class ChecklistEntryController extends Controller
 
         $validated = $request->validate([
             'status' => 'sometimes|nullable|string|in:compliant,partial,non_compliant,na',
+            'level_maturity' => 'sometimes|nullable|integer|min:0|max:5',
             'catatan' => 'nullable|string|max:2000',
         ]);
 
@@ -28,7 +29,11 @@ class ChecklistEntryController extends Controller
             ['tanggal_input' => now()]
         );
 
-        if (isset($validated['status']) && $validated['status'] !== $entry->status) {
+        // Loose compare: request may carry '3' (string) vs 3 (int cast).
+        $maturityChanging = array_key_exists('level_maturity', $validated)
+            && $validated['level_maturity'] != $entry->level_maturity;
+
+        if ((isset($validated['status']) && $validated['status'] !== $entry->status) || $maturityChanging) {
             $updateData['tanggal_verifikasi'] = null;
             $updateData['catatan_admin'] = null;
             $updateData['admin_id'] = null;
@@ -48,6 +53,7 @@ class ChecklistEntryController extends Controller
             'entries' => 'required|array|min:1|max:100',
             'entries.*.id' => 'required|integer|exists:checklist_entries,id',
             'entries.*.status' => 'sometimes|nullable|string|in:compliant,partial,non_compliant,na',
+            'entries.*.level_maturity' => 'sometimes|nullable|integer|min:0|max:5',
             'entries.*.catatan' => 'sometimes|nullable|string|max:2000',
         ]);
 
@@ -74,13 +80,22 @@ class ChecklistEntryController extends Controller
 
                 $updateData = ['updated_at' => $now];
 
-                if (array_key_exists('status', $item) && $item['status'] !== $entry->status) {
+                $statusChanging = array_key_exists('status', $item) && $item['status'] !== $entry->status;
+                $maturityChanging = array_key_exists('level_maturity', $item) && $item['level_maturity'] != $entry->level_maturity;
+
+                if ($statusChanging) {
                     $updateData['status'] = $item['status'];
+                }
+                if ($maturityChanging) {
+                    $updateData['level_maturity'] = $item['level_maturity'];
+                }
+                if ($statusChanging || $maturityChanging) {
                     $updateData['tanggal_verifikasi'] = null;
                     $updateData['catatan_admin'] = null;
                     $updateData['admin_id'] = null;
                     $updateData['tanggal_input'] = $now;
-                } elseif (array_key_exists('catatan', $item)) {
+                }
+                if (array_key_exists('catatan', $item)) {
                     $updateData['catatan'] = $item['catatan'];
                     $updateData['tanggal_input'] = $now;
                 }

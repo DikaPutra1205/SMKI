@@ -22,6 +22,7 @@ export interface EntryItem {
     id: number;
     control_id: number;
     status: string;
+    level_maturity: number | null;
     catatan: string | null;
     catatan_admin: string | null;
     tanggal_input: string | null;
@@ -139,12 +140,12 @@ class AssessmentStore {
         this._notify();
     }
 
-    getDirtyEntries(): { id: number; status: string; catatan: string | null }[] {
-        const result: { id: number; status: string; catatan: string | null }[] = [];
+    getDirtyEntries(): { id: number; status: string; level_maturity: number | null; catatan: string | null }[] {
+        const result: { id: number; status: string; level_maturity: number | null; catatan: string | null }[] = [];
         for (const id of this._dirtyIds) {
             const entry = this._entries.get(id);
             if (entry) {
-                result.push({ id: entry.id, status: entry.status, catatan: entry.catatan });
+                result.push({ id: entry.id, status: entry.status, level_maturity: entry.level_maturity ?? null, catatan: entry.catatan });
             }
         }
         return result;

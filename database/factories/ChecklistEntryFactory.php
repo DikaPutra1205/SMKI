@@ -30,6 +30,7 @@ class ChecklistEntryFactory extends Factory
                 ChecklistEntry::STATUS_NON_COMPLIANT,
                 ChecklistEntry::STATUS_NA,
             ]),
+            'level_maturity' => fake()->optional()->numberBetween(0, 5),
             'catatan' => fake()->optional()->sentence(),
             'catatan_admin' => fake()->optional()->sentence(),
             'tanggal_input' => now(),

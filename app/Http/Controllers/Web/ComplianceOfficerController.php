@@ -306,6 +306,7 @@ class ComplianceOfficerController extends Controller
         $validated = $request->validate([
             'status' => 'required|string|in:compliant,non_compliant',
             'admin_notes' => 'nullable|string|max:2000',
+            'level_maturity' => 'sometimes|nullable|integer|min:0|max:5',
         ]);
 
         // Catatan admin only applies to the reject (non_compliant) path.
@@ -314,12 +315,12 @@ class ComplianceOfficerController extends Controller
         $isReject = $validated['status'] === 'non_compliant';
         $adminNotes = $isReject && ! empty(trim($validated['admin_notes'] ?? '')) ? trim($validated['admin_notes']) : null;
 
-        $entry->update([
+        $entry->update(array_merge([
             'status' => $validated['status'],
             'catatan_admin' => $adminNotes,
             'tanggal_verifikasi' => now(),
             'admin_id' => $user->id,
-        ]);
+        ], array_key_exists('level_maturity', $validated) ? ['level_maturity' => $validated['level_maturity']] : []));
 
         if ($isReject) {
             $targetPic = $entry->pic ?? User::where('unit_id', $entry->unit_id)->whereHas('role', fn ($q) => $q->where('name', User::ROLE_PIC))->first();

@@ -58,6 +58,7 @@ interface EntryInput {
     id: number;
     control_id: number;
     status: string;
+    level_maturity: number | null;
     catatan: string | null;
     catatan_admin: string | null;
     tanggal_input: string | null;
@@ -185,6 +186,14 @@ function EntryItemRow({
         [entryId, onEntryUpdate, showSaved],
     );
 
+    const handleMaturityChange = useCallback(
+        (value: string) => {
+            onEntryUpdate(entryId, { level_maturity: value === '' ? null : Number(value) });
+            showSaved();
+        },
+        [entryId, onEntryUpdate, showSaved],
+    );
+
     if (!entry) return null;
 
     const isVerified = entry.tanggal_verifikasi !== null;
@@ -286,6 +295,24 @@ function EntryItemRow({
             </div>
 
             <div className="flex flex-col gap-1.5">
+                <div className="flex items-center gap-2">
+                    <label htmlFor={`maturity-${entryId}`} className="text-xs font-semibold whitespace-nowrap text-slate-600 dark:text-slate-300">
+                        Level Maturity
+                    </label>
+                    <select
+                        id={`maturity-${entryId}`}
+                        value={entry.level_maturity === null || entry.level_maturity === undefined ? '' : String(entry.level_maturity)}
+                        onChange={(e) => handleMaturityChange(e.target.value)}
+                        className="focus:border-primary focus:ring-primary rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-700 transition-colors focus:ring-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                    >
+                        <option value="">Belum dinilai</option>
+                        {[0, 1, 2, 3, 4, 5].map((n) => (
+                            <option key={n} value={n}>
+                                Level {n}
+                            </option>
+                        ))}
+                    </select>
+                </div>
                 <div className="flex gap-3">
                     <input
                         type="text"

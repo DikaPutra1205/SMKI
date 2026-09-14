@@ -188,6 +188,7 @@ class ChecklistEntryController extends Controller
             'unit_id' => 'required|exists:work_units,id',
             'pic_id' => 'required|exists:users,id',
             'status' => 'required|in:compliant,partial,non_compliant,na',
+            'level_maturity' => 'nullable|integer|min:0|max:5',
             'catatan' => 'nullable|string',
             'tanggal_input' => 'nullable|date',
         ]);
@@ -225,6 +226,7 @@ class ChecklistEntryController extends Controller
 
         $data = $request->validate([
             'status' => 'sometimes|in:compliant,partial,non_compliant,na',
+            'level_maturity' => 'nullable|integer|min:0|max:5',
             'catatan' => 'nullable|string',
             'bukti_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240',
             'uploaded_by' => 'nullable|exists:users,id',
@@ -271,15 +273,22 @@ class ChecklistEntryController extends Controller
         // A comment-only edit (no 'status' key, or same status) must preserve
         // the existing verification timestamp.
         $statusChanging = isset($data['status']) && $data['status'] !== $checklistEntry->status;
+        // Loose compare: request may carry '3' (string) vs 3 (int cast).
+        $maturityChanging = array_key_exists('level_maturity', $data) && $data['level_maturity'] != $checklistEntry->level_maturity;
+        $verificationResetting = $statusChanging || $maturityChanging;
 
         $updatePayload = [
             'status' => $data['status'] ?? $checklistEntry->status,
             'catatan' => $data['catatan'] ?? $checklistEntry->catatan,
             'tanggal_input' => now(),
-            'tanggal_verifikasi' => $statusChanging ? null : $checklistEntry->tanggal_verifikasi,
+            'tanggal_verifikasi' => $verificationResetting ? null : $checklistEntry->tanggal_verifikasi,
         ];
 
-        if ($statusChanging) {
+        if (array_key_exists('level_maturity', $data)) {
+            $updatePayload['level_maturity'] = $data['level_maturity'];
+        }
+
+        if ($verificationResetting) {
             $updatePayload['catatan_admin'] = null;
             $updatePayload['admin_id'] = null;
         }
@@ -310,14 +319,15 @@ class ChecklistEntryController extends Controller
             'admin_id' => 'required|exists:users,id',
             'catatan_admin' => 'nullable|string',
             'status' => 'required|in:compliant,partial,non_compliant,na',
+            'level_maturity' => 'nullable|integer|min:0|max:5',
         ]);
 
-        $checklistEntry->update([
+        $checklistEntry->update(array_merge([
             'admin_id' => $data['admin_id'],
             'catatan_admin' => $data['catatan_admin'] ?? null,
             'status' => $data['status'],
             'tanggal_verifikasi' => now(),
-        ]);
+        ], array_key_exists('level_maturity', $data) ? ['level_maturity' => $data['level_maturity']] : []));
 
         if ($data['status'] === 'non_compliant') {
             $user = $request->user() ?? User::find($data['admin_id']);

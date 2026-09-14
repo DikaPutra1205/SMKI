@@ -54,6 +54,7 @@ interface ControlRef {
 interface VerifyEntry {
     id: number;
     status: string | null;
+    level_maturity: number | null;
     catatan: string | null;
     catatan_admin?: string | null;
     tanggal_input: string | null;
@@ -137,15 +138,17 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
     const [flashVisible, setFlashVisible] = useState(false);
     const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
     const [adminNote, setAdminNote] = useState('');
+    const [maturity, setMaturity] = useState<string>('');
     const [noteError, setNoteError] = useState<string | null>(null);
     const [actionSubmitting, setActionSubmitting] = useState<'approve' | 'reject' | null>(null);
 
     useEffect(() => {
         setAdminNote(entry?.tanggal_verifikasi ? entry?.catatan_admin || '' : '');
+        setMaturity(entry?.level_maturity === null || entry?.level_maturity === undefined ? '' : String(entry.level_maturity));
         setNoteError(null);
         setConfirmAction(null);
         setActionSubmitting(null);
-    }, [entry?.id, entry?.catatan_admin, entry?.tanggal_verifikasi]);
+    }, [entry?.id, entry?.catatan_admin, entry?.tanggal_verifikasi, entry?.level_maturity]);
 
     useEffect(() => {
         if (flash?.message) {
@@ -178,7 +181,12 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
 
         // Approve (compliant) must not carry an admin note — catatan is only
         // for the reject path. Backend also nulls catatan_admin on approve.
-        const payload = action === 'reject' ? { status: targetStatus, admin_notes: adminNote.trim() || undefined } : { status: targetStatus };
+        // Maturity correction rides along when the admin changed the select.
+        const maturityValue = maturity === '' ? undefined : Number(maturity);
+        const payload =
+            action === 'reject'
+                ? { status: targetStatus, admin_notes: adminNote.trim() || undefined, level_maturity: maturityValue }
+                : { status: targetStatus, level_maturity: maturityValue };
 
         router.post(`/admin/kepatuhan/checklist/verify/${entry.id}`, payload, {
             preserveScroll: true,
@@ -292,6 +300,10 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
                                 label: 'Status PIC',
                                 value: <StatusBadge tone={statusTone(entry.status)}>{t(`status.${entry.status ?? 'pending'}` as never)}</StatusBadge>,
                             },
+                            {
+                                label: 'Level Maturity',
+                                value: entry.level_maturity === null || entry.level_maturity === undefined ? 'Belum dinilai' : `Level ${entry.level_maturity}`,
+                            },
                             { label: 'Tanggal Input', value: fmtDateTime(entry.tanggal_input) || '—' },
                         ].map(({ label, value }, i, arr) => (
                             <div
@@ -352,6 +364,26 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
                             {entry.catatan_admin && <p className="text-body mt-1 text-xs dark:text-slate-300">{entry.catatan_admin}</p>}
                         </div>
                     )}
+
+                    {/* Maturity correction — editable on verify-single, follows admin_notes pattern */}
+                    <div className="space-y-1">
+                        <label htmlFor="verify-maturity" className="text-navy text-xs font-bold tracking-wide uppercase dark:text-white">
+                            Level Maturity (0–5)
+                        </label>
+                        <select
+                            id="verify-maturity"
+                            value={maturity}
+                            onChange={(e) => setMaturity(e.target.value)}
+                            className="border-border bg-surface text-body w-full rounded-[10px] border px-3 py-2.5 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                        >
+                            <option value="">Belum dinilai</option>
+                            {[0, 1, 2, 3, 4, 5].map((n) => (
+                                <option key={n} value={n}>
+                                    Level {n}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
 
                     {/* Admin notes textarea — only visible for reject flow */}
                     {confirmAction !== 'approve' && (

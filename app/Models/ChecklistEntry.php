@@ -19,6 +19,7 @@ class ChecklistEntry extends Model
         'pic_id',
         'admin_id',
         'status',
+        'level_maturity',
         'catatan',
         'catatan_admin',
         'tanggal_input',
@@ -26,6 +27,7 @@ class ChecklistEntry extends Model
     ];
 
     protected $casts = [
+        'level_maturity' => 'integer',
         'tanggal_input' => 'datetime',
         'tanggal_verifikasi' => 'datetime',
     ];
