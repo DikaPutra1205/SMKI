@@ -120,7 +120,7 @@ class ChecklistEntryController extends Controller
             });
         }
 
-        // ── Pengurutan Standar: Klausul Manajemen 4-10 lebih dulu, kemudian Annex A (A.5 -> A.8) ──
+        // Urutkan berdasarkan kategori lalu kode
         $query->orderBy('controls.kategori', 'desc')
             ->orderBy('controls.kode_klausul', 'asc')
             ->orderBy('checklist_entries.unit_id', 'asc')

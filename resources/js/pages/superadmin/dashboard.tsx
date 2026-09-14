@@ -258,7 +258,7 @@ export default function SuperadminDashboard({
                                 <ShieldCheck className="h-4 w-4" />
                             </div>
                             <div>
-                                <h3 className="text-sm font-bold text-slate-900 dark:text-white">{frameworks[1]?.nama || 'ISO/IEC 27701:2019'}</h3>
+                                <h3 className="text-sm font-bold text-slate-900 dark:text-white">{frameworks[1]?.nama || 'ISO/IEC 27701:2025'}</h3>
                                 <p className="text-[11px] text-slate-500 dark:text-slate-400">Sistem Manajemen Informasi Privasi (PIMS)</p>
                             </div>
                         </div>

@@ -37,7 +37,7 @@ class ControlsSheet implements Export, FromCollection, ShouldAutoSize, WithHeadi
             'framework_versi',   // B — harus cocok persis dengan Sheet Frameworks kolom B
             'kode_klausul',      // C
             'judul',             // D
-            'kategori',          // E — annex_a atau klausul_4_10
+            'kategori',          // E — organisasional, orang, fisik, atau teknologi
             'deskripsi',         // F — boleh kosong
             'domain_peran',      // G — controller, processor, atau kosong
         ];
