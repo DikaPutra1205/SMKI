@@ -2,15 +2,14 @@
 
 namespace Tests\Feature;
 
-use App\Models\AuditLog;
 use App\Models\ChecklistEntry;
 use App\Models\Control;
-use App\Models\Finding;
 use App\Models\Framework;
-use App\Models\Risk;
 use App\Models\User;
 use App\Models\WorkUnit;
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\LaravelPdf\Facades\Pdf;
 use Tests\TestCase;
 
 class ReportExportTest extends TestCase
@@ -21,6 +20,12 @@ class ReportExportTest extends TestCase
 
     private User $pic;
 
+    private User $superadmin;
+
+    private User $auditor;
+
+    private User $koordinator;
+
     private WorkUnit $unit;
 
     private Control $control;
@@ -29,12 +34,103 @@ class ReportExportTest extends TestCase
     {
         parent::setUp();
 
+        $this->seed(RolesAndPermissionsSeeder::class);
+
+        Pdf::fake();
+
         $this->unit = WorkUnit::factory()->create(['nama' => 'Pusat Data Komdigi']);
         $this->admin = User::factory()->create(['role' => 'admin_kepatuhan', 'unit_id' => $this->unit->id]);
         $this->pic = User::factory()->create(['role' => 'pic', 'unit_id' => $this->unit->id]);
+        $this->superadmin = User::factory()->create(['role' => 'superadmin']);
+        $this->auditor = User::factory()->create(['role' => 'auditor']);
+        $this->koordinator = User::factory()->create(['role' => 'koordinator_smki', 'unit_id' => $this->unit->id]);
 
         $framework = Framework::factory()->create(['nama' => 'ISO/IEC 27001', 'versi' => '2022']);
         $this->control = Control::factory()->create(['framework_id' => $framework->id, 'kode_klausul' => 'A.5.1']);
+    }
+
+    public function test_superadmin_can_export_all_enabled_report_types(): void
+    {
+        $response1 = $this->actingAs($this->superadmin)->get('/reports/export-pdf?type=quick-summary');
+        $response1->assertOk();
+        $this->assertEquals('application/pdf', $response1->headers->get('Content-Type'));
+        $this->assertStringStartsWith('%PDF-', $response1->getContent());
+
+        $response2 = $this->actingAs($this->superadmin)->get('/reports/export-pdf?type=executive');
+        $response2->assertOk();
+        $this->assertEquals('application/pdf', $response2->headers->get('Content-Type'));
+        $this->assertStringStartsWith('%PDF-', $response2->getContent());
+
+        $response3 = $this->actingAs($this->superadmin)->get('/reports/export-pdf?type=audit-ready');
+        $response3->assertStatus(501);
+    }
+
+    public function test_admin_kepatuhan_can_export_quick_summary_only(): void
+    {
+        $response1 = $this->actingAs($this->admin)->get('/reports/export-pdf?type=quick-summary');
+        $response1->assertOk();
+
+        $response2 = $this->actingAs($this->admin)->get('/reports/export-pdf?type=executive');
+        $response2->assertForbidden();
+    }
+
+    public function test_auditor_can_export_both_quick_summary_and_executive(): void
+    {
+        $response1 = $this->actingAs($this->auditor)->get('/reports/export-pdf?type=quick-summary');
+        $response1->assertOk();
+
+        $response2 = $this->actingAs($this->auditor)->get('/reports/export-pdf?type=executive');
+        $response2->assertOk();
+    }
+
+    public function test_koordinator_smki_can_export_executive_only(): void
+    {
+        $response1 = $this->actingAs($this->koordinator)->get('/reports/export-pdf?type=executive');
+        $response1->assertOk();
+
+        $response2 = $this->actingAs($this->koordinator)->get('/reports/export-pdf?type=quick-summary');
+        $response2->assertForbidden();
+    }
+
+    public function test_pic_cannot_export_any_pdf_report(): void
+    {
+        $this->actingAs($this->pic)->get('/reports/export-pdf?type=quick-summary')->assertForbidden();
+        $this->actingAs($this->pic)->get('/reports/export-pdf?type=executive')->assertForbidden();
+    }
+
+    public function test_reports_periods_endpoint_returns_available_periods_json(): void
+    {
+        $response = $this->actingAs($this->admin)->get('/reports/periods');
+
+        $response->assertOk()
+            ->assertJsonStructure([
+                'status',
+                'data' => [
+                    '*' => ['value', 'label', 'year', 'month'],
+                ],
+                'work_units' => [
+                    '*' => ['id', 'nama'],
+                ],
+            ]);
+    }
+
+    public function test_reports_work_units_endpoint_returns_work_units_list(): void
+    {
+        $response = $this->actingAs($this->admin)->get('/reports/work-units');
+
+        $response->assertOk()
+            ->assertJsonStructure([
+                'status',
+                'data' => [
+                    '*' => ['id', 'nama'],
+                ],
+            ]);
+    }
+
+    public function test_report_export_with_unit_id_filter(): void
+    {
+        $response = $this->actingAs($this->superadmin)->get("/reports/export-pdf?type=quick-summary&unit_id={$this->unit->id}");
+        $response->assertOk();
     }
 
     public function test_authorized_user_can_get_compliance_summary_report_data(): void
@@ -75,7 +171,6 @@ class ReportExportTest extends TestCase
         $this->assertEquals('text/csv; charset=UTF-8', $response->headers->get('Content-Type'));
         $this->assertStringContainsString('SMKI_Compliance_Report_', $response->headers->get('Content-Disposition'));
 
-        // Verify Anti-Tamper audit log creation
         $this->assertDatabaseHas('audit_logs', [
             'entity_type' => 'Report',
             'aksi' => 'export',
@@ -91,6 +186,7 @@ class ReportExportTest extends TestCase
         $exportResponse = $this->actingAs($this->pic)->get('/api/v1/reports/export-csv');
         $exportResponse->assertForbidden();
     }
+
 
     public function test_exported_csv_contains_expected_rows_and_utf8_bom(): void
     {

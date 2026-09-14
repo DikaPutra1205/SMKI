@@ -1,11 +1,12 @@
 import ComplianceAreaChart, { type TrendPoint } from '@/components/dashboards/ComplianceAreaChart';
+import ExportReportModal from '@/components/dashboards/ExportReportModal';
 import TimeframeFilter from '@/components/dashboards/TimeframeFilter';
 import { ChartSkeleton } from '@/components/skeletons/ChartSkeleton';
 import AppLayout from '@/layouts/AppLayout';
 import { formatDateIndonesian, formatDateTimeIndonesian } from '@/lib/utils';
 import { Deferred, Head, Link } from '@inertiajs/react';
-import { ArrowUpRight, Database, KeyRound, Layers, Shield, ShieldAlert, ShieldCheck, TrendingUp, Users } from 'lucide-react';
-import { useMemo } from 'react';
+import { ArrowUpRight, Database, FileDown, KeyRound, Layers, Shield, ShieldAlert, ShieldCheck, TrendingUp, Users } from 'lucide-react';
+import { useMemo, useState } from 'react';
 
 interface FrameworkSummary {
     id: number;
@@ -81,6 +82,8 @@ export default function SuperadminDashboard({
         return `${days[d.getDay()]}, ${formatDateIndonesian(d)}`;
     }, []);
 
+    const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+
     return (
         <AppLayout breadcrumbs={breadcrumbs} currentPath="/admin/superadmin/dashboard">
             <Head title="Command Center — Superadmin" />
@@ -108,6 +111,14 @@ export default function SuperadminDashboard({
                                 : '/dashboard'
                         }
                     />
+                    <button
+                        type="button"
+                        onClick={() => setIsExportModalOpen(true)}
+                        className="inline-flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-3.5 py-2 text-xs font-semibold text-primary shadow-xs transition-colors hover:bg-primary/10 dark:border-primary/40 dark:bg-primary/10 dark:text-primary-200 dark:hover:bg-primary/20"
+                    >
+                        <FileDown className="h-4 w-4" />
+                        Unduh Laporan PDF
+                    </button>
                     <Link
                         href="/admin/superadmin/frameworks"
                         className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
@@ -124,6 +135,8 @@ export default function SuperadminDashboard({
                     </Link>
                 </div>
             </div>
+
+            <ExportReportModal open={isExportModalOpen} onClose={() => setIsExportModalOpen(false)} />
 
             {/* Row 1: KPI Cards */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

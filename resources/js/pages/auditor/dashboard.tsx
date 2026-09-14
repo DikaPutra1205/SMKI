@@ -1,4 +1,5 @@
 import ComplianceAreaChart, { type TrendPoint } from '@/components/dashboards/ComplianceAreaChart';
+import ExportReportModal from '@/components/dashboards/ExportReportModal';
 import TimeframeFilter from '@/components/dashboards/TimeframeFilter';
 import { ActivitySkeleton } from '@/components/skeletons/ActivitySkeleton';
 import { ChartSkeleton } from '@/components/skeletons/ChartSkeleton';
@@ -7,8 +8,8 @@ import { useCan } from '@/lib/can';
 import { formatDateIndonesian, formatDateTimeIndonesian } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { Deferred, Head, Link, usePage } from '@inertiajs/react';
-import { ClipboardCheck, Clock, FileSearch, Shield, ShieldAlert, ShieldCheck, TrendingUp } from 'lucide-react';
-import { useMemo } from 'react';
+import { ClipboardCheck, Clock, FileDown, FileSearch, Shield, ShieldAlert, ShieldCheck, TrendingUp } from 'lucide-react';
+import { useMemo, useState } from 'react';
 
 interface RecentActivity {
     id: number;
@@ -37,6 +38,7 @@ interface AuditorDashboardProps {
     };
     trends?: TrendPoint[];
     recent_activities?: RecentActivity[];
+    workUnits?: Array<{ id: number; nama: string; kode?: string | null }>;
     filters?: {
         unit_id?: number | string;
         session_id?: number | string;
@@ -44,7 +46,7 @@ interface AuditorDashboardProps {
     };
 }
 
-export default function AuditorDashboard({ summary, trends = [], recent_activities = [], filters = {} }: AuditorDashboardProps) {
+export default function AuditorDashboard({ summary, trends = [], recent_activities = [], workUnits = [], filters = {} }: AuditorDashboardProps) {
     const { auth } = usePage<SharedData>().props;
     const can = useCan();
     const userName = auth.user?.name || 'Auditor Kepatuhan';
@@ -68,6 +70,8 @@ export default function AuditorDashboard({ summary, trends = [], recent_activiti
 
     // ── Trend Chart Data ──────────────────────────────────────────────────────
     const totalRisks = (risks.critical || 0) + (risks.high || 0) + (risks.medium || 0) + (risks.low || 0);
+
+    const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs} currentPath="/admin/auditor/dashboard">
@@ -97,6 +101,14 @@ export default function AuditorDashboard({ summary, trends = [], recent_activiti
                         }
                         extraParams={{ unit_id: filters.unit_id, session_id: filters.session_id }}
                     />
+                    <button
+                        type="button"
+                        onClick={() => setIsExportModalOpen(true)}
+                        className="inline-flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-3.5 py-2 text-xs font-semibold text-primary shadow-xs transition-colors hover:bg-primary/10 dark:border-primary/40 dark:bg-primary/10 dark:text-primary-200 dark:hover:bg-primary/20"
+                    >
+                        <FileDown className="h-4 w-4" />
+                        Unduh Laporan PDF
+                    </button>
                     <Link
                         href="/temuan"
                         className="bg-primary hover:bg-primary inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all active:scale-95 sm:text-sm"
@@ -115,6 +127,13 @@ export default function AuditorDashboard({ summary, trends = [], recent_activiti
                     )}
                 </div>
             </div>
+
+            <ExportReportModal
+                open={isExportModalOpen}
+                onClose={() => setIsExportModalOpen(false)}
+                unitId={filters.unit_id ? Number(filters.unit_id) : undefined}
+                workUnits={workUnits}
+            />
 
             {/* Row 1: KPI Cards */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

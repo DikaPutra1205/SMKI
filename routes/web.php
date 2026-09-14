@@ -73,6 +73,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/risks', [ComplianceOfficerController::class, 'storeRisk'])->name('risks.store.direct');
     Route::put('/risks/{risk}', [ComplianceOfficerController::class, 'updateRisk'])->name('risks.update.direct');
     Route::get('/audit-logs', [PageController::class, 'auditLogs'])->name('audit-logs.index');
+    Route::get('/reports/export-pdf', [ReportExportController::class, 'exportPdf'])->name('reports.export-pdf.direct');
+    Route::get('/reports/periods', [ReportExportController::class, 'periods'])->name('reports.periods.direct');
+    Route::get('/reports/work-units', [ReportExportController::class, 'workUnits'])->name('reports.work-units.direct');
 
     Route::prefix('admin/kepatuhan')->name('admin.kepatuhan.')->group(function () {
         Route::get('/', function () {

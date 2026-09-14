@@ -75,6 +75,22 @@ Rule: for `pic`, every ✓ grant is limited to records owned by the PIC's own un
 | **report** | | | | | |
 | report.read | ✓ | ✓ | ✓ | ✓ | ✗ |
 | report.export | ✓ | ✓ | ✓ | ✓ | ✗ |
+
+### PDF Report Generator Access & Data Scoping Rules
+
+The PDF Export endpoint (`GET /reports/export-pdf?type=...`) enforces granular report template authorization and work unit data scoping:
+
+- **`superadmin`**: Full access to all report types (`quick-summary`, `executive`, `audit-ready`) across all Satuan Kerja.
+- **`admin_kepatuhan`**: Access to `quick-summary` report type ONLY across all Satuan Kerja. Accessing `executive` returns 403 Forbidden.
+- **`auditor`**: Access to both `quick-summary` and `executive` report types across all Satuan Kerja.
+- **`koordinator_smki`**: Access to `executive` report type ONLY across all Satuan Kerja. Accessing `quick-summary` returns 403 Forbidden.
+- **`pic`**: No report export access (403 Forbidden).
+
+Available Report Types:
+1. `quick-summary`: Detailed multi-page compliance progress report (with charts, domain breakdowns, high-priority controls, and detail tables).
+2. `executive`: Short 1-page executive summary report.
+3. `audit-ready`: Formal audit evidence report (currently placeholder 501 Not Implemented).
+
 | **user** | | | | | |
 | user.profileview | ✓ | ✓ | ✓ | ✓ | ✓ |
 | user.managementview | ✓ | ✗ | ✓ | ✓ | ✗ |

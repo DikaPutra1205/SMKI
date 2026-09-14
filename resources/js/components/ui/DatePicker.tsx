@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight, Calendar, X } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 
@@ -64,19 +64,27 @@ export function DatePicker({
     const triggerRef = useRef<HTMLButtonElement>(null);
     const popoverRef = useRef<HTMLDivElement>(null);
 
-    const selected = parseYmd(value);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = useMemo(() => {
+        const d = new Date();
+        d.setHours(0, 0, 0, 0);
+        return d;
+    }, []);
 
-    const [viewYear, setViewYear] = useState(selected?.getFullYear() ?? today.getFullYear());
-    const [viewMonth, setViewMonth] = useState(selected?.getMonth() ?? today.getMonth());
+    const selected = useMemo(() => parseYmd(value), [value]);
 
+    const [viewYear, setViewYear] = useState<number>(() => selected?.getFullYear() ?? today.getFullYear());
+    const [viewMonth, setViewMonth] = useState<number>(() => selected?.getMonth() ?? today.getMonth());
+
+    // Sync view with selected date when value changes or when popover opens
     useEffect(() => {
-        if (selected) {
-            setViewYear(selected.getFullYear());
-            setViewMonth(selected.getMonth());
+        if (value || isOpen) {
+            const parsed = parseYmd(value);
+            if (parsed) {
+                setViewYear(parsed.getFullYear());
+                setViewMonth(parsed.getMonth());
+            }
         }
-    }, [selected]);
+    }, [value, isOpen]);
 
     const close = useCallback(() => setIsOpen(false), []);
 
@@ -84,8 +92,10 @@ export function DatePicker({
         if (!isOpen) return;
         function handleClick(e: MouseEvent) {
             if (
-                popoverRef.current && !popoverRef.current.contains(e.target as Node) &&
-                triggerRef.current && !triggerRef.current.contains(e.target as Node)
+                popoverRef.current &&
+                !popoverRef.current.contains(e.target as Node) &&
+                triggerRef.current &&
+                !triggerRef.current.contains(e.target as Node)
             ) {
                 close();
             }
@@ -109,8 +119,14 @@ export function DatePicker({
     function goMonth(delta: number) {
         let m = viewMonth + delta;
         let y = viewYear;
-        if (m < 0) { m = 11; y--; }
-        if (m > 11) { m = 0; y++; }
+        if (m < 0) {
+            m = 11;
+            y--;
+        }
+        if (m > 11) {
+            m = 0;
+            y++;
+        }
         setViewMonth(m);
         setViewYear(y);
     }
@@ -124,12 +140,24 @@ export function DatePicker({
     for (let i = 0; i < firstDay; i++) calendarDays.push(null);
     for (let d = 1; d <= daysInMonth; d++) calendarDays.push(d);
 
+    // Dynamic year list (from 10 years ago to +5 years ahead, plus ensuring current/viewYear is present)
+    const yearOptions = useMemo(() => {
+        const currentY = today.getFullYear();
+        const minYear = Math.min(currentY - 10, viewYear - 2);
+        const maxYear = Math.max(currentY + 6, viewYear + 2);
+        const years: number[] = [];
+        for (let y = minYear; y <= maxYear; y++) {
+            years.push(y);
+        }
+        return years;
+    }, [today, viewYear]);
+
     const popoverPos = (() => {
         if (!triggerRef.current) return { top: 0, left: 0 };
         const rect = triggerRef.current.getBoundingClientRect();
         return {
-            top: rect.bottom + window.scrollY + 6,
-            left: Math.min(rect.left + window.scrollX, window.innerWidth - 320),
+            top: rect.bottom + 6,
+            left: Math.max(16, Math.min(rect.left, window.innerWidth - 320)),
         };
     })();
 
@@ -162,8 +190,16 @@ export function DatePicker({
                     <span
                         role="button"
                         tabIndex={0}
-                        onClick={(e) => { e.stopPropagation(); onChange(''); }}
-                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); onChange(''); } }}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onChange('');
+                        }}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.stopPropagation();
+                                onChange('');
+                            }
+                        }}
                         className="ml-1 rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-700 dark:hover:text-slate-300"
                     >
                         <X className="h-3.5 w-3.5" />
@@ -173,92 +209,133 @@ export function DatePicker({
 
             {error && <span className="text-[11px] font-medium text-rose-500 dark:text-red-400">{error}</span>}
 
-            {isOpen && createPortal(
-                <div
-                    ref={popoverRef}
-                    className="fixed z-[1060] w-[300px] rounded-2xl border border-slate-200 bg-white p-3 shadow-lg dark:border-slate-700 dark:bg-slate-900"
-                    style={{ top: popoverPos.top, left: popoverPos.left }}
-                >
-                    {/* Header */}
-                    <div className="mb-2 flex items-center justify-between">
-                        <button
-                            type="button"
-                            onClick={() => goMonth(-1)}
-                            className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-                        >
-                            <ChevronLeft className="h-4 w-4" />
-                        </button>
-                        <span className="text-xs font-bold text-slate-800 dark:text-white">
-                            {MONTHS_ID[viewMonth]} {viewYear}
-                        </span>
-                        <button
-                            type="button"
-                            onClick={() => goMonth(1)}
-                            className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-                        >
-                            <ChevronRight className="h-4 w-4" />
-                        </button>
-                    </div>
-
-                    {/* Day-of-week headers */}
-                    <div className="mb-1 grid grid-cols-7 gap-0.5">
-                        {DAYS_SHORT.map((d) => (
-                            <div key={d} className="py-1 text-center text-[10px] font-bold text-slate-400 dark:text-slate-500">
-                                {d}
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Day grid */}
-                    <div className="grid grid-cols-7 gap-0.5">
-                        {calendarDays.map((day, i) => {
-                            if (day === null) return <div key={`e${i}`} />;
-                            const ymd = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                            const isToday = ymd === todayStr;
-                            const isSelected = ymd === selectedStr;
-
-                            return (
-                                <button
-                                    key={ymd}
-                                    type="button"
-                                    onClick={() => selectDate(ymd)}
-                                    className={cn(
-                                        'h-8 w-full rounded-lg text-xs font-medium transition-colors',
-                                        isSelected
-                                            ? 'bg-primary text-white shadow-sm'
-                                            : isToday
-                                              ? 'bg-primary-50 text-primary font-bold dark:bg-primary/20 dark:text-primary-200'
-                                              : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800',
-                                    )}
-                                >
-                                    {day}
-                                </button>
-                            );
-                        })}
-                    </div>
-
-                    {/* Footer actions */}
-                    <div className="mt-2 flex items-center justify-between border-t border-slate-100 pt-2 dark:border-slate-800">
-                        <button
-                            type="button"
-                            onClick={() => { onChange(toYmd(today)); close(); }}
-                            className="rounded-lg px-2.5 py-1 text-[11px] font-semibold text-primary hover:bg-primary-50 dark:text-primary-200 dark:hover:bg-primary/10"
-                        >
-                            Hari Ini
-                        </button>
-                        {value && (
+            {isOpen &&
+                createPortal(
+                    <div
+                        ref={popoverRef}
+                        className="fixed z-[1060] w-[300px] rounded-2xl border border-slate-200 bg-white p-3 shadow-lg dark:border-slate-700 dark:bg-slate-900"
+                        style={{ top: popoverPos.top, left: popoverPos.left }}
+                    >
+                        {/* Header with Month/Year Selectors */}
+                        <div className="mb-2 flex items-center justify-between gap-1">
                             <button
                                 type="button"
-                                onClick={() => { onChange(''); close(); }}
-                                className="rounded-lg px-2.5 py-1 text-[11px] font-semibold text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+                                onClick={() => goMonth(-1)}
+                                className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+                                title="Bulan Sebelumnya"
                             >
-                                Hapus
+                                <ChevronLeft className="h-4 w-4" />
                             </button>
-                        )}
-                    </div>
-                </div>,
-                document.body,
-            )}
+                            <div className="flex items-center gap-1">
+                                <select
+                                    value={viewMonth}
+                                    onChange={(e) => setViewMonth(Number(e.target.value))}
+                                    className="cursor-pointer rounded-lg border border-transparent bg-transparent px-1.5 py-1 text-xs font-bold text-slate-800 hover:border-slate-200 hover:bg-slate-50 focus:border-primary focus:outline-none dark:text-white dark:hover:border-slate-700 dark:hover:bg-slate-800"
+                                >
+                                    {MONTHS_ID.map((m, idx) => (
+                                        <option
+                                            key={m}
+                                            value={idx}
+                                            className="bg-white text-slate-800 dark:bg-slate-900 dark:text-white"
+                                        >
+                                            {m}
+                                        </option>
+                                    ))}
+                                </select>
+                                <select
+                                    value={viewYear}
+                                    onChange={(e) => setViewYear(Number(e.target.value))}
+                                    className="cursor-pointer rounded-lg border border-transparent bg-transparent px-1.5 py-1 text-xs font-bold text-slate-800 hover:border-slate-200 hover:bg-slate-50 focus:border-primary focus:outline-none dark:text-white dark:hover:border-slate-700 dark:hover:bg-slate-800"
+                                >
+                                    {yearOptions.map((y) => (
+                                        <option
+                                            key={y}
+                                            value={y}
+                                            className="bg-white text-slate-800 dark:bg-slate-900 dark:text-white"
+                                        >
+                                            {y}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => goMonth(1)}
+                                className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+                                title="Bulan Berikutnya"
+                            >
+                                <ChevronRight className="h-4 w-4" />
+                            </button>
+                        </div>
+
+                        {/* Day-of-week headers */}
+                        <div className="mb-1 grid grid-cols-7 gap-0.5">
+                            {DAYS_SHORT.map((d) => (
+                                <div
+                                    key={d}
+                                    className="py-1 text-center text-[10px] font-bold text-slate-400 dark:text-slate-500"
+                                >
+                                    {d}
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Day grid */}
+                        <div className="grid grid-cols-7 gap-0.5">
+                            {calendarDays.map((day, i) => {
+                                if (day === null) return <div key={`e${i}`} />;
+                                const ymd = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                                const isToday = ymd === todayStr;
+                                const isSelected = ymd === selectedStr;
+
+                                return (
+                                    <button
+                                        key={ymd}
+                                        type="button"
+                                        onClick={() => selectDate(ymd)}
+                                        className={cn(
+                                            'h-8 w-full rounded-lg text-xs font-medium transition-colors',
+                                            isSelected
+                                                ? 'bg-primary text-white shadow-sm'
+                                                : isToday
+                                                  ? 'bg-primary-50 font-bold text-primary dark:bg-primary/20 dark:text-primary-200'
+                                                  : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800',
+                                        )}
+                                    >
+                                        {day}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {/* Footer actions */}
+                        <div className="mt-2 flex items-center justify-between border-t border-slate-100 pt-2 dark:border-slate-800">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    onChange(toYmd(today));
+                                    close();
+                                }}
+                                className="rounded-lg px-2.5 py-1 text-[11px] font-semibold text-primary hover:bg-primary-50 dark:text-primary-200 dark:hover:bg-primary/10"
+                            >
+                                Hari Ini
+                            </button>
+                            {value && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        onChange('');
+                                        close();
+                                    }}
+                                    className="rounded-lg px-2.5 py-1 text-[11px] font-semibold text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+                                >
+                                    Hapus
+                                </button>
+                            )}
+                        </div>
+                    </div>,
+                    document.body,
+                )}
         </div>
     );
 }
