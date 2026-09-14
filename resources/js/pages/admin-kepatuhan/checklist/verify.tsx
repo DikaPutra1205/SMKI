@@ -115,7 +115,8 @@ function fmtDateTime(value: string | null): string {
 }
 
 function kategoriLabel(k: string): string {
-    return k === 'annex_a' ? 'Annex A' : 'Klausul 4–10';
+    const labels: Record<string, string> = { organisasional: 'Organisasional', orang: 'Orang', fisik: 'Fisik', teknologi: 'Teknologi' };
+    return labels[k] ?? k;
 }
 
 function isImageFile(filename?: string): boolean {

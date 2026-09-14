@@ -74,12 +74,11 @@ interface ControlFormData {
 }
 
 const DOMAIN_TABS = [
-    { id: 'all', label: 'Semua Kontrol', prefix: '' },
-    { id: 'a5', label: 'A.5 Organisasi', prefix: '5.' },
-    { id: 'a6', label: 'A.6 Orang (Personel)', prefix: '6.' },
-    { id: 'a7', label: 'A.7 Fisik', prefix: '7.' },
-    { id: 'a8', label: 'A.8 Teknologi', prefix: '8.' },
-    { id: 'klausul', label: 'Klausul 4-10', prefix: '4.' },
+    { id: 'all', label: 'Semua Kontrol', kategori: '' },
+    { id: 'organisasional', label: 'Organisasional', kategori: 'Organisasional' },
+    { id: 'orang', label: 'Orang', kategori: 'Orang' },
+    { id: 'fisik', label: 'Fisik', kategori: 'Fisik' },
+    { id: 'teknologi', label: 'Teknologi', kategori: 'Teknologi' },
 ];
 
 export default function Compliance({ frameworks = [], controls, filters = {} }: ComplianceProps) {
@@ -100,10 +99,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
         if (selectedDomain === 'all') return items;
         const tab = DOMAIN_TABS.find((t) => t.id === selectedDomain);
         if (!tab) return items;
-        if (selectedDomain === 'klausul') {
-            return items.filter((item) => item.category !== 'Annex A' || !item.code.startsWith('A.'));
-        }
-        return items.filter((item) => item.code.startsWith(`A.${tab.prefix}`) || item.code.startsWith(tab.prefix));
+        return items.filter((item) => item.category === tab.kategori);
     }, [controls?.data, selectedDomain, selectedPeran]);
 
     const { flash } = usePage<{ flash?: { type: string; message: string } }>().props;
@@ -128,7 +124,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
         framework_id: String(selectedFrameworkId ?? frameworks[0]?.id ?? ''),
         kode_klausul: '',
         judul: '',
-        kategori: 'annex_a',
+        kategori: 'organisasional',
         domain_peran: '',
         deskripsi: '',
     });
@@ -146,7 +142,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
             framework_id: String(item.framework_id ?? ''),
             kode_klausul: item.code,
             judul: item.title,
-            kategori: item.category === 'Annex A' ? 'annex_a' : 'klausul_4_10',
+            kategori: item.category.toLowerCase(),
             domain_peran: item.domain_peran ?? '',
             deskripsi: item.description,
         });
@@ -300,7 +296,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
 
             {/* Controls Panel Container */}
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                {/* Annex A Domain Filter Tabs */}
+                {/* Kategori Filter Tabs */}
                 <div className="flex items-center gap-1 overflow-x-auto border-b border-slate-200 bg-slate-50/50 p-2.5 dark:border-slate-800 dark:bg-slate-900/50">
                     {DOMAIN_TABS.map((tab) => (
                         <button
@@ -390,7 +386,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                                         </td>
                                         <td className="px-5 py-4 text-left whitespace-nowrap">
                                             <span className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                                                {item.category === 'Annex A' ? 'Annex A' : 'Klausul 4-10'}
+                                                {item.category}
                                             </span>
                                         </td>
                                         <td className="px-5 py-4 text-left whitespace-nowrap">
@@ -601,8 +597,10 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                             onChange={(e) => form.setData('kategori', e.target.value)}
                             error={form.errors.kategori}
                         >
-                            <option value="annex_a">Annex A</option>
-                            <option value="klausul_4_10">Klausul 4-10</option>
+                            <option value="organisasional">Organisasional</option>
+                            <option value="orang">Orang</option>
+                            <option value="fisik">Fisik</option>
+                            <option value="teknologi">Teknologi</option>
                         </Select>
 
                         <Select
