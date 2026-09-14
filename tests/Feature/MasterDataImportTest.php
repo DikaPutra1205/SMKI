@@ -409,6 +409,7 @@ class MasterDataImportTest extends TestCase
             'judul' => 'Policies',
             'kategori' => 'annex_a',
             'deskripsi' => 'desc',
+            'domain_peran' => 'controller',
         ]);
 
         $response = $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
@@ -428,10 +429,10 @@ class MasterDataImportTest extends TestCase
 
         $ctrlRows = $spreadsheet->getSheetByName('Controls')->toArray();
         $this->assertSame(
-            ['framework_nama', 'framework_versi', 'kode_klausul', 'judul', 'kategori', 'deskripsi'],
+            ['framework_nama', 'framework_versi', 'kode_klausul', 'judul', 'kategori', 'deskripsi', 'domain_peran'],
             $ctrlRows[0]
         );
-        $this->assertSame(['ISO 27001', '2022', 'A.5.1', 'Policies', 'annex_a', 'desc'], $ctrlRows[1]);
+        $this->assertSame(['ISO 27001', '2022', 'A.5.1', 'Policies', 'annex_a', 'desc', 'controller'], $ctrlRows[1]);
     }
 
     public function test_export_with_empty_database_has_headers_only(): void
@@ -443,7 +444,7 @@ class MasterDataImportTest extends TestCase
         $spreadsheet = $this->readExport($response);
         $this->assertSame(['nama', 'versi', 'url_file'], $spreadsheet->getSheetByName('Frameworks')->toArray()[0]);
         $this->assertSame(
-            ['framework_nama', 'framework_versi', 'kode_klausul', 'judul', 'kategori', 'deskripsi'],
+            ['framework_nama', 'framework_versi', 'kode_klausul', 'judul', 'kategori', 'deskripsi', 'domain_peran'],
             $spreadsheet->getSheetByName('Controls')->toArray()[0]
         );
         $this->assertCount(1, $spreadsheet->getSheetByName('Frameworks')->toArray());
