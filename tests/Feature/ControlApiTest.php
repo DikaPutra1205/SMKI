@@ -21,7 +21,7 @@ class ControlApiTest extends TestCase
     {
         $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
         $this->framework()->controls()->create([
-            'kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a',
+            'kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'teknologi',
         ]);
 
         $this->actingAs($admin)
@@ -34,9 +34,9 @@ class ControlApiTest extends TestCase
     {
         $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
         $fw = $this->framework();
-        $fw->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a']);
+        $fw->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'teknologi']);
         $other = Framework::create(['nama' => 'Other', 'versi' => '1']);
-        $other->controls()->create(['kode_klausul' => 'A.6.1', 'judul' => 'Other', 'kategori' => 'annex_a']);
+        $other->controls()->create(['kode_klausul' => 'A.6.1', 'judul' => 'Other', 'kategori' => 'teknologi']);
 
         $this->actingAs($admin)
             ->getJson("/api/controls?framework_id={$fw->id}")
@@ -49,7 +49,7 @@ class ControlApiTest extends TestCase
     {
         $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
         $fw = $this->framework();
-        $fw->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a']);
+        $fw->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'teknologi']);
 
         $this->actingAs($admin)
             ->getJson("/api/frameworks/{$fw->id}/controls")
@@ -68,7 +68,7 @@ class ControlApiTest extends TestCase
                 'framework_id' => $fw->id,
                 'kode_klausul' => 'A.5.2',
                 'judul' => 'Information security roles',
-                'kategori' => 'annex_a',
+                'kategori' => 'teknologi',
             ])
             ->assertCreated()
             ->assertJsonPath('data.kode_klausul', 'A.5.2');
@@ -96,7 +96,7 @@ class ControlApiTest extends TestCase
         $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
         $fw = $this->framework();
         $control = $fw->controls()->create([
-            'kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a',
+            'kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'teknologi',
         ]);
 
         $this->actingAs($admin)->getJson("/api/controls/{$control->id}")->assertOk();
@@ -121,7 +121,7 @@ class ControlApiTest extends TestCase
                 'framework_id' => $fw->id,
                 'kode_klausul' => 'A.5.9',
                 'judul' => 'Inventory of information and other assets',
-                'kategori' => 'annex_a',
+                'kategori' => 'teknologi',
             ])
             ->assertForbidden();
 
@@ -132,8 +132,8 @@ class ControlApiTest extends TestCase
     {
         $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
         $fw = $this->framework();
-        $fw->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a']);
-        $fw->controls()->create(['kode_klausul' => 'A.7.2', 'judul' => 'Other', 'kategori' => 'annex_a']);
+        $fw->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'teknologi']);
+        $fw->controls()->create(['kode_klausul' => 'A.7.2', 'judul' => 'Other', 'kategori' => 'teknologi']);
 
         $this->actingAs($admin)
             ->getJson('/api/controls?search=A.5.1')
@@ -146,7 +146,7 @@ class ControlApiTest extends TestCase
     {
         $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
         $fw = $this->framework();
-        $fw->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a']);
+        $fw->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'teknologi']);
         $fw->delete();
 
         $this->actingAs($admin)
@@ -154,7 +154,7 @@ class ControlApiTest extends TestCase
             ->assertStatus(404);
     }
 
-    public function test_store_accepts_klausul_4_10_kategori(): void
+    public function test_store_accepts_organisasional_kategori(): void
     {
         $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
         $fw = $this->framework();
@@ -164,12 +164,12 @@ class ControlApiTest extends TestCase
                 'framework_id' => $fw->id,
                 'kode_klausul' => '4.2.2',
                 'judul' => 'Stakeholder communication',
-                'kategori' => 'klausul_4_10',
+                'kategori' => 'organisasional',
             ])
             ->assertCreated()
-            ->assertJsonPath('data.kategori', 'klausul_4_10');
+            ->assertJsonPath('data.kategori', 'organisasional');
 
-        $this->assertDatabaseHas('controls', ['kode_klausul' => '4.2.2', 'kategori' => 'klausul_4_10']);
+        $this->assertDatabaseHas('controls', ['kode_klausul' => '4.2.2', 'kategori' => 'organisasional']);
     }
 
     public function test_store_accepts_domain_peran_values(): void
@@ -183,7 +183,7 @@ class ControlApiTest extends TestCase
                     'framework_id' => $fw->id,
                     'kode_klausul' => "A.5.{$i}",
                     'judul' => "Control {$peran}",
-                    'kategori' => 'annex_a',
+                    'kategori' => 'teknologi',
                     'domain_peran' => $peran,
                 ])
                 ->assertCreated()
@@ -203,7 +203,7 @@ class ControlApiTest extends TestCase
                 'framework_id' => $fw->id,
                 'kode_klausul' => 'A.5.1',
                 'judul' => 'No peran',
-                'kategori' => 'annex_a',
+                'kategori' => 'teknologi',
             ])
             ->assertCreated();
         $this->assertDatabaseHas('controls', ['kode_klausul' => 'A.5.1', 'domain_peran' => null]);
@@ -213,7 +213,7 @@ class ControlApiTest extends TestCase
                 'framework_id' => $fw->id,
                 'kode_klausul' => 'A.5.2',
                 'judul' => 'Null peran',
-                'kategori' => 'annex_a',
+                'kategori' => 'teknologi',
                 'domain_peran' => null,
             ])
             ->assertCreated();
@@ -230,7 +230,7 @@ class ControlApiTest extends TestCase
                 'framework_id' => $fw->id,
                 'kode_klausul' => 'A.5.2',
                 'judul' => 'Bad peran',
-                'kategori' => 'annex_a',
+                'kategori' => 'teknologi',
                 'domain_peran' => 'owner',
             ])
             ->assertStatus(422);
@@ -241,7 +241,7 @@ class ControlApiTest extends TestCase
         $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
         $fw = $this->framework();
         $control = $fw->controls()->create([
-            'kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a',
+            'kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'teknologi',
         ]);
 
         $this->actingAs($admin)
@@ -259,8 +259,8 @@ class ControlApiTest extends TestCase
     {
         $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
         $fw = $this->framework();
-        $fw->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'C1', 'kategori' => 'annex_a', 'domain_peran' => 'controller']);
-        $fw->controls()->create(['kode_klausul' => 'A.5.2', 'judul' => 'P1', 'kategori' => 'annex_a', 'domain_peran' => 'processor']);
+        $fw->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'C1', 'kategori' => 'teknologi', 'domain_peran' => 'controller']);
+        $fw->controls()->create(['kode_klausul' => 'A.5.2', 'judul' => 'P1', 'kategori' => 'teknologi', 'domain_peran' => 'processor']);
 
         $this->actingAs($admin)
             ->getJson('/api/controls?domain_peran=controller')
@@ -268,7 +268,7 @@ class ControlApiTest extends TestCase
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.kode_klausul', 'A.5.1');
 
-        $fw->controls()->create(['kode_klausul' => 'A.5.3', 'judul' => 'U1', 'kategori' => 'annex_a', 'domain_peran' => null]);
+        $fw->controls()->create(['kode_klausul' => 'A.5.3', 'judul' => 'U1', 'kategori' => 'teknologi', 'domain_peran' => null]);
 
         $this->actingAs($admin)
             ->getJson('/api/controls?domain_peran=unknown')
@@ -288,7 +288,7 @@ class ControlApiTest extends TestCase
         $fw1 = $this->framework();
         $fw2 = Framework::create(['nama' => 'ISO 27701:2019', 'versi' => '2019']);
         $control = $fw1->controls()->create([
-            'kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a',
+            'kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'teknologi',
         ]);
 
         $this->actingAs($admin)
@@ -296,7 +296,7 @@ class ControlApiTest extends TestCase
                 'framework_id' => $fw2->id,
                 'kode_klausul' => 'A.5.1',
                 'judul' => 'Policies',
-                'kategori' => 'annex_a',
+                'kategori' => 'teknologi',
             ])
             ->assertOk();
 

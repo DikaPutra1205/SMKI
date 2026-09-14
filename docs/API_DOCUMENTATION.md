@@ -126,7 +126,7 @@ Gunakan `id` atau `email` user berikut untuk simulasi pengujian hak akses peran:
 - `status` (string: `compliant` | `partial` | `non_compliant` | `na`)
 - `bulan` (integer 1-12) — Filter periode bulan (contoh: `?bulan=8`)
 - `tahun` (integer) — Filter periode tahun (contoh: `?tahun=2026`)
-- `kategori` (string: `annex_a` | `klausul_4_10`)
+- `kategori` (string: `organisasional` | `orang` | `fisik` | `teknologi`)
 - `framework_id` (integer: `1` untuk ISO 27001, `2` untuk ISO 27701)
 - `is_verified` (boolean: `true` / `false`) — Filter status verifikasi Admin
 - `trashed` (string: `only` / `with`) — Filter data soft-deleted
@@ -140,8 +140,8 @@ Gunakan `id` atau `email` user berikut untuk simulasi pengujian hak akses peran:
   "status": "success",
   "data": {
     "current_page": 1,
-    "last_page": 6,
-    "total": 118,
+    "last_page": 7,
+    "total": 123,
     "per_page": 20,
     "data": [
       {
@@ -158,9 +158,9 @@ Gunakan `id` atau `email` user berikut untuk simulasi pengujian hak akses peran:
         "control": {
           "id": 1,
           "framework_id": 1,
-          "kode_klausul": "4.1",
-          "judul": "Memahami Organisasi dan Konteksnya",
-          "kategori": "klausul_4_10"
+          "kode_klausul": "A.5.1",
+          "judul": "Kebijakan untuk keamanan informasi",
+          "kategori": "organisasional"
         },
         "unit": { "id": 3, "nama": "Biro Teknologi Informasi" },
         "pic": { "id": 5, "name": "PIC Biro TI" },
@@ -269,9 +269,9 @@ Gunakan `id` atau `email` user berikut untuk simulasi pengujian hak akses peran:
 
 ### 6. Master Data Framework & Kontrol
 
-- `GET /api/frameworks` — Daftar standar ISO (ISO 27001:2022 & ISO 27701:2019).
+- `GET /api/frameworks` — Daftar standar ISO (ISO 27001:2022 & ISO 27701:2025).
 - `POST /api/frameworks` — Tambah framework baru.
-- `GET /api/controls` — Seluruh klausul kontrol (filter: `?framework_id=`, `?kategori=annex_a|klausul_4_10`).
+- `GET /api/controls` — Seluruh klausul kontrol (filter: `?framework_id=`, `?kategori=organisasional|orang|fisik|teknologi`).
 - `GET /api/frameworks/{id}/controls` — Kontrol spesifik untuk framework tertentu.
 - `POST /api/controls` — Tambah klausul kontrol baru.
 

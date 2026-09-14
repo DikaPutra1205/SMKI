@@ -21,7 +21,7 @@ class EvidenceAuthorizationGapTest extends TestCase
         $unitB = WorkUnit::create(['nama' => 'Unit B']);
         $fw = Framework::create(['nama' => 'ISO 27001', 'versi' => '2022']);
         $control = $fw->controls()->create([
-            'kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a',
+            'kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'teknologi',
         ]);
         $picA = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unitA->id]);
         $picB = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unitB->id]);

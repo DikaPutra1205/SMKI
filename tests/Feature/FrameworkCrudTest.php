@@ -196,10 +196,10 @@ class FrameworkCrudTest extends TestCase
         $user = $this->makeAdmin();
         $framework = Framework::create(['nama' => 'ISO 27001:2022', 'versi' => '2022']);
         $framework->controls()->create([
-            'kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a',
+            'kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'teknologi',
         ]);
         $framework->controls()->create([
-            'kode_klausul' => 'A.5.2', 'judul' => 'Roles', 'kategori' => 'annex_a',
+            'kode_klausul' => 'A.5.2', 'judul' => 'Roles', 'kategori' => 'teknologi',
         ]);
 
         $this->actingAs($user)

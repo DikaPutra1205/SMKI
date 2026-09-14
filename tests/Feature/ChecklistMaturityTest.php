@@ -20,7 +20,7 @@ class ChecklistMaturityTest extends TestCase
         $unit = WorkUnit::create(['nama' => 'Unit QA']);
         $fw = Framework::create(['nama' => 'ISO 27001:2022', 'versi' => '2022']);
         $control = $fw->controls()->create([
-            'kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a',
+            'kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'teknologi',
         ]);
         $pic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unit->id]);
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN_KEPATUHAN]);
@@ -254,7 +254,7 @@ class ChecklistMaturityTest extends TestCase
     {
         $unit = WorkUnit::create(['nama' => 'Unit Provision']);
         $fw = Framework::create(['nama' => 'ISO 27001', 'versi' => '2022']);
-        $fw->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a']);
+        $fw->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'teknologi']);
         User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unit->id]);
 
         $this->artisan('smki:generate-monthly-checklist')->assertSuccessful();

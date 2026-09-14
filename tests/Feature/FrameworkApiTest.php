@@ -21,7 +21,7 @@ class FrameworkApiTest extends TestCase
         $framework->controls()->create([
             'kode_klausul' => 'A.5.1',
             'judul' => 'Policies for information security',
-            'kategori' => 'annex_a',
+            'kategori' => 'teknologi',
         ]);
 
         $this->actingAs($admin)

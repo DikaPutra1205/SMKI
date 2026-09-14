@@ -35,17 +35,17 @@ erDiagram
 ### 1. `frameworks` (Standar SMKI)
 - `id` (PK, BigInt)
 - `nama` (String, e.g. `ISO/IEC 27001`, `ISO/IEC 27701`)
-- `versi` (String, e.g. `2022`, `2019`)
+- `versi` (String, e.g. `2022`, `2025`)
 - `url_file` (String, nullable)
 - `created_at`, `updated_at`, `deleted_at`
 
 ### 2. `controls` (Klausul & Kontrol Standar)
 - `id` (PK, BigInt)
 - `framework_id` (FK -> `frameworks.id`)
-- `kode_klausul` (String, e.g. `4.1`, `A.5.1`, `7.2.1`)
+- `kode_klausul` (String, e.g. `A.5.1`, `7.2.1`, `8.4.2`)
 - `judul` (String)
 - `deskripsi` (Text, nullable)
-- `kategori` (String: `klausul_4_10`, `annex_a`)
+- `kategori` (String: `organisasional`, `orang`, `fisik`, `teknologi`)
 - **Index Unik:** `(framework_id, kode_klausul)`
 
 ### 3. `work_units` (Satuan Kerja / Biro Organisasi)

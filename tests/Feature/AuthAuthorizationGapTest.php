@@ -21,7 +21,7 @@ class AuthAuthorizationGapTest extends TestCase
         $unit = WorkUnit::create(['nama' => 'Unit QA']);
         $fw = Framework::create(['nama' => 'ISO 27001:2022', 'versi' => '2022']);
         $control = $fw->controls()->create([
-            'kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a',
+            'kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'teknologi',
         ]);
         $pic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unit->id]);
         $entry = ChecklistEntry::create([

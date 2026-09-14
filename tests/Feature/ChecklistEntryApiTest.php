@@ -22,7 +22,7 @@ class ChecklistEntryApiTest extends TestCase
         $unit = WorkUnit::create(['nama' => 'Unit QA']);
         $fw = Framework::create(['nama' => 'ISO 27001:2022', 'versi' => '2022']);
         $control = $fw->controls()->create([
-            'kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a',
+            'kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'teknologi',
         ]);
         $pic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unit->id]);
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN_KEPATUHAN]);
@@ -432,9 +432,9 @@ class ChecklistEntryApiTest extends TestCase
         $unit = WorkUnit::create(['nama' => 'Unit QA 2']);
         $fw1 = Framework::create(['nama' => 'ISO 27001', 'versi' => '2022']);
         $fw2 = Framework::create(['nama' => 'NIST CSF', 'versi' => '2.0']);
-        $ctrl1 = $fw1->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a']);
+        $ctrl1 = $fw1->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'teknologi']);
         $ctrl2 = $fw1->controls()->create(['kode_klausul' => '4.1', 'judul' => 'Context', 'kategori' => 'clauses']);
-        $ctrl3 = $fw2->controls()->create(['kode_klausul' => 'PR.AC-1', 'judul' => 'Identities', 'kategori' => 'annex_a']);
+        $ctrl3 = $fw2->controls()->create(['kode_klausul' => 'PR.AC-1', 'judul' => 'Identities', 'kategori' => 'teknologi']);
         $pic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unit->id]);
 
         $session = ChecklistSession::create(['konteks_penilaian' => 'Sesi filter', 'unit_id' => $unit->id, 'framework_id' => $fw1->id]);
@@ -603,7 +603,7 @@ class ChecklistEntryApiTest extends TestCase
         $unitA = WorkUnit::create(['nama' => 'Unit A']);
         $unitB = WorkUnit::create(['nama' => 'Unit B']);
         $fw = Framework::create(['nama' => 'ISO 27001', 'versi' => '2022']);
-        $control = $fw->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a']);
+        $control = $fw->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'teknologi']);
         $picA = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unitA->id]);
         $picB = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unitB->id]);
 
@@ -623,7 +623,7 @@ class ChecklistEntryApiTest extends TestCase
     {
         $unit = WorkUnit::create(['nama' => 'Unit Bulanan']);
         $fw = Framework::create(['nama' => 'ISO 27001', 'versi' => '2022']);
-        $ctrl = $fw->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a']);
+        $ctrl = $fw->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'teknologi']);
         $pic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unit->id]);
 
         $this->artisan('smki:generate-monthly-checklist')->assertSuccessful();
@@ -657,7 +657,7 @@ class ChecklistEntryApiTest extends TestCase
     {
         $unit = WorkUnit::create(['nama' => 'Unit PIC Web']);
         $fw = Framework::create(['nama' => 'ISO 27001', 'versi' => '2022']);
-        $control = $fw->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a']);
+        $control = $fw->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'teknologi']);
         $pic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unit->id]);
         $otherPic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unit->id]);
         $entry = ChecklistEntry::create([
@@ -715,7 +715,7 @@ class ChecklistEntryApiTest extends TestCase
 
         $unit = WorkUnit::create(['nama' => 'Unit Bukti Web']);
         $fw = Framework::create(['nama' => 'ISO 27001', 'versi' => '2022']);
-        $control = $fw->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a']);
+        $control = $fw->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'teknologi']);
         $pic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unit->id]);
         $session = ChecklistSession::create(['konteks_penilaian' => 'Sesi bukti', 'unit_id' => $unit->id, 'framework_id' => $fw->id]);
         $entry = ChecklistEntry::create([
@@ -746,7 +746,7 @@ class ChecklistEntryApiTest extends TestCase
     {
         $unit = WorkUnit::create(['nama' => 'Unit Update Web']);
         $fw = Framework::create(['nama' => 'ISO 27001', 'versi' => '2022']);
-        $control = $fw->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a']);
+        $control = $fw->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'teknologi']);
         $pic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unit->id]);
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN_KEPATUHAN]);
         $session = ChecklistSession::create(['konteks_penilaian' => 'Sesi Update', 'unit_id' => $unit->id, 'framework_id' => $fw->id]);

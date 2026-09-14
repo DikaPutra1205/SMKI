@@ -31,7 +31,7 @@ class ControlCrudTest extends TestCase
                 'kode_klausul' => 'A.99.1',
                 'judul' => 'Kontrol Baru',
                 'deskripsi' => 'Deskripsi kontrol baru',
-                'kategori' => 'annex_a',
+                'kategori' => 'teknologi',
             ])
             ->assertRedirect('/admin/kepatuhan/compliance');
 
@@ -39,7 +39,7 @@ class ControlCrudTest extends TestCase
             'framework_id' => $framework->id,
             'kode_klausul' => 'A.99.1',
             'judul' => 'Kontrol Baru',
-            'kategori' => 'annex_a',
+            'kategori' => 'teknologi',
         ]);
     }
 
@@ -67,7 +67,7 @@ class ControlCrudTest extends TestCase
                 'framework_id' => $existing->framework_id,
                 'kode_klausul' => $existing->kode_klausul,
                 'judul' => 'Kode Duplikat',
-                'kategori' => 'annex_a',
+                'kategori' => 'teknologi',
             ])
             ->assertSessionHasErrors('kode_klausul');
     }
@@ -83,14 +83,14 @@ class ControlCrudTest extends TestCase
             ->put("/admin/kepatuhan/controls/{$control->id}", [
                 'kode_klausul' => $control->kode_klausul,
                 'judul' => 'Judul Diubah',
-                'kategori' => 'klausul_4_10',
+                'kategori' => 'organisasional',
             ])
             ->assertRedirect('/admin/kepatuhan/compliance');
 
         $this->assertDatabaseHas('controls', [
             'id' => $control->id,
             'judul' => 'Judul Diubah',
-            'kategori' => 'klausul_4_10',
+            'kategori' => 'organisasional',
         ]);
     }
 

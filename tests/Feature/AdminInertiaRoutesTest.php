@@ -66,7 +66,7 @@ class AdminInertiaRoutesTest extends TestCase
                 'framework_id' => $framework->id,
                 'kode_klausul' => 'A.99.1',
                 'judul' => 'Test Inertia Control',
-                'kategori' => 'annex_a',
+                'kategori' => 'teknologi',
                 'deskripsi' => 'Deskripsi uji coba',
             ]);
 
@@ -82,7 +82,7 @@ class AdminInertiaRoutesTest extends TestCase
                 'framework_id' => $framework->id,
                 'kode_klausul' => 'A.99.1',
                 'judul' => 'Test Inertia Control Updated',
-                'kategori' => 'klausul_4_10',
+                'kategori' => 'organisasional',
             ]);
 
         $updateResp->assertRedirect('/admin/kepatuhan/compliance');

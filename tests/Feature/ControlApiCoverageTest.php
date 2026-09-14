@@ -17,7 +17,7 @@ class ControlApiCoverageTest extends TestCase
         return Framework::create(['nama' => 'ISO 27001:2022', 'versi' => '2022']);
     }
 
-    private function makeControl(Framework $fw, string $kode = 'A.5.1', string $judul = 'Policies', string $kat = 'annex_a'): Control
+    private function makeControl(Framework $fw, string $kode = 'A.5.1', string $judul = 'Policies', string $kat = 'teknologi'): Control
     {
         return $fw->controls()->create(['kode_klausul' => $kode, 'judul' => $judul, 'kategori' => $kat]);
     }
@@ -27,7 +27,7 @@ class ControlApiCoverageTest extends TestCase
     {
         $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
         $this->actingAs($admin)
-            ->postJson('/api/controls', ['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a'])
+            ->postJson('/api/controls', ['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'teknologi'])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['framework_id']);
     }
@@ -37,7 +37,7 @@ class ControlApiCoverageTest extends TestCase
         $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
         $fw = $this->framework();
         $this->actingAs($admin)
-            ->postJson('/api/controls', ['framework_id' => $fw->id, 'judul' => 'Policies', 'kategori' => 'annex_a'])
+            ->postJson('/api/controls', ['framework_id' => $fw->id, 'judul' => 'Policies', 'kategori' => 'teknologi'])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['kode_klausul']);
     }
@@ -47,7 +47,7 @@ class ControlApiCoverageTest extends TestCase
         $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
         $fw = $this->framework();
         $this->actingAs($admin)
-            ->postJson('/api/controls', ['framework_id' => $fw->id, 'kode_klausul' => 'A.5.1', 'kategori' => 'annex_a'])
+            ->postJson('/api/controls', ['framework_id' => $fw->id, 'kode_klausul' => 'A.5.1', 'kategori' => 'teknologi'])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['judul']);
     }
@@ -57,7 +57,7 @@ class ControlApiCoverageTest extends TestCase
         $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
         $this->actingAs($admin)
             ->postJson('/api/controls', [
-                'framework_id' => 99999, 'kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a',
+                'framework_id' => 99999, 'kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'teknologi',
             ])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['framework_id']);
@@ -70,7 +70,7 @@ class ControlApiCoverageTest extends TestCase
         $this->actingAs($admin)
             ->postJson('/api/controls', [
                 'framework_id' => $fw->id, 'kode_klausul' => str_repeat('X', 21),
-                'judul' => 'Policies', 'kategori' => 'annex_a',
+                'judul' => 'Policies', 'kategori' => 'teknologi',
             ])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['kode_klausul']);
@@ -85,7 +85,7 @@ class ControlApiCoverageTest extends TestCase
 
         $this->actingAs($admin)
             ->postJson('/api/controls', [
-                'framework_id' => $fw->id, 'kode_klausul' => 'A.5.1', 'judul' => 'Dup', 'kategori' => 'annex_a',
+                'framework_id' => $fw->id, 'kode_klausul' => 'A.5.1', 'judul' => 'Dup', 'kategori' => 'teknologi',
             ])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['kode_klausul']);
@@ -100,7 +100,7 @@ class ControlApiCoverageTest extends TestCase
 
         $this->actingAs($admin)
             ->postJson('/api/controls', [
-                'framework_id' => $fw2->id, 'kode_klausul' => 'A.5.1', 'judul' => 'Cross', 'kategori' => 'annex_a',
+                'framework_id' => $fw2->id, 'kode_klausul' => 'A.5.1', 'judul' => 'Cross', 'kategori' => 'teknologi',
             ])
             ->assertCreated();
 
@@ -194,14 +194,14 @@ class ControlApiCoverageTest extends TestCase
     {
         $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
         $fw = $this->framework();
-        $this->makeControl($fw, 'A.5.1', 'P1', 'annex_a');
-        $this->makeControl($fw, 'A.5.2', 'P2', 'klausul_4_10');
+        $this->makeControl($fw, 'A.5.1', 'P1', 'teknologi');
+        $this->makeControl($fw, 'A.5.2', 'P2', 'organisasional');
 
         $this->actingAs($admin)
-            ->getJson('/api/controls?kategori=klausul_4_10')
+            ->getJson('/api/controls?kategori=organisasional')
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.kategori', 'klausul_4_10');
+            ->assertJsonPath('data.0.kategori', 'organisasional');
     }
 
     public function test_index_search_matches_judul(): void
@@ -228,7 +228,7 @@ class ControlApiCoverageTest extends TestCase
     {
         $fw = $this->framework();
         $this->postJson('/api/controls', [
-            'framework_id' => $fw->id, 'kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'annex_a',
+            'framework_id' => $fw->id, 'kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'teknologi',
         ])->assertStatus(401);
 
         $this->assertDatabaseMissing('controls', ['kode_klausul' => 'A.5.1']);

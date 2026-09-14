@@ -495,7 +495,7 @@ class DashboardAnalyticsTest extends TestCase
             'framework_id' => $this->iso27001->id,
             'kode_klausul' => 'A.5.'.str_pad((string) $i, 3, '0', STR_PAD_LEFT),
             'judul' => "Control {$i}",
-            'kategori' => 'annex_a',
+            'kategori' => 'teknologi',
         ]));
 
         $session = ChecklistSession::factory()->create([

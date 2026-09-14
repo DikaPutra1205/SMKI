@@ -22,12 +22,12 @@ class ChecklistSessionApiTest extends TestCase
         $control1 = $fw->controls()->create([
             'kode_klausul' => 'A.5.1',
             'judul' => 'Kebijakan Keamanan Informasi',
-            'kategori' => 'annex_a',
+            'kategori' => 'teknologi',
         ]);
         $control2 = $fw->controls()->create([
             'kode_klausul' => 'A.5.2',
             'judul' => 'Peran dan Tanggung Jawab Keamanan',
-            'kategori' => 'annex_a',
+            'kategori' => 'teknologi',
         ]);
 
         $pic = User::factory()->create([
@@ -475,7 +475,7 @@ class ChecklistSessionApiTest extends TestCase
         $otherFw->controls()->create([
             'kode_klausul' => 'PR.DS-1',
             'judul' => 'Data at rest protected',
-            'kategori' => 'annex_a',
+            'kategori' => 'teknologi',
         ]);
 
         $res = $this->actingAs($admin)->postJson('/api/checklist-sessions', [
