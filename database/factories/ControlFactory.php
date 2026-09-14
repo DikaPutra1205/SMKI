@@ -19,8 +19,8 @@ class ControlFactory extends Factory
             'framework_id' => Framework::factory(),
             'kode_klausul' => 'A.'.fake()->unique()->numerify('#.#'),
             'judul' => fake()->sentence(3),
-            'kategori' => fake()->randomElement(['annex_a', 'klausul_4_10']),
-            'domain_peran' => fake()->optional()->randomElement(['controller', 'processor']),
+            'kategori' => fake()->randomElement(Control::KATEGORIS),
+            'domain_peran' => fake()->optional()->randomElement(Control::PERANS),
             'deskripsi' => fake()->optional()->paragraph(),
         ];
     }

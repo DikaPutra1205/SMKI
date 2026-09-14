@@ -21,6 +21,22 @@ class Control extends Model
         'domain_peran',
     ];
 
+    public const KATEGORIS = ['organisasional', 'orang', 'fisik', 'teknologi'];
+
+    public const KATEGORI_LABELS = [
+        'organisasional' => 'Organisasional',
+        'orang' => 'Orang',
+        'fisik' => 'Fisik',
+        'teknologi' => 'Teknologi',
+    ];
+
+    public const PERANS = ['controller', 'processor'];
+
+    public static function kategoriLabel(string $kategori): string
+    {
+        return self::KATEGORI_LABELS[$kategori] ?? $kategori;
+    }
+
     protected $appends = ['framework_name', 'framework_versi'];
 
     public function framework(): BelongsTo

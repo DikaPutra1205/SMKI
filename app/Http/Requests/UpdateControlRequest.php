@@ -34,8 +34,8 @@ class UpdateControlRequest extends FormRequest
             ],
             'judul' => ['sometimes', 'required', 'string', 'max:255'],
             'deskripsi' => ['nullable', 'string'],
-            'kategori' => ['sometimes', 'required', Rule::in(['annex_a', 'klausul_4_10'])],
-            'domain_peran' => ['sometimes', 'nullable', Rule::in(['controller', 'processor'])],
+            'kategori' => ['sometimes', 'required', Rule::in(Control::KATEGORIS)],
+            'domain_peran' => ['sometimes', 'nullable', Rule::in(Control::PERANS)],
         ];
     }
 

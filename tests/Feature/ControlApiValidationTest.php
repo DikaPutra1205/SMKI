@@ -28,7 +28,7 @@ class ControlApiValidationTest extends TestCase
                 'framework_id' => $framework->id,
                 'kode_klausul' => 'A.5.1',
                 'judul' => 'Duplicated clause',
-                'kategori' => 'annex_a',
+                'kategori' => 'teknologi',
             ]);
 
         $response->assertStatus(422);
@@ -93,7 +93,7 @@ class ControlApiValidationTest extends TestCase
                 'framework_id' => $fw2->id,
                 'kode_klausul' => 'A.5.1',
                 'judul' => 'Moved',
-                'kategori' => 'annex_a',
+                'kategori' => 'teknologi',
             ]);
 
         $response->assertStatus(422);
@@ -120,7 +120,7 @@ class ControlApiValidationTest extends TestCase
                 'framework_id' => $framework->id,
                 'kode_klausul' => 'A.5.1',
                 'judul' => 'Reused clause',
-                'kategori' => 'annex_a',
+                'kategori' => 'teknologi',
             ]);
 
         $response->assertCreated();
@@ -141,7 +141,7 @@ class ControlApiValidationTest extends TestCase
                 'framework_id' => '',
                 'kode_klausul' => 'A.5.1',
                 'judul' => 'Policies',
-                'kategori' => 'annex_a',
+                'kategori' => 'teknologi',
             ]);
 
         $response->assertStatus(422);
@@ -159,5 +159,33 @@ class ControlApiValidationTest extends TestCase
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['framework_id']);
+    }
+
+    public function test_store_accepts_new_domain_kategoris_and_rejects_retired(): void
+    {
+        $fw = Framework::create(['nama' => 'ISO 27001', 'versi' => '2022']);
+
+        foreach (['organisasional', 'orang', 'fisik', 'teknologi'] as $kat) {
+            $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
+                ->postJson('/api/controls', [
+                    'framework_id' => $fw->id,
+                    'kode_klausul' => 'T.'.uniqid(),
+                    'judul' => 'Domain kat',
+                    'kategori' => $kat,
+                ])
+                ->assertCreated();
+        }
+
+        foreach (['annex_a', 'klausul_4_10'] as $retired) {
+            $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
+                ->postJson('/api/controls', [
+                    'framework_id' => $fw->id,
+                    'kode_klausul' => 'R.'.uniqid(),
+                    'judul' => 'Retired kat',
+                    'kategori' => $retired,
+                ])
+                ->assertUnprocessable()
+                ->assertJsonValidationErrors('kategori');
+        }
     }
 }
