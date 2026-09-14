@@ -244,43 +244,6 @@ class ComplianceOfficerController extends Controller
         abort(403);
     }
 
-    public function bulkVerifyPage(Request $request): Response
-    {
-        $user = $request->user();
-
-        $this->ensureCanViewReviewQueue($user);
-
-        $sessionId = $request->filled('session_id') ? (int) $request->input('session_id') : null;
-
-        // ── Landing: no session selected yet → show session card grid ──────────
-        if ($sessionId === null) {
-            $filters = $request->only(['search', 'unit_id', 'framework_id', 'periode']);
-
-            $sessions = $this->complianceService->getAdminSessions($filters);
-
-            return Inertia::render('admin-kepatuhan/checklist/bulk-verify-landing', [
-                'sessions' => $sessions,
-                'workUnits' => $this->complianceService->getWorkUnits(),
-                'frameworks' => $this->complianceService->getFrameworkSummaries(),
-                'periodeOptions' => $this->complianceService->getSessionPeriodeOptions(),
-                'filters' => $filters,
-            ]);
-        }
-
-        // ── Detail: session selected → show per-session entry review table ─────
-        $filters = $request->only(['status', 'unit_id', 'framework_id', 'session_id', 'is_verified', 'search']);
-
-        $entries = $this->complianceOfficerService->getReviewQueueEntries($user, $filters, 20);
-        $selectedSession = ChecklistSession::with(['unit:id,nama', 'framework:id,nama,versi'])->find($sessionId);
-
-        return Inertia::render('admin-kepatuhan/checklist/bulk-verify', [
-            'entries' => $entries,
-            'session' => $selectedSession,
-            'workUnits' => $this->complianceService->getWorkUnits(),
-            'filters' => $filters,
-        ]);
-    }
-
     /**
      * Single and unified checklist verify page.
      * When no session_id is given, lists assessment sessions grouped by unit.

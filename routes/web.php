@@ -109,7 +109,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/risks', [ComplianceOfficerController::class, 'risks'])->name('risks.index');
         Route::post('/risks', [ComplianceOfficerController::class, 'storeRisk'])->name('risks.store');
         Route::put('/risks/{risk}', [ComplianceOfficerController::class, 'updateRisk'])->name('risks.update');
-        Route::get('/checklist/bulk-verify', [ComplianceOfficerController::class, 'bulkVerifyPage'])->name('checklist.bulk-verify');
+        Route::get('/checklist/bulk-verify', function () {
+            return redirect('/admin/kepatuhan/checklist/verify'.(request()->getQueryString() ? '?'.request()->getQueryString() : ''));
+        })->name('checklist.bulk-verify');
         Route::post('/bulk-verify', [ComplianceOfficerController::class, 'bulkVerify'])->name('bulk-verify');
         Route::get('/checklist/verify', [ComplianceOfficerController::class, 'verifyPage'])->name('checklist.verify');
         Route::post('/checklist/verify/{entry}', [ComplianceOfficerController::class, 'verifySingle'])->name('checklist.verify.single');

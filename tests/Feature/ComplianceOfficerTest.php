@@ -1260,11 +1260,11 @@ class ComplianceOfficerTest extends TestCase
             'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
         ]);
 
-        $response = $this->actingAs($this->admin)->get("/admin/kepatuhan/checklist/bulk-verify?session_id={$session->id}");
+        $response = $this->actingAs($this->admin)->get("/admin/kepatuhan/checklist/verify?session_id={$session->id}");
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('admin-kepatuhan/checklist/bulk-verify', false)
+            ->component('admin-kepatuhan/checklist/verify', false)
             ->has('entries.data', 1)
             ->where('entries.data.0.control.kode_klausul', 'A.5.1')
             ->where('entries.data.0.unit.nama', 'Pusat Ekosistem SDM')
@@ -1288,18 +1288,31 @@ class ComplianceOfficerTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->admin)
-            ->get("/admin/kepatuhan/checklist/bulk-verify?session_id={$session->id}&is_verified=0");
+            ->get("/admin/kepatuhan/checklist/verify?session_id={$session->id}&is_verified=0");
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('admin-kepatuhan/checklist/bulk-verify', false)
+            ->component('admin-kepatuhan/checklist/verify', false)
             ->has('entries.data', 0)
             ->where('filters.is_verified', '0'));
     }
 
     public function test_pic_cannot_access_bulk_verify_page(): void
     {
-        $this->actingAs($this->picA)->get('/admin/kepatuhan/checklist/bulk-verify')->assertForbidden();
+        $this->actingAs($this->picA)->get('/admin/kepatuhan/checklist/verify')->assertForbidden();
+    }
+
+    public function test_legacy_bulk_verify_url_redirects_to_verify_page(): void
+    {
+        $session = ChecklistSession::factory()->create(['unit_id' => $this->unitA->id]);
+
+        $this->actingAs($this->admin)
+            ->get('/admin/kepatuhan/checklist/bulk-verify')
+            ->assertRedirect('/admin/kepatuhan/checklist/verify');
+
+        $this->actingAs($this->admin)
+            ->get("/admin/kepatuhan/checklist/bulk-verify?session_id={$session->id}")
+            ->assertRedirect("/admin/kepatuhan/checklist/verify?session_id={$session->id}");
     }
 
     public function test_koordinator_and_auditor_can_view_but_not_verify_checklists(): void

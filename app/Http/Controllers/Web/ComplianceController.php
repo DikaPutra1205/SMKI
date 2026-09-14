@@ -59,6 +59,11 @@ class ComplianceController extends Controller
     public function dashboard(Request $request): Response
     {
         $user = $request->user();
+
+        if (! $user->hasPermissionTo('dashboard.read') || ! $user->hasPermissionTo('audit-log.view')) {
+            abort(403);
+        }
+
         $unitId = $request->filled('unit_id') ? (int) $request->input('unit_id') : null;
         $sessionId = $request->filled('session_id') ? (int) $request->input('session_id') : null;
         $timeframe = $request->input('months');

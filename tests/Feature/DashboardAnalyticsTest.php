@@ -1403,4 +1403,17 @@ class DashboardAnalyticsTest extends TestCase
             ->where('summary.findings_summary.total_active', 1)
         );
     }
+
+    public function test_admin_dashboard_requires_audit_log_view_permission(): void
+    {
+        // PIC holds dashboard.read but lacks audit-log.view → 403 on the
+        // admin-kepatuhan dashboard URL (their own flat /dashboard is unaffected).
+        $this->actingAs($this->pic)->get('/admin/kepatuhan/dashboard')->assertForbidden();
+
+        // Koordinator/auditor hold both grants → 200.
+        foreach (['koordinator_smki', 'auditor'] as $role) {
+            $user = User::factory()->create(['role' => $role, 'unit_id' => $this->unitA->id]);
+            $this->actingAs($user)->get('/admin/kepatuhan/dashboard')->assertOk();
+        }
+    }
 }

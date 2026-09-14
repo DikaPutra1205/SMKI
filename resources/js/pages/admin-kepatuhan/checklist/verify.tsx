@@ -585,8 +585,8 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
         });
     }
 
-    // ponytail: koordinator/auditor land on their flat /dashboard — the
-    // admin-kepatuhan dashboard URL 403s for them via PageDispatcher.
+    // ponytail: PIC lacks audit-log.view so the admin dashboard URL 403s
+    // for them; koordinator/auditor use flat /dashboard by nav convention.
     // canVerify roles (admin/superadmin) hold bulk-verify, so invert on that.
     const dashboardHref = canVerify ? '/admin/kepatuhan/dashboard' : '/dashboard';
     const breadcrumbs = [
