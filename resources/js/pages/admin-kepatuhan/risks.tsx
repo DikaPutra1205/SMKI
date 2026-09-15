@@ -1,7 +1,6 @@
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
 import { Select } from '@/components/ui/Select';
 import { SlideOver } from '@/components/ui/SlideOver';
@@ -127,10 +126,10 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
     const [searchQuery, setSearchQuery] = useState(filters.search || '');
     const [selectedLevel, setSelectedLevel] = useState<string>(filters.risk_level || filters.level_risiko || 'all');
     const [selectedStatus, setSelectedStatus] = useState<string>(filters.status || 'all');
+    type DrawerMode = 'detail' | 'edit' | 'create' | null;
+    const [drawerMode, setDrawerMode] = useState<DrawerMode>(null);
+    const [activeRisk, setActiveRisk] = useState<RiskItem | null>(null);
     const [selectedUnit, setSelectedUnit] = useState<string>(filters.unit_id || 'all');
-    const [detailTarget, setDetailTarget] = useState<RiskItem | null>(null);
-    const [editTarget, setEditTarget] = useState<RiskItem | null>(null);
-    const [createModalOpen, setCreateModalOpen] = useState(false);
     const [delOpen, setDelOpen] = useState(false);
     const [delTarget, setDelTarget] = useState<RiskItem | null>(null);
     const [delBusy, setDelBusy] = useState(false);
@@ -155,34 +154,23 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
         admin_notes: '',
     });
 
-    const openCreateModal = () => {
+    const openCreate = () => {
         createForm.reset();
         createForm.clearErrors();
         if (isPic && authUser?.unit_id) {
             createForm.setData('unit_id', String(authUser.unit_id));
         }
-        setCreateModalOpen(true);
+        setActiveRisk(null);
+        setDrawerMode('create');
     };
 
-    const closeCreateModal = () => {
-        setCreateModalOpen(false);
-        createForm.reset();
-        createForm.clearErrors();
+    const openDetail = (r: RiskItem) => {
+        setActiveRisk(r);
+        setDrawerMode('detail');
     };
 
-    const submitCreate = (e?: React.FormEvent) => {
-        if (e) e.preventDefault();
-        createForm.post('/admin/kepatuhan/risks', {
-            preserveScroll: true,
-            onSuccess: () => {
-                closeCreateModal();
-                router.reload({ only: ['risks', 'matrix'] });
-            },
-        });
-    };
-
-    const openEditModal = (r: RiskItem) => {
-        setEditTarget(r);
+    const openEdit = (r: RiskItem) => {
+        setActiveRisk(r);
         updateForm.setData({
             risk_level: r.risk_level || r.level_risiko || 'low',
             status: r.status || 'open',
@@ -191,23 +179,39 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
             deadline: r.deadline ? String(r.deadline).split('T')[0] : '',
             admin_notes: (r.admin_notes || r.catatan_admin || '') as string,
         });
+        setDrawerMode('edit');
     };
 
-    const closeEditModal = () => {
-        setEditTarget(null);
+    const closeDrawer = () => {
+        setDrawerMode(null);
+        setActiveRisk(null);
+        createForm.reset();
+        createForm.clearErrors();
         updateForm.reset();
         updateForm.clearErrors();
     };
 
-    // Highlight note requirement when reverting to open status
-    const needsNotes = updateForm.data.status === 'open' && editTarget?.status !== 'open';
-
-    const submitUpdate = () => {
-        if (!editTarget) return;
-        updateForm.put(`/admin/kepatuhan/risks/${editTarget.id}`, {
+    const submitCreate = (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+        createForm.post('/admin/kepatuhan/risks', {
             preserveScroll: true,
             onSuccess: () => {
-                closeEditModal();
+                closeDrawer();
+                router.reload({ only: ['risks', 'matrix'] });
+            },
+        });
+    };
+
+    // Highlight note requirement when reverting to open status
+    const needsNotes = updateForm.data.status === 'open' && activeRisk?.status !== 'open';
+
+    const submitUpdate = (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+        if (!activeRisk) return;
+        updateForm.put(`/admin/kepatuhan/risks/${activeRisk.id}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                closeDrawer();
                 router.reload({ only: ['risks', 'matrix'] });
             },
         });
@@ -436,7 +440,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                     {canCreate && (
                         <button
                             type="button"
-                            onClick={openCreateModal}
+                            onClick={openCreate}
                             className="bg-primary hover:bg-primary-700 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-all hover:shadow-md"
                         >
                             <Plus className="h-4 w-4" />
@@ -591,7 +595,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                     <div className="flex items-center gap-3 pt-1">
                                         <button
                                             type="button"
-                                            onClick={() => setDetailTarget(r)}
+                                            onClick={() => openDetail(r)}
                                             className="text-primary dark:text-primary-200 inline-flex items-center gap-1 text-xs font-semibold"
                                         >
                                             <Eye className="h-3.5 w-3.5" />
@@ -600,7 +604,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                         {canUpdate && (
                                             <button
                                                 type="button"
-                                                onClick={() => openEditModal(r)}
+                                                onClick={() => openEdit(r)}
                                                 className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
                                             >
                                                 <Edit2 className="h-3.5 w-3.5" />
@@ -669,7 +673,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                             <td className="px-5 py-4">
                                                 <button
                                                     type="button"
-                                                    onClick={() => setDetailTarget(r)}
+                                                    onClick={() => openDetail(r)}
                                                     className="hover:text-primary dark:hover:text-primary-300 line-clamp-1 text-left font-semibold text-slate-900 transition-colors dark:text-white"
                                                 >
                                                     {r.control?.judul || t('common.noData')}
@@ -705,7 +709,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                                 <div className="inline-flex items-center gap-3">
                                                     <button
                                                         type="button"
-                                                        onClick={() => setDetailTarget(r)}
+                                                        onClick={() => openDetail(r)}
                                                         className="text-primary hover:text-primary-700 dark:text-primary-200 inline-flex items-center gap-1 text-xs font-semibold"
                                                     >
                                                         <Eye className="h-3.5 w-3.5" />
@@ -714,7 +718,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                                     {canUpdate && (
                                                         <button
                                                             type="button"
-                                                            onClick={() => openEditModal(r)}
+                                                            onClick={() => openEdit(r)}
                                                             className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
                                                         >
                                                             <Edit2 className="h-3.5 w-3.5" />
@@ -761,144 +765,225 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                 </section>
             </div>
 
-            {/* ── Create Risk Modal ── */}
-            <Modal open={createModalOpen} onClose={closeCreateModal} title={t('risks.createTitle')} description={t('risks.createDesc')}>
-                <form onSubmit={submitCreate} className="space-y-4 pt-1">
-                    {/* Kontrol SMKI */}
-                    <div>
-                        <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                            {t('risks.controlSelect')} <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                            value={createForm.data.control_id}
-                            onChange={(e) => createForm.setData('control_id', e.target.value)}
-                            required
-                            className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                        >
-                            <option value="">{t('risks.controlSelectPlaceholder')}</option>
-                            {controls.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                    {c.kode_klausul} - {c.judul} {c.framework ? `(${c.framework.nama})` : ''}
-                                </option>
-                            ))}
-                        </select>
-                        {createForm.errors.control_id && <p className="mt-1 text-xs text-red-500">{createForm.errors.control_id}</p>}
+            {/* ── Standardized Risk Slide-Over Drawer (Create / Edit / Detail) ── */}
+            <SlideOver
+                open={drawerMode !== null}
+                maxWidth="2xl"
+                title={
+                    drawerMode === 'create' ? (
+                        t('risks.createTitle')
+                    ) : (
+                        <div className="flex items-center gap-2.5">
+                            <span>{drawerMode === 'edit' ? t('risks.updateTitle') : 'Detail Risiko'}</span>
+                            {activeRisk && (
+                                <code className="border-primary-200 bg-primary-50 text-primary dark:border-primary-800 dark:bg-navy-900 dark:text-primary-200 rounded border px-2 py-0.5 text-xs font-bold">
+                                    RSK-{riskRef(activeRisk)}
+                                </code>
+                            )}
+                        </div>
+                    )
+                }
+                description={
+                    drawerMode === 'create'
+                        ? t('risks.createDesc')
+                        : drawerMode === 'edit'
+                          ? 'Perbarui status penanganan dan rencana mitigasi'
+                          : undefined
+                }
+                onClose={closeDrawer}
+                footer={
+                    <div className="flex w-full items-center justify-between">
+                        <div>
+                            {drawerMode === 'edit' && activeRisk && (
+                                <button
+                                    type="button"
+                                    onClick={() => setDrawerMode('detail')}
+                                    className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                                >
+                                    Kembali ke Detail
+                                </button>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-3">
+                            {drawerMode === 'detail' && (
+                                <>
+                                    {canUpdate && activeRisk && (
+                                        <button
+                                            type="button"
+                                            onClick={() => openEdit(activeRisk)}
+                                            className="bg-primary hover:bg-primary-700 inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors"
+                                        >
+                                            <Edit2 className="h-3.5 w-3.5" />
+                                            Perbarui Status / Mitigasi
+                                        </button>
+                                    )}
+                                    <button
+                                        type="button"
+                                        onClick={closeDrawer}
+                                        className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                                    >
+                                        {t('risks.close')}
+                                    </button>
+                                </>
+                            )}
+                            {drawerMode === 'create' && (
+                                <>
+                                    <button
+                                        type="button"
+                                        onClick={closeDrawer}
+                                        className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                                    >
+                                        {t('risks.updateCancel')}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={submitCreate}
+                                        disabled={createForm.processing}
+                                        className="bg-primary hover:bg-primary-700 disabled:bg-primary/60 rounded-xl px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors"
+                                    >
+                                        {createForm.processing ? 'Menyimpan…' : t('risks.createSubmit')}
+                                    </button>
+                                </>
+                            )}
+                            {drawerMode === 'edit' && (
+                                <>
+                                    <button
+                                        type="button"
+                                        onClick={closeDrawer}
+                                        className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                                    >
+                                        {t('risks.updateCancel')}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={submitUpdate}
+                                        disabled={updateForm.processing}
+                                        className="bg-primary hover:bg-primary-700 disabled:bg-primary/60 rounded-xl px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors"
+                                    >
+                                        {updateForm.processing ? 'Menyimpan…' : t('risks.updateSubmit')}
+                                    </button>
+                                </>
+                            )}
+                        </div>
                     </div>
-
-                    {/* Unit Kerja */}
-                    <div>
-                        <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">{t('risks.unitSelect')}</label>
-                        <select
-                            value={createForm.data.unit_id}
-                            onChange={(e) => createForm.setData('unit_id', e.target.value)}
-                            disabled={isPic && !!authUser?.unit_id}
-                            className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:ring-1 disabled:bg-slate-100 disabled:text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:disabled:bg-slate-800/50"
-                        >
-                            <option value="">{t('risks.unitSelectPlaceholder')}</option>
-                            {workUnits.map((u) => (
-                                <option key={u.id} value={u.id}>
-                                    {u.nama}
-                                </option>
-                            ))}
-                        </select>
-                        {createForm.errors.unit_id && <p className="mt-1 text-xs text-red-500">{createForm.errors.unit_id}</p>}
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        {/* Level selector */}
+                }
+            >
+                {/* ── Mode 1: CREATE FORM ── */}
+                {drawerMode === 'create' && (
+                    <form onSubmit={submitCreate} className="space-y-4 pt-1">
+                        {/* Kontrol SMKI */}
                         <div>
                             <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                                {t('risks.updateLevel')} <span className="text-red-500">*</span>
+                                {t('risks.controlSelect')} <span className="text-red-500">*</span>
                             </label>
                             <select
-                                value={createForm.data.risk_level}
-                                onChange={(e) => createForm.setData('risk_level', e.target.value)}
+                                value={createForm.data.control_id}
+                                onChange={(e) => createForm.setData('control_id', e.target.value)}
+                                required
                                 className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                             >
-                                <option value="low">{t('risks.low')}</option>
-                                <option value="medium">{t('risks.medium')}</option>
-                                <option value="high">{t('risks.high')}</option>
-                                <option value="critical">{t('risks.critical')}</option>
+                                <option value="">{t('risks.controlSelectPlaceholder')}</option>
+                                {controls.map((c) => (
+                                    <option key={c.id} value={c.id}>
+                                        {c.kode_klausul} - {c.judul} {c.framework ? `(${c.framework.nama})` : ''}
+                                    </option>
+                                ))}
                             </select>
-                            {createForm.errors.risk_level && <p className="mt-1 text-xs text-red-500">{createForm.errors.risk_level}</p>}
+                            {createForm.errors.control_id && <p className="mt-1 text-xs text-red-500">{createForm.errors.control_id}</p>}
                         </div>
 
-                        {/* Custom Deadline */}
+                        {/* Unit Kerja */}
                         <div>
-                            <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">{t('risks.deadline')}</label>
-                            <DatePicker value={createForm.data.deadline} onChange={(val) => createForm.setData('deadline', val)} />
-                            {createForm.errors.deadline && <p className="mt-1 text-xs text-red-500">{createForm.errors.deadline}</p>}
+                            <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">{t('risks.unitSelect')}</label>
+                            <select
+                                value={createForm.data.unit_id}
+                                onChange={(e) => createForm.setData('unit_id', e.target.value)}
+                                disabled={isPic && !!authUser?.unit_id}
+                                className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:ring-1 disabled:bg-slate-100 disabled:text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:disabled:bg-slate-800/50"
+                            >
+                                <option value="">{t('risks.unitSelectPlaceholder')}</option>
+                                {workUnits.map((u) => (
+                                    <option key={u.id} value={u.id}>
+                                        {u.nama}
+                                    </option>
+                                ))}
+                            </select>
+                            {createForm.errors.unit_id && <p className="mt-1 text-xs text-red-500">{createForm.errors.unit_id}</p>}
                         </div>
-                    </div>
 
-                    {/* Owner */}
-                    <div>
-                        <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">{t('risks.updateOwner')}</label>
-                        <input
-                            type="text"
-                            value={createForm.data.risk_owner}
-                            onChange={(e) => createForm.setData('risk_owner', e.target.value)}
-                            placeholder={t('risks.updateOwnerPlaceholder')}
-                            className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                        />
-                        {createForm.errors.risk_owner && <p className="mt-1 text-xs text-red-500">{createForm.errors.risk_owner}</p>}
-                    </div>
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            {/* Level selector */}
+                            <div>
+                                <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                    {t('risks.updateLevel')} <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    value={createForm.data.risk_level}
+                                    onChange={(e) => createForm.setData('risk_level', e.target.value)}
+                                    className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                >
+                                    <option value="low">{t('risks.low')}</option>
+                                    <option value="medium">{t('risks.medium')}</option>
+                                    <option value="high">{t('risks.high')}</option>
+                                    <option value="critical">{t('risks.critical')}</option>
+                                </select>
+                                {createForm.errors.risk_level && <p className="mt-1 text-xs text-red-500">{createForm.errors.risk_level}</p>}
+                            </div>
 
-                    {/* Mitigation plan */}
-                    <div>
-                        <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">{t('risks.updateMitigation')}</label>
-                        <textarea
-                            value={createForm.data.mitigation_plan}
-                            onChange={(e) => createForm.setData('mitigation_plan', e.target.value)}
-                            placeholder={t('risks.updateMitigationPlaceholder')}
-                            rows={3}
-                            className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                        />
-                        {createForm.errors.mitigation_plan && <p className="mt-1 text-xs text-red-500">{createForm.errors.mitigation_plan}</p>}
-                    </div>
+                            {/* Custom Deadline */}
+                            <div>
+                                <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">{t('risks.deadline')}</label>
+                                <DatePicker value={createForm.data.deadline} onChange={(val) => createForm.setData('deadline', val)} />
+                                {createForm.errors.deadline && <p className="mt-1 text-xs text-red-500">{createForm.errors.deadline}</p>}
+                            </div>
+                        </div>
 
-                    {/* Admin notes */}
-                    <div>
-                        <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">{t('risks.adminNotes')}</label>
-                        <textarea
-                            value={createForm.data.admin_notes}
-                            onChange={(e) => createForm.setData('admin_notes', e.target.value)}
-                            placeholder={t('risks.adminNotesPlaceholder')}
-                            rows={2}
-                            className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                        />
-                        {createForm.errors.admin_notes && <p className="mt-1 text-xs text-red-500">{createForm.errors.admin_notes}</p>}
-                    </div>
+                        {/* Owner */}
+                        <div>
+                            <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">{t('risks.updateOwner')}</label>
+                            <input
+                                type="text"
+                                value={createForm.data.risk_owner}
+                                onChange={(e) => createForm.setData('risk_owner', e.target.value)}
+                                placeholder={t('risks.updateOwnerPlaceholder')}
+                                className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                            />
+                            {createForm.errors.risk_owner && <p className="mt-1 text-xs text-red-500">{createForm.errors.risk_owner}</p>}
+                        </div>
 
-                    {/* Footer actions */}
-                    <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
-                        <button
-                            type="button"
-                            onClick={closeCreateModal}
-                            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-                        >
-                            {t('risks.updateCancel')}
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={createForm.processing}
-                            className="bg-primary hover:bg-primary-700 disabled:bg-primary/60 rounded-xl px-4 py-2 text-xs font-semibold text-white transition-colors"
-                        >
-                            {createForm.processing ? 'Menyimpan…' : t('risks.createSubmit')}
-                        </button>
-                    </div>
-                </form>
-            </Modal>
+                        {/* Mitigation plan */}
+                        <div>
+                            <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                {t('risks.updateMitigation')}
+                            </label>
+                            <textarea
+                                value={createForm.data.mitigation_plan}
+                                onChange={(e) => createForm.setData('mitigation_plan', e.target.value)}
+                                placeholder={t('risks.updateMitigationPlaceholder')}
+                                rows={3}
+                                className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                            />
+                            {createForm.errors.mitigation_plan && <p className="mt-1 text-xs text-red-500">{createForm.errors.mitigation_plan}</p>}
+                        </div>
 
-            {/* ── Update Status Modal ── */}
-            <Modal
-                open={editTarget !== null}
-                onClose={closeEditModal}
-                title={t('risks.updateTitle')}
-                description={editTarget ? `RSK-${riskRef(editTarget)} · ${editTarget.control?.judul || ''}` : undefined}
-            >
-                {editTarget && (
-                    <div className="space-y-4 pt-1">
+                        {/* Admin notes */}
+                        <div>
+                            <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">{t('risks.adminNotes')}</label>
+                            <textarea
+                                value={createForm.data.admin_notes}
+                                onChange={(e) => createForm.setData('admin_notes', e.target.value)}
+                                placeholder={t('risks.adminNotesPlaceholder')}
+                                rows={2}
+                                className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                            />
+                            {createForm.errors.admin_notes && <p className="mt-1 text-xs text-red-500">{createForm.errors.admin_notes}</p>}
+                        </div>
+                    </form>
+                )}
+
+                {/* ── Mode 2: EDIT FORM ── */}
+                {drawerMode === 'edit' && activeRisk && (
+                    <form onSubmit={submitUpdate} className="space-y-4 pt-1">
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                             {/* Status selector */}
                             <div>
@@ -973,7 +1058,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                             </div>
                         </div>
 
-                        {/* Mitigation plan — always visible */}
+                        {/* Mitigation plan */}
                         <div>
                             <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">
                                 {t('risks.updateMitigation')}
@@ -987,7 +1072,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                             />
                         </div>
 
-                        {/* Admin notes — editable for Admin/Koordinator, read-only/hidden for PIC */}
+                        {/* Admin notes */}
                         {!isPic ? (
                             <div
                                 className={`rounded-xl border p-3.5 ${
@@ -1020,141 +1105,56 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                 <p className="text-xs whitespace-pre-wrap text-slate-700 dark:text-slate-300">{updateForm.data.admin_notes}</p>
                             </div>
                         ) : null}
-
-                        {/* Footer actions */}
-                        <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
-                            <button
-                                type="button"
-                                onClick={closeEditModal}
-                                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-                            >
-                                {t('risks.updateCancel')}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={submitUpdate}
-                                disabled={updateForm.processing}
-                                className="bg-primary hover:bg-primary-700 disabled:bg-primary/60 rounded-xl px-4 py-2 text-xs font-semibold text-white transition-colors"
-                            >
-                                {updateForm.processing ? 'Menyimpan…' : t('risks.updateSubmit')}
-                            </button>
-                        </div>
-                    </div>
+                    </form>
                 )}
-            </Modal>
 
-            {/* Risk Detail Slide-Over Drawer */}
-            <SlideOver
-                open={detailTarget !== null}
-                title={
-                    detailTarget ? (
-                        <div className="flex items-center gap-2.5">
-                            <span>Detail Risiko</span>
-                            <code className="border-primary-200 bg-primary-50 text-primary dark:border-primary-800 dark:bg-navy-900 dark:text-primary-200 rounded border px-2 py-0.5 text-xs font-bold">
-                                RSK-{riskRef(detailTarget)}
-                            </code>
-                        </div>
-                    ) : (
-                        'Detail Risiko'
-                    )
-                }
-                description={detailTarget?.control?.judul || 'Analisis dan rencana perlakuan risiko keamanan'}
-                onClose={() => setDetailTarget(null)}
-                maxWidth="xl"
-                footer={
-                    <div className="flex items-center gap-3">
-                        {canUpdate && detailTarget && (
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    const target = detailTarget;
-                                    setDetailTarget(null);
-                                    openEditModal(target);
-                                }}
-                                className="bg-primary hover:bg-primary-700 inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold text-white transition-colors"
-                            >
-                                <Edit2 className="h-3.5 w-3.5" />
-                                Perbarui Status
-                            </button>
-                        )}
-                        <button
-                            type="button"
-                            onClick={() => setDetailTarget(null)}
-                            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-                        >
-                            {t('risks.close')}
-                        </button>
-                    </div>
-                }
-            >
-                {detailTarget && (
-                    <div className="space-y-6">
-                        {/* Top Information Cards */}
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="rounded-xl border border-slate-200/80 bg-white p-3.5 dark:border-slate-800 dark:bg-slate-900">
-                                <span className="text-[11px] font-medium text-slate-400">Level Keparahan Risiko</span>
-                                <div className="mt-2">{getRiskLevelBadge(detailTarget.risk_level || detailTarget.level_risiko)}</div>
+                {/* ── Mode 3: DETAIL VIEW (Compact 2-Column & Structured Context) ── */}
+                {drawerMode === 'detail' && activeRisk && (
+                    <div className="space-y-5">
+                        {/* Top Badges & Status Strip */}
+                        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200/80 bg-slate-50/80 p-3.5 dark:border-slate-800 dark:bg-slate-900/50">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <div>{getRiskLevelBadge(activeRisk.risk_level || activeRisk.level_risiko)}</div>
+                                <div>{getMitigationStatus(activeRisk.status)}</div>
                             </div>
-
-                            <div className="rounded-xl border border-slate-200/80 bg-white p-3.5 dark:border-slate-800 dark:bg-slate-900">
-                                <span className="text-[11px] font-medium text-slate-400">Status Mitigasi</span>
-                                <div className="mt-2">{getMitigationStatus(detailTarget.status)}</div>
-                            </div>
+                            <div>{getDeadlineBadge(activeRisk)}</div>
                         </div>
 
-                        {/* Control Klausul Association */}
-                        <div className="space-y-3 rounded-xl border border-slate-200/80 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                            <div className="flex items-center gap-2 text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
-                                <Shield className="text-primary dark:text-primary-200 h-4 w-4" />
-                                <span>Kontrol SMKI Terkait</span>
-                            </div>
-                            <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-800/60">
-                                <div className="text-primary dark:text-primary-200 text-xs font-bold">
-                                    {detailTarget.control?.kode_klausul}
-                                    {detailTarget.control?.framework && (
-                                        <span className="font-normal text-slate-500">
-                                            {' '}
-                                            · {detailTarget.control.framework.nama} ({detailTarget.control.framework.versi})
-                                        </span>
+                        {/* Linked SMKI Control Header */}
+                        <div className="rounded-xl border border-slate-200/80 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                            <div className="flex items-center justify-between gap-2">
+                                <span className="text-primary dark:text-primary-300 font-mono text-xs font-bold">
+                                    {activeRisk.control?.kode_klausul}
+                                    {activeRisk.control?.framework && (
+                                        <span className="font-sans font-normal text-slate-400"> · {activeRisk.control.framework.nama}</span>
                                     )}
-                                </div>
-                                <div className="mt-1 text-sm leading-relaxed font-semibold text-slate-900 dark:text-white">
-                                    {detailTarget.control?.judul || '—'}
-                                </div>
+                                </span>
+                                {activeRisk.unit?.nama && (
+                                    <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                                        <Building2 className="h-3 w-3 text-slate-400" />
+                                        {activeRisk.unit.nama}
+                                    </span>
+                                )}
                             </div>
+                            <h4 className="mt-2 text-sm font-semibold text-slate-900 dark:text-white">{activeRisk.control?.judul || '—'}</h4>
                         </div>
 
-                        {/* Unit Kerja */}
-                        {detailTarget.unit?.nama && (
-                            <div className="space-y-2 rounded-xl border border-slate-200/80 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                                <div className="flex items-center gap-2 text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
-                                    <Building2 className="h-4 w-4 text-sky-600 dark:text-sky-400" />
-                                    <span>Satuan Kerja / Unit</span>
+                        {/* Condensed Quick Context (2 Columns) */}
+                        <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-200/80 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                            <div>
+                                <span className="text-[11px] font-medium text-slate-400">Pemilik Risiko (Risk Owner)</span>
+                                <div className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200">
+                                    <UserCheck className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                                    <span className="truncate">{activeRisk.risk_owner || activeRisk.pemilik_risiko || 'Belum ditugaskan'}</span>
                                 </div>
-                                <p className="rounded-lg bg-slate-50 p-3 text-xs font-semibold text-slate-900 dark:bg-slate-800/60 dark:text-white">
-                                    {detailTarget.unit.nama}
-                                </p>
                             </div>
-                        )}
-
-                        {/* Tenggat Waktu (Custom Deadline) */}
-                        <div className="space-y-2 rounded-xl border border-slate-200/80 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                            <div className="flex items-center gap-2 text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
-                                <Calendar className="h-4 w-4 text-rose-500" />
-                                <span>Tenggat Waktu Mitigasi (SLA)</span>
+                            <div>
+                                <span className="text-[11px] font-medium text-slate-400">Tenggat Target (SLA)</span>
+                                <div className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200">
+                                    <Calendar className="h-3.5 w-3.5 shrink-0 text-rose-500" />
+                                    <span>{activeRisk.deadline ? formatDateTimeIndonesian(activeRisk.deadline) : 'Mengikuti SLA Level'}</span>
+                                </div>
                             </div>
-                            <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-800/60">{getDeadlineBadge(detailTarget)}</div>
-                        </div>
-
-                        {/* Risk Owner Information */}
-                        <div className="space-y-2 rounded-xl border border-slate-200/80 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                            <div className="flex items-center gap-2 text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
-                                <UserCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                                <span>Pemilik Risiko (Risk Owner)</span>
-                            </div>
-                            <p className="rounded-lg bg-slate-50 p-3 text-xs font-semibold text-slate-900 dark:bg-slate-800/60 dark:text-white">
-                                {detailTarget.risk_owner || detailTarget.pemilik_risiko || 'Belum ditugaskan'}
-                            </p>
                         </div>
 
                         {/* Mitigation Plan & Actions */}
@@ -1163,30 +1163,30 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                 <FileText className="h-4 w-4 text-amber-500" />
                                 <span>Rencana Tindakan Mitigasi</span>
                             </div>
-                            <p className="rounded-lg bg-slate-50 p-3 text-xs leading-relaxed text-slate-700 dark:bg-slate-800/60 dark:text-slate-300">
-                                {detailTarget.mitigation_plan ||
-                                    detailTarget.rencana_mitigasi ||
+                            <div className="rounded-lg bg-slate-50 p-3 text-xs leading-relaxed text-slate-700 dark:bg-slate-800/60 dark:text-slate-300">
+                                {activeRisk.mitigation_plan ||
+                                    activeRisk.rencana_mitigasi ||
                                     'Belum ada rencana perlakuan risiko yang didokumentasikan.'}
-                            </p>
+                            </div>
                         </div>
 
                         {/* Catatan Admin / Evaluasi */}
-                        {(detailTarget.catatan_admin || detailTarget.admin_notes) && (
+                        {(activeRisk.catatan_admin || activeRisk.admin_notes) && (
                             <div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50/70 p-4 dark:border-amber-900/50 dark:bg-amber-950/30">
                                 <div className="flex items-center gap-2 text-xs font-bold tracking-wider text-amber-800 uppercase dark:text-amber-300">
                                     <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                                     <span>Catatan Evaluasi / Admin</span>
                                 </div>
                                 <p className="text-xs leading-relaxed text-amber-900 dark:text-amber-200">
-                                    {detailTarget.catatan_admin || detailTarget.admin_notes}
+                                    {activeRisk.catatan_admin || activeRisk.admin_notes}
                                 </p>
                             </div>
                         )}
 
                         {/* Metadata Timeline */}
-                        {detailTarget.created_at && (
+                        {activeRisk.created_at && (
                             <div className="border-t border-slate-100 pt-3 text-[11px] text-slate-400 dark:border-slate-800">
-                                Terdaftar pada: {formatDateTimeIndonesian(detailTarget.created_at)}
+                                Terdaftar pada: {formatDateTimeIndonesian(activeRisk.created_at)}
                             </div>
                         )}
                     </div>

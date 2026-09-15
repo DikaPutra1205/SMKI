@@ -134,30 +134,22 @@ function DonutChart({
                 </div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center justify-center gap-3">
                 <div className="flex items-center gap-1.5">
                     <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                        Patuh <span className="font-bold text-slate-900 dark:text-white">{compliant}</span>
-                    </span>
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Patuh</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                     <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
-                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                        Sebagian Patuh <span className="font-bold text-slate-900 dark:text-white">{partial}</span>
-                    </span>
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Sebagian Patuh</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                     <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
-                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                        Ketidaksesuaian <span className="font-bold text-slate-900 dark:text-white">{nonCompliant}</span>
-                    </span>
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Ketidaksesuaian</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                     <span className="h-2.5 w-2.5 rounded-full bg-slate-300 dark:bg-slate-500" />
-                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                        Tidak Berlaku <span className="font-bold text-slate-900 dark:text-white">{na}</span>
-                    </span>
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Tidak Berlaku</span>
                 </div>
             </div>
         </div>

@@ -1,6 +1,5 @@
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
 import { Select } from '@/components/ui/Select';
 import { SlideOver } from '@/components/ui/SlideOver';
@@ -9,7 +8,7 @@ import AppLayout from '@/layouts/AppLayout';
 import { useCan } from '@/lib/can';
 import { t } from '@/lib/i18n';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { Eye, Layers, Pencil, Plus, Search, Trash2, XCircle } from 'lucide-react';
+import { Eye, Layers, Pencil, Plus, Save, Search, Shield, Trash2, XCircle } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 export interface FrameworkItem {
@@ -61,8 +60,6 @@ interface ComplianceProps {
     };
 }
 
-type ModalMode = 'create' | 'edit' | null;
-
 interface ControlFormData {
     framework_id: string;
     kode_klausul: string;
@@ -112,9 +109,8 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
         }
     }, [flash]);
 
-    const [modalMode, setModalMode] = useState<ModalMode>(null);
-    const [editingId, setEditingId] = useState<string | null>(null);
-    const [detailTarget, setDetailTarget] = useState<ControlItem | null>(null);
+    const [drawerMode, setDrawerMode] = useState<'detail' | 'edit' | 'create' | null>(null);
+    const [activeControl, setActiveControl] = useState<ControlItem | null>(null);
 
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<ControlItem | null>(null);
@@ -129,17 +125,22 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
         deskripsi: '',
     });
 
+    function openDetail(item: ControlItem) {
+        setActiveControl(item);
+        setDrawerMode('detail');
+    }
+
     function openCreate() {
         form.reset();
         form.setData('framework_id', String(selectedFrameworkId ?? frameworks[0]?.id ?? ''));
         form.clearErrors();
-        setEditingId(null);
-        setModalMode('create');
+        setActiveControl(null);
+        setDrawerMode('create');
     }
 
     function openEdit(item: ControlItem) {
         form.setData({
-            framework_id: String(item.framework_id ?? ''),
+            framework_id: String(item.framework_id ?? selectedFrameworkId ?? frameworks[0]?.id ?? ''),
             kode_klausul: item.code,
             judul: item.title,
             kategori: item.category.toLowerCase(),
@@ -147,23 +148,29 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
             deskripsi: item.description,
         });
         form.clearErrors();
-        setEditingId(item.id);
-        setModalMode('edit');
+        setActiveControl(item);
+        setDrawerMode('edit');
     }
 
-    function closeModal() {
-        setModalMode(null);
-        setEditingId(null);
+    function closeDrawer() {
+        setDrawerMode(null);
+        setActiveControl(null);
         form.reset();
         form.clearErrors();
     }
 
     function submitForm(e: React.FormEvent) {
         e.preventDefault();
-        if (modalMode === 'create') {
-            form.post('/admin/kepatuhan/controls', { onSuccess: closeModal });
-        } else if (modalMode === 'edit' && editingId) {
-            form.put(`/admin/kepatuhan/controls/${editingId}`, { onSuccess: closeModal });
+        if (drawerMode === 'create') {
+            form.post('/admin/kepatuhan/controls', {
+                preserveScroll: true,
+                onSuccess: closeDrawer,
+            });
+        } else if (drawerMode === 'edit' && activeControl) {
+            form.put(`/admin/kepatuhan/controls/${activeControl.id}`, {
+                preserveScroll: true,
+                onSuccess: closeDrawer,
+            });
         }
     }
 
@@ -374,7 +381,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                                 filteredItems.map((item, idx) => (
                                     <tr
                                         key={item.id}
-                                        onClick={() => setDetailTarget(item)}
+                                        onClick={() => openDetail(item)}
                                         className={`cursor-pointer transition-colors ${
                                             idx % 2 === 0 ? 'bg-white dark:bg-[#00223d]/70' : 'bg-slate-200/70 dark:bg-[#00172b]/80'
                                         } hover:bg-primary-50/40 dark:hover:bg-[#0a3b63]/60`}
@@ -402,7 +409,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                                             <div className="flex items-center justify-end gap-1.5">
                                                 <button
                                                     type="button"
-                                                    onClick={() => setDetailTarget(item)}
+                                                    onClick={() => openDetail(item)}
                                                     className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
                                                     title={t('compliance.detailRef')}
                                                 >
@@ -465,200 +472,217 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                 />
             </div>
 
-            {/* SlideOver Drawer for Control Detail */}
+            {/* SlideOver Drawer for Control Detail & Edit/Create */}
             <SlideOver
-                open={detailTarget !== null}
-                onClose={() => setDetailTarget(null)}
-                title={detailTarget ? `${detailTarget.code} — ${detailTarget.title}` : 'Detail Kontrol'}
-                subtitle={detailTarget?.framework_nama || 'Standar Keamanan Informasi ISO 27001'}
-                width="max-w-xl"
+                open={drawerMode !== null}
+                onClose={closeDrawer}
+                title={
+                    drawerMode === 'create'
+                        ? 'Tambah Kontrol Baru'
+                        : drawerMode === 'edit'
+                          ? `Ubah Kontrol: ${activeControl?.code ?? ''}`
+                          : 'Detail Kontrol SMKI'
+                }
+                subtitle={
+                    drawerMode === 'create'
+                        ? 'Daftarkan klausul kontrol kepatuhan baru ke dalam framework SMKI.'
+                        : drawerMode === 'edit'
+                          ? 'Perbarui parameter, klausul, atau deskripsi kontrol kepatuhan ini.'
+                          : undefined
+                }
+                maxWidth="2xl"
                 footer={
-                    <div className="flex w-full items-center justify-between">
-                        {can('control.update') && detailTarget && (
+                    drawerMode === 'detail' ? (
+                        <div className="flex w-full items-center justify-between">
+                            {can('control.update') && activeControl && (
+                                <button
+                                    type="button"
+                                    onClick={() => openEdit(activeControl)}
+                                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                                >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                    <span>Ubah Kontrol Ini</span>
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                onClick={closeDrawer}
+                                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                            >
+                                Tutup
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="flex w-full items-center justify-between">
                             <button
                                 type="button"
                                 onClick={() => {
-                                    const target = detailTarget;
-                                    setDetailTarget(null);
-                                    openEdit(target);
+                                    if (drawerMode === 'edit' && activeControl) {
+                                        setDrawerMode('detail');
+                                    } else {
+                                        closeDrawer();
+                                    }
                                 }}
-                                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
                             >
-                                <Pencil className="h-3.5 w-3.5" />
-                                Ubah Kontrol Ini
+                                {drawerMode === 'edit' ? 'Kembali ke Detail' : t('common.cancel')}
                             </button>
-                        )}
-                        <button
-                            type="button"
-                            onClick={() => setDetailTarget(null)}
-                            className="rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900"
-                        >
-                            Tutup
-                        </button>
-                    </div>
+                            <button
+                                type="submit"
+                                form="control-form"
+                                disabled={form.processing}
+                                className="bg-primary hover:bg-primary-700 inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-xs font-semibold text-white shadow-xs transition-colors disabled:opacity-50"
+                            >
+                                <Save className="h-3.5 w-3.5" />
+                                <span>
+                                    {form.processing
+                                        ? t('common.saving')
+                                        : drawerMode === 'create'
+                                          ? t('compliance.addControlBtn')
+                                          : 'Simpan Perubahan'}
+                                </span>
+                            </button>
+                        </div>
+                    )
                 }
             >
-                {detailTarget && (
-                    <div className="space-y-6">
+                {drawerMode === 'detail' && activeControl && (
+                    <div className="space-y-4">
                         {/* Header Box */}
-                        <div className="border-primary-100 bg-primary-50/60 dark:border-navy-800 dark:bg-navy-900/30 rounded-2xl border p-4.5">
-                            <div className="mb-2 flex items-center gap-2">
-                                <span className="bg-primary inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-bold text-white">
-                                    {detailTarget.code}
-                                </span>
+                        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
+                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 dark:border-slate-800">
+                                <div className="flex items-center gap-2">
+                                    <span className="border-primary-200 bg-primary-50 text-primary dark:border-primary-800 dark:bg-navy-900 dark:text-primary-200 inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-bold">
+                                        <Shield className="h-3.5 w-3.5" />
+                                        {activeControl.code}
+                                    </span>
+                                    {activeControl.framework_nama && (
+                                        <span className="rounded-lg bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                                            {activeControl.framework_nama}
+                                        </span>
+                                    )}
+                                </div>
                                 <span className="text-primary-700 border-primary-200 dark:text-primary-200 inline-flex items-center rounded-lg border bg-white px-2.5 py-1 text-xs font-semibold dark:border-slate-700 dark:bg-slate-800">
-                                    {detailTarget.category}
+                                    {activeControl.category}
                                 </span>
                             </div>
-                            <h3 className="text-base font-bold text-slate-900 dark:text-white">{detailTarget.title}</h3>
-                        </div>
 
-                        {/* Deskripsi & Persyaratan */}
-                        <div>
-                            <span className="mb-2 block text-xs font-bold tracking-wider text-slate-400 uppercase">
-                                Deskripsi & Persyaratan Kontrol
-                            </span>
-                            <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-4 text-xs leading-relaxed whitespace-pre-wrap text-slate-700 sm:text-sm dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-300">
-                                {detailTarget.description || 'Tidak ada deskripsi rinci untuk klausul kontrol ini.'}
+                            <div className="mt-3">
+                                <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Judul Kontrol</span>
+                                <h3 className="mt-0.5 text-base font-bold text-slate-900 dark:text-white">{activeControl.title}</h3>
                             </div>
+
+                            {activeControl.domain_peran && (
+                                <div className="mt-3 flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
+                                    <span className="font-semibold text-slate-400">Peran Domain:</span>
+                                    <span className="rounded-md bg-slate-100 px-2 py-0.5 font-medium text-slate-700 capitalize dark:bg-slate-800 dark:text-slate-300">
+                                        {activeControl.domain_peran}
+                                    </span>
+                                </div>
+                            )}
                         </div>
 
-                        {/* Framework Reference */}
-                        <div>
-                            <span className="mb-2 block text-xs font-bold tracking-wider text-slate-400 uppercase">Informasi Kerangka Kerja</span>
-                            <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                                <div className="flex items-center justify-between text-xs sm:text-sm">
-                                    <span className="text-slate-500">Framework Induk</span>
-                                    <span className="font-semibold text-slate-900 dark:text-white">
-                                        {detailTarget.framework_nama || 'ISO/IEC 27001:2022'}
-                                    </span>
-                                </div>
-                                <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs sm:text-sm dark:border-slate-800">
-                                    <span className="text-slate-500">Kategori Kontrol</span>
-                                    <span className="font-semibold text-slate-900 dark:text-white">{detailTarget.category}</span>
-                                </div>
-                                <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs sm:text-sm dark:border-slate-800">
-                                    <span className="text-slate-500">Peran Domain</span>
-                                    <span className="font-semibold text-slate-900 capitalize dark:text-white">
-                                        {detailTarget.domain_peran ?? '—'}
-                                    </span>
-                                </div>
+                        {/* Deskripsi & Persyaratan Kontrol */}
+                        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
+                            <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                                Deskripsi &amp; Panduan Implementasi Kontrol
+                            </span>
+                            <div className="mt-2 rounded-xl border border-slate-100 bg-slate-50/70 p-4 text-xs leading-relaxed whitespace-pre-line text-slate-700 sm:text-sm dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-300">
+                                {activeControl.description || 'Tidak ada deskripsi rinci untuk klausul kontrol ini.'}
                             </div>
                         </div>
                     </div>
                 )}
+
+                {(drawerMode === 'create' || drawerMode === 'edit') && (
+                    <form id="control-form" onSubmit={submitForm} className="space-y-4">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <Select
+                                label={t('compliance.frameworkLabel')}
+                                value={form.data.framework_id}
+                                onChange={(e) => form.setData('framework_id', e.target.value)}
+                                error={form.errors.framework_id}
+                            >
+                                {frameworks.map((fw) => (
+                                    <option key={fw.id} value={String(fw.id)}>
+                                        {fw.nama} ({fw.versi})
+                                    </option>
+                                ))}
+                            </Select>
+
+                            <Select
+                                label={t('compliance.categoryLabel')}
+                                value={form.data.kategori}
+                                onChange={(e) => form.setData('kategori', e.target.value)}
+                                error={form.errors.kategori}
+                            >
+                                <option value="organisasional">Organisasional</option>
+                                <option value="orang">Orang</option>
+                                <option value="fisik">Fisik</option>
+                                <option value="teknologi">Teknologi</option>
+                            </Select>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div>
+                                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                    Kode Klausul / Kontrol <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    value={form.data.kode_klausul}
+                                    onChange={(e) => form.setData('kode_klausul', e.target.value)}
+                                    placeholder="Contoh: A.5.1 atau 5.1"
+                                    aria-label={t('compliance.code')}
+                                    className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                />
+                                {form.errors.kode_klausul && <p className="mt-1 text-xs text-red-500">{form.errors.kode_klausul}</p>}
+                            </div>
+
+                            <Select
+                                label="Peran Domain"
+                                value={form.data.domain_peran}
+                                onChange={(e) => form.setData('domain_peran', e.target.value)}
+                                error={form.errors.domain_peran}
+                            >
+                                <option value="">— Tidak diketahui —</option>
+                                <option value="controller">controller</option>
+                                <option value="processor">processor</option>
+                            </Select>
+                        </div>
+
+                        <div>
+                            <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                Judul Kontrol <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                value={form.data.judul}
+                                onChange={(e) => form.setData('judul', e.target.value)}
+                                placeholder="Contoh: Kebijakan Keamanan Informasi"
+                                className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                aria-label={t('compliance.controlTitle')}
+                            />
+                            {form.errors.judul && <p className="mt-1 text-xs text-red-500">{form.errors.judul}</p>}
+                        </div>
+
+                        <div>
+                            <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                Deskripsi &amp; Detail Klausul
+                            </label>
+                            <textarea
+                                value={form.data.deskripsi}
+                                onChange={(e) => form.setData('deskripsi', e.target.value)}
+                                rows={5}
+                                placeholder="Jelaskan ruang lingkup atau persyaratan kontrol..."
+                                className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                aria-label={t('compliance.description')}
+                            />
+                            {form.errors.deskripsi && <p className="mt-1 text-xs text-red-500">{form.errors.deskripsi}</p>}
+                        </div>
+                    </form>
+                )}
             </SlideOver>
-
-            {/* Add/edit control modal */}
-            <Modal
-                open={modalMode !== null}
-                title={modalMode === 'create' ? t('compliance.createTitle') : t('compliance.editTitle')}
-                description={modalMode === 'create' ? t('compliance.createSubtitle') : undefined}
-                onClose={closeModal}
-                maxWidth="lg"
-                footer={
-                    <>
-                        <button
-                            type="button"
-                            onClick={closeModal}
-                            className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 sm:text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
-                        >
-                            {t('common.cancel')}
-                        </button>
-                        <button
-                            type="submit"
-                            form="control-form"
-                            disabled={form.processing}
-                            className="bg-primary hover:bg-primary-700 rounded-xl px-5 py-2.5 text-xs font-semibold text-white shadow-sm transition-colors disabled:opacity-50 sm:text-sm"
-                        >
-                            {form.processing ? t('common.saving') : t('compliance.addControlBtn')}
-                        </button>
-                    </>
-                }
-            >
-                <form id="control-form" onSubmit={submitForm} className="space-y-4 pt-2">
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <Select
-                            label={t('compliance.frameworkLabel')}
-                            value={form.data.framework_id}
-                            onChange={(e) => form.setData('framework_id', e.target.value)}
-                            error={form.errors.framework_id}
-                        >
-                            {frameworks.map((fw) => (
-                                <option key={fw.id} value={String(fw.id)}>
-                                    {fw.nama} ({fw.versi})
-                                </option>
-                            ))}
-                        </Select>
-
-                        <Select
-                            label={t('compliance.categoryLabel')}
-                            value={form.data.kategori}
-                            onChange={(e) => form.setData('kategori', e.target.value)}
-                            error={form.errors.kategori}
-                        >
-                            <option value="organisasional">Organisasional</option>
-                            <option value="orang">Orang</option>
-                            <option value="fisik">Fisik</option>
-                            <option value="teknologi">Teknologi</option>
-                        </Select>
-
-                        <Select
-                            label="Peran Domain"
-                            value={form.data.domain_peran}
-                            onChange={(e) => form.setData('domain_peran', e.target.value)}
-                            error={form.errors.domain_peran}
-                        >
-                            <option value="">— Tidak diketahui —</option>
-                            <option value="controller">controller</option>
-                            <option value="processor">processor</option>
-                        </Select>
-                    </div>
-
-                    <div>
-                        <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                            Kode Klausul / Kontrol <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            value={form.data.kode_klausul}
-                            onChange={(e) => form.setData('kode_klausul', e.target.value)}
-                            placeholder="Contoh: A.5.1 atau 5.1"
-                            aria-label={t('compliance.code')}
-                            className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                        />
-                        {form.errors.kode_klausul && <p className="mt-1 text-xs text-red-500">{form.errors.kode_klausul}</p>}
-                    </div>
-
-                    <div>
-                        <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                            Judul Kontrol <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            value={form.data.judul}
-                            onChange={(e) => form.setData('judul', e.target.value)}
-                            placeholder="Contoh: Kebijakan Keamanan Informasi"
-                            className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                            aria-label={t('compliance.controlTitle')}
-                        />
-                        {form.errors.judul && <p className="mt-1 text-xs text-red-500">{form.errors.judul}</p>}
-                    </div>
-
-                    <div>
-                        <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">Deskripsi & Detail Klausul</label>
-                        <textarea
-                            value={form.data.deskripsi}
-                            onChange={(e) => form.setData('deskripsi', e.target.value)}
-                            rows={3}
-                            placeholder="Jelaskan ruang lingkup atau persyaratan kontrol..."
-                            className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                            aria-label={t('compliance.description')}
-                        />
-                        {form.errors.deskripsi && <p className="mt-1 text-xs text-red-500">{form.errors.deskripsi}</p>}
-                    </div>
-                </form>
-            </Modal>
 
             <Toast
                 visible={flashVisible}

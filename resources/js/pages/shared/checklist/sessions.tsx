@@ -1,14 +1,14 @@
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
 import { Select } from '@/components/ui/Select';
+import { SlideOver } from '@/components/ui/SlideOver';
 import AppLayout from '@/layouts/AppLayout';
 import { useCan } from '@/lib/can';
 import { t } from '@/lib/i18n';
 import { formatDateIndonesian, formatPeriodeIndonesian } from '@/lib/utils';
-import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { CalendarClock, CheckCircle2, Pencil, Plus, Search, Send, ShieldCheck, Trash2, UserRound } from 'lucide-react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { ArrowRight, CalendarClock, CheckCircle2, Pencil, Plus, Search, Send, ShieldCheck, Trash2, UserRound } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 interface SessionItem {
@@ -244,45 +244,45 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
                 </div>
             )}
 
-            <div className="page-head flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="page-head flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Manajemen Sesi Checklist</h1>
-                    <p className="text-muted mt-1 text-xs sm:text-sm dark:text-slate-400">
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Manajemen Sesi Checklist</h1>
+                    <p className="mt-1 text-xs text-slate-500 sm:text-sm dark:text-slate-400">
                         Buat dan kelola sesi pengecekan mandiri untuk setiap satuan kerja.
                     </p>
                 </div>
                 {can('checklist-session.create') && (
-                    <>
+                    <div className="flex items-center justify-end gap-2.5 sm:shrink-0">
                         <button
                             type="button"
                             onClick={() => setGenerateDialogOpen(true)}
-                            className="border-border-strong text-navy hover:bg-surface inline-flex items-center gap-2 rounded-[10px] border bg-white px-4 py-2 text-xs font-semibold transition-colors sm:text-sm dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:hover:bg-slate-800"
+                            className="dark:hover:bg-slate-750 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-2 text-xs font-semibold text-slate-700 shadow-2xs transition-colors hover:bg-slate-100 sm:text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                         >
-                            <CalendarClock className="h-4 w-4" />
+                            <CalendarClock className="h-4 w-4 text-slate-500 dark:text-slate-400" />
                             <span>Generate Bulanan</span>
                         </button>
                         <button
                             type="button"
                             onClick={openCreate}
-                            className="bg-primary shadow-blue hover:bg-primary-700 inline-flex items-center gap-2 rounded-[10px] px-4 py-2 text-xs font-semibold text-white transition-colors sm:text-sm"
+                            className="bg-primary hover:bg-primary-700 inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold text-white shadow-xs transition-colors sm:text-sm"
                         >
                             <Plus className="h-4 w-4" />
                             <span>Buat Sesi</span>
                         </button>
-                    </>
+                    </div>
                 )}
             </div>
 
             {/* Toolbar */}
-            <div className="border-border flex flex-col gap-3 rounded-[14px] border bg-white p-3 shadow-sm md:flex-row md:items-center dark:border-slate-700 dark:bg-slate-900">
+            <div className="flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-2xs md:flex-row md:items-center dark:border-slate-800 dark:bg-slate-900">
                 <div className="relative min-w-[220px] flex-1">
-                    <Search className="text-faint absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 dark:text-slate-500" />
+                    <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                     <input
                         type="text"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Cari konteks, unit, atau PIC..."
-                        className="border-border-strong text-ink placeholder:text-faint focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white py-2 pr-4 pl-9 text-xs focus:ring-2 focus:outline-none sm:text-sm dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
+                        className="focus:border-primary focus:ring-primary/20 h-10 w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 pr-4 pl-9 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:outline-none sm:text-sm dark:border-slate-700 dark:bg-slate-800/50 dark:text-white dark:placeholder:text-slate-500"
                     />
                 </div>
 
@@ -330,26 +330,26 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
                         return (
                             <div
                                 key={s.id}
-                                className="border-border group hover:border-primary-200 flex flex-col rounded-[14px] border bg-white p-5 shadow-sm transition-all hover:shadow-md dark:border-slate-700 dark:bg-slate-900"
+                                className="group flex flex-col rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs transition-all hover:border-slate-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
                             >
                                 <div className="mb-3">
-                                    <h3 className="text-navy truncate text-sm leading-snug font-bold dark:text-white">{s.konteks_penilaian}</h3>
-                                    <p className="text-faint mt-0.5 text-xs dark:text-slate-500">
+                                    <h3 className="truncate text-sm leading-snug font-bold text-slate-900 dark:text-white">{s.konteks_penilaian}</h3>
+                                    <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                                         {s.periode ? formatPeriodeIndonesian(s.periode) : 'Tanpa Periode'}
                                     </p>
                                 </div>
 
-                                <div className="text-muted mb-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs dark:text-slate-400">
+                                <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-600 dark:text-slate-400">
                                     <span className="inline-flex items-center gap-1.5">
-                                        <UserRound className="text-faint h-3.5 w-3.5 dark:text-slate-500" />
+                                        <UserRound className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
                                         {s.unit_nama || 'Unit tidak diketahui'}
                                     </span>
-                                    {s.creator_name && <span className="text-faint dark:text-slate-500">oleh {s.creator_name}</span>}
+                                    {s.creator_name && <span className="text-slate-400 dark:text-slate-500">oleh {s.creator_name}</span>}
                                 </div>
 
                                 {s.framework_nama && (
                                     <div className="mb-3">
-                                        <span className="border-border text-body bg-surface inline-flex items-center rounded-[6px] border px-2.5 py-1 text-[11px] font-semibold dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                                        <span className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
                                             {s.framework_nama}
                                         </span>
                                     </div>
@@ -357,7 +357,7 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
 
                                 <div className="mb-3">
                                     <div className="mb-1 flex items-baseline justify-between">
-                                        <span className="text-muted text-xs dark:text-slate-400">
+                                        <span className="text-xs text-slate-500 dark:text-slate-400">
                                             {s.compliant_entries}/{s.total_entries} Patuh
                                         </span>
                                         <span className="text-primary text-xs font-bold">{pct}%</span>
@@ -384,37 +384,49 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
                                     </div>
                                 </div>
 
-                                {(can('checklist-session.update') || can('checklist-session.delete')) && (
-                                    <div className="border-border text-faint mt-auto flex flex-wrap items-center justify-end gap-1.5 border-t pt-3 dark:border-slate-700">
-                                        {can('checklist-session.update') && (
-                                            <button
-                                                type="button"
-                                                onClick={() => openEdit(s)}
-                                                className="border-border-strong text-navy hover:bg-surface inline-flex items-center gap-1.5 rounded-[10px] border bg-white px-3 py-1.5 text-xs font-semibold transition-colors dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:hover:bg-slate-800"
-                                            >
-                                                <Pencil className="h-3.5 w-3.5" />
-                                                Edit
-                                            </button>
-                                        )}
-                                        {can('checklist-session.delete') && (
-                                            <button
-                                                type="button"
-                                                onClick={() => handleDelete(s)}
-                                                className="border-danger-border bg-danger-bg text-danger hover:bg-danger/10 inline-flex items-center gap-1.5 rounded-[10px] border px-3 py-1.5 text-xs font-semibold transition-colors dark:border-red-800 dark:text-red-400"
-                                            >
-                                                <Trash2 className="h-3.5 w-3.5" />
-                                                Hapus
-                                            </button>
+                                <div className="mt-auto border-t border-slate-100 pt-3 dark:border-slate-800">
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                        <Link
+                                            href={`/admin/kepatuhan/checklist/verify?session_id=${s.id}`}
+                                            className="text-primary hover:text-primary-700 dark:text-primary-300 dark:hover:text-primary-200 inline-flex items-center gap-1 text-xs font-semibold"
+                                        >
+                                            <span>Verifikasi Kontrol</span>
+                                            <ArrowRight className="h-3.5 w-3.5" />
+                                        </Link>
+
+                                        {(can('checklist-session.update') || can('checklist-session.delete')) && (
+                                            <div className="flex items-center gap-1.5">
+                                                {can('checklist-session.update') && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => openEdit(s)}
+                                                        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                                                    >
+                                                        <Pencil className="h-3 w-3" />
+                                                        Edit
+                                                    </button>
+                                                )}
+                                                {can('checklist-session.delete') && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDelete(s)}
+                                                        className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-700 transition-colors hover:bg-rose-100 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300 dark:hover:bg-rose-900/60"
+                                                    >
+                                                        <Trash2 className="h-3 w-3" />
+                                                        Hapus
+                                                    </button>
+                                                )}
+                                            </div>
                                         )}
                                     </div>
-                                )}
 
-                                <div className="border-border text-faint mt-3 flex flex-wrap items-center justify-between gap-2 border-t pt-3 text-[11px] dark:border-slate-700 dark:text-slate-500">
-                                    <span className="inline-flex items-center gap-1">
-                                        <ShieldCheck className="h-3.5 w-3.5" />
-                                        {s.verified_entries}/{s.total_entries} terverifikasi
-                                    </span>
-                                    <span>{formatDateIndonesian(s.created_at, { shortMonth: true })}</span>
+                                    <div className="mt-2.5 flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500">
+                                        <span className="inline-flex items-center gap-1">
+                                            <ShieldCheck className="h-3.5 w-3.5" />
+                                            {s.verified_entries}/{s.total_entries} terverifikasi
+                                        </span>
+                                        <span>{formatDateIndonesian(s.created_at, { shortMonth: true })}</span>
+                                    </div>
                                 </div>
                             </div>
                         );
@@ -435,17 +447,18 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
                 />
             )}
 
-            <Modal
+            <SlideOver
                 open={modalMode !== null}
                 title={modalMode === 'create' ? 'Buat Sesi Checklist' : 'Edit Sesi Checklist'}
+                subtitle={modalMode === 'create' ? 'Inisialisasi lembar checklist baru untuk unit kerja' : 'Perbarui konteks atau catatan sesi'}
                 onClose={closeModal}
                 maxWidth="lg"
                 footer={
-                    <>
+                    <div className="flex w-full items-center justify-end gap-3">
                         <button
                             type="button"
                             onClick={closeModal}
-                            className="border-border-strong text-body hover:bg-surface rounded-[10px] border bg-white px-4 py-2 text-sm font-medium transition-colors dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                            className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                         >
                             Batal
                         </button>
@@ -453,16 +466,18 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
                             type="submit"
                             form="session-form"
                             disabled={form.processing}
-                            className="bg-primary hover:bg-primary-700 inline-flex items-center gap-2 rounded-[10px] px-5 py-2 text-sm font-semibold text-white transition-colors disabled:opacity-50"
+                            className="bg-primary hover:bg-primary-700 inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-xs transition-colors disabled:opacity-50"
                         >
-                            {form.processing ? 'Menyimpan...' : modalMode === 'create' ? 'Buat' : 'Simpan'}
+                            {form.processing ? 'Menyimpan...' : modalMode === 'create' ? 'Buat Sesi' : 'Simpan Perubahan'}
                         </button>
-                    </>
+                    </div>
                 }
             >
-                <form id="session-form" onSubmit={submitForm} className="space-y-4">
+                <form id="session-form" onSubmit={submitForm} className="space-y-4 p-1">
                     <div>
-                        <label className="text-body mb-1 block text-xs font-semibold dark:text-slate-300">Unit Kerja</label>
+                        <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            Unit Kerja <span className="text-red-500">*</span>
+                        </label>
                         <Select value={form.data.unit_id} onChange={(e) => form.setData('unit_id', e.target.value)} disabled={modalMode === 'edit'}>
                             <option value="">Pilih Unit Kerja</option>
                             {workUnits.map((u) => (
@@ -471,11 +486,11 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
                                 </option>
                             ))}
                         </Select>
-                        {form.errors.unit_id && <p className="text-danger mt-1 text-[11px] font-medium dark:text-red-400">{form.errors.unit_id}</p>}
+                        {form.errors.unit_id && <p className="mt-1 text-xs text-red-500">{form.errors.unit_id}</p>}
                     </div>
 
                     <div>
-                        <label className="text-body mb-1 block text-xs font-semibold dark:text-slate-300">Framework</label>
+                        <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">Framework</label>
                         <Select
                             value={form.data.framework_id}
                             onChange={(e) => form.setData('framework_id', e.target.value)}
@@ -488,50 +503,51 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
                                 </option>
                             ))}
                         </Select>
-                        {form.errors.framework_id && (
-                            <p className="text-danger mt-1 text-[11px] font-medium dark:text-red-400">{form.errors.framework_id}</p>
-                        )}
+                        {form.errors.framework_id && <p className="mt-1 text-xs text-red-500">{form.errors.framework_id}</p>}
                     </div>
 
                     <div>
-                        <label className="text-body mb-1 block text-xs font-semibold dark:text-slate-300">Periode (YYYY-MM)</label>
+                        <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            Periode (YYYY-MM) <span className="text-red-500">*</span>
+                        </label>
                         <input
                             type="text"
                             value={form.data.periode}
                             onChange={(e) => form.setData('periode', e.target.value)}
                             placeholder="2026-08"
                             disabled={modalMode === 'edit'}
-                            className="border-border-strong text-ink placeholder:text-faint focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white px-3 text-sm focus:ring-2 focus:outline-none disabled:opacity-60 dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
+                            className="focus:border-primary focus:ring-primary/20 h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:outline-none disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
                         />
-                        {form.errors.periode && <p className="text-danger mt-1 text-[11px] font-medium dark:text-red-400">{form.errors.periode}</p>}
+                        {form.errors.periode && <p className="mt-1 text-xs text-red-500">{form.errors.periode}</p>}
                     </div>
 
                     <div>
-                        <label className="text-body mb-1 block text-xs font-semibold dark:text-slate-300">Konteks Penilaian</label>
+                        <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            Konteks Penilaian <span className="text-red-500">*</span>
+                        </label>
                         <input
                             type="text"
                             value={form.data.konteks_penilaian}
                             onChange={(e) => form.setData('konteks_penilaian', e.target.value)}
                             placeholder="Penilaian Bulanan SMKI - Agustus 2026"
-                            className="border-border-strong text-ink placeholder:text-faint focus:border-primary focus:ring-primary/20 h-10 w-full rounded-[10px] border bg-white px-3 text-sm focus:ring-2 focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
+                            className="focus:border-primary focus:ring-primary/20 h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
                         />
-                        {form.errors.konteks_penilaian && (
-                            <p className="text-danger mt-1 text-[11px] font-medium dark:text-red-400">{form.errors.konteks_penilaian}</p>
-                        )}
+                        {form.errors.konteks_penilaian && <p className="mt-1 text-xs text-red-500">{form.errors.konteks_penilaian}</p>}
                     </div>
 
                     <div>
-                        <label className="text-body mb-1 block text-xs font-semibold dark:text-slate-300">Catatan</label>
+                        <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">Catatan</label>
                         <textarea
                             value={form.data.catatan}
                             onChange={(e) => form.setData('catatan', e.target.value)}
                             rows={3}
-                            className="border-border-strong text-ink placeholder:text-faint focus:border-primary focus:ring-primary/20 w-full rounded-[10px] border bg-white px-3 py-2 text-sm focus:ring-2 focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
+                            placeholder="Tambahkan catatan jika ada..."
+                            className="focus:border-primary focus:ring-primary/20 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
                         />
-                        {form.errors.catatan && <p className="text-danger mt-1 text-[11px] font-medium dark:text-red-400">{form.errors.catatan}</p>}
+                        {form.errors.catatan && <p className="mt-1 text-xs text-red-500">{form.errors.catatan}</p>}
                     </div>
                 </form>
-            </Modal>
+            </SlideOver>
 
             <ConfirmDialog
                 open={deleteDialogOpen}

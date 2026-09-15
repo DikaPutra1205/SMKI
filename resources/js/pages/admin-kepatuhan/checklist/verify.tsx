@@ -12,6 +12,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
 import { Select } from '@/components/ui/Select';
+import { SlideOver } from '@/components/ui/SlideOver';
 import { StatusBadge, statusTone } from '@/components/ui/StatusBadge';
 import { Textarea } from '@/components/ui/Textarea';
 import { Toast } from '@/components/ui/Toast';
@@ -159,15 +160,6 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
         }
     }, [flash]);
 
-    useEffect(() => {
-        if (!entry) return;
-        const handler = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') onClose();
-        };
-        document.addEventListener('keydown', handler);
-        return () => document.removeEventListener('keydown', handler);
-    }, [entry, onClose]);
-
     const executeVerify = (action: 'approve' | 'reject') => {
         if (!entry || actionSubmitting) return;
         const targetStatus = action === 'approve' ? 'compliant' : 'non_compliant';
@@ -234,7 +226,7 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
     const hasEvidence = Boolean(entry.active_evidence?.file_url);
     const alreadyVerified = Boolean(entry.tanggal_verifikasi);
 
-    return createPortal(
+    return (
         <>
             <Toast
                 visible={flashVisible}
@@ -243,49 +235,81 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
                 onDismiss={() => setFlashVisible(false)}
             />
 
-            {/* Backdrop */}
-            <div className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-[2px] transition-opacity" onClick={onClose} aria-hidden="true" />
-
-            {/* Panel */}
-            <aside className="border-border fixed inset-y-0 right-0 z-50 flex w-full max-w-[500px] flex-col border-l bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
-                {/* Header */}
-                <div className="border-border flex items-start justify-between gap-4 border-b px-5 py-4 dark:border-slate-700">
-                    <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                            <ShieldCheck className="text-primary h-5 w-5 shrink-0" />
-                            <h2 className="text-navy text-base font-bold dark:text-white">Verifikasi Entri Kontrol</h2>
-                        </div>
-                        <p className="text-muted mt-0.5 font-mono text-xs font-semibold dark:text-slate-400">{code}</p>
+            <SlideOver
+                open={Boolean(entry)}
+                onClose={onClose}
+                maxWidth="2xl"
+                title={
+                    <div className="flex items-center gap-2.5">
+                        <ShieldCheck className="text-primary h-5 w-5 shrink-0" />
+                        <span>Verifikasi Entri Kontrol</span>
+                        <code className="border-primary-200 bg-primary-50 text-primary dark:border-primary-800 dark:bg-navy-900 dark:text-primary-200 rounded border px-2 py-0.5 font-mono text-xs font-bold">
+                            {code}
+                        </code>
                     </div>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="text-muted hover:bg-surface hover:text-navy rounded-lg p-1.5 transition-colors dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
-                        aria-label="Tutup panel"
-                    >
-                        <X className="h-5 w-5" />
-                    </button>
-                </div>
-
-                {/* Body */}
-                <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
+                }
+                description={undefined}
+                footer={
+                    can('checklist.bulk-verify') ? (
+                        <div className="flex w-full items-center gap-3">
+                            <button
+                                type="button"
+                                disabled={actionSubmitting !== null}
+                                onClick={() => handleActionClick('approve')}
+                                className="bg-success hover:bg-success/90 inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-all active:scale-[0.98] disabled:opacity-50"
+                            >
+                                {actionSubmitting === 'approve' ? (
+                                    <>
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                        Menyetujui...
+                                    </>
+                                ) : (
+                                    <>
+                                        <CheckCircle2 className="h-4 w-4" />
+                                        Setujui (Patuh)
+                                    </>
+                                )}
+                            </button>
+                            <button
+                                type="button"
+                                disabled={actionSubmitting !== null}
+                                onClick={() => handleActionClick('reject')}
+                                className="bg-danger hover:bg-danger/90 inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-all active:scale-[0.98] disabled:opacity-50"
+                            >
+                                {actionSubmitting === 'reject' ? (
+                                    <>
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                        Menolak...
+                                    </>
+                                ) : (
+                                    <>
+                                        <XCircle className="h-4 w-4" />
+                                        Tolak (Tidak Patuh)
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    ) : undefined
+                }
+            >
+                <div className="space-y-4 pt-1">
                     {/* Control info */}
-                    <div className="border-border bg-surface/50 overflow-hidden rounded-[12px] border dark:border-slate-700 dark:bg-slate-800/40">
-                        <div className="border-border flex items-center justify-between border-b px-4 py-2.5 dark:border-slate-700">
-                            <span className="text-muted text-xs font-bold tracking-wide uppercase dark:text-slate-400">Kontrol / Klausul</span>
+                    <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-800/40">
+                        <div className="flex items-center justify-between border-b border-slate-200/80 px-4 py-2.5 dark:border-slate-800">
+                            <span className="text-xs font-bold tracking-wide text-slate-500 uppercase dark:text-slate-400">Kontrol / Klausul</span>
                             {framework && (
-                                <span className="border-border text-navy rounded-[6px] border bg-white px-2 py-0.5 text-[11px] font-semibold dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+                                <span className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
                                     {framework}
                                 </span>
                             )}
                         </div>
                         <div className="px-4 py-3">
-                            <p className="text-navy text-sm leading-snug font-bold dark:text-white">{title}</p>
+                            <p className="text-sm leading-snug font-bold text-slate-900 dark:text-white">{title}</p>
                             {entry.control?.deskripsi && (
-                                <p className="text-body mt-2 text-xs leading-relaxed dark:text-slate-300">{entry.control.deskripsi}</p>
+                                <p className="mt-2 text-xs leading-relaxed text-slate-600 dark:text-slate-300">{entry.control.deskripsi}</p>
                             )}
                             {entry.control?.kategori && (
-                                <span className="text-muted mt-2 inline-block text-[11px] font-medium dark:text-slate-400">
+                                <span className="mt-2 inline-block text-[11px] font-medium text-slate-500 dark:text-slate-400">
                                     Kategori: {kategoriLabel(entry.control.kategori)}
                                 </span>
                             )}
@@ -293,7 +317,7 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
                     </div>
 
                     {/* Meta: unit, PIC, status, dates */}
-                    <div className="border-border overflow-hidden rounded-[12px] border dark:border-slate-700">
+                    <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900">
                         {[
                             { label: 'Unit Kerja', value: entry.unit?.nama || '—' },
                             { label: 'PIC Pengisi', value: entry.pic?.name || '—' },
@@ -303,16 +327,19 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
                             },
                             {
                                 label: 'Level Maturity',
-                                value: entry.level_maturity === null || entry.level_maturity === undefined ? 'Belum dinilai' : `Level ${entry.level_maturity}`,
+                                value:
+                                    entry.level_maturity === null || entry.level_maturity === undefined
+                                        ? 'Belum dinilai'
+                                        : `Level ${entry.level_maturity}`,
                             },
                             { label: 'Tanggal Input', value: fmtDateTime(entry.tanggal_input) || '—' },
                         ].map(({ label, value }, i, arr) => (
                             <div
                                 key={label}
-                                className={`flex items-center justify-between gap-3 px-4 py-2.5 ${i < arr.length - 1 ? 'border-border border-b dark:border-slate-700' : ''}`}
+                                className={`flex items-center justify-between gap-3 px-4 py-2.5 ${i < arr.length - 1 ? 'border-b border-slate-100 dark:border-slate-800' : ''}`}
                             >
-                                <span className="text-body text-xs font-medium dark:text-slate-300">{label}</span>
-                                <span className="text-navy text-right text-xs font-semibold dark:text-white">{value}</span>
+                                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{label}</span>
+                                <span className="text-right text-xs font-semibold text-slate-800 dark:text-white">{value}</span>
                             </div>
                         ))}
                     </div>
@@ -320,8 +347,8 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
                     {/* PIC notes */}
                     {entry.catatan && (
                         <div>
-                            <h3 className="text-navy mb-1.5 text-xs font-bold tracking-wide uppercase dark:text-white">Catatan PIC</h3>
-                            <p className="border-border bg-surface/50 text-body rounded-[10px] border px-3.5 py-3 text-xs leading-relaxed dark:border-slate-700 dark:bg-slate-800/40 dark:text-slate-300">
+                            <h3 className="mb-1.5 text-xs font-bold tracking-wide text-slate-700 uppercase dark:text-slate-300">Catatan PIC</h3>
+                            <p className="rounded-xl border border-slate-200/80 bg-slate-50/70 px-3.5 py-3 text-xs leading-relaxed text-slate-700 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-300">
                                 {entry.catatan}
                             </p>
                         </div>
@@ -329,7 +356,9 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
 
                     {/* Evidence */}
                     <div>
-                        <h3 className="text-navy mb-1.5 text-xs font-bold tracking-wide uppercase dark:text-white">Dokumen Bukti (Evidence)</h3>
+                        <h3 className="mb-1.5 text-xs font-bold tracking-wide text-slate-700 uppercase dark:text-slate-300">
+                            Dokumen Bukti (Evidence)
+                        </h3>
                         {hasEvidence ? (
                             <button
                                 type="button"
@@ -339,7 +368,7 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
                                         nama_file: entry.active_evidence?.nama_file || `${code} Evidence`,
                                     })
                                 }
-                                className="flex w-full items-center justify-between gap-2.5 rounded-[10px] border border-emerald-300 bg-emerald-50 px-3.5 py-3 text-xs font-semibold text-emerald-800 transition-colors hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-950/60"
+                                className="flex w-full items-center justify-between gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-3 text-xs font-semibold text-emerald-800 transition-colors hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-950/60"
                             >
                                 <div className="flex items-center gap-2 truncate">
                                     <FileText className="h-4 w-4 shrink-0" />
@@ -348,7 +377,7 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
                                 <Eye className="h-4 w-4 shrink-0" />
                             </button>
                         ) : (
-                            <div className="flex items-center gap-2.5 rounded-[10px] border border-amber-300 bg-amber-50 px-3.5 py-3 text-xs font-semibold text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+                            <div className="flex items-center gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-xs font-semibold text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
                                 <XCircle className="h-4 w-4 shrink-0" />
                                 Belum ada dokumen evidence yang dilampirkan
                             </div>
@@ -357,25 +386,28 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
 
                     {/* Previous admin notes (if already verified before) */}
                     {alreadyVerified && (
-                        <div className="border-info/20 bg-info-bg rounded-[10px] border px-3.5 py-3 dark:bg-sky-950/30">
-                            <p className="text-info text-xs font-semibold dark:text-sky-400">
+                        <div className="rounded-xl border border-sky-200 bg-sky-50/70 px-3.5 py-3 dark:border-sky-800/60 dark:bg-sky-950/30">
+                            <p className="text-xs font-semibold text-sky-800 dark:text-sky-300">
                                 Telah Diverifikasi · {fmtDateTime(entry.tanggal_verifikasi)}
                                 {entry.admin?.name ? ` oleh ${entry.admin.name}` : ''}
                             </p>
-                            {entry.catatan_admin && <p className="text-body mt-1 text-xs dark:text-slate-300">{entry.catatan_admin}</p>}
+                            {entry.catatan_admin && <p className="mt-1 text-xs text-slate-700 dark:text-slate-300">{entry.catatan_admin}</p>}
                         </div>
                     )}
 
                     {/* Maturity correction — editable on verify-single, follows admin_notes pattern */}
                     <div className="space-y-1">
-                        <label htmlFor="verify-maturity" className="text-navy text-xs font-bold tracking-wide uppercase dark:text-white">
+                        <label
+                            htmlFor="verify-maturity"
+                            className="block text-xs font-bold tracking-wide text-slate-700 uppercase dark:text-slate-300"
+                        >
                             Level Maturity (0–5)
                         </label>
                         <select
                             id="verify-maturity"
                             value={maturity}
                             onChange={(e) => setMaturity(e.target.value)}
-                            className="border-border bg-surface text-body w-full rounded-[10px] border px-3 py-2.5 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                            className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                         >
                             <option value="">Belum dinilai</option>
                             {[0, 1, 2, 3, 4, 5].map((n) => (
@@ -404,49 +436,7 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
                         </div>
                     )}
                 </div>
-
-                {/* Footer action bar */}
-                {can('checklist.bulk-verify') && (
-                    <div className="border-border bg-surface/60 flex items-center gap-3 border-t px-5 py-4 dark:border-slate-700 dark:bg-slate-900/60">
-                        <button
-                            type="button"
-                            disabled={actionSubmitting !== null}
-                            onClick={() => handleActionClick('approve')}
-                            className="bg-success hover:bg-success/90 inline-flex flex-1 items-center justify-center gap-2 rounded-[10px] px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-all active:scale-[0.98] disabled:opacity-50"
-                        >
-                            {actionSubmitting === 'approve' ? (
-                                <>
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                    Menyetujui...
-                                </>
-                            ) : (
-                                <>
-                                    <CheckCircle2 className="h-4 w-4" />
-                                    Setujui (Patuh)
-                                </>
-                            )}
-                        </button>
-                        <button
-                            type="button"
-                            disabled={actionSubmitting !== null}
-                            onClick={() => handleActionClick('reject')}
-                            className="bg-danger hover:bg-danger/90 inline-flex flex-1 items-center justify-center gap-2 rounded-[10px] px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-all active:scale-[0.98] disabled:opacity-50"
-                        >
-                            {actionSubmitting === 'reject' ? (
-                                <>
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                    Menolak...
-                                </>
-                            ) : (
-                                <>
-                                    <XCircle className="h-4 w-4" />
-                                    Tolak (Tidak Patuh)
-                                </>
-                            )}
-                        </button>
-                    </div>
-                )}
-            </aside>
+            </SlideOver>
 
             <ConfirmDialog
                 open={confirmAction === 'reject'}
@@ -458,8 +448,7 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
                 onCancel={() => setConfirmAction(null)}
                 onConfirm={() => executeVerify('reject')}
             />
-        </>,
-        document.body,
+        </>
     );
 }
 

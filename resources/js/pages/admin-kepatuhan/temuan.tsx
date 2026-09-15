@@ -1,7 +1,6 @@
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
 import { Select } from '@/components/ui/Select';
 import { SlideOver } from '@/components/ui/SlideOver';
@@ -277,6 +276,7 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
         }
         return null;
     });
+    const [detailActiveTab, setDetailActiveTab] = useState<'action' | 'history' | 'control'>('action');
     const [showNoteFormOnSameStatus, setShowNoteFormOnSameStatus] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const isFirstRender = useRef(true);
@@ -287,12 +287,18 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
     // Helper to close drawer and clean query param from URL cleanly
     const closeDetailDrawer = useCallback(() => {
         setDetailTarget(null);
+        setDetailActiveTab('action');
         if (typeof window !== 'undefined' && (window.location.search.includes('id=') || window.location.search.includes('finding_id='))) {
             const url = new URL(window.location.href);
             url.searchParams.delete('id');
             url.searchParams.delete('finding_id');
             window.history.replaceState({}, '', url.pathname + (url.search ? url.search : ''));
         }
+    }, []);
+
+    const openDetailDrawer = useCallback((f: FindingItem) => {
+        setDetailTarget(f);
+        setDetailActiveTab('action');
     }, []);
 
     // Auto-open finding in slide-over drawer if targeted via URL query (e.g. notification click)
@@ -938,34 +944,26 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                             </div>
                         </form>
                     ) : (
-                        /* SCENARIO B: Current Status Info & Quick Action */
-                        <div className="flex flex-col gap-3 rounded-xl border border-slate-200/80 bg-white p-3.5 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800 dark:bg-slate-800/60">
-                            <div className="flex items-start gap-3">
-                                <div className="mt-0.5 shrink-0">
+                        /* SCENARIO B: Current Status Info & Quick Action (Clean & Non-Redundant) */
+                        <div className="flex flex-col gap-3 rounded-xl border border-slate-200/80 bg-slate-50/70 p-3.5 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800 dark:bg-slate-800/40">
+                            <div className="flex min-w-0 items-center gap-2.5">
+                                <div className="shrink-0">
                                     {currentStatus === 'closed' ? (
-                                        <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                                        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                                     ) : currentStatus === 'resolved' ? (
-                                        <Clock className="text-primary dark:text-primary-300 h-5 w-5" />
+                                        <Clock className="text-primary dark:text-primary-300 h-4 w-4" />
                                     ) : (
-                                        <Info className="h-5 w-5 text-amber-500" />
+                                        <Info className="h-4 w-4 text-amber-500" />
                                     )}
                                 </div>
-                                <div className="min-w-0">
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <span className="text-xs font-bold text-slate-900 dark:text-white">{selectedStep.fullLabel}</span>
-                                        <StatusBadge tone={STATUS_TONE[currentStatus] ?? 'gray'}>
-                                            {STATUS_TEXT[currentStatus] ?? currentStatus}
-                                        </StatusBadge>
-                                    </div>
-                                    <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{selectedStep.desc}</p>
-                                </div>
+                                <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">{selectedStep.desc}</p>
                             </div>
 
                             {canUpdate ? (
                                 <button
                                     type="button"
                                     onClick={() => setShowNoteFormOnSameStatus(true)}
-                                    className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                                    className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-2xs transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                                 >
                                     <Edit3 className="h-3.5 w-3.5 text-slate-500" />
                                     <span>Catat Progres</span>
@@ -1016,7 +1014,7 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                                     <button
                                         key={f.id}
                                         type="button"
-                                        onClick={() => setDetailTarget(f)}
+                                        onClick={() => openDetailDrawer(f)}
                                         className="group hover:border-primary dark:hover:border-primary block w-full rounded-xl border border-slate-200/80 bg-white p-3.5 text-left shadow-2xs transition-all hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
                                     >
                                         <div className="flex items-center justify-between gap-2">
@@ -1149,7 +1147,7 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                                         <div className="flex items-center justify-end gap-2">
                                             <button
                                                 type="button"
-                                                onClick={() => setDetailTarget(f)}
+                                                onClick={() => openDetailDrawer(f)}
                                                 className="text-primary hover:text-primary-700 dark:text-primary-300 dark:hover:text-primary-200 inline-flex items-center gap-1 text-xs font-semibold"
                                             >
                                                 <Eye className="h-3.5 w-3.5" />
@@ -1352,15 +1350,35 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                 )}
             </div>
 
-            {/* Modal Tambah Temuan Baru (Admin Kepatuhan) */}
-            <Modal
+            {/* SlideOver Tambah Temuan Baru (Admin Kepatuhan) */}
+            <SlideOver
                 open={isCreateModalOpen}
                 title="Buat Temuan Audit Baru"
-                description="Terbitkan temuan ketidaksesuaian baru untuk ditindaklanjuti oleh PIC unit kerja."
+                subtitle="Terbitkan temuan ketidaksesuaian baru untuk ditindaklanjuti oleh PIC unit kerja."
                 onClose={() => setIsCreateModalOpen(false)}
                 maxWidth="xl"
+                footer={
+                    <div className="flex w-full items-center justify-end gap-2.5">
+                        <button
+                            type="button"
+                            onClick={() => setIsCreateModalOpen(false)}
+                            className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            type="submit"
+                            form="create-finding-form"
+                            disabled={createProcessing}
+                            className="bg-primary hover:bg-primary-700 inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-all disabled:opacity-50"
+                        >
+                            <Save className="h-4 w-4" />
+                            <span>{createProcessing ? 'Menerbitkan...' : 'Terbitkan Temuan'}</span>
+                        </button>
+                    </div>
+                }
             >
-                <form onSubmit={handleCreateFinding} className="space-y-4">
+                <form id="create-finding-form" onSubmit={handleCreateFinding} className="space-y-4 p-1">
                     <div>
                         <label className="mb-1 block text-xs font-bold text-slate-700 dark:text-slate-300">
                             Pilih Kontrol / Klausul SMKI <span className="text-rose-500">*</span>
@@ -1473,26 +1491,8 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                         />
                         {createErrors.catatan && <p className="mt-1 text-xs text-rose-500">{createErrors.catatan}</p>}
                     </div>
-
-                    <div className="flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4 dark:border-slate-800">
-                        <button
-                            type="button"
-                            onClick={() => setIsCreateModalOpen(false)}
-                            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
-                        >
-                            Batal
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={createProcessing}
-                            className="bg-primary hover:bg-primary-700 inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold text-white shadow-sm transition-all disabled:opacity-50"
-                        >
-                            <Save className="h-4 w-4" />
-                            <span>{createProcessing ? 'Menerbitkan...' : 'Terbitkan Temuan'}</span>
-                        </button>
-                    </div>
                 </form>
-            </Modal>
+            </SlideOver>
 
             {/* Detail Slide-Over Drawer with Review & Status Audit Trail */}
             <SlideOver
@@ -1518,7 +1518,7 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                 }
                 description={undefined}
                 onClose={closeDetailDrawer}
-                maxWidth="xl"
+                maxWidth="2xl"
                 footer={
                     <div className="flex w-full items-center justify-between">
                         {Boolean(detailTarget?.deleted_at) && canDelete && detailTarget ? (
@@ -1554,7 +1554,7 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                 }
             >
                 {detailTarget && (
-                    <div className="space-y-5">
+                    <div className="space-y-4">
                         {/* Soft-deleted Alert Banner */}
                         {Boolean(detailTarget.deleted_at) && (
                             <div className="flex flex-col justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-800 shadow-2xs sm:flex-row sm:items-center dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-200">
@@ -1582,205 +1582,317 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                             </div>
                         )}
 
-                        {/* Primary Context: Klausul, Framework, Severity, & Catatan Awal Temuan */}
-                        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <span className="border-primary-200 bg-primary-50 text-primary dark:border-primary-800 dark:bg-navy-900 dark:text-primary-200 inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-bold">
-                                        <Shield className="h-3.5 w-3.5" />
-                                        {detailTarget.control?.kode_klausul || 'Klausul SMKI'}
-                                    </span>
-                                    {detailTarget.control?.framework && (
-                                        <span className="rounded-lg bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                                            {detailTarget.control.framework.nama} ({detailTarget.control.framework.versi})
-                                        </span>
+                        {/* Navigation Tabs Bar */}
+                        <div className="flex items-center gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800/80">
+                            <button
+                                type="button"
+                                onClick={() => setDetailActiveTab('action')}
+                                className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold transition-all ${
+                                    detailActiveTab === 'action'
+                                        ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
+                                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                                }`}
+                            >
+                                <CheckCircle2 className="text-primary h-3.5 w-3.5" />
+                                <span>Tindak Lanjut &amp; Aksi</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setDetailActiveTab('history')}
+                                className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold transition-all ${
+                                    detailActiveTab === 'history'
+                                        ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
+                                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                                }`}
+                            >
+                                <History className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                                <span>Riwayat Status</span>
+                                <span
+                                    className={`py-0.2 rounded-full px-1.5 text-[10px] font-bold ${
+                                        detailActiveTab === 'history'
+                                            ? 'bg-primary/10 text-primary dark:bg-primary-950 dark:text-primary-300'
+                                            : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+                                    }`}
+                                >
+                                    {detailTarget.histories?.length || 0}
+                                </span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setDetailActiveTab('control')}
+                                className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold transition-all ${
+                                    detailActiveTab === 'control'
+                                        ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
+                                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                                }`}
+                            >
+                                <Shield className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                                <span>Klausul Kontrol</span>
+                            </button>
+                        </div>
+
+                        {/* TAB 1: Tindak Lanjut & Aksi */}
+                        {detailActiveTab === 'action' && (
+                            <div className="space-y-4">
+                                {/* Compact Context Summary Card */}
+                                <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
+                                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 dark:border-slate-800">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <span className="border-primary-200 bg-primary-50 text-primary dark:border-primary-800 dark:bg-navy-900 dark:text-primary-200 inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-bold">
+                                                <Shield className="h-3.5 w-3.5" />
+                                                {detailTarget.control?.kode_klausul || 'Klausul SMKI'}
+                                            </span>
+                                            {detailTarget.control?.framework && (
+                                                <span className="rounded-lg bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                                                    {detailTarget.control.framework.nama} ({detailTarget.control.framework.versi})
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <StatusBadge tone={SEVERITY_TONE[detailTarget.kategori] ?? 'gray'}>
+                                                {severityLabel(detailTarget.kategori)}
+                                            </StatusBadge>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-3">
+                                        <h3 className="text-sm leading-relaxed font-bold text-slate-900 dark:text-white">
+                                            {detailTarget.control?.judul || '—'}
+                                        </h3>
+                                    </div>
+
+                                    {/* 2-Column Key-Value Row for Unit/PIC and SLA */}
+                                    <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                        <div className="flex items-center gap-2.5 rounded-xl border border-slate-100 bg-slate-50/70 p-3 text-xs dark:border-slate-800 dark:bg-slate-800/40">
+                                            <Building2 className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                                            <div className="min-w-0 flex-1">
+                                                <span className="block text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                                                    Unit Kerja &amp; PIC
+                                                </span>
+                                                <p className="truncate font-semibold text-slate-800 dark:text-slate-200">
+                                                    {detailTarget.unit?.nama || '—'}
+                                                </p>
+                                                <p className="flex items-center gap-1 truncate text-[11px] text-slate-500 dark:text-slate-400">
+                                                    <UserCheck className="h-3 w-3 shrink-0 text-slate-400" />
+                                                    <span>PIC: {detailTarget.pic?.name || 'Belum ditugaskan'}</span>
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-2.5 rounded-xl border border-slate-100 bg-slate-50/70 p-3 text-xs dark:border-slate-800 dark:bg-slate-800/40">
+                                            <Calendar className="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
+                                            <div className="min-w-0 flex-1">
+                                                <span className="block text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                                                    Batas Waktu SLA
+                                                </span>
+                                                <p className="font-semibold text-slate-800 dark:text-slate-200">
+                                                    {detailTarget.deadline ? formatDateIndonesian(detailTarget.deadline) : 'Tidak ditentukan'}
+                                                </p>
+                                                <div className="mt-1">{deadlineChip(detailTarget)}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Catatan Awal Temuan */}
+                                    {(detailTarget.admin_notes || detailTarget.catatan_admin) && (
+                                        <div className="mt-3 rounded-xl border border-amber-200/90 bg-amber-50/60 p-3 text-xs dark:border-amber-900/50 dark:bg-amber-950/20">
+                                            <div className="flex items-center gap-1.5 font-bold text-amber-900 dark:text-amber-300">
+                                                <FileText className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                                                <span>Catatan Awal Temuan</span>
+                                            </div>
+                                            <p className="mt-1 leading-relaxed whitespace-pre-line text-slate-700 dark:text-slate-300">
+                                                {detailTarget.admin_notes || detailTarget.catatan_admin}
+                                            </p>
+                                        </div>
                                     )}
                                 </div>
-                                <StatusBadge tone={SEVERITY_TONE[detailTarget.kategori] ?? 'gray'}>
-                                    {severityLabel(detailTarget.kategori)}
-                                </StatusBadge>
-                            </div>
 
-                            <div className="mt-2">
-                                <h3 className="text-sm leading-relaxed font-bold text-slate-900 dark:text-white">
-                                    {detailTarget.control?.judul || '—'}
-                                </h3>
-                                {detailTarget.control?.deskripsi && (
-                                    <p className="mt-1 line-clamp-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                                        {detailTarget.control.deskripsi}
-                                    </p>
+                                {/* Status & Alur Tindak Lanjut (Workflow Hub) */}
+                                {renderStatusWorkflowHub(detailTarget)}
+
+                                {/* Hint Shortcut to History Tab */}
+                                {detailTarget.histories && detailTarget.histories.length > 0 && (
+                                    <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200/80 bg-white p-3 text-xs shadow-2xs dark:border-slate-800 dark:bg-slate-900">
+                                        <div className="flex min-w-0 items-center gap-2 text-slate-500 dark:text-slate-400">
+                                            <History className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                                            <span className="truncate">
+                                                Aktivitas terakhir oleh{' '}
+                                                <strong className="text-slate-800 dark:text-slate-200">
+                                                    {detailTarget.histories[detailTarget.histories.length - 1]?.user?.name || 'Sistem SMKI'}
+                                                </strong>{' '}
+                                                ({formatDateTimeIndonesian(detailTarget.histories[detailTarget.histories.length - 1]?.created_at)})
+                                            </span>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setDetailActiveTab('history')}
+                                            className="text-primary hover:text-primary-700 dark:text-primary-300 inline-flex shrink-0 items-center gap-1 font-semibold"
+                                        >
+                                            <span>Lihat Riwayat ({detailTarget.histories.length})</span>
+                                            <ArrowRight className="h-3 w-3" />
+                                        </button>
+                                    </div>
                                 )}
                             </div>
+                        )}
 
-                            {/* Catatan Awal Temuan (Auditor / Admin) - placed prominently near the top */}
-                            {(detailTarget.admin_notes || detailTarget.catatan_admin) && (
-                                <div className="mt-3.5 rounded-xl border border-amber-200/90 bg-amber-50/60 p-3.5 dark:border-amber-900/50 dark:bg-amber-950/20">
-                                    <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900 dark:text-amber-300">
-                                        <FileText className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                                        <span>Catatan Awal Temuan</span>
-                                    </div>
-                                    <p className="mt-1.5 text-xs leading-relaxed whitespace-pre-line text-slate-700 dark:text-slate-300">
-                                        {detailTarget.admin_notes || detailTarget.catatan_admin}
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Informasi Penugasan Unit & Batas Waktu SLA */}
-                        {/* Informasi Penugasan Unit & Batas Waktu SLA (Unified Card) */}
-                        <div className="divide-y divide-slate-100 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
-                            {/* Row 1: Unit Kerja & PIC */}
-                            <div className="flex items-center justify-between gap-3 pb-3.5">
-                                <div className="flex min-w-0 items-center gap-3">
-                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
-                                        <Building2 className="h-5 w-5" />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase dark:text-slate-500">
-                                            Unit Kerja Terkait
+                        {/* TAB 2: Riwayat Status & Audit Trail */}
+                        {detailActiveTab === 'history' && (
+                            <div className="space-y-4">
+                                <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
+                                    <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
+                                        <div className="flex items-center gap-2 text-xs font-bold tracking-wider text-slate-800 uppercase dark:text-slate-200">
+                                            <History className="text-primary dark:text-primary-300 h-4 w-4" />
+                                            <span>Catatan Tindak Lanjut &amp; Riwayat Status</span>
+                                        </div>
+                                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                                            {detailTarget.histories?.length || 0} Entri
                                         </span>
-                                        <p className="truncate text-sm font-bold text-slate-900 dark:text-white">{detailTarget.unit?.nama || '—'}</p>
                                     </div>
-                                </div>
-                                <div className="flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200/80 bg-slate-50 px-2.5 py-1 text-xs dark:border-slate-700 dark:bg-slate-800">
-                                    <UserCheck className="h-3.5 w-3.5 text-slate-400" />
-                                    <span className="text-[11px] text-slate-400">PIC:</span>
-                                    <span className="font-semibold text-slate-700 dark:text-slate-200">
-                                        {detailTarget.pic?.name || 'Belum ditugaskan'}
-                                    </span>
-                                </div>
-                            </div>
 
-                            {/* Row 2: Target Batas SLA */}
-                            <div className="flex items-center justify-between gap-3 pt-3.5">
-                                <div className="flex min-w-0 items-center gap-3">
-                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
-                                        <Calendar className="h-5 w-5" />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase dark:text-slate-500">
-                                            Target Batas SLA
-                                        </span>
-                                        <p className="text-sm font-bold text-slate-900 dark:text-white">
-                                            {detailTarget.deadline ? formatDateIndonesian(detailTarget.deadline) : 'Tidak ditentukan'}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="shrink-0">{deadlineChip(detailTarget)}</div>
-                            </div>
-                        </div>
+                                    <div className="space-y-4 pt-3">
+                                        {detailTarget.histories && detailTarget.histories.length > 0 ? (
+                                            <div className="relative space-y-4 pl-6 before:absolute before:top-2 before:bottom-2 before:left-2.5 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800">
+                                                {detailTarget.histories.map((hist, hIdx) => {
+                                                    const isInitial = hist.from_status === null;
+                                                    const isBackward =
+                                                        hist.from_status &&
+                                                        STEPS.findIndex((s) => s.id === hist.from_status) >
+                                                            STEPS.findIndex((s) => s.id === hist.to_status);
 
-                        {/* Riwayat Perubahan Status (Status Audit Trail Timeline) — shown above the status update UI */}
-                        <div className="space-y-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
-                            <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
-                                <div className="flex items-center gap-2 text-xs font-bold tracking-wider text-slate-800 uppercase dark:text-slate-200">
-                                    <History className="text-primary dark:text-primary-300 h-4 w-4" />
-                                    <span>Catatan Tindak Lanjut &amp; Riwayat Status</span>
-                                </div>
-                                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                                    {detailTarget.histories?.length || 0} Entri
-                                </span>
-                            </div>
-
-                            <div className="space-y-4 pt-1">
-                                {detailTarget.histories && detailTarget.histories.length > 0 ? (
-                                    <div className="relative space-y-4 pl-6 before:absolute before:top-2 before:bottom-2 before:left-2.5 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800">
-                                        {detailTarget.histories.map((hist, hIdx) => {
-                                            const isInitial = hist.from_status === null;
-                                            const isBackward =
-                                                hist.from_status &&
-                                                STEPS.findIndex((s) => s.id === hist.from_status) > STEPS.findIndex((s) => s.id === hist.to_status);
-
-                                            return (
-                                                <div key={hist.id || hIdx} className="group relative">
-                                                    {/* Timeline Bullet */}
-                                                    <div
-                                                        className={`absolute top-1 -left-6 grid h-5 w-5 place-items-center rounded-full border-2 bg-white dark:bg-slate-900 ${
-                                                            isInitial
-                                                                ? 'border-blue-500 text-blue-500'
-                                                                : isBackward
-                                                                  ? 'border-rose-500 text-rose-500'
-                                                                  : 'border-emerald-500 text-emerald-500'
-                                                        }`}
-                                                    >
-                                                        {isBackward ? (
-                                                            <RotateCcw className="h-2.5 w-2.5" />
-                                                        ) : (
-                                                            <div className="h-1.5 w-1.5 rounded-full bg-current" />
-                                                        )}
-                                                    </div>
-
-                                                    <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3 text-xs dark:border-slate-800/80 dark:bg-slate-800/40">
-                                                        <div className="flex flex-wrap items-center justify-between gap-1.5 pb-1.5">
-                                                            <div className="flex items-center gap-1.5">
-                                                                <span className="font-bold text-slate-900 dark:text-white">
-                                                                    {hist.user?.name || 'Sistem SMKI'}
-                                                                </span>
-                                                                <span className="rounded bg-slate-200/80 px-1.5 py-0.5 text-[10px] font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-300">
-                                                                    {getRoleName(hist.user?.role)}
-                                                                </span>
+                                                    return (
+                                                        <div key={hist.id || hIdx} className="group relative">
+                                                            {/* Timeline Bullet */}
+                                                            <div
+                                                                className={`absolute top-1 -left-6 grid h-5 w-5 place-items-center rounded-full border-2 bg-white dark:bg-slate-900 ${
+                                                                    isInitial
+                                                                        ? 'border-blue-500 text-blue-500'
+                                                                        : isBackward
+                                                                          ? 'border-rose-500 text-rose-500'
+                                                                          : 'border-emerald-500 text-emerald-500'
+                                                                }`}
+                                                            >
+                                                                {isBackward ? (
+                                                                    <RotateCcw className="h-2.5 w-2.5" />
+                                                                ) : (
+                                                                    <div className="h-1.5 w-1.5 rounded-full bg-current" />
+                                                                )}
                                                             </div>
-                                                            <span className="text-[10px] text-slate-400 dark:text-slate-500">
-                                                                {formatDateTimeIndonesian(hist.created_at)}
-                                                            </span>
-                                                        </div>
 
-                                                        {/* Transition Pill */}
-                                                        <div className="my-1.5 flex items-center gap-1.5">
-                                                            {isInitial ? (
-                                                                <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-[11px] font-bold text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">
-                                                                    Dibuat Awal → {STATUS_TEXT[hist.to_status] || hist.to_status}
-                                                                </span>
-                                                            ) : (
-                                                                <div className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-bold text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
-                                                                    <span>{STATUS_TEXT[hist.from_status || ''] || hist.from_status}</span>
-                                                                    <ArrowRight className="h-3 w-3 text-slate-400" />
-                                                                    <span
-                                                                        className={
-                                                                            isBackward
-                                                                                ? 'text-rose-600 dark:text-rose-400'
-                                                                                : 'text-emerald-600 dark:text-emerald-400'
-                                                                        }
-                                                                    >
-                                                                        {STATUS_TEXT[hist.to_status] || hist.to_status}
-                                                                    </span>
-                                                                    {isBackward && (
-                                                                        <span className="ml-1 rounded bg-rose-100 px-1 text-[9px] text-rose-700 dark:bg-rose-950 dark:text-rose-300">
-                                                                            Kembali
+                                                            <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3 text-xs dark:border-slate-800/80 dark:bg-slate-800/40">
+                                                                <div className="flex flex-wrap items-center justify-between gap-1.5 pb-1.5">
+                                                                    <div className="flex items-center gap-1.5">
+                                                                        <span className="font-bold text-slate-900 dark:text-white">
+                                                                            {hist.user?.name || 'Sistem SMKI'}
                                                                         </span>
+                                                                        <span className="rounded bg-slate-200/80 px-1.5 py-0.5 text-[10px] font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-300">
+                                                                            {getRoleName(hist.user?.role)}
+                                                                        </span>
+                                                                    </div>
+                                                                    <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                                                                        {formatDateTimeIndonesian(hist.created_at)}
+                                                                    </span>
+                                                                </div>
+
+                                                                {/* Transition Pill */}
+                                                                <div className="my-1.5 flex items-center gap-1.5">
+                                                                    {isInitial ? (
+                                                                        <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-[11px] font-bold text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">
+                                                                            Dibuat Awal → {STATUS_TEXT[hist.to_status] || hist.to_status}
+                                                                        </span>
+                                                                    ) : (
+                                                                        <div className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-bold text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+                                                                            <span>{STATUS_TEXT[hist.from_status || ''] || hist.from_status}</span>
+                                                                            <ArrowRight className="h-3 w-3 text-slate-400" />
+                                                                            <span
+                                                                                className={
+                                                                                    isBackward
+                                                                                        ? 'text-rose-600 dark:text-rose-400'
+                                                                                        : 'text-emerald-600 dark:text-emerald-400'
+                                                                                }
+                                                                            >
+                                                                                {STATUS_TEXT[hist.to_status] || hist.to_status}
+                                                                            </span>
+                                                                            {isBackward && (
+                                                                                <span className="ml-1 rounded bg-rose-100 px-1 text-[9px] text-rose-700 dark:bg-rose-950 dark:text-rose-300">
+                                                                                    Kembali
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
                                                                     )}
                                                                 </div>
-                                                            )}
-                                                        </div>
 
-                                                        {/* Notes Content */}
-                                                        <div className="mt-2 rounded-lg bg-white p-2.5 text-xs leading-relaxed text-slate-700 shadow-2xs dark:bg-slate-900/80 dark:text-slate-300">
-                                                            <div className="flex items-start gap-1.5">
-                                                                <MessageSquare className="mt-0.5 h-3 w-3 shrink-0 text-slate-400" />
-                                                                <p className="italic">"{hist.catatan}"</p>
+                                                                {/* Notes Content */}
+                                                                <div className="mt-2 rounded-lg bg-white p-2.5 text-xs leading-relaxed text-slate-700 shadow-2xs dark:bg-slate-900/80 dark:text-slate-300">
+                                                                    <div className="flex items-start gap-1.5">
+                                                                        <MessageSquare className="mt-0.5 h-3 w-3 shrink-0 text-slate-400" />
+                                                                        <p className="italic">"{hist.catatan}"</p>
+                                                                    </div>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
+                                                    );
+                                                })}
+                                            </div>
+                                        ) : (
+                                            <EmptyState message="Belum ada catatan tindak lanjut atau riwayat status tercatat." />
+                                        )}
                                     </div>
-                                ) : (
-                                    <div className="rounded-xl border border-dashed border-slate-200 p-4 text-center text-xs text-slate-400 dark:border-slate-800 dark:text-slate-500">
-                                        Belum ada catatan tindak lanjut atau riwayat status tercatat.
-                                    </div>
-                                )}
+                                </div>
+
+                                {/* Audit Metadata */}
+                                <div className="flex items-center justify-between border-t border-slate-100 px-1 pt-3 text-[11px] text-slate-400 dark:border-slate-800">
+                                    <span>Dibuat: {detailTarget.created_at ? formatDateTimeIndonesian(detailTarget.created_at) : '—'}</span>
+                                    {detailTarget.verified_at && <span>Diverifikasi: {formatDateTimeIndonesian(detailTarget.verified_at)}</span>}
+                                </div>
                             </div>
-                        </div>
+                        )}
 
-                        {/* Status & Alur Tindak Lanjut (Unified Interactive Stepper Hub) */}
-                        {renderStatusWorkflowHub(detailTarget)}
+                        {/* TAB 3: Klausul Kontrol */}
+                        {detailActiveTab === 'control' && (
+                            <div className="space-y-4">
+                                <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <span className="border-primary-200 bg-primary-50 text-primary dark:border-primary-800 dark:bg-navy-900 dark:text-primary-200 inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-bold">
+                                            <Shield className="h-3.5 w-3.5" />
+                                            {detailTarget.control?.kode_klausul || 'Klausul SMKI'}
+                                        </span>
+                                        {detailTarget.control?.framework && (
+                                            <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                                                {detailTarget.control.framework.nama} ({detailTarget.control.framework.versi})
+                                            </span>
+                                        )}
+                                    </div>
 
-                        {/* Audit Metadata Timeline */}
-                        <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-[11px] text-slate-400 dark:border-slate-800">
-                            <span>Dibuat: {detailTarget.created_at ? formatDateTimeIndonesian(detailTarget.created_at) : '—'}</span>
-                            {detailTarget.verified_at && <span>Diverifikasi: {formatDateTimeIndonesian(detailTarget.verified_at)}</span>}
-                        </div>
+                                    <div className="mt-3">
+                                        <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Judul Kontrol</span>
+                                        <h3 className="mt-1 text-base font-bold text-slate-900 dark:text-white">
+                                            {detailTarget.control?.judul || '—'}
+                                        </h3>
+                                    </div>
+
+                                    <div className="mt-4 border-t border-slate-100 pt-4 dark:border-slate-800">
+                                        <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                                            Deskripsi &amp; Panduan Implementasi Kontrol
+                                        </span>
+                                        <div className="mt-2 rounded-xl border border-slate-100 bg-slate-50/70 p-4 text-xs leading-relaxed whitespace-pre-line text-slate-700 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-300">
+                                            {detailTarget.control?.deskripsi || 'Tidak ada deskripsi rinci untuk kontrol kepatuhan ini.'}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end">
+                                    <button
+                                        type="button"
+                                        onClick={() => setDetailActiveTab('action')}
+                                        className="text-primary hover:text-primary-700 dark:text-primary-300 inline-flex items-center gap-1.5 text-xs font-semibold"
+                                    >
+                                        <span>Kembali ke Tindak Lanjut &amp; Aksi</span>
+                                        <ArrowRight className="h-3.5 w-3.5" />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
             </SlideOver>

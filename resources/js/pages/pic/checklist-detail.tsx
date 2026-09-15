@@ -682,16 +682,11 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
                             Sebelumnya
                         </button>
 
-                        <div className="flex flex-col items-center gap-1">
-                            <span className="text-xs font-medium text-slate-500">
+                        <div className="flex flex-col items-center gap-0.5">
+                            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
                                 Halaman {currentPageIndex + 1} dari {pageMeta.length}
                             </span>
-                            {currentPageMeta && (
-                                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                                    {currentPageMeta.framework_name} &bull; {formatKategori(currentPageMeta.kategori)}
-                                </span>
-                            )}
-                            {currentPageMeta && <span className="text-[11px] text-slate-400">{currentPageMeta.entry_count} kontrol</span>}
+                            <span className="text-xs text-slate-400">Navigasi per kategori</span>
                         </div>
 
                         <button
