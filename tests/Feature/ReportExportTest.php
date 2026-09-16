@@ -172,9 +172,9 @@ class ReportExportTest extends TestCase
         Finding::factory()->create(['control_id' => $this->control->id, 'unit_id' => $otherUnit->id, 'status' => Finding::STATUS_OPEN]);
         Finding::factory()->create(['control_id' => $this->control->id, 'unit_id' => $this->unit->id, 'status' => Finding::STATUS_CLOSED]);
 
-        Risk::factory()->create(['control_id' => $this->control->id, 'level_risiko' => Risk::LEVEL_HIGH]);
-        Risk::factory()->create(['control_id' => $otherControl->id, 'level_risiko' => Risk::LEVEL_CRITICAL]);
-        Risk::factory()->create(['control_id' => $otherControl->id, 'level_risiko' => Risk::LEVEL_LOW]);
+        Risk::factory()->withControl($this->control)->create(['level_risiko' => Risk::LEVEL_HIGH]);
+        Risk::factory()->withControl($otherControl)->create(['level_risiko' => Risk::LEVEL_CRITICAL]);
+        Risk::factory()->withControl($otherControl)->create(['level_risiko' => Risk::LEVEL_LOW]);
 
         ChecklistEntry::factory()->create(['control_id' => $this->control->id, 'unit_id' => $this->unit->id, 'status' => ChecklistEntry::STATUS_COMPLIANT]);
         ChecklistEntry::factory()->create(['control_id' => $otherControl->id, 'unit_id' => $otherUnit->id, 'status' => ChecklistEntry::STATUS_COMPLIANT]);

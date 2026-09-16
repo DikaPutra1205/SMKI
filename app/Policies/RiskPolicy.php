@@ -18,7 +18,9 @@ class RiskPolicy
         }
 
         if ($user->unit_id !== null) {
-            return $risk->control?->checklistEntries()->where('unit_id', $user->unit_id)->exists() ?? false;
+            return $risk->controls()
+                ->whereHas('checklistEntries', fn ($q) => $q->where('unit_id', $user->unit_id))
+                ->exists();
         }
 
         return true;

@@ -20,12 +20,12 @@ class RiskController extends Controller
         Gate::authorize('viewAny', Risk::class);
 
         $user = $request->user();
-        $query = Risk::with(['control.framework', 'unit']);
+        $query = Risk::with(['controls.framework', 'unit']);
 
         if ($user->isPic()) {
             $query->where(function ($q) use ($user) {
                 $q->where('unit_id', $user->unit_id)
-                    ->orWhereHas('control.checklistEntries', fn ($cq) => $cq->where('unit_id', $user->unit_id));
+                    ->orWhereHas('controls.checklistEntries', fn ($cq) => $cq->where('unit_id', $user->unit_id));
             });
         } elseif ($request->filled('unit_id')) {
             $query->where('unit_id', $request->unit_id);
@@ -66,16 +66,22 @@ class RiskController extends Controller
             $data['catatan_admin'] = $data['admin_notes'];
         }
 
-        $risk = Risk::create($data);
+        $controlIds = $data['control_ids'] ?? [];
 
-        return $this->created($risk->load(['control.framework', 'unit']));
+        $risk = Risk::create(collect($data)->except(['control_ids', 'risk_level', 'risk_owner', 'mitigation_plan', 'admin_notes'])->toArray());
+
+        if (! empty($controlIds)) {
+            $risk->controls()->sync($controlIds);
+        }
+
+        return $this->created($risk->load(['controls.framework', 'unit']));
     }
 
     public function show(Risk $risk): JsonResponse
     {
         Gate::authorize('view', $risk);
 
-        return $this->success($risk->load(['control.framework', 'unit']));
+        return $this->success($risk->load(['controls.framework', 'unit']));
     }
 
     public function update(UpdateRiskRequest $request, Risk $risk): JsonResponse
@@ -96,6 +102,8 @@ class RiskController extends Controller
                 $data['unit_id']
             );
         }
+
+        $controlIds = $data['control_ids'] ?? null;
 
         $updateData = [];
         if (isset($data['risk_level'])) {
@@ -134,9 +142,16 @@ class RiskController extends Controller
             $updateData['catatan_admin'] = $data['catatan_admin'];
         }
 
-        $risk->update($updateData);
+        if (! empty($updateData)) {
+            $risk->update($updateData);
+        }
 
-        return $this->success($risk->fresh(['control.framework', 'unit']), 'Risiko berhasil diperbarui');
+        // Sync pivot jika control_ids disertakan di request
+        if ($controlIds !== null && is_array($controlIds) && ! empty($controlIds)) {
+            $risk->controls()->sync($controlIds);
+        }
+
+        return $this->success($risk->fresh(['controls.framework', 'unit']), 'Risiko berhasil diperbarui');
     }
 
     public function destroy(Risk $risk): JsonResponse

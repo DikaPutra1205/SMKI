@@ -15,13 +15,24 @@ class StoreRiskRequest extends FormRequest
         return $this->user()?->can('create', [Risk::class, $unitId ? (int) $unitId : null]) ?? false;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('control_id') && ! $this->has('control_ids')) {
+            $val = $this->input('control_id');
+            $this->merge([
+                'control_ids' => is_array($val) ? $val : [$val],
+            ]);
+        }
+    }
+
     /**
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
         return [
-            'control_id' => 'required|exists:controls,id',
+            'control_ids' => 'required|array|min:1',
+            'control_ids.*' => 'exists:controls,id',
             'unit_id' => 'nullable|exists:work_units,id',
             'level_risiko' => 'sometimes|required_without:risk_level|in:low,medium,high,critical',
             'risk_level' => 'sometimes|required_without:level_risiko|in:low,medium,high,critical',

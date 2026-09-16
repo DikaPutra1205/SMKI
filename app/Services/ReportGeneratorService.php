@@ -33,11 +33,11 @@ class ReportGeneratorService
         $unitComparisons = $this->analyticsService->getUnitComparisons($user);
 
         $findingsQuery = Finding::with(['control', 'unit']);
-        $risksQuery = Risk::with(['control']);
+        $risksQuery = Risk::with(['controls']);
 
         if ($scopedUnitId) {
             $findingsQuery->where('unit_id', $scopedUnitId);
-            $risksQuery->whereHas('control.checklistEntries', fn ($q) => $q->where('unit_id', $scopedUnitId));
+            $risksQuery->whereHas('controls.checklistEntries', fn ($q) => $q->where('unit_id', $scopedUnitId));
         }
 
         $openFindings = $findingsQuery->whereIn('status', [Finding::STATUS_OPEN, Finding::STATUS_IN_PROGRESS])->count();

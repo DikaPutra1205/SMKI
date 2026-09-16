@@ -773,16 +773,14 @@ class ComplianceOfficerTest extends TestCase
 
     public function test_admin_can_list_risks_with_english_aliases_and_filters(): void
     {
-        $high = Risk::factory()->create([
-            'control_id' => $this->control->id,
+        $high = Risk::factory()->withControl($this->control)->create([
             'level_risiko' => Risk::LEVEL_HIGH,
             'pemilik_risiko' => 'Budi Santoso',
             'rencana_mitigasi' => 'Pasang WAF dan 2FA',
             'status' => Risk::STATUS_OPEN,
         ]);
 
-        Risk::factory()->create([
-            'control_id' => $this->control->id,
+        Risk::factory()->withControl($this->control)->create([
             'level_risiko' => Risk::LEVEL_LOW,
             'pemilik_risiko' => 'Siti Aminah',
             'status' => Risk::STATUS_MITIGATED,
@@ -802,14 +800,12 @@ class ComplianceOfficerTest extends TestCase
 
     public function test_risks_can_be_filtered_by_level_risiko_alias_and_status(): void
     {
-        $critical = Risk::factory()->create([
-            'control_id' => $this->control->id,
+        $critical = Risk::factory()->withControl($this->control)->create([
             'level_risiko' => Risk::LEVEL_CRITICAL,
             'status' => Risk::STATUS_OPEN,
         ]);
 
-        Risk::factory()->create([
-            'control_id' => $this->control->id,
+        Risk::factory()->withControl($this->control)->create([
             'level_risiko' => Risk::LEVEL_CRITICAL,
             'status' => Risk::STATUS_ACCEPTED,
         ]);
@@ -825,13 +821,11 @@ class ComplianceOfficerTest extends TestCase
 
     public function test_risks_can_be_searched_by_owner_or_mitigation_plan(): void
     {
-        $match = Risk::factory()->create([
-            'control_id' => $this->control->id,
+        $match = Risk::factory()->withControl($this->control)->create([
             'rencana_mitigasi' => 'Audit keamanan SIKEJAR mendatang',
         ]);
 
-        Risk::factory()->create([
-            'control_id' => $this->control->id,
+        Risk::factory()->withControl($this->control)->create([
             'rencana_mitigasi' => 'Pelatihan karyawan umum',
         ]);
 
@@ -850,8 +844,7 @@ class ComplianceOfficerTest extends TestCase
             'control_id' => $this->control->id,
             'unit_id' => $this->unitA->id,
         ]);
-        $riskA = Risk::factory()->create([
-            'control_id' => $this->control->id,
+        $riskA = Risk::factory()->withControl($this->control)->create([
             'level_risiko' => Risk::LEVEL_HIGH,
         ]);
 
@@ -863,8 +856,7 @@ class ComplianceOfficerTest extends TestCase
             'control_id' => $controlB->id,
             'unit_id' => $this->unitB->id,
         ]);
-        $riskB = Risk::factory()->create([
-            'control_id' => $controlB->id,
+        $riskB = Risk::factory()->withControl($controlB)->create([
             'level_risiko' => Risk::LEVEL_LOW,
         ]);
 
@@ -884,8 +876,7 @@ class ComplianceOfficerTest extends TestCase
             'control_id' => $this->control->id,
             'unit_id' => $this->unitA->id,
         ]);
-        Risk::factory()->create([
-            'control_id' => $this->control->id,
+        Risk::factory()->withControl($this->control)->create([
             'level_risiko' => Risk::LEVEL_CRITICAL,
         ]);
 
@@ -897,8 +888,7 @@ class ComplianceOfficerTest extends TestCase
             'control_id' => $controlB->id,
             'unit_id' => $this->unitB->id,
         ]);
-        Risk::factory()->create([
-            'control_id' => $controlB->id,
+        Risk::factory()->withControl($controlB)->create([
             'level_risiko' => Risk::LEVEL_HIGH,
         ]);
 
@@ -920,8 +910,7 @@ class ComplianceOfficerTest extends TestCase
 
     public function test_show_risk_returns_formatted_resource(): void
     {
-        $risk = Risk::factory()->create([
-            'control_id' => $this->control->id,
+        $risk = Risk::factory()->withControl($this->control)->create([
             'level_risiko' => Risk::LEVEL_MEDIUM,
             'pemilik_risiko' => 'Tim IT',
             'rencana_mitigasi' => 'Backup rutin',
@@ -946,8 +935,7 @@ class ComplianceOfficerTest extends TestCase
 
     public function test_admin_can_update_risk_level_and_owner(): void
     {
-        $risk = Risk::factory()->create([
-            'control_id' => $this->control->id,
+        $risk = Risk::factory()->withControl($this->control)->create([
             'level_risiko' => Risk::LEVEL_LOW,
         ]);
 
@@ -971,9 +959,7 @@ class ComplianceOfficerTest extends TestCase
 
     public function test_update_risk_rejects_invalid_level_and_status(): void
     {
-        $risk = Risk::factory()->create([
-            'control_id' => $this->control->id,
-        ]);
+        $risk = Risk::factory()->withControl($this->control)->create();
 
         $this->actingAs($this->admin)->putJson("/api/v1/compliance-officer/risks/{$risk->id}", [
             'risk_level' => 'extreme',
@@ -1100,8 +1086,7 @@ class ComplianceOfficerTest extends TestCase
     {
         $this->withoutVite();
 
-        Risk::factory()->create([
-            'control_id' => $this->control->id,
+        Risk::factory()->withControl($this->control)->create([
             'level_risiko' => Risk::LEVEL_HIGH,
         ]);
 
@@ -1147,8 +1132,7 @@ class ComplianceOfficerTest extends TestCase
 
     public function test_web_update_risk_redirects_back_with_flash(): void
     {
-        $risk = Risk::factory()->create([
-            'control_id' => $this->control->id,
+        $risk = Risk::factory()->withControl($this->control)->create([
             'level_risiko' => Risk::LEVEL_HIGH,
             'status' => Risk::STATUS_OPEN,
         ]);
@@ -1232,8 +1216,7 @@ class ComplianceOfficerTest extends TestCase
 
     public function test_update_risk_writes_single_audit_log_entry(): void
     {
-        $risk = Risk::factory()->create([
-            'control_id' => $this->control->id,
+        $risk = Risk::factory()->withControl($this->control)->create([
             'status' => Risk::STATUS_OPEN,
         ]);
 

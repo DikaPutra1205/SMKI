@@ -201,7 +201,7 @@ class DashboardAnalyticsService
         // 4. Risks Summary via SQL Aggregate
         $riskQuery = Risk::query();
         if ($scopedUnitId) {
-            $riskQuery->whereHas('control.checklistEntries', fn ($q) => $q->where('unit_id', $scopedUnitId));
+            $riskQuery->whereHas('controls.checklistEntries', fn ($q) => $q->where('unit_id', $scopedUnitId));
         }
         if ($cutoffDate) {
             $riskQuery->where('created_at', '>=', $cutoffDate);

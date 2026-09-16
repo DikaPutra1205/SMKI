@@ -70,7 +70,7 @@ class RiskManagementTest extends TestCase
     public function test_koordinator_or_admin_can_create_new_risk_with_custom_deadline(): void
     {
         $payload = [
-            'control_id' => $this->control->id,
+            'control_ids' => [$this->control->id],
             'unit_id' => $this->unitA->id,
             'level_risiko' => Risk::LEVEL_HIGH,
             'pemilik_risiko' => 'Koordinator Keamanan Sistem',
@@ -89,11 +89,14 @@ class RiskManagementTest extends TestCase
             ->assertJsonPath('data.admin_notes', 'Harap dikoordinasikan dengan PIC Satker.');
 
         $this->assertDatabaseHas('risks', [
-            'control_id' => $this->control->id,
             'unit_id' => $this->unitA->id,
             'level_risiko' => Risk::LEVEL_HIGH,
             'pemilik_risiko' => 'Koordinator Keamanan Sistem',
             'status' => Risk::STATUS_OPEN,
+        ]);
+
+        $this->assertDatabaseHas('control_risk', [
+            'control_id' => $this->control->id,
         ]);
 
         // Verify immutable audit log
@@ -106,8 +109,7 @@ class RiskManagementTest extends TestCase
 
     public function test_pic_and_admin_can_update_risk_status_and_admin_notes_iteratively(): void
     {
-        $risk = Risk::factory()->create([
-            'control_id' => $this->control->id,
+        $risk = Risk::factory()->withControl($this->control)->create([
             'unit_id' => $this->unitA->id,
             'level_risiko' => Risk::LEVEL_CRITICAL,
             'pemilik_risiko' => 'Tim Infrastruktur',
@@ -149,15 +151,13 @@ class RiskManagementTest extends TestCase
 
     public function test_risk_overdue_and_days_remaining_calculation(): void
     {
-        $overdueRisk = Risk::factory()->create([
-            'control_id' => $this->control->id,
+        $overdueRisk = Risk::factory()->withControl($this->control)->create([
             'unit_id' => $this->unitA->id,
             'status' => Risk::STATUS_OPEN,
             'deadline' => now()->subDays(4)->toDateString(),
         ]);
 
-        $futureRisk = Risk::factory()->create([
-            'control_id' => $this->control->id,
+        $futureRisk = Risk::factory()->withControl($this->control)->create([
             'unit_id' => $this->unitA->id,
             'status' => Risk::STATUS_OPEN,
             'deadline' => now()->addDays(5)->toDateString(),
@@ -179,8 +179,7 @@ class RiskManagementTest extends TestCase
 
     public function test_pic_cannot_update_other_unit_risk(): void
     {
-        $otherUnitRisk = Risk::factory()->create([
-            'control_id' => $this->control->id,
+        $otherUnitRisk = Risk::factory()->withControl($this->control)->create([
             'unit_id' => $this->unitB->id,
             'status' => Risk::STATUS_OPEN,
         ]);
@@ -194,14 +193,12 @@ class RiskManagementTest extends TestCase
 
     public function test_generic_risk_controller_enforces_unit_scoping_for_pic(): void
     {
-        $riskA = Risk::factory()->create([
-            'control_id' => $this->control->id,
+        $riskA = Risk::factory()->withControl($this->control)->create([
             'unit_id' => $this->unitA->id,
             'pemilik_risiko' => 'Owner Unit A',
         ]);
 
-        $riskB = Risk::factory()->create([
-            'control_id' => $this->control->id,
+        $riskB = Risk::factory()->withControl($this->control)->create([
             'unit_id' => $this->unitB->id,
             'pemilik_risiko' => 'Owner Unit B',
         ]);
@@ -217,8 +214,7 @@ class RiskManagementTest extends TestCase
 
     public function test_generic_risk_controller_prevents_pic_from_modifying_other_unit_risk(): void
     {
-        $riskB = Risk::factory()->create([
-            'control_id' => $this->control->id,
+        $riskB = Risk::factory()->withControl($this->control)->create([
             'unit_id' => $this->unitB->id,
             'status' => Risk::STATUS_OPEN,
         ]);
@@ -243,8 +239,7 @@ class RiskManagementTest extends TestCase
             'unit_id' => $this->unitA->id,
         ]);
 
-        $risk = Risk::factory()->create([
-            'control_id' => $this->control->id,
+        $risk = Risk::factory()->withControl($this->control)->create([
             'unit_id' => $this->unitA->id,
         ]);
 
@@ -255,8 +250,7 @@ class RiskManagementTest extends TestCase
 
     public function test_pic_cannot_view_other_unit_risk_via_compliance_officer_api(): void
     {
-        $riskB = Risk::factory()->create([
-            'control_id' => $this->control->id,
+        $riskB = Risk::factory()->withControl($this->control)->create([
             'unit_id' => $this->unitB->id,
             'status' => Risk::STATUS_OPEN,
         ]);
@@ -268,8 +262,7 @@ class RiskManagementTest extends TestCase
 
     public function test_pic_can_view_own_unit_risk_via_compliance_officer_api(): void
     {
-        $riskA = Risk::factory()->create([
-            'control_id' => $this->control->id,
+        $riskA = Risk::factory()->withControl($this->control)->create([
             'unit_id' => $this->unitA->id,
             'status' => Risk::STATUS_OPEN,
         ]);
@@ -283,8 +276,7 @@ class RiskManagementTest extends TestCase
 
     public function test_pic_can_update_own_unit_risk_via_generic_api(): void
     {
-        $riskA = Risk::factory()->create([
-            'control_id' => $this->control->id,
+        $riskA = Risk::factory()->withControl($this->control)->create([
             'unit_id' => $this->unitA->id,
             'status' => Risk::STATUS_OPEN,
         ]);
@@ -302,8 +294,7 @@ class RiskManagementTest extends TestCase
 
     public function test_pic_cannot_view_other_unit_risk_via_generic_api(): void
     {
-        $riskB = Risk::factory()->create([
-            'control_id' => $this->control->id,
+        $riskB = Risk::factory()->withControl($this->control)->create([
             'unit_id' => $this->unitB->id,
             'status' => Risk::STATUS_OPEN,
         ]);
@@ -316,8 +307,7 @@ class RiskManagementTest extends TestCase
     public function test_pic_cannot_modify_level_deadline_owner_or_admin_notes(): void
     {
         $originalDeadline = now()->addDays(10)->toDateString();
-        $risk = Risk::factory()->create([
-            'control_id' => $this->control->id,
+        $risk = Risk::factory()->withControl($this->control)->create([
             'unit_id' => $this->unitA->id,
             'level_risiko' => Risk::LEVEL_CRITICAL,
             'pemilik_risiko' => 'Original Owner',

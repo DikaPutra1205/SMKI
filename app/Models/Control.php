@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -54,9 +55,14 @@ class Control extends Model
         return $this->hasMany(Finding::class, 'control_id');
     }
 
-    public function risks(): HasMany
+    /**
+     * Risiko-risiko yang terkait dengan kontrol ini (many-to-many via pivot control_risk).
+     * Satu kontrol dapat digunakan untuk memitigasi lebih dari satu risiko sesuai PRD.
+     */
+    public function risks(): BelongsToMany
     {
-        return $this->hasMany(Risk::class, 'control_id');
+        return $this->belongsToMany(Risk::class, 'control_risk')
+            ->withTimestamps();
     }
 
     public function getFrameworkNameAttribute(): string

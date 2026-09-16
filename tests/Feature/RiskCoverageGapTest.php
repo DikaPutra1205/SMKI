@@ -43,7 +43,7 @@ class RiskCoverageGapTest extends TestCase
 
     public function test_anonymous_blocked_on_all_risk_routes(): void
     {
-        $risk = Risk::factory()->create(['control_id' => $this->control->id, 'unit_id' => $this->unitA->id]);
+        $risk = Risk::factory()->withControl($this->control)->create(['unit_id' => $this->unitA->id]);
 
         $this->getJson('/api/risks')->assertUnauthorized();
         $this->getJson("/api/risks/{$risk->id}")->assertUnauthorized();
@@ -58,30 +58,30 @@ class RiskCoverageGapTest extends TestCase
 
     public function test_store_risk_validation_rejects_bad_payload(): void
     {
-        // missing control_id → 422
+        // missing control_ids → 422
         $this->actingAs($this->admin)->postJson('/api/v1/compliance-officer/risks', [
             'unit_id' => $this->unitA->id,
             'level_risiko' => Risk::LEVEL_HIGH,
-        ])->assertUnprocessable()->assertJsonValidationErrors(['control_id']);
+        ])->assertUnprocessable()->assertJsonValidationErrors(['control_ids']);
 
         // invalid level_risiko → 422
         $this->actingAs($this->admin)->postJson('/api/v1/compliance-officer/risks', [
-            'control_id' => $this->control->id,
+            'control_ids' => [$this->control->id],
             'unit_id' => $this->unitA->id,
             'level_risiko' => 'extreme',
         ])->assertUnprocessable()->assertJsonValidationErrors(['level_risiko']);
 
-        // non-existent control_id → 422
+        // non-existent control in control_ids → 422
         $this->actingAs($this->admin)->postJson('/api/v1/compliance-officer/risks', [
-            'control_id' => 999999,
+            'control_ids' => [999999],
             'unit_id' => $this->unitA->id,
             'level_risiko' => Risk::LEVEL_LOW,
-        ])->assertUnprocessable()->assertJsonValidationErrors(['control_id']);
+        ])->assertUnprocessable()->assertJsonValidationErrors(['control_ids.0']);
     }
 
     public function test_update_risk_rejects_invalid_status(): void
     {
-        $risk = Risk::factory()->create(['control_id' => $this->control->id, 'unit_id' => $this->unitA->id]);
+        $risk = Risk::factory()->withControl($this->control)->create(['unit_id' => $this->unitA->id]);
 
         $this->actingAs($this->admin)->putJson("/api/v1/compliance-officer/risks/{$risk->id}", [
             'status' => 'bogus',
@@ -94,8 +94,7 @@ class RiskCoverageGapTest extends TestCase
 
     public function test_generic_risk_api_happy_paths(): void
     {
-        $risk = Risk::factory()->create([
-            'control_id' => $this->control->id,
+        $risk = Risk::factory()->withControl($this->control)->create([
             'unit_id' => $this->unitA->id,
             'level_risiko' => Risk::LEVEL_MEDIUM,
             'status' => Risk::STATUS_OPEN,
@@ -108,7 +107,7 @@ class RiskCoverageGapTest extends TestCase
             ->assertOk()->assertJsonPath('data.id', $risk->id);
 
         $this->actingAs($this->admin)->postJson('/api/risks', [
-            'control_id' => $this->control->id,
+            'control_ids' => [$this->control->id],
             'unit_id' => $this->unitA->id,
             'level_risiko' => Risk::LEVEL_LOW,
             'pemilik_risiko' => 'Owner API',
@@ -117,7 +116,7 @@ class RiskCoverageGapTest extends TestCase
 
     public function test_risk_matrix_shape(): void
     {
-        Risk::factory()->create(['control_id' => $this->control->id, 'unit_id' => $this->unitA->id, 'level_risiko' => Risk::LEVEL_HIGH, 'status' => Risk::STATUS_OPEN]);
+        Risk::factory()->withControl($this->control)->create(['unit_id' => $this->unitA->id, 'level_risiko' => Risk::LEVEL_HIGH, 'status' => Risk::STATUS_OPEN]);
 
         $this->actingAs($this->admin)->getJson('/api/v1/compliance-officer/risks/matrix')
             ->assertOk()
@@ -128,18 +127,18 @@ class RiskCoverageGapTest extends TestCase
     {
         // PIC loses create/delete entirely (own unit included)
         $this->actingAs($this->picA)->postJson('/api/risks', [
-            'control_id' => $this->control->id,
+            'control_ids' => [$this->control->id],
             'unit_id' => $this->unitA->id,
             'level_risiko' => Risk::LEVEL_HIGH,
             'pemilik_risiko' => 'PIC A',
         ])->assertForbidden();
 
-        $this->assertDatabaseMissing('risks', ['control_id' => $this->control->id]);
+        $this->assertDatabaseCount('risks', 0);
     }
 
     public function test_koordinator_can_delete_own_unit_risk(): void
     {
-        $risk = Risk::factory()->create(['control_id' => $this->control->id, 'unit_id' => $this->unitA->id]);
+        $risk = Risk::factory()->withControl($this->control)->create(['unit_id' => $this->unitA->id]);
 
         $this->actingAs($this->koordinator)->deleteJson("/api/risks/{$risk->id}")->assertOk();
         $this->assertSoftDeleted('risks', ['id' => $risk->id]);
@@ -147,7 +146,7 @@ class RiskCoverageGapTest extends TestCase
 
     public function test_soft_deleted_risk_hidden(): void
     {
-        $risk = Risk::factory()->create(['control_id' => $this->control->id, 'unit_id' => $this->unitA->id]);
+        $risk = Risk::factory()->withControl($this->control)->create(['unit_id' => $this->unitA->id]);
 
         $this->actingAs($this->admin)->deleteJson("/api/risks/{$risk->id}")->assertOk();
         $this->assertSoftDeleted('risks', ['id' => $risk->id]);
@@ -160,12 +159,12 @@ class RiskCoverageGapTest extends TestCase
 
     public function test_overdue_false_when_mitigated_or_accepted(): void
     {
-        $mitigated = Risk::factory()->create([
-            'control_id' => $this->control->id, 'unit_id' => $this->unitA->id,
+        $mitigated = Risk::factory()->withControl($this->control)->create([
+            'unit_id' => $this->unitA->id,
             'status' => Risk::STATUS_MITIGATED, 'deadline' => now()->subDays(5)->toDateString(),
         ]);
-        $accepted = Risk::factory()->create([
-            'control_id' => $this->control->id, 'unit_id' => $this->unitA->id,
+        $accepted = Risk::factory()->withControl($this->control)->create([
+            'unit_id' => $this->unitA->id,
             'status' => Risk::STATUS_ACCEPTED, 'deadline' => now()->subDays(5)->toDateString(),
         ]);
 
@@ -175,8 +174,8 @@ class RiskCoverageGapTest extends TestCase
 
     public function test_days_remaining_null_without_deadline(): void
     {
-        $risk = Risk::factory()->create([
-            'control_id' => $this->control->id, 'unit_id' => $this->unitA->id,
+        $risk = Risk::factory()->withControl($this->control)->create([
+            'unit_id' => $this->unitA->id,
             'status' => Risk::STATUS_OPEN, 'deadline' => null,
         ]);
 
@@ -197,7 +196,7 @@ class RiskCoverageGapTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->component('admin-kepatuhan/risks', false)->has('risks.data'));
 
         $this->actingAs($this->admin)->from('/admin/kepatuhan/risks')->post('/admin/kepatuhan/risks', [
-            'control_id' => $this->control->id,
+            'control_ids' => [$this->control->id],
             'unit_id' => $this->unitA->id,
             'level_risiko' => Risk::LEVEL_LOW,
             'pemilik_risiko' => 'Web Owner',

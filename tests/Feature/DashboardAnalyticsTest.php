@@ -116,8 +116,7 @@ class DashboardAnalyticsTest extends TestCase
             'deadline' => now()->subDays(2), // Overdue
         ]);
 
-        Risk::factory()->create([
-            'control_id' => $ctrl1->id,
+        Risk::factory()->withControl($ctrl1)->create([
             'level_risiko' => Risk::LEVEL_HIGH,
             'status' => Risk::STATUS_OPEN,
         ]);
@@ -563,10 +562,10 @@ class DashboardAnalyticsTest extends TestCase
     {
         $ctrl = Control::factory()->create(['framework_id' => $this->iso27001->id]);
 
-        Risk::factory()->create(['control_id' => $ctrl->id, 'level_risiko' => Risk::LEVEL_CRITICAL, 'status' => Risk::STATUS_OPEN]);
-        Risk::factory()->create(['control_id' => $ctrl->id, 'level_risiko' => Risk::LEVEL_HIGH, 'status' => Risk::STATUS_MITIGATED]);
-        Risk::factory()->create(['control_id' => $ctrl->id, 'level_risiko' => Risk::LEVEL_MEDIUM, 'status' => Risk::STATUS_ACCEPTED]);
-        Risk::factory()->create(['control_id' => $ctrl->id, 'level_risiko' => Risk::LEVEL_LOW, 'status' => Risk::STATUS_OPEN]);
+        Risk::factory()->withControl($ctrl)->create(['level_risiko' => Risk::LEVEL_CRITICAL, 'status' => Risk::STATUS_OPEN]);
+        Risk::factory()->withControl($ctrl)->create(['level_risiko' => Risk::LEVEL_HIGH, 'status' => Risk::STATUS_MITIGATED]);
+        Risk::factory()->withControl($ctrl)->create(['level_risiko' => Risk::LEVEL_MEDIUM, 'status' => Risk::STATUS_ACCEPTED]);
+        Risk::factory()->withControl($ctrl)->create(['level_risiko' => Risk::LEVEL_LOW, 'status' => Risk::STATUS_OPEN]);
 
         $response = $this->actingAs($this->admin)->getJson('/api/v1/dashboard/summary');
 
@@ -1139,16 +1138,14 @@ class DashboardAnalyticsTest extends TestCase
         $ctrl = Control::factory()->create(['framework_id' => $this->iso27001->id]);
 
         // Recent risk
-        Risk::factory()->create([
-            'control_id' => $ctrl->id,
+        Risk::factory()->withControl($ctrl)->create([
             'level_risiko' => Risk::LEVEL_CRITICAL,
             'status' => Risk::STATUS_OPEN,
             'created_at' => now()->subMonth(),
         ]);
 
         // Old risk
-        Risk::factory()->create([
-            'control_id' => $ctrl->id,
+        Risk::factory()->withControl($ctrl)->create([
             'level_risiko' => Risk::LEVEL_LOW,
             'status' => Risk::STATUS_OPEN,
             'created_at' => now()->subMonths(4),

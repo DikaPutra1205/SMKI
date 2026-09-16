@@ -286,12 +286,12 @@ class ComplianceOfficerService
     {
         $scopedUnitId = $this->resolveScopedUnitId($user, $filters['unit_id'] ?? null);
 
-        $query = Risk::with(['control.framework', 'unit:id,nama'])->orderByDesc('id');
+        $query = Risk::with(['controls.framework', 'unit:id,nama'])->orderByDesc('id');
 
         if ($scopedUnitId) {
             $query->where(function ($q) use ($scopedUnitId) {
                 $q->where('unit_id', $scopedUnitId)
-                    ->orWhereHas('control.checklistEntries', fn ($cq) => $cq->where('unit_id', $scopedUnitId));
+                    ->orWhereHas('controls.checklistEntries', fn ($cq) => $cq->where('unit_id', $scopedUnitId));
             });
         }
 
@@ -309,7 +309,7 @@ class ComplianceOfficerService
             $query->where(function ($q) use ($search) {
                 $q->whereRaw('LOWER(pemilik_risiko) LIKE ?', ["%{$search}%"])
                     ->orWhereRaw('LOWER(rencana_mitigasi) LIKE ?', ["%{$search}%"])
-                    ->orWhereHas('control', fn ($cq) => $cq->whereRaw('LOWER(kode_klausul) LIKE ?', ["%{$search}%"])->orWhereRaw('LOWER(judul) LIKE ?', ["%{$search}%"]));
+                    ->orWhereHas('controls', fn ($cq) => $cq->whereRaw('LOWER(kode_klausul) LIKE ?', ["%{$search}%"])->orWhereRaw('LOWER(judul) LIKE ?', ["%{$search}%"]));
             });
         }
 
@@ -333,7 +333,7 @@ class ComplianceOfficerService
         if ($scopedUnitId) {
             $query->where(function ($q) use ($scopedUnitId) {
                 $q->where('unit_id', $scopedUnitId)
-                    ->orWhereHas('control.checklistEntries', fn ($cq) => $cq->where('unit_id', $scopedUnitId));
+                    ->orWhereHas('controls.checklistEntries', fn ($cq) => $cq->where('unit_id', $scopedUnitId));
             });
         }
 
@@ -364,14 +364,16 @@ class ComplianceOfficerService
      */
     public function getRisk(User $user, int $id): Risk
     {
-        $risk = Risk::with(['control.framework', 'unit:id,nama'])->findOrFail($id);
+        $risk = Risk::with(['controls.framework', 'unit:id,nama'])->findOrFail($id);
 
         if ($user->isPic()) {
             $isAuthorized = false;
             if ($user->unit_id !== null && $risk->unit_id !== null) {
                 $isAuthorized = (int) $risk->unit_id === (int) $user->unit_id;
             } elseif ($user->unit_id !== null) {
-                $isAuthorized = $risk->control?->checklistEntries()->where('unit_id', $user->unit_id)->exists() ?? false;
+                $isAuthorized = $risk->controls()
+                    ->whereHas('checklistEntries', fn ($q) => $q->where('unit_id', $user->unit_id))
+                    ->exists();
             } else {
                 $isAuthorized = true;
             }
@@ -395,8 +397,12 @@ class ComplianceOfficerService
                 $unitId = $user->unit_id;
             }
 
+            $controlIds = $data['control_ids'] ?? [];
+            if (empty($controlIds) && isset($data['control_id'])) {
+                $controlIds = (array) $data['control_id'];
+            }
+
             $risk = Risk::create([
-                'control_id' => $data['control_id'],
                 'unit_id' => $unitId,
                 'level_risiko' => $data['level_risiko'] ?? $data['risk_level'] ?? Risk::LEVEL_LOW,
                 'pemilik_risiko' => $data['pemilik_risiko'] ?? $data['risk_owner'] ?? $user->name,
@@ -406,13 +412,17 @@ class ComplianceOfficerService
                 'catatan_admin' => $data['catatan_admin'] ?? $data['admin_notes'] ?? null,
             ]);
 
+            if (! empty($controlIds)) {
+                $risk->controls()->sync($controlIds);
+            }
+
             AuditLog::catat(
                 'Risk',
                 $risk->id,
                 'created',
                 $user->id,
                 [
-                    'control_id' => $risk->control_id,
+                    'control_ids' => $risk->controls()->allRelatedIds()->toArray(),
                     'unit_id' => $risk->unit_id,
                     'level_risiko' => $risk->level_risiko,
                     'status' => $risk->status,
@@ -420,7 +430,7 @@ class ComplianceOfficerService
                 ]
             );
 
-            $fresh = $risk->fresh(['control.framework', 'unit:id,nama']);
+            $fresh = $risk->fresh(['controls.framework', 'unit:id,nama']);
 
             return $this->formatRiskResource($fresh);
         });
@@ -436,7 +446,9 @@ class ComplianceOfficerService
             if ($user->unit_id !== null && $risk->unit_id !== null) {
                 $isAuthorized = (int) $risk->unit_id === (int) $user->unit_id;
             } elseif ($user->unit_id !== null) {
-                $isAuthorized = $risk->control?->checklistEntries()->where('unit_id', $user->unit_id)->exists() ?? false;
+                $isAuthorized = $risk->controls()
+                    ->whereHas('checklistEntries', fn ($q) => $q->where('unit_id', $user->unit_id))
+                    ->exists();
             } else {
                 $isAuthorized = true;
             }
@@ -460,6 +472,7 @@ class ComplianceOfficerService
 
         return DB::transaction(function () use ($user, $risk, $data) {
             $oldValues = $risk->only(['level_risiko', 'pemilik_risiko', 'rencana_mitigasi', 'status', 'deadline', 'catatan_admin']);
+            $oldValues['control_ids'] = $risk->controls()->allRelatedIds()->toArray();
 
             $updateData = [];
 
@@ -501,7 +514,16 @@ class ComplianceOfficerService
 
             if (! empty($updateData)) {
                 $risk->update($updateData);
+            }
 
+            // Sync control pivot jika ada control_ids atau control_id di request
+            $syncControlIds = $data['control_ids'] ?? (isset($data['control_id']) ? (array) $data['control_id'] : null);
+            if ($syncControlIds !== null && is_array($syncControlIds) && ! empty($syncControlIds)) {
+                $risk->controls()->sync($syncControlIds);
+                $updateData['control_ids'] = $syncControlIds;
+            }
+
+            if (! empty($updateData)) {
                 AuditLog::catat(
                     'Risk',
                     $risk->id,
@@ -514,7 +536,7 @@ class ComplianceOfficerService
                 );
             }
 
-            $freshRisk = $risk->fresh(['control.framework', 'unit:id,nama']);
+            $freshRisk = $risk->fresh(['controls.framework', 'unit:id,nama']);
 
             return $this->formatRiskResource($freshRisk);
         });

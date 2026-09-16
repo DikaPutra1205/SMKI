@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Risk extends Model
@@ -12,7 +13,6 @@ class Risk extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'control_id',
         'unit_id',
         'level_risiko',
         'pemilik_risiko',
@@ -42,9 +42,14 @@ class Risk extends Model
 
     const STATUS_ACCEPTED = 'accepted';
 
-    public function control(): BelongsTo
+    /**
+     * Kontrol-kontrol yang terkait dengan risiko ini (many-to-many via pivot control_risk).
+     * Satu risiko dapat dipetakan ke lebih dari satu kontrol sesuai PRD.
+     */
+    public function controls(): BelongsToMany
     {
-        return $this->belongsTo(Control::class);
+        return $this->belongsToMany(Control::class, 'control_risk')
+            ->withTimestamps();
     }
 
     public function unit(): BelongsTo

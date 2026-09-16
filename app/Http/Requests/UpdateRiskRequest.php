@@ -33,9 +33,21 @@ class UpdateRiskRequest extends FormRequest
         return $this->user()?->hasPermissionTo('risk.update') || $this->user()?->isAdmin() || $this->user()?->isSuperAdmin() || $this->user()?->isKoordinator();
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('control_id') && ! $this->has('control_ids')) {
+            $val = $this->input('control_id');
+            $this->merge([
+                'control_ids' => is_array($val) ? $val : [$val],
+            ]);
+        }
+    }
+
     public function rules(): array
     {
         return [
+            'control_ids' => 'sometimes|array|min:1',
+            'control_ids.*' => 'exists:controls,id',
             'risk_level' => 'sometimes|in:low,medium,high,critical',
             'level_risiko' => 'sometimes|in:low,medium,high,critical',
             'status' => 'sometimes|in:open,mitigated,accepted',
