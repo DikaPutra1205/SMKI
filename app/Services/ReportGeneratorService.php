@@ -15,8 +15,11 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Spatie\LaravelPdf\Facades\Pdf;
+use Spatie\LaravelPdf\PdfBuilder;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use ZipArchive;
 
 class ReportGeneratorService
 {
@@ -39,7 +42,8 @@ class ReportGeneratorService
         ?int $unitId = null,
         ?string $periode = null,
         ?string $startDate = null,
-        ?string $endDate = null
+        ?string $endDate = null,
+        string $printMode = 'latest'
     ): \Symfony\Component\HttpFoundation\Response {
         // Enforce RBAC per role
         $role = $user->role;
@@ -62,8 +66,125 @@ class ReportGeneratorService
             $config['header_view'] = null;
         }
 
-        $data = $this->buildDataFor($reportType, $unitId, $periode, $startDate, $endDate);
+        $unitSlug = $this->getReportUnitName($unitId);
+        $typePrefix = $this->getReportTypePrefix($reportType);
+        $months = $this->resolveMonthsList($periode, $startDate, $endDate);
 
+        if ($printMode === 'per_month' && count($months) > 1) {
+            return $this->exportMultiMonthZip($reportType, $user, $unitId, $months, $config, $typePrefix, $unitSlug);
+        }
+
+        $effectivePeriod = ($printMode === 'per_month' && count($months) === 1) ? $months[0] : $periode;
+
+        return $this->exportSinglePdf($reportType, $user, $unitId, $effectivePeriod, $startDate, $endDate, $config, $typePrefix, $unitSlug);
+    }
+
+    protected function exportMultiMonthZip(
+        string $reportType,
+        User $user,
+        ?int $unitId,
+        array $months,
+        array $config,
+        string $typePrefix,
+        string $unitSlug
+    ): \Symfony\Component\HttpFoundation\Response {
+        $this->logAudit($config['audit_action'].'_zip', $user, $reportType, $unitId);
+
+        $firstMonth = Carbon::parse($months[0].'-01');
+        $lastMonth = Carbon::parse(end($months).'-01');
+
+        $rangeLabel = $firstMonth->format('Y') === $lastMonth->format('Y')
+            ? $firstMonth->isoFormat('MMMM').'-'.$lastMonth->isoFormat('MMMM_Y')
+            : $firstMonth->isoFormat('MMMM_Y').'-'.$lastMonth->isoFormat('MMMM_Y');
+
+        $zipFilename = "{$typePrefix}_{$unitSlug}_{$rangeLabel}.zip";
+        $tempZipPath = tempnam(sys_get_temp_dir(), 'smki_zip_');
+
+        $zip = new ZipArchive;
+        if ($zip->open($tempZipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+            abort(500, 'Gagal membuat arsip ZIP untuk laporan kepatuhan.');
+        }
+
+        foreach ($months as $idx => $m) {
+            $mDt = Carbon::parse($m.'-01');
+            $num = sprintf('%02d', $idx + 1);
+            $monthLabel = $mDt->isoFormat('MMMM_Y');
+            $pdfNameInZip = "{$num}_{$typePrefix}_{$unitSlug}_{$monthLabel}.pdf";
+
+            $singleData = match ($reportType) {
+                'quick-summary' => $this->buildQuickSummaryData($unitId, $m, null, null),
+                'executive' => $this->buildExecutiveData($unitId, $m, null, null),
+                default => [],
+            };
+
+            $pdfInstance = $this->createPdfInstance($config, $singleData);
+            $pdfContent = $pdfInstance->generatePdfContent();
+
+            $zip->addFromString($pdfNameInZip, $pdfContent);
+        }
+
+        $zip->close();
+
+        $zipContent = file_get_contents($tempZipPath);
+        @unlink($tempZipPath);
+
+        return response($zipContent, 200, [
+            'Content-Type' => 'application/zip',
+            'Content-Disposition' => 'attachment; filename="'.$zipFilename.'"',
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+        ]);
+    }
+
+    protected function exportSinglePdf(
+        string $reportType,
+        User $user,
+        ?int $unitId,
+        ?string $periode,
+        ?string $startDate,
+        ?string $endDate,
+        array $config,
+        string $typePrefix,
+        string $unitSlug
+    ): \Symfony\Component\HttpFoundation\Response {
+        $data = match ($reportType) {
+            'quick-summary' => $this->buildQuickSummaryData($unitId, $periode, $startDate, $endDate),
+            'executive' => $this->buildExecutiveData($unitId, $periode, $startDate, $endDate),
+            default => [],
+        };
+
+        $this->logAudit($config['audit_action'], $user, $reportType, $unitId);
+
+        $periodLabel = $periode
+            ? Carbon::parse($periode.'-01')->isoFormat('MMMM_Y')
+            : ($startDate && $endDate
+                ? Carbon::parse($startDate)->isoFormat('MMMM_Y')
+                : now()->isoFormat('MMMM_Y'));
+
+        $filename = "{$typePrefix}_{$unitSlug}_{$periodLabel}.pdf";
+
+        $pdf = $this->createPdfInstance($config, $data);
+        $response = $pdf->inline($filename)->toResponse(request());
+
+        if (empty($response->headers->get('Content-Type')) || str_starts_with($response->headers->get('Content-Type'), 'text/html')) {
+            $response->headers->set('Content-Type', 'application/pdf');
+            $response->headers->set('Content-Disposition', 'inline; filename="'.$filename.'"');
+        }
+
+        // Prevent browser caching for generated PDFs
+        $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+        $response->headers->set('Cache-Control', 'post-check=0, pre-check=0', false);
+        $response->headers->set('Pragma', 'no-cache');
+
+        if (app()->runningUnitTests() && empty($response->getContent())) {
+            $response->setContent($pdf->generatePdfContent());
+        }
+
+        return $response;
+    }
+
+    protected function createPdfInstance(array $config, array $data): PdfBuilder
+    {
         $pdf = Pdf::view($config['view'], $data)
             ->format($config['paper'] ?? 'a4')
             ->portrait();
@@ -96,22 +217,56 @@ class ReportGeneratorService
             $pdf->footerView($config['footer_view'], $data);
         }
 
-        $this->logAudit($config['audit_action'], $user, $reportType, $unitId);
+        return $pdf;
+    }
 
-        $filename = $reportType.'-'.now()->format('Ymd-His').'.pdf';
-
-        $response = $pdf->inline($filename)->toResponse(request());
-
-        if (empty($response->headers->get('Content-Type')) || str_starts_with($response->headers->get('Content-Type'), 'text/html')) {
-            $response->headers->set('Content-Type', 'application/pdf');
-            $response->headers->set('Content-Disposition', 'inline; filename="'.$filename.'"');
+    protected function resolveMonthsList(?string $periode, ?string $startDate, ?string $endDate): array
+    {
+        $months = [];
+        if ($startDate && $endDate) {
+            try {
+                $start = Carbon::parse($startDate)->startOfMonth();
+                $end = Carbon::parse($endDate)->startOfMonth();
+                while ($start->lte($end)) {
+                    $months[] = $start->format('Y-m');
+                    $start->addMonth();
+                }
+            } catch (\Exception) {
+                // fallback
+            }
+        } elseif ($periode) {
+            $months[] = $periode;
         }
 
-        if (app()->runningUnitTests() && empty($response->getContent())) {
-            $response->setContent($pdf->generatePdfContent());
+        if (empty($months)) {
+            $months[] = now()->format('Y-m');
         }
 
-        return $response;
+        return $months;
+    }
+
+    protected function getReportTypePrefix(string $reportType): string
+    {
+        return match ($reportType) {
+            'executive' => 'Laporan_Eksekutif_SMKI',
+            'quick-summary' => 'Laporan_Progres_Kepatuhan_SMKI',
+            'audit-ready' => 'Laporan_Audit_SMKI',
+            default => 'Laporan_SMKI',
+        };
+    }
+
+    protected function getReportUnitName(?int $unitId): string
+    {
+        if ($unitId) {
+            $unit = WorkUnit::find($unitId);
+            if ($unit && ! empty($unit->nama)) {
+                return Str::slug($unit->nama, '_');
+            }
+
+            return 'Unit_'.$unitId;
+        }
+
+        return 'Kementerian_Komdigi';
     }
 
     /**

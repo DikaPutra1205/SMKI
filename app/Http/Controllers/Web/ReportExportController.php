@@ -7,7 +7,6 @@ use App\Models\WorkUnit;
 use App\Services\ReportGeneratorService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportExportController extends Controller
@@ -21,7 +20,7 @@ class ReportExportController extends Controller
      *
      * GET /reports/export-pdf?type=quick-summary|executive|audit-ready&unit_id=...&periode=YYYY-MM&start_date=YYYY-MM-DD&end_date=YYYY-MM-DD
      */
-    public function exportPdf(Request $request): Response|StreamedResponse
+    public function exportPdf(Request $request): \Symfony\Component\HttpFoundation\Response
     {
         $request->validate([
             'type' => 'nullable|string|in:quick-summary,executive,audit-ready',
@@ -29,6 +28,7 @@ class ReportExportController extends Controller
             'periode' => 'nullable|string',
             'start_date' => 'nullable|string',
             'end_date' => 'nullable|string',
+            'print_mode' => 'nullable|string|in:latest,per_month',
         ]);
 
         $reportType = $request->input('type', 'quick-summary');
@@ -37,6 +37,7 @@ class ReportExportController extends Controller
         $periode = $request->input('periode');
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
+        $printMode = $request->input('print_mode', 'latest');
 
         return $this->reportService->export(
             $reportType,
@@ -45,13 +46,14 @@ class ReportExportController extends Controller
             $periode,
             $startDate,
             $endDate,
+            $printMode,
         );
     }
 
     /**
      * Invoke handler for GET /reports/export-pdf.
      */
-    public function __invoke(Request $request): Response|StreamedResponse
+    public function __invoke(Request $request): \Symfony\Component\HttpFoundation\Response
     {
         return $this->exportPdf($request);
     }

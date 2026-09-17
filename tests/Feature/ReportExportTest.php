@@ -2,9 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Models\AuditLog;
 use App\Models\ChecklistEntry;
 use App\Models\Control;
+use App\Models\Finding;
 use App\Models\Framework;
+use App\Models\Risk;
 use App\Models\User;
 use App\Models\WorkUnit;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -133,6 +136,41 @@ class ReportExportTest extends TestCase
         $response->assertOk();
     }
 
+    public function test_single_period_export_has_standardized_filename(): void
+    {
+        $response = $this->actingAs($this->koordinator)->get("/reports/export-pdf?type=executive&unit_id={$this->unit->id}&periode=2026-07");
+        $response->assertOk();
+        $this->assertEquals('application/pdf', $response->headers->get('Content-Type'));
+        $disposition = $response->headers->get('Content-Disposition');
+        $this->assertStringContainsString('Laporan_Eksekutif_SMKI_pusat_data_komdigi_Juli_2026.pdf', $disposition);
+    }
+
+    public function test_multi_month_export_returns_zip_archive_with_individual_pdfs(): void
+    {
+        $response = $this->actingAs($this->koordinator)->get(
+            "/reports/export-pdf?type=executive&unit_id={$this->unit->id}&start_date=2026-06-01&end_date=2026-08-31&print_mode=per_month"
+        );
+
+        $response->assertOk();
+        $this->assertEquals('application/zip', $response->headers->get('Content-Type'));
+        $disposition = $response->headers->get('Content-Disposition');
+        $this->assertStringContainsString('Laporan_Eksekutif_SMKI_pusat_data_komdigi_', $disposition);
+        $this->assertStringEndsWith('.zip"', $disposition);
+
+        // Verify ZIP content
+        $tempPath = tempnam(sys_get_temp_dir(), 'test_zip_');
+        file_put_contents($tempPath, $response->getContent());
+
+        $zip = new \ZipArchive;
+        $this->assertTrue($zip->open($tempPath));
+        $this->assertEquals(3, $zip->numFiles);
+        $this->assertStringContainsString('01_Laporan_Eksekutif_SMKI_pusat_data_komdigi_Juni_2026.pdf', $zip->getNameIndex(0));
+        $this->assertStringContainsString('02_Laporan_Eksekutif_SMKI_pusat_data_komdigi_Juli_2026.pdf', $zip->getNameIndex(1));
+        $this->assertStringContainsString('03_Laporan_Eksekutif_SMKI_pusat_data_komdigi_Agustus_2026.pdf', $zip->getNameIndex(2));
+        $zip->close();
+        @unlink($tempPath);
+    }
+
     public function test_authorized_user_can_get_compliance_summary_report_data(): void
     {
         ChecklistEntry::factory()->create([
@@ -186,7 +224,6 @@ class ReportExportTest extends TestCase
         $exportResponse = $this->actingAs($this->pic)->get('/api/v1/reports/export-csv');
         $exportResponse->assertForbidden();
     }
-
 
     public function test_exported_csv_contains_expected_rows_and_utf8_bom(): void
     {

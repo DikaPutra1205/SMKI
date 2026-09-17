@@ -40,6 +40,7 @@ export default function ExportReportModal({ open, onClose, unitId, workUnits: in
     // Date range
     const [startDate, setStartDate] = useState<string>('');
     const [endDate, setEndDate] = useState<string>('');
+    const [printMode, setPrintMode] = useState<'latest' | 'per_month'>('latest');
 
     // Available report types for current role:
     // - admin_kepatuhan: quick-summary only
@@ -166,6 +167,8 @@ export default function ExportReportModal({ open, onClose, unitId, workUnits: in
         if (effectiveUnitId && effectiveUnitId.trim() !== '') {
             params.set('unit_id', effectiveUnitId.trim());
         }
+
+        params.set('print_mode', printMode);
 
         params.set('t', Date.now().toString());
 
@@ -303,6 +306,37 @@ export default function ExportReportModal({ open, onClose, unitId, workUnits: in
                             onChange={setEndDate}
                             placeholder="Pilih tanggal selesai"
                         />
+                    </div>
+                </div>
+
+                {/* 4. Mode Cetak */}
+                <div>
+                    <label className="text-xs font-bold tracking-wider text-slate-600 uppercase dark:text-slate-300">Mode Cetak Laporan</label>
+                    <div className="mt-1.5 grid grid-cols-2 gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setPrintMode('latest')}
+                            className={`flex flex-col items-start rounded-xl border p-2.5 text-left transition-all ${
+                                printMode === 'latest'
+                                    ? 'border-primary bg-primary/10 text-primary shadow-xs dark:border-primary dark:bg-primary/20 dark:text-primary-200'
+                                    : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                            }`}
+                        >
+                            <span className="text-xs font-bold">Data Sesi Terakhir</span>
+                            <span className="mt-0.5 text-[11px] opacity-75">Hanya asesmen terbaru</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setPrintMode('per_month')}
+                            className={`flex flex-col items-start rounded-xl border p-2.5 text-left transition-all ${
+                                printMode === 'per_month'
+                                    ? 'border-primary bg-primary/10 text-primary shadow-xs dark:border-primary dark:bg-primary/20 dark:text-primary-200'
+                                    : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                            }`}
+                        >
+                            <span className="text-xs font-bold">Jabarkan Per Bulan</span>
+                            <span className="mt-0.5 text-[11px] opacity-75">Dokumen terpisah per bulan (ZIP)</span>
+                        </button>
                     </div>
                 </div>
             </div>

@@ -51,7 +51,7 @@ Route::middleware('auth')->group(function () {
 
     // ── Flat page routes (permission-gated, role_id-dispatched) ─────────────
     Route::get('/dashboard', [PageController::class, 'dashboard'])->name('dashboard');
-    Route::get('/frameworks', [PageController::class, 'frameworks'])->name('frameworks.index');
+    Route::get('/frameworks', [PageController::class, 'frameworks'])->name('frameworks.page');
     Route::get('/users', [PageController::class, 'users'])->name('users.index');
     Route::get('/roles', [PageController::class, 'roles'])->name('roles.index');
     Route::get('/checklist', [PageController::class, 'checklist'])->name('checklist');
@@ -69,7 +69,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/temuan/{finding}', [ComplianceOfficerController::class, 'updateFinding'])->name('temuan.update.direct');
     Route::delete('/temuan/{finding}', [ComplianceOfficerController::class, 'destroyFinding'])->name('temuan.destroy.direct');
     Route::post('/temuan/{id}/restore', [ComplianceOfficerController::class, 'restoreFinding'])->name('temuan.restore.direct');
-    Route::get('/risks', [PageController::class, 'risks'])->name('risks.index');
+    Route::get('/risks', [PageController::class, 'risks'])->name('risks.page');
     Route::post('/risks', [ComplianceOfficerController::class, 'storeRisk'])->name('risks.store.direct');
     Route::put('/risks/{risk}', [ComplianceOfficerController::class, 'updateRisk'])->name('risks.update.direct');
     Route::get('/audit-logs', [PageController::class, 'auditLogs'])->name('audit-logs.index');
