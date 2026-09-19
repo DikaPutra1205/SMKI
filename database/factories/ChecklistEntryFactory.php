@@ -24,12 +24,7 @@ class ChecklistEntryFactory extends Factory
             'unit_id' => WorkUnit::factory(),
             'pic_id' => User::factory(),
             'admin_id' => null,
-            'status' => fake()->randomElement([
-                ChecklistEntry::STATUS_COMPLIANT,
-                ChecklistEntry::STATUS_PARTIAL,
-                ChecklistEntry::STATUS_NON_COMPLIANT,
-                ChecklistEntry::STATUS_NA,
-            ]),
+            'status' => fake()->randomElement(ChecklistEntry::workflowValues()),
             'level_maturity' => fake()->optional()->numberBetween(0, 5),
             'catatan' => fake()->optional()->sentence(),
             'catatan_admin' => fake()->optional()->sentence(),

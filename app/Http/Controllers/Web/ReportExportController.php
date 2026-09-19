@@ -7,6 +7,7 @@ use App\Models\WorkUnit;
 use App\Services\ReportGeneratorService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportExportController extends Controller
@@ -20,7 +21,7 @@ class ReportExportController extends Controller
      *
      * GET /reports/export-pdf?type=quick-summary|executive|audit-ready&unit_id=...&periode=YYYY-MM&start_date=YYYY-MM-DD&end_date=YYYY-MM-DD
      */
-    public function exportPdf(Request $request): \Symfony\Component\HttpFoundation\Response
+    public function exportPdf(Request $request): Response
     {
         $request->validate([
             'type' => 'nullable|string|in:quick-summary,executive,audit-ready',
@@ -53,7 +54,7 @@ class ReportExportController extends Controller
     /**
      * Invoke handler for GET /reports/export-pdf.
      */
-    public function __invoke(Request $request): \Symfony\Component\HttpFoundation\Response
+    public function __invoke(Request $request): Response
     {
         return $this->exportPdf($request);
     }
