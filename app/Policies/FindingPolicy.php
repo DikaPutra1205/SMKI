@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Finding;
 use App\Models\User;
+use App\Models\WorkUnit;
 
 class FindingPolicy
 {
@@ -13,8 +14,17 @@ class FindingPolicy
             return true;
         }
 
+        if ((int) $finding->unit_id === (int) $user->unit_id) {
+            return true;
+        }
+
         if ($user->unit_id !== null) {
-            return (int) $finding->unit_id === (int) $user->unit_id;
+            $userUnit = $user->unit()->first();
+            $findingUnit = $finding->unit()->first();
+
+            if ($userUnit && $findingUnit && $userUnit->isAncestorOf($findingUnit)) {
+                return true;
+            }
         }
 
         return (int) $finding->pic_id === (int) $user->id;
@@ -24,7 +34,12 @@ class FindingPolicy
     {
         if ($user->isPic()) {
             if ($targetUnitId !== null && (int) $targetUnitId !== (int) $user->unit_id) {
-                return false;
+                $userUnit = WorkUnit::find($user->unit_id);
+                $targetUnit = WorkUnit::find($targetUnitId);
+
+                if (! ($userUnit && $targetUnit && $userUnit->isAncestorOf($targetUnit))) {
+                    return false;
+                }
             }
         }
 
