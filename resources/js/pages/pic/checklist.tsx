@@ -29,9 +29,9 @@ interface SessionItem {
     framework: Framework | null;
     total_entries: number;
     completed_entries: number;
-    compliant_entries: number;
-    partial_entries: number;
-    non_compliant_entries: number;
+    selesai_entries: number;
+    tinjauan_entries: number;
+    proses_entries: number;
     na_entries: number;
 }
 
@@ -96,13 +96,13 @@ export default function Assessments({ sessions, user_unit }: AssessmentsProps) {
                         const total = s.total_entries || 0;
                         const completed = s.completed_entries || 0;
                         const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
-                        const compliant = s.compliant_entries || 0;
-                        const partial = s.partial_entries || 0;
-                        const nonCompliant = s.non_compliant_entries || 0;
+                        const selesai = s.selesai_entries || 0;
+                        const tinjauan = s.tinjauan_entries || 0;
+                        const proses = s.proses_entries || 0;
                         const na = s.na_entries || 0;
-                        const compliantPct = total > 0 ? (compliant / total) * 100 : 0;
-                        const partialPct = total > 0 ? (partial / total) * 100 : 0;
-                        const nonCompliantPct = total > 0 ? (nonCompliant / total) * 100 : 0;
+                        const selesaiPct = total > 0 ? (selesai / total) * 100 : 0;
+                        const tinjauanPct = total > 0 ? (tinjauan / total) * 100 : 0;
+                        const prosesPct = total > 0 ? (proses / total) * 100 : 0;
                         const naPct = total > 0 ? (na / total) * 100 : 0;
 
                         return (
@@ -130,17 +130,17 @@ export default function Assessments({ sessions, user_unit }: AssessmentsProps) {
                                         <span className="text-primary text-xs font-bold">{pct}%</span>
                                     </div>
                                     <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                                        {compliantPct > 0 && (
+                                        {selesaiPct > 0 && (
                                             <div
                                                 className="h-full bg-emerald-500 transition-all duration-500"
-                                                style={{ width: `${compliantPct}%` }}
+                                                style={{ width: `${selesaiPct}%` }}
                                             />
                                         )}
-                                        {partialPct > 0 && (
-                                            <div className="h-full bg-amber-400 transition-all duration-500" style={{ width: `${partialPct}%` }} />
+                                        {tinjauanPct > 0 && (
+                                            <div className="h-full bg-blue-400 transition-all duration-500" style={{ width: `${tinjauanPct}%` }} />
                                         )}
-                                        {nonCompliantPct > 0 && (
-                                            <div className="h-full bg-red-500 transition-all duration-500" style={{ width: `${nonCompliantPct}%` }} />
+                                        {prosesPct > 0 && (
+                                            <div className="h-full bg-amber-400 transition-all duration-500" style={{ width: `${prosesPct}%` }} />
                                         )}
                                         {naPct > 0 && (
                                             <div

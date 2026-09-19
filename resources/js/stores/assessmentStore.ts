@@ -140,12 +140,17 @@ class AssessmentStore {
         this._notify();
     }
 
-    getDirtyEntries(): { id: number; status: string; level_maturity: number | null; catatan: string | null }[] {
-        const result: { id: number; status: string; level_maturity: number | null; catatan: string | null }[] = [];
+    getDirtyEntries(): { id: number; level_maturity: number | null; catatan: string | null; tidak_berlaku: boolean }[] {
+        const result: { id: number; level_maturity: number | null; catatan: string | null; tidak_berlaku: boolean }[] = [];
         for (const id of this._dirtyIds) {
             const entry = this._entries.get(id);
             if (entry) {
-                result.push({ id: entry.id, status: entry.status, level_maturity: entry.level_maturity ?? null, catatan: entry.catatan });
+                result.push({
+                    id: entry.id,
+                    level_maturity: entry.level_maturity ?? null,
+                    catatan: entry.catatan,
+                    tidak_berlaku: entry.status === 'tidak_berlaku',
+                });
             }
         }
         return result;
@@ -185,24 +190,41 @@ class AssessmentStore {
         total: number;
         percentage: number;
         invalidCount: number;
-        compliantCount: number;
-        partialCount: number;
-        nonCompliantCount: number;
+        selesaiCount: number;
+        tinjauanCount: number;
+        prosesCount: number;
+        belumCount: number;
         naCount: number;
-        pendingCount: number;
     } {
         const entries = Array.from(this._entries.values());
         const total = entries.length;
-        const compliantCount = entries.filter((e) => e.status === 'compliant').length;
-        const partialCount = entries.filter((e) => e.status === 'partial').length;
-        const nonCompliantCount = entries.filter((e) => e.status === 'non_compliant').length;
-        const naCount = entries.filter((e) => e.status === 'na').length;
-        const pendingCount = total - compliantCount - partialCount - nonCompliantCount - naCount;
-        const completed = entries.filter((e) => Boolean(e.status)).length;
-        const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-        const invalidCount = entries.filter((e) => !e.status).length;
+        let selesaiCount = 0;
+        let tinjauanCount = 0;
+        let prosesCount = 0;
+        let belumCount = 0;
+        let naCount = 0;
 
-        return { completed, total, percentage, invalidCount, compliantCount, partialCount, nonCompliantCount, naCount, pendingCount };
+        for (const e of entries) {
+            const isNa = e.status === 'tidak_berlaku';
+            const hasBukti = !!e.active_evidence;
+            if (isNa) {
+                naCount++;
+            } else if (e.catatan && hasBukti) {
+                tinjauanCount++;
+            } else if (e.catatan || hasBukti) {
+                prosesCount++;
+            } else {
+                belumCount++;
+            }
+        }
+
+        const verifiedNa = entries.filter((e) => e.status === 'tidak_berlaku' && e.tanggal_verifikasi !== null).length;
+        selesaiCount = entries.filter((e) => e.tanggal_verifikasi !== null && e.status !== 'tidak_berlaku').length;
+        const completed = selesaiCount + verifiedNa;
+        const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+        const invalidCount = total - completed;
+
+        return { completed, total, percentage, invalidCount, selesaiCount, tinjauanCount, prosesCount, belumCount, naCount };
     }
 
     subscribe(listener: Listener): () => void {

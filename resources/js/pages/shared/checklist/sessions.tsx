@@ -23,9 +23,9 @@ interface SessionItem {
     creator_name: string;
     catatan: string | null;
     total_entries: number;
-    compliant_entries: number;
-    partial_entries: number;
-    non_compliant_entries: number;
+    selesai_entries: number;
+    tinjauan_entries: number;
+    proses_entries: number;
     na_entries: number;
     verified_entries: number;
     compliance_percentage: number;
@@ -322,9 +322,9 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
                     {paginatedSessions.map((s) => {
                         const pct = s.compliance_percentage;
                         const total = s.total_entries || 0;
-                        const compliantPct = total > 0 ? (s.compliant_entries / total) * 100 : 0;
-                        const partialPct = total > 0 ? ((s.partial_entries || 0) / total) * 100 : 0;
-                        const nonCompliantPct = total > 0 ? (s.non_compliant_entries / total) * 100 : 0;
+                        const selesaiPct = total > 0 ? (s.selesai_entries / total) * 100 : 0;
+                        const tinjauanPct = total > 0 ? ((s.tinjauan_entries || 0) / total) * 100 : 0;
+                        const prosesPct = total > 0 ? (s.proses_entries / total) * 100 : 0;
                         const naPct = total > 0 ? (s.na_entries / total) * 100 : 0;
 
                         return (
@@ -363,17 +363,17 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
                                         <span className="text-primary text-xs font-bold">{pct}%</span>
                                     </div>
                                     <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                                        {compliantPct > 0 && (
+                                        {selesaiPct > 0 && (
                                             <div
                                                 className="h-full bg-emerald-500 transition-all duration-500"
-                                                style={{ width: `${compliantPct}%` }}
+                                                style={{ width: `${selesaiPct}%` }}
                                             />
                                         )}
-                                        {partialPct > 0 && (
-                                            <div className="h-full bg-amber-500 transition-all duration-500" style={{ width: `${partialPct}%` }} />
+                                        {tinjauanPct > 0 && (
+                                            <div className="h-full bg-blue-400 transition-all duration-500" style={{ width: `${tinjauanPct}%` }} />
                                         )}
-                                        {nonCompliantPct > 0 && (
-                                            <div className="h-full bg-red-500 transition-all duration-500" style={{ width: `${nonCompliantPct}%` }} />
+                                        {prosesPct > 0 && (
+                                            <div className="h-full bg-amber-500 transition-all duration-500" style={{ width: `${prosesPct}%` }} />
                                         )}
                                         {naPct > 0 && (
                                             <div

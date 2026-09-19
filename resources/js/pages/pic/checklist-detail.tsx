@@ -1,9 +1,11 @@
 import ChecklistDetailSkeleton from '@/components/skeletons/ChecklistDetailSkeleton';
 import SyncWorker from '@/components/SyncWorker';
 import { Modal } from '@/components/ui/Modal';
+import { StatusBadge, statusTone } from '@/components/ui/StatusBadge';
 import { useAssessmentEntry, useAssessmentStore } from '@/hooks/useAssessmentStore';
 import { usePageLoading } from '@/hooks/usePageLoading';
 import AppLayout from '@/layouts/AppLayout';
+import { isEntryComplete, resolveWorkflow } from '@/lib/workflow-status';
 import { assessmentStore } from '@/stores/assessmentStore';
 import { Head, router, usePage } from '@inertiajs/react';
 import {
@@ -20,10 +22,6 @@ import {
     Loader2,
     Search,
     Send,
-    Shield,
-    ShieldAlert,
-    ShieldCheck,
-    ShieldHalf,
     Upload,
     XCircle,
 } from 'lucide-react';
@@ -90,18 +88,7 @@ interface ChecklistDetailProps {
     totalEntries: number;
 }
 
-const STATUS_OPTIONS = [
-    {
-        value: 'compliant',
-        label: 'Patuh',
-        icon: ShieldCheck,
-        color: 'border-emerald-500 bg-emerald-50 text-emerald-700',
-        radioColor: 'bg-emerald-500',
-    },
-    { value: 'partial', label: 'Sebagian Patuh', icon: ShieldHalf, color: 'border-amber-500 bg-amber-50 text-amber-700', radioColor: 'bg-amber-500' },
-    { value: 'non_compliant', label: 'Ketidaksesuaian', icon: ShieldAlert, color: 'border-red-500 bg-red-50 text-red-700', radioColor: 'bg-red-500' },
-    { value: 'na', label: 'Tidak Berlaku', icon: Shield, color: 'border-slate-400 bg-slate-50 text-slate-600', radioColor: 'bg-slate-400' },
-];
+
 
 function getCsrfToken(): string {
     const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
@@ -169,21 +156,13 @@ function EntryItemRow({
         savedTimeoutRef.current = setTimeout(() => setSaveState('idle'), 2000);
     }, []);
 
-    const handleStatusClick = useCallback(
-        (status: string) => {
-            onEntryUpdate(entryId, { status });
-            showSaved();
-        },
-        [entryId, onEntryUpdate, showSaved],
-    );
-
     const handleCatatanInput = useCallback(
         (value: string) => {
             setLocalCatatan(value);
-            onEntryUpdate(entryId, { catatan: value });
+            onEntryUpdate(entryId, { catatan: value, tidak_berlaku: entry?.status === 'tidak_berlaku' });
             showSaved();
         },
-        [entryId, onEntryUpdate, showSaved],
+        [entryId, onEntryUpdate, showSaved, entry?.status],
     );
 
     const handleMaturityChange = useCallback(
@@ -194,13 +173,20 @@ function EntryItemRow({
         [entryId, onEntryUpdate, showSaved],
     );
 
+    const handleNaToggle = useCallback(() => {
+        const newNa = entry?.status !== 'tidak_berlaku';
+        onEntryUpdate(entryId, { tidak_berlaku: newNa });
+        showSaved();
+    }, [entryId, onEntryUpdate, showSaved, entry?.status]);
+
     if (!entry) return null;
 
     const isVerified = entry.tanggal_verifikasi !== null;
     const hasAdminCatatan = !!entry.catatan_admin;
-    const missingStatus = !entry.status;
     const isEvidenceMissing = !entry.active_evidence;
-    const isIncomplete = missingStatus || isEvidenceMissing;
+    const isNa = entry.status === 'tidak_berlaku';
+    const workflowStatus = resolveWorkflow(entry.catatan, !!entry.active_evidence, isNa);
+    const isIncomplete = !isEntryComplete(workflowStatus, entry.catatan, !!entry.active_evidence, isVerified);
     const showErrorLabels = highlight && isIncomplete;
 
     // A verified entry's color is driven by whether the admin left a note,
@@ -260,38 +246,21 @@ function EntryItemRow({
                     );
                 })()}
 
-            {showErrorLabels && missingStatus && (
-                <div className="mb-2 flex items-center gap-1 text-[11px] font-medium text-amber-500">
-                    <XCircle className="h-3 w-3" />
-                    Status wajib dipilih
-                </div>
-            )}
-
-            <div className="mb-3 flex flex-wrap gap-2">
-                {STATUS_OPTIONS.map((opt) => {
-                    const Icon = opt.icon;
-                    const isActive = entry.status === opt.value;
-                    return (
-                        <button
-                            key={opt.value}
-                            type="button"
-                            onClick={() => handleStatusClick(opt.value)}
-                            className={`flex items-center gap-2 rounded-lg border-2 px-3 py-2 text-xs font-semibold transition-all ${
-                                isActive
-                                    ? `${opt.color} border-current ring-1 ring-current/20`
-                                    : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900'
-                            }`}
-                        >
-                            <span
-                                className={`flex h-4 w-4 items-center justify-center rounded-full border-2 ${isActive ? 'border-current' : 'border-slate-300'}`}
-                            >
-                                {isActive && <span className={`h-2 w-2 rounded-full ${opt.radioColor}`} />}
-                            </span>
-                            <Icon className="h-3.5 w-3.5" />
-                            {opt.label}
-                        </button>
-                    );
-                })}
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+                <StatusBadge tone={statusTone(entry.status)}>{entry.status?.replace(/_/g, ' ') || 'Belum dinilai'}</StatusBadge>
+                {!isVerified && (
+                    <button
+                        type="button"
+                        onClick={handleNaToggle}
+                        className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition-colors ${
+                            isNa
+                                ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-400'
+                                : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400'
+                        }`}
+                    >
+                        {isNa ? 'Batalkan' : 'Tandai Tidak Berlaku'}
+                    </button>
+                )}
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -318,7 +287,7 @@ function EntryItemRow({
                         type="text"
                         value={localCatatan}
                         onChange={(e) => handleCatatanInput(e.target.value)}
-                        placeholder="Catatan tindak lanjut (opsional)..."
+                        placeholder={isNa ? 'Justifikasi bila tidak berlaku...' : 'Catatan tindak lanjut (opsional)...'}
                         className="focus:border-primary focus:ring-primary flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 placeholder-slate-400 transition-colors focus:ring-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
                     />
                     <label
@@ -360,6 +329,7 @@ function EntryItemRow({
                                         if (data?.evidence) {
                                             onEvidenceUpdate(entry.id, data.evidence);
                                         }
+                                        onEntryUpdate(entry.id, { tidak_berlaku: entry.status === 'tidak_berlaku' });
                                         showSaved();
                                     })
                                     .catch(() => {
@@ -472,7 +442,9 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
     }, [currentPageIndex, getPageEntries, storeEntries]);
 
     const isEntryIncomplete = (e: EntryInput): boolean => {
-        return !e.status || !e.active_evidence;
+        const isNa = e.status === 'tidak_berlaku';
+        const ws = resolveWorkflow(e.catatan, !!e.active_evidence, isNa);
+        return !isEntryComplete(ws, e.catatan, !!e.active_evidence, e.tanggal_verifikasi !== null);
     };
 
     const filteredEntries = useMemo(() => {
@@ -642,27 +614,33 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
                     </div>
                 </div>
                 <div className="bg-primary-100/50 dark:bg-navy-800/50 flex h-2 w-full overflow-hidden rounded-full">
-                    {progress.compliantCount > 0 && (
+                    {progress.selesaiCount > 0 && (
                         <div
                             className="h-full bg-emerald-500 transition-all duration-500"
-                            style={{ width: `${progress.total > 0 ? (progress.compliantCount / progress.total) * 100 : 0}%` }}
+                            style={{ width: `${progress.total > 0 ? (progress.selesaiCount / progress.total) * 100 : 0}%` }}
                         />
                     )}
-                    {progress.partialCount > 0 && (
+                    {progress.tinjauanCount > 0 && (
+                        <div
+                            className="h-full bg-blue-500 transition-all duration-500"
+                            style={{ width: `${progress.total > 0 ? (progress.tinjauanCount / progress.total) * 100 : 0}%` }}
+                        />
+                    )}
+                    {progress.prosesCount > 0 && (
                         <div
                             className="h-full bg-amber-500 transition-all duration-500"
-                            style={{ width: `${progress.total > 0 ? (progress.partialCount / progress.total) * 100 : 0}%` }}
+                            style={{ width: `${progress.total > 0 ? (progress.prosesCount / progress.total) * 100 : 0}%` }}
                         />
                     )}
-                    {progress.nonCompliantCount > 0 && (
+                    {progress.belumCount > 0 && (
                         <div
-                            className="h-full bg-red-500 transition-all duration-500"
-                            style={{ width: `${progress.total > 0 ? (progress.nonCompliantCount / progress.total) * 100 : 0}%` }}
+                            className="h-full bg-slate-300 transition-all duration-500 dark:bg-slate-600"
+                            style={{ width: `${progress.total > 0 ? (progress.belumCount / progress.total) * 100 : 0}%` }}
                         />
                     )}
                     {progress.naCount > 0 && (
                         <div
-                            className="h-full bg-slate-300 transition-all duration-500 dark:bg-slate-600"
+                            className="h-full bg-slate-400 transition-all duration-500 dark:bg-slate-500"
                             style={{ width: `${progress.total > 0 ? (progress.naCount / progress.total) * 100 : 0}%` }}
                         />
                     )}

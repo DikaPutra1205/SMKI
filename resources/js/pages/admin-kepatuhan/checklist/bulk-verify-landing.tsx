@@ -21,9 +21,9 @@ interface SessionItem {
     framework_id: number | null;
     framework_nama: string;
     total_entries: number;
-    compliant_entries: number;
-    partial_entries: number;
-    non_compliant_entries: number;
+    selesai_entries: number;
+    tinjauan_entries: number;
+    proses_entries: number;
     na_entries: number;
     verified_entries: number;
     compliance_percentage: number;
@@ -60,9 +60,9 @@ function complianceColor(pct: number): string {
 
 function SessionCard({ session }: { session: SessionItem }) {
     const segments = complianceSegments({
-        compliant: session.compliant_entries,
-        partial: session.partial_entries,
-        nonCompliant: session.non_compliant_entries,
+        compliant: session.selesai_entries,
+        partial: session.tinjauan_entries,
+        nonCompliant: session.proses_entries,
         na: session.na_entries,
     });
     const pct = session.compliance_percentage;
@@ -107,7 +107,7 @@ function SessionCard({ session }: { session: SessionItem }) {
             <div className="mb-3.5">
                 <div className="mb-1.5 flex items-baseline justify-between">
                     <span className="text-muted text-xs font-medium dark:text-slate-400">
-                        {session.compliant_entries}/{session.total_entries} Kontrol Patuh
+                        {session.selesai_entries}/{session.total_entries} Kontrol Selesai
                     </span>
                     <span className={`text-sm font-bold ${complianceColor(pct)}`}>{pct}%</span>
                 </div>
