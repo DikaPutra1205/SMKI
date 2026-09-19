@@ -27,7 +27,11 @@ class ChecklistSessionController extends Controller
             'updater:id,name',
         ])->withCount([
             'entries as total_entries',
-            'entries as compliant_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_SELESAI),
+            'entries as selesai_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_SELESAI),
+            'entries as tinjauan_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_DALAM_TINJAUAN),
+            'entries as proses_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_DALAM_PROSES),
+            'entries as belum_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_BELUM_DIMULAI),
+            'entries as na_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_TIDAK_BERLAKU),
             'entries as verified_entries' => fn ($q) => $q->whereNotNull('tanggal_verifikasi'),
         ]);
 

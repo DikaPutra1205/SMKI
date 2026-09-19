@@ -376,12 +376,13 @@ class DashboardAnalyticsTest extends TestCase
         $data = $response->json('data');
 
         $this->assertEquals(33, $data['overall_compliance_rate']);
-        $this->assertEquals(33, $data['frameworks_breakdown'][0]['compliance_rate']);
-        $this->assertEquals(1, $data['frameworks_breakdown'][0]['compliant_count']);
-        $this->assertEquals(1, $data['frameworks_breakdown'][0]['partial_count']);
-        $this->assertEquals(1, $data['frameworks_breakdown'][0]['non_compliant_count']);
+        $this->assertEquals(33, $data['frameworks_breakdown'][0]['completion_rate']);
+        $this->assertEquals(1, $data['frameworks_breakdown'][0]['selesai_count']);
+        $this->assertEquals(0, $data['frameworks_breakdown'][0]['tinjauan_count']);
+        $this->assertEquals(1, $data['frameworks_breakdown'][0]['proses_count']);
+        $this->assertEquals(1, $data['frameworks_breakdown'][0]['belum_count']);
         $this->assertEquals(0, $data['frameworks_breakdown'][0]['na_count']);
-        $this->assertEquals(0, $data['frameworks_breakdown'][1]['compliance_rate']);
+        $this->assertEquals(0, $data['frameworks_breakdown'][1]['completion_rate']);
         $this->assertEquals(1, $data['frameworks_breakdown'][1]['na_count']);
         $this->assertEquals(2, $data['total_controls_active']);
     }
@@ -425,8 +426,8 @@ class DashboardAnalyticsTest extends TestCase
 
         // Only the newest periode session counts: 0 compliant of 1 applicable.
         $this->assertEquals(0, $data['overall_compliance_rate']);
-        $this->assertEquals(0, $data['frameworks_breakdown'][0]['compliant_count']);
-        $this->assertEquals(1, $data['frameworks_breakdown'][0]['non_compliant_count']);
+        $this->assertEquals(0, $data['frameworks_breakdown'][0]['selesai_count']);
+        $this->assertEquals(1, $data['frameworks_breakdown'][0]['belum_count']);
     }
 
     public function test_non_unit_role_averages_per_unit_compliant_counts(): void
@@ -478,9 +479,9 @@ class DashboardAnalyticsTest extends TestCase
         $data = $response->json('data');
 
         // Average of per-unit compliant counts: round((2 + 1) / 2) = 2.
-        $this->assertEquals(2, $data['frameworks_breakdown'][0]['compliant_count']);
-        // compliance_rate = average of per-unit rates: (2/3 + 1/3) / 2 = 0.5 => 50.
-        $this->assertEquals(50, $data['frameworks_breakdown'][0]['compliance_rate']);
+        $this->assertEquals(2, $data['frameworks_breakdown'][0]['selesai_count']);
+        // completion_rate = average of per-unit rates: (2/3 + 1/3) / 2 = 0.5 => 50.
+        $this->assertEquals(50, $data['frameworks_breakdown'][0]['completion_rate']);
     }
 
     public function test_pic_full_compliance_shows_total_controls_out_of_total(): void
@@ -518,8 +519,8 @@ class DashboardAnalyticsTest extends TestCase
         $fw = $response->json('data.frameworks_breakdown')[0];
 
         $this->assertEquals(118, $fw['total_controls']);
-        $this->assertEquals(118, $fw['compliant_count']);
-        $this->assertEquals(100, $fw['compliance_rate']);
+        $this->assertEquals(118, $fw['selesai_count']);
+        $this->assertEquals(100, $fw['completion_rate']);
     }
 
     public function test_summary_growth_rate_compares_current_vs_last_month(): void
@@ -644,8 +645,8 @@ class DashboardAnalyticsTest extends TestCase
         $this->assertEquals(0, $data['findings_summary']['total_active']);
         $this->assertEquals(0, $data['findings_summary']['overdue']);
         $this->assertEquals(0, $data['risks_summary']['total_active']);
-        $this->assertEquals(0, $data['frameworks_breakdown'][0]['compliance_rate']);
-        $this->assertEquals(0, $data['frameworks_breakdown'][1]['compliance_rate']);
+        $this->assertEquals(0, $data['frameworks_breakdown'][0]['completion_rate']);
+        $this->assertEquals(0, $data['frameworks_breakdown'][1]['completion_rate']);
     }
 
     public function test_pic_without_assigned_unit_is_not_scoped_to_any_unit(): void

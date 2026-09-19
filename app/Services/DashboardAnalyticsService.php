@@ -39,7 +39,7 @@ class DashboardAnalyticsService
         $frameworks = Framework::withCount('controls')->orderBy('id')->get();
         $frameworksBreakdown = [];
         $totalApplicableOverall = 0;
-        $totalCompliantOverall = 0;
+        $totalSelesaiOverall = 0;
 
         // Explicit session drill-down overrides the most-recent-session rule.
         if ($sessionId) {
@@ -49,12 +49,14 @@ class DashboardAnalyticsService
                 ->selectRaw('
                     controls.framework_id,
                     checklist_entries.unit_id AS session_unit_id,
-                    COUNT(DISTINCT CASE WHEN checklist_entries.status = ? THEN checklist_entries.control_id END) as compliant_count,
-                    COUNT(DISTINCT CASE WHEN checklist_entries.status = ? THEN checklist_entries.control_id END) as partial_count,
-                    COUNT(DISTINCT CASE WHEN checklist_entries.status = ? THEN checklist_entries.control_id END) as non_compliant_count,
+                    COUNT(DISTINCT CASE WHEN checklist_entries.status = ? THEN checklist_entries.control_id END) as selesai_count,
+                    COUNT(DISTINCT CASE WHEN checklist_entries.status = ? THEN checklist_entries.control_id END) as tinjauan_count,
+                    COUNT(DISTINCT CASE WHEN checklist_entries.status = ? THEN checklist_entries.control_id END) as proses_count,
+                    COUNT(DISTINCT CASE WHEN checklist_entries.status = ? THEN checklist_entries.control_id END) as belum_count,
                     COUNT(DISTINCT CASE WHEN checklist_entries.status = ? THEN checklist_entries.control_id END) as na_count
                 ', [
                     ChecklistEntry::WORKFLOW_SELESAI,
+                    ChecklistEntry::WORKFLOW_DALAM_TINJAUAN,
                     ChecklistEntry::WORKFLOW_DALAM_PROSES,
                     ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
                     ChecklistEntry::WORKFLOW_TIDAK_BERLAKU,
@@ -82,12 +84,14 @@ class DashboardAnalyticsService
                 ->selectRaw('
                     controls.framework_id,
                     ms.unit_id AS session_unit_id,
-                    COUNT(DISTINCT CASE WHEN checklist_entries.status = ? THEN checklist_entries.control_id END) as compliant_count,
-                    COUNT(DISTINCT CASE WHEN checklist_entries.status = ? THEN checklist_entries.control_id END) as partial_count,
-                    COUNT(DISTINCT CASE WHEN checklist_entries.status = ? THEN checklist_entries.control_id END) as non_compliant_count,
+                    COUNT(DISTINCT CASE WHEN checklist_entries.status = ? THEN checklist_entries.control_id END) as selesai_count,
+                    COUNT(DISTINCT CASE WHEN checklist_entries.status = ? THEN checklist_entries.control_id END) as tinjauan_count,
+                    COUNT(DISTINCT CASE WHEN checklist_entries.status = ? THEN checklist_entries.control_id END) as proses_count,
+                    COUNT(DISTINCT CASE WHEN checklist_entries.status = ? THEN checklist_entries.control_id END) as belum_count,
                     COUNT(DISTINCT CASE WHEN checklist_entries.status = ? THEN checklist_entries.control_id END) as na_count
                 ', [
                     ChecklistEntry::WORKFLOW_SELESAI,
+                    ChecklistEntry::WORKFLOW_DALAM_TINJAUAN,
                     ChecklistEntry::WORKFLOW_DALAM_PROSES,
                     ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
                     ChecklistEntry::WORKFLOW_TIDAK_BERLAKU,
@@ -106,65 +110,68 @@ class DashboardAnalyticsService
 
             if ($scopedUnitId) {
                 $stats = $unitRows->first();
-                $compliantCount = $stats ? (int) $stats->compliant_count : 0;
-                $partialCount = $stats ? (int) $stats->partial_count : 0;
-                $nonCompliantCount = $stats ? (int) $stats->non_compliant_count : 0;
+                $selesaiCount = $stats ? (int) $stats->selesai_count : 0;
+                $tinjauanCount = $stats ? (int) $stats->tinjauan_count : 0;
+                $prosesCount = $stats ? (int) $stats->proses_count : 0;
+                $belumCount = $stats ? (int) $stats->belum_count : 0;
                 $naCount = $stats ? (int) $stats->na_count : 0;
 
-                $applicableCount = $compliantCount + $partialCount + $nonCompliantCount;
-                $complianceRate = $applicableCount > 0 ? (int) round(($compliantCount / $applicableCount) * 100) : 0;
+                $applicableCount = $selesaiCount + $tinjauanCount + $prosesCount + $belumCount;
+                $completionRate = $applicableCount > 0 ? (int) round(($selesaiCount / $applicableCount) * 100) : 0;
             } else {
-                // Overall (non-unit roles): average each unit's compliant-control
+                // Overall (non-unit roles): average each unit's selesai-control
                 // count and rate from its most-recent session. Units never
-                // assessed contribute 0 compliant (no latest session row).
+                // assessed contribute 0 selesai (no latest session row).
                 $perUnitRates = [];
-                $perUnitCompliant = [];
+                $perUnitSelesai = [];
                 foreach ($unitRows as $row) {
-                    $compliant = (int) $row->compliant_count;
-                    $applicable = $compliant + (int) $row->partial_count + (int) $row->non_compliant_count;
-                    $perUnitCompliant[] = $compliant;
+                    $selesai = (int) $row->selesai_count;
+                    $applicable = $selesai + (int) $row->tinjauan_count + (int) $row->proses_count + (int) $row->belum_count;
+                    $perUnitSelesai[] = $selesai;
                     if ($applicable > 0) {
-                        $perUnitRates[] = $compliant / $applicable;
+                        $perUnitRates[] = $selesai / $applicable;
                     }
                 }
 
-                $compliantCount = $perUnitCompliant
-                    ? (int) round(array_sum($perUnitCompliant) / count($perUnitCompliant))
+                $selesaiCount = $perUnitSelesai
+                    ? (int) round(array_sum($perUnitSelesai) / count($perUnitSelesai))
                     : 0;
-                $partialCount = (int) $unitRows->sum('partial_count');
-                $nonCompliantCount = (int) $unitRows->sum('non_compliant_count');
+                $tinjauanCount = (int) $unitRows->sum('tinjauan_count');
+                $prosesCount = (int) $unitRows->sum('proses_count');
+                $belumCount = (int) $unitRows->sum('belum_count');
                 $naCount = (int) $unitRows->sum('na_count');
 
-                $complianceRate = $perUnitRates
+                $completionRate = $perUnitRates
                     ? (int) round((array_sum($perUnitRates) / count($perUnitRates)) * 100)
                     : 0;
 
                 // Overall applicable across units drives overall_compliance_rate.
-                $applicableCount = $compliantCount + $partialCount + $nonCompliantCount;
+                $applicableCount = $selesaiCount + $tinjauanCount + $prosesCount + $belumCount;
             }
 
             $totalApplicableOverall += $applicableCount;
-            $totalCompliantOverall += $compliantCount;
+            $totalSelesaiOverall += $selesaiCount;
 
             $frameworksBreakdown[] = [
                 'id' => $fw->id,
                 'nama' => $fw->nama,
                 'versi' => $fw->versi,
-                'compliance_rate' => $complianceRate,
-                'compliant_count' => $compliantCount,
-                'partial_count' => $partialCount,
-                'non_compliant_count' => $nonCompliantCount,
+                'completion_rate' => $completionRate,
+                'selesai_count' => $selesaiCount,
+                'tinjauan_count' => $tinjauanCount,
+                'proses_count' => $prosesCount,
+                'belum_count' => $belumCount,
                 'na_count' => $naCount,
                 'total_controls' => $fw->controls_count,
             ];
         }
 
-        $overallComplianceRate = $totalApplicableOverall > 0
-            ? (int) round(($totalCompliantOverall / $totalApplicableOverall) * 100)
+        $overallCompletionRate = $totalApplicableOverall > 0
+            ? (int) round(($totalSelesaiOverall / $totalApplicableOverall) * 100)
             : 0;
 
         // 2. Growth from last period (compare with previous month / session)
-        $growthFromLastPeriod = $this->calculateGrowthRate($scopedUnitId, $overallComplianceRate);
+        $growthFromLastPeriod = $this->calculateGrowthRate($scopedUnitId, $overallCompletionRate);
 
         // 3. Findings Summary & Overdue Calculation via SQL Aggregate
         $today = Carbon::today();
@@ -230,7 +237,7 @@ class DashboardAnalyticsService
         ];
 
         return [
-            'overall_compliance_rate' => $overallComplianceRate,
+            'overall_compliance_rate' => $overallCompletionRate,
             'growth_from_last_period' => $growthFromLastPeriod,
             'total_controls_active' => array_sum(array_column($frameworksBreakdown, 'total_controls')),
             'frameworks_breakdown' => $frameworksBreakdown,

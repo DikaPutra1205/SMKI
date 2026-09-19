@@ -52,38 +52,36 @@ class ChecklistSession extends Model
         $stats = $this->entries()
             ->selectRaw('
                 COUNT(*) as total_entries,
-                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as compliant,
-                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as partial,
-                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as non_compliant,
-                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as na,
-                SUM(CASE WHEN (
-                    status = ?
-                    OR (status IN (?, ?, ?) AND catatan IS NOT NULL AND catatan != \'\')
-                ) THEN 1 ELSE 0 END) as completed,
+                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as selesai,
+                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as tinjauan,
+                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as proses,
+                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as belum,
+                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as na_terverifikasi,
                 SUM(CASE WHEN tanggal_verifikasi IS NOT NULL THEN 1 ELSE 0 END) as verified_entries
             ', [
                 ChecklistEntry::WORKFLOW_SELESAI,
+                ChecklistEntry::WORKFLOW_DALAM_TINJAUAN,
                 ChecklistEntry::WORKFLOW_DALAM_PROSES,
-                ChecklistEntry::WORKFLOW_DALAM_PROSES,
-                ChecklistEntry::WORKFLOW_TIDAK_BERLAKU,
-                ChecklistEntry::WORKFLOW_SELESAI,
-                ChecklistEntry::WORKFLOW_DALAM_PROSES,
-                ChecklistEntry::WORKFLOW_DALAM_PROSES,
+                ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
                 ChecklistEntry::WORKFLOW_TIDAK_BERLAKU,
             ])
             ->first();
 
         $total = (int) $stats->total_entries;
-        $completed = (int) $stats->completed;
+        $selesai = (int) $stats->selesai;
+        $naTerverifikasi = (int) $stats->na_terverifikasi;
+        $completed = $selesai + $naTerverifikasi;
 
         return [
             'total_entries' => $total,
-            'compliant' => (int) $stats->compliant,
-            'partial' => (int) $stats->partial,
-            'non_compliant' => (int) $stats->non_compliant,
-            'na' => (int) $stats->na,
+            'selesai_entries' => $selesai,
+            'tinjauan_entries' => (int) $stats->tinjauan,
+            'proses_entries' => (int) $stats->proses,
+            'belum_entries' => (int) $stats->belum,
+            'na_entries' => $naTerverifikasi,
             'verified_entries' => (int) $stats->verified_entries,
-            'compliance_percentage' => $total > 0 ? (int) round(($completed / $total) * 100) : 0,
+            'completed' => $completed,
+            'completion_percentage' => $total > 0 ? (int) round(($completed / $total) * 100) : 0,
         ];
     }
 }

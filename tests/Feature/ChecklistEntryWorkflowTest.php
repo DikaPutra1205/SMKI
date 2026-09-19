@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\ChecklistEntry;
+use App\Models\ChecklistSession;
 use App\Models\Framework;
 use App\Models\User;
 use App\Models\WorkUnit;
@@ -346,5 +347,42 @@ class ChecklistEntryWorkflowTest extends TestCase
         $fresh = $entry->fresh();
         $this->assertSame(ChecklistEntry::WORKFLOW_DALAM_PROSES, $fresh->status);
         $this->assertNull($fresh->tanggal_verifikasi);
+    }
+
+    public function test_session_summary_reports_workflow_buckets(): void
+    {
+        $unit = WorkUnit::create(['nama' => 'Unit Summary']);
+        $fw = Framework::create(['nama' => 'ISO27001', 'versi' => '2022']);
+        $control1 = $fw->controls()->create(['kode_klausul' => 'A5.1', 'judul' => 'Policies', 'kategori' => 'teknologi']);
+        $control2 = $fw->controls()->create(['kode_klausul' => 'A5.2', 'judul' => 'People', 'kategori' => 'teknologi']);
+        $pic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unit->id]);
+        $session = ChecklistSession::create([
+            'konteks_penilaian' => 'Audit',
+            'unit_id' => $unit->id,
+            'framework_id' => $fw->id,
+            'created_by' => $pic->id,
+            'updated_by' => $pic->id,
+        ]);
+
+        $entry1 = ChecklistEntry::create([
+            'control_id' => $control1->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI, 'tanggal_verifikasi' => now(),
+        ]);
+        $entry2 = ChecklistEntry::create([
+            'control_id' => $control2->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
+        ]);
+        $session->entries()->saveMany([$entry1, $entry2]);
+
+        $summary = $session->summary;
+
+        $this->assertEquals(2, $summary['total_entries']);
+        $this->assertEquals(1, $summary['selesai_entries']);
+        $this->assertEquals(1, $summary['belum_entries']);
+        $this->assertEquals(0, $summary['tinjauan_entries']);
+        $this->assertEquals(0, $summary['proses_entries']);
+        $this->assertEquals(0, $summary['na_entries']);
+        $this->assertEquals(1, $summary['completed']);
+        $this->assertEquals(50, $summary['completion_percentage']);
     }
 }

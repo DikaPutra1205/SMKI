@@ -38,7 +38,12 @@ class PicDashboardController extends Controller
             ->withCount([
                 'entries as total_entries',
                 'entries as completed_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_SELESAI)
-                    ->orWhere(fn ($q2) => $q2->whereIn('status', [ChecklistEntry::WORKFLOW_DALAM_PROSES, ChecklistEntry::WORKFLOW_DALAM_PROSES, ChecklistEntry::WORKFLOW_TIDAK_BERLAKU])->where('catatan', '!=', '')->whereNotNull('catatan')),
+                    ->orWhere(fn ($q2) => $q2->whereIn('status', [ChecklistEntry::WORKFLOW_DALAM_PROSES, ChecklistEntry::WORKFLOW_DALAM_TINJAUAN, ChecklistEntry::WORKFLOW_TIDAK_BERLAKU])->where('catatan', '!=', '')->whereNotNull('catatan')),
+                'entries as selesai_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_SELESAI),
+                'entries as tinjauan_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_DALAM_TINJAUAN),
+                'entries as proses_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_DALAM_PROSES),
+                'entries as belum_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_BELUM_DIMULAI),
+                'entries as na_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_TIDAK_BERLAKU),
             ])
             ->orderByDesc('id')->limit(10)->get()
             ->map(fn ($s) => [

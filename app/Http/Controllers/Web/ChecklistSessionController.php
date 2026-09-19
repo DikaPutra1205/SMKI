@@ -31,13 +31,14 @@ class ChecklistSessionController extends Controller
                 'entries as total_entries',
                 'entries as completed_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_SELESAI)
                     ->orWhere(function ($q2) {
-                        $q2->whereIn('status', [ChecklistEntry::WORKFLOW_DALAM_PROSES, ChecklistEntry::WORKFLOW_DALAM_PROSES, ChecklistEntry::WORKFLOW_TIDAK_BERLAKU])
+                        $q2->whereIn('status', [ChecklistEntry::WORKFLOW_DALAM_PROSES, ChecklistEntry::WORKFLOW_DALAM_TINJAUAN, ChecklistEntry::WORKFLOW_TIDAK_BERLAKU])
                             ->where('catatan', '!=', '')
                             ->whereNotNull('catatan');
                     }),
-                'entries as compliant_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_SELESAI),
-                'entries as partial_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_DALAM_PROSES),
-                'entries as non_compliant_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_DALAM_PROSES),
+                'entries as selesai_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_SELESAI),
+                'entries as tinjauan_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_DALAM_TINJAUAN),
+                'entries as proses_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_DALAM_PROSES),
+                'entries as belum_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_BELUM_DIMULAI),
                 'entries as na_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_TIDAK_BERLAKU),
             ])
             ->orderByDesc('id')
