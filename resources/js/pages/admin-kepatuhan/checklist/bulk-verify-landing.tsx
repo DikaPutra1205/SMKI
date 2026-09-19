@@ -24,9 +24,10 @@ interface SessionItem {
     selesai_entries: number;
     tinjauan_entries: number;
     proses_entries: number;
+    belum_entries: number;
     na_entries: number;
     verified_entries: number;
-    compliance_percentage: number;
+    completion_percentage: number;
     created_at: string;
     updated_at: string;
 }
@@ -66,7 +67,7 @@ function SessionCard({ session }: { session: SessionItem }) {
         belum: session.belum_entries,
         na: session.na_entries,
     });
-    const pct = session.compliance_percentage;
+    const pct = session.completion_percentage;
 
     function handleClick() {
         router.get('/admin/kepatuhan/checklist/verify', { session_id: String(session.id) });

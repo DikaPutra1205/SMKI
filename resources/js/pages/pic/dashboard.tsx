@@ -13,8 +13,9 @@ interface FrameworkBreakdown {
     nama: string;
     completion_rate: number;
     selesai_count: number;
-    partial_count: number;
-    non_selesai_count: number;
+    tinjauan_count: number;
+    proses_count: number;
+    belum_count: number;
     na_count: number;
     total_controls: number;
 }
