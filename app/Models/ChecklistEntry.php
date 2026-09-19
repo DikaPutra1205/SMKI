@@ -32,14 +32,49 @@ class ChecklistEntry extends Model
         'tanggal_verifikasi' => 'datetime',
     ];
 
-    // status: compliant, partial, non_compliant, na
-    const STATUS_COMPLIANT = 'compliant';
+    // status: belum_dimulai, dalam_proses, dalam_tinjauan, selesai_diterapkan, tidak_berlaku
+    const WORKFLOW_BELUM_DIMULAI = 'belum_dimulai';
 
-    const STATUS_PARTIAL = 'partial';
+    const WORKFLOW_DALAM_PROSES = 'dalam_proses';
 
-    const STATUS_NON_COMPLIANT = 'non_compliant';
+    const WORKFLOW_DALAM_TINJAUAN = 'dalam_tinjauan';
 
-    const STATUS_NA = 'na';
+    const WORKFLOW_SELESAI = 'selesai_diterapkan';
+
+    const WORKFLOW_TIDAK_BERLAKU = 'tidak_berlaku';
+
+    public static function workflowValues(): array
+    {
+        return [
+            self::WORKFLOW_BELUM_DIMULAI,
+            self::WORKFLOW_DALAM_PROSES,
+            self::WORKFLOW_DALAM_TINJAUAN,
+            self::WORKFLOW_SELESAI,
+            self::WORKFLOW_TIDAK_BERLAKU,
+        ];
+    }
+
+    public static function resolvePicWorkflow(bool $hasCatatan, bool $hasBukti): string
+    {
+        if ($hasCatatan && $hasBukti) {
+            return self::WORKFLOW_DALAM_TINJAUAN;
+        }
+
+        if ($hasCatatan || $hasBukti) {
+            return self::WORKFLOW_DALAM_PROSES;
+        }
+
+        return self::WORKFLOW_BELUM_DIMULAI;
+    }
+
+    public function applyPicTouch(?string $catatan, bool $hasBukti, bool $naSelected): string
+    {
+        if ($naSelected) {
+            return self::WORKFLOW_TIDAK_BERLAKU;
+        }
+
+        return self::resolvePicWorkflow(trim((string) $catatan) !== '', $hasBukti);
+    }
 
     public function session(): BelongsTo
     {
