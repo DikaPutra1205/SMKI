@@ -43,4 +43,26 @@ class WorkUnit extends Model
     {
         return $this->hasMany(Finding::class, 'unit_id');
     }
+
+    public function getDescendantIds(): array
+    {
+        $ids = [];
+        $this->loadMissing('children');
+
+        foreach ($this->children as $child) {
+            $ids[] = $child->id;
+            $ids = array_merge($ids, $child->getDescendantIds());
+        }
+
+        return $ids;
+    }
+
+    public function isAncestorOf(WorkUnit $unit): bool
+    {
+        if ($this->id === $unit->id) {
+            return false;
+        }
+
+        return in_array($unit->id, $this->getDescendantIds(), true);
+    }
 }
