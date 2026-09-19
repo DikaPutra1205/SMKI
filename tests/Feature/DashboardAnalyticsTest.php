@@ -651,6 +651,7 @@ class DashboardAnalyticsTest extends TestCase
 
     public function test_pic_without_assigned_unit_is_not_scoped_to_any_unit(): void
     {
+        // TODO(vuln): unitless PIC currently sees all units (global view). Should be scoped or 403.
         $ctrl = Control::factory()->create(['framework_id' => $this->iso27001->id]);
 
         Finding::factory()->create([

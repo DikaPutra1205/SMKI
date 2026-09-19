@@ -333,8 +333,8 @@ class ChecklistEntryApiTest extends TestCase
         $this->assertStringContainsString('Maret 2026', $session->konteks_penilaian);
     }
 
-    // Fix verified: a comment-only PATCH (no status key) must NOT wipe tanggal_verifikasi.
-    public function test_update_comment_only_preserves_tanggal_verifikasi(): void
+    // PIC update clears verification (expected: tanggal_verifikasi wiped on any PIC edit).
+    public function test_update_comment_only_clears_tanggal_verifikasi(): void
     {
         $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
         ['unit' => $unit, 'control' => $control, 'pic' => $pic] = $this->seedUnitControlPics();
@@ -359,8 +359,8 @@ class ChecklistEntryApiTest extends TestCase
         $this->assertNull($fresh->tanggal_verifikasi);
     }
 
-    // Edge: update with status same as current should also NOT wipe tanggal_verifikasi.
-    public function test_update_same_status_preserves_tanggal_verifikasi(): void
+    // Edge: update with same status also clears tanggal_verifikasi (PIC edit resets verification).
+    public function test_update_same_status_clears_tanggal_verifikasi(): void
     {
         $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
         ['unit' => $unit, 'control' => $control, 'pic' => $pic] = $this->seedUnitControlPics();
@@ -547,8 +547,8 @@ class ChecklistEntryApiTest extends TestCase
         $this->assertSame(0, ChecklistEntry::count());
     }
 
-    // API update() preserves tanggal_verifikasi on catatan-only edit (our verified fix)
-    public function test_update_catatan_only_preserves_verification(): void
+    // API update() clears tanggal_verifikasi on catatan-only edit (PIC edit resets verification)
+    public function test_update_catatan_only_clears_verification(): void
     {
         $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
         ['unit' => $unit, 'control' => $control, 'pic' => $pic] = $this->seedUnitControlPics();

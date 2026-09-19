@@ -38,7 +38,7 @@ class AuthAuthorizationGapTest extends TestCase
         $this->getJson('/api/checklist-entries')->assertStatus(401);
     }
 
-    // D6 — pic reaches the admin-only verify endpoint (no policy/gate/middleware).
+    // D6 — pic must not reach the admin-only verify endpoint.
     public function test_pic_reaches_verify_endpoint(): void
     {
         ['pic' => $pic, 'entry' => $entry] = $this->seedEntry();
@@ -47,9 +47,9 @@ class AuthAuthorizationGapTest extends TestCase
         $this->actingAs($pic)
             ->patchJson("/api/checklist-entries/{$entry->id}/verify",
                 ['admin_id' => $pic->id, 'decision' => 'approve'])
-            ->assertOk();
+            ->assertForbidden();
 
-        $this->assertNotNull(ChecklistEntry::find($entry->id)->tanggal_verifikasi);
+        $this->assertNull(ChecklistEntry::find($entry->id)->tanggal_verifikasi);
     }
 
     // D6 — pic reaches evidence store (writes any role's data).

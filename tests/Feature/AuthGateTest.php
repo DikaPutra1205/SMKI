@@ -241,7 +241,7 @@ class AuthGateTest extends TestCase
         $pic = User::factory()->create(['role' => User::ROLE_PIC]);
 
         $this->assertTrue(Gate::forUser($admin)->allows('checklist.verify'));
-        $this->assertTrue(Gate::forUser($pic)->allows('checklist.verify'));
+        $this->assertTrue(Gate::forUser($pic)->denies('checklist.verify'));
         $this->assertTrue(Gate::forUser($admin)->allows('audit-log.view'));
         $this->assertTrue(Gate::forUser($pic)->denies('audit-log.view'));
         $this->assertTrue(Gate::forUser($pic)->denies('checklist.bulk-verify'));
