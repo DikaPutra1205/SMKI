@@ -97,6 +97,10 @@ class ChecklistEntryPolicy
      */
     public function verify(User $user, ChecklistEntry $checklistEntry): bool
     {
+        if ($user->isPic()) {
+            return false;
+        }
+
         return $this->isUserAuthorizedForEntry($user, $checklistEntry);
     }
 

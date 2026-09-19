@@ -120,4 +120,9 @@ class FindingPolicy
 
         return $user->hasPermissionTo('finding.delete') || $user->isAdmin() || $user->isSuperAdmin();
     }
+
+    public function restore(User $user, Finding $finding): bool
+    {
+        return $this->delete($user, $finding);
+    }
 }
