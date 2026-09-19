@@ -162,7 +162,6 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
 
     const executeVerify = (action: 'approve' | 'reject') => {
         if (!entry || actionSubmitting) return;
-        const targetStatus = action === 'approve' ? 'compliant' : 'non_compliant';
 
         if (action === 'reject' && !adminNote.trim()) {
             setNoteError('Catatan verifikasi admin wajib diisi sebelum menolak.');
@@ -172,14 +171,12 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
         setNoteError(null);
         setActionSubmitting(action);
 
-        // Approve (compliant) must not carry an admin note — catatan is only
-        // for the reject path. Backend also nulls catatan_admin on approve.
-        // Maturity correction rides along when the admin changed the select.
         const maturityValue = maturity === '' ? undefined : Number(maturity);
+        const decision = action === 'approve' ? 'approve' : 'reject';
         const payload =
             action === 'reject'
-                ? { status: targetStatus, admin_notes: adminNote.trim() || undefined, level_maturity: maturityValue }
-                : { status: targetStatus, level_maturity: maturityValue };
+                ? { decision, admin_notes: adminNote.trim() || undefined, level_maturity: maturityValue }
+                : { decision, level_maturity: maturityValue };
 
         router.post(`/admin/kepatuhan/checklist/verify/${entry.id}`, payload, {
             preserveScroll: true,
@@ -266,7 +263,7 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
                                 ) : (
                                     <>
                                         <CheckCircle2 className="h-4 w-4" />
-                                        Setujui (Patuh)
+                                        Setujui (Selesai Diterapkan)
                                     </>
                                 )}
                             </button>
@@ -284,7 +281,7 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
                                 ) : (
                                     <>
                                         <XCircle className="h-4 w-4" />
-                                        Tolak (Tidak Patuh)
+                                        Tolak (Kembalikan ke PIC)
                                     </>
                                 )}
                             </button>
@@ -441,8 +438,8 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
             <ConfirmDialog
                 open={confirmAction === 'reject'}
                 title="Tolak Kontrol Ini?"
-                description="Tandai entri kontrol ini sebagai Tidak Patuh? PIC unit kerja perlu menindaklanjuti."
-                confirmLabel="Tolak (Tidak Patuh)"
+                description="Tandai entri kontrol ini sebagai ditolak? PIC unit kerja perlu menindaklanjuti."
+                confirmLabel="Tolak (Kembalikan ke PIC)"
                 variant="danger"
                 busy={actionSubmitting === 'reject'}
                 onCancel={() => setConfirmAction(null)}
@@ -454,7 +451,7 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
 
 /* ─── Unified Verify Page with Always-On Selection & Floating Dock ─────────── */
 
-const STATUS_OPTIONS = ['compliant', 'partial', 'non_compliant', 'na'] as const;
+const STATUS_OPTIONS = ['belum_dimulai', 'dalam_proses', 'dalam_tinjauan', 'selesai_diterapkan', 'tidak_berlaku'] as const;
 
 export default function Verify({ entries, session, workUnits = [], filters = {} }: VerifyProps) {
     const can = useCan();
@@ -579,20 +576,17 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
     function submitBulkDecision() {
         if (!bulkConfirmAction || selectedIds.size === 0) return;
 
-        const targetStatus = bulkConfirmAction === 'approve' ? 'compliant' : 'non_compliant';
-
         if (bulkConfirmAction === 'reject' && !bulkAdminNote.trim()) {
             setBulkNoteError('Catatan verifikasi admin wajib diisi sebelum menolak secara massal.');
             return;
         }
 
         setBulkBusy(true);
-        // Approve (compliant) must not carry an admin note — catatan is only
-        // for the bulk reject path. Backend also nulls catatan_admin on approve.
+        const decision = bulkConfirmAction === 'approve' ? 'approve' : 'reject';
         const bulkPayload =
             bulkConfirmAction === 'reject'
-                ? { entry_ids: Array.from(selectedIds), status: targetStatus, admin_notes: bulkAdminNote.trim() || undefined }
-                : { entry_ids: Array.from(selectedIds), status: targetStatus };
+                ? { entry_ids: Array.from(selectedIds), decision, admin_notes: bulkAdminNote.trim() || undefined }
+                : { entry_ids: Array.from(selectedIds), decision };
 
         router.post('/admin/kepatuhan/bulk-verify', bulkPayload, {
             preserveScroll: true,
@@ -1060,7 +1054,7 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                                 </div>
                                 <div>
                                     <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                                        {bulkConfirmAction === 'approve' ? 'Verifikasi & Setujui Kontrol' : 'Tolak & Minta Perbaikan'}
+                                        {bulkConfirmAction === 'approve' ? 'Verifikasi & Setujui Kontrol' : 'Tolak & Kembalikan ke PIC'}
                                     </h3>
                                     <p className="text-xs text-slate-500 dark:text-slate-400">
                                         {selectedIds.size} entri checklist dipilih untuk diproses sekaligus.
@@ -1070,8 +1064,8 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
 
                             <p className="mb-4 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
                                 {bulkConfirmAction === 'approve'
-                                    ? `Tandai ${selectedIds.size} entri kontrol terpilih sebagai Patuh (Compliant) dan telah terverifikasi secara resmi.`
-                                    : `Tandai ${selectedIds.size} entri kontrol terpilih sebagai Tidak Patuh / Ditolak. PIC terkait akan diminta untuk memperbarui bukti dukung.`}
+                                    ? `Setujui ${selectedIds.size} entri kontrol terpilih sebagai Selesai Diterapkan dan telah terverifikasi.`
+                                    : `Tolak ${selectedIds.size} entri kontrol terpilih. PIC terkait akan diminta untuk memperbarui bukti dukung.`}
                             </p>
 
                             {bulkConfirmAction === 'reject' && (
