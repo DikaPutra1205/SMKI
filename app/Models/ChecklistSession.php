@@ -62,14 +62,14 @@ class ChecklistSession extends Model
                 ) THEN 1 ELSE 0 END) as completed,
                 SUM(CASE WHEN tanggal_verifikasi IS NOT NULL THEN 1 ELSE 0 END) as verified_entries
             ', [
-                ChecklistEntry::STATUS_COMPLIANT,
-                ChecklistEntry::STATUS_PARTIAL,
-                ChecklistEntry::STATUS_NON_COMPLIANT,
-                ChecklistEntry::STATUS_NA,
-                ChecklistEntry::STATUS_COMPLIANT,
-                ChecklistEntry::STATUS_PARTIAL,
-                ChecklistEntry::STATUS_NON_COMPLIANT,
-                ChecklistEntry::STATUS_NA,
+                ChecklistEntry::WORKFLOW_SELESAI,
+                ChecklistEntry::WORKFLOW_DALAM_PROSES,
+                ChecklistEntry::WORKFLOW_DALAM_PROSES,
+                ChecklistEntry::WORKFLOW_TIDAK_BERLAKU,
+                ChecklistEntry::WORKFLOW_SELESAI,
+                ChecklistEntry::WORKFLOW_DALAM_PROSES,
+                ChecklistEntry::WORKFLOW_DALAM_PROSES,
+                ChecklistEntry::WORKFLOW_TIDAK_BERLAKU,
             ])
             ->first();
 

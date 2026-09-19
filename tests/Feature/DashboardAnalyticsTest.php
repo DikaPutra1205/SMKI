@@ -98,14 +98,14 @@ class DashboardAnalyticsTest extends TestCase
             'session_id' => $session->id,
             'control_id' => $ctrl1->id,
             'unit_id' => $this->unitA->id,
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI,
         ]);
 
         ChecklistEntry::factory()->create([
             'session_id' => $session->id,
             'control_id' => $ctrl2->id,
             'unit_id' => $this->unitA->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
         ]);
 
         Finding::factory()->create([
@@ -157,7 +157,7 @@ class DashboardAnalyticsTest extends TestCase
         ChecklistEntry::factory()->create([
             'control_id' => $ctrl1->id,
             'unit_id' => $this->unitA->id,
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI,
         ]);
 
         $response = $this->actingAs($auditor)->get('/admin/auditor/dashboard');
@@ -191,7 +191,7 @@ class DashboardAnalyticsTest extends TestCase
             'session_id' => $sessionA->id,
             'control_id' => $ctrl1->id,
             'unit_id' => $this->unitA->id,
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI,
         ]);
 
         // Unit B's own most-recent session — non-compliant entry. The PIC is
@@ -206,7 +206,7 @@ class DashboardAnalyticsTest extends TestCase
             'session_id' => $sessionB->id,
             'control_id' => $ctrl1->id,
             'unit_id' => $this->unitB->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
         ]);
 
         // Finding for Unit B
@@ -350,9 +350,9 @@ class DashboardAnalyticsTest extends TestCase
 
         // Framework 1: 1 compliant + 1 partial + 1 non-compliant => applicable 3, rate round(1/3*100)=33
         foreach ([
-            ChecklistEntry::STATUS_COMPLIANT,
-            ChecklistEntry::STATUS_PARTIAL,
-            ChecklistEntry::STATUS_NON_COMPLIANT,
+            ChecklistEntry::WORKFLOW_SELESAI,
+            ChecklistEntry::WORKFLOW_DALAM_PROSES,
+            ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
         ] as $status) {
             ChecklistEntry::factory()->create([
                 'session_id' => $sessionA->id,
@@ -367,7 +367,7 @@ class DashboardAnalyticsTest extends TestCase
             'session_id' => $sessionB->id,
             'control_id' => $ctrlB->id,
             'unit_id' => $this->unitA->id,
-            'status' => ChecklistEntry::STATUS_NA,
+            'status' => ChecklistEntry::WORKFLOW_TIDAK_BERLAKU,
         ]);
 
         $response = $this->actingAs($this->admin)->getJson('/api/v1/dashboard/summary');
@@ -409,13 +409,13 @@ class DashboardAnalyticsTest extends TestCase
             'session_id' => $older->id,
             'control_id' => $ctrl->id,
             'unit_id' => $this->unitA->id,
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI,
         ]);
         ChecklistEntry::factory()->create([
             'session_id' => $newest->id,
             'control_id' => $ctrl->id,
             'unit_id' => $this->unitA->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
         ]);
 
         $response = $this->actingAs($this->pic)->getJson('/api/v1/dashboard/summary');
@@ -452,24 +452,24 @@ class DashboardAnalyticsTest extends TestCase
         foreach ([$ctrlA, $ctrlB] as $c) {
             ChecklistEntry::factory()->create([
                 'session_id' => $sessionA->id, 'control_id' => $c->id,
-                'unit_id' => $this->unitA->id, 'status' => ChecklistEntry::STATUS_COMPLIANT,
+                'unit_id' => $this->unitA->id, 'status' => ChecklistEntry::WORKFLOW_SELESAI,
             ]);
         }
         ChecklistEntry::factory()->create([
             'session_id' => $sessionA->id, 'control_id' => $ctrlC->id,
-            'unit_id' => $this->unitA->id, 'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'unit_id' => $this->unitA->id, 'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
         ]);
         ChecklistEntry::factory()->create([
             'session_id' => $sessionB->id, 'control_id' => $ctrlA->id,
-            'unit_id' => $this->unitB->id, 'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'unit_id' => $this->unitB->id, 'status' => ChecklistEntry::WORKFLOW_SELESAI,
         ]);
         ChecklistEntry::factory()->create([
             'session_id' => $sessionB->id, 'control_id' => $ctrlB->id,
-            'unit_id' => $this->unitB->id, 'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'unit_id' => $this->unitB->id, 'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
         ]);
         ChecklistEntry::factory()->create([
             'session_id' => $sessionB->id, 'control_id' => $ctrlC->id,
-            'unit_id' => $this->unitB->id, 'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'unit_id' => $this->unitB->id, 'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
         ]);
 
         $response = $this->actingAs($this->admin)->getJson('/api/v1/dashboard/summary');
@@ -508,7 +508,7 @@ class DashboardAnalyticsTest extends TestCase
                 'session_id' => $session->id,
                 'control_id' => $ctrl->id,
                 'unit_id' => $this->unitA->id,
-                'status' => ChecklistEntry::STATUS_COMPLIANT,
+                'status' => ChecklistEntry::WORKFLOW_SELESAI,
             ]);
         }
 
@@ -536,7 +536,7 @@ class DashboardAnalyticsTest extends TestCase
             'session_id' => $session->id,
             'control_id' => $ctrl->id,
             'unit_id' => $this->unitA->id,
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI,
             'tanggal_input' => now(),
         ]);
 
@@ -544,7 +544,7 @@ class DashboardAnalyticsTest extends TestCase
             'session_id' => $session->id,
             'control_id' => $ctrl->id,
             'unit_id' => $this->unitA->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
             'tanggal_input' => now()->subMonth(),
         ]);
 
@@ -697,14 +697,14 @@ class DashboardAnalyticsTest extends TestCase
             'session_id' => $sessionA->id,
             'control_id' => $ctrl->id,
             'unit_id' => $this->unitA->id,
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI,
         ]);
 
         ChecklistEntry::factory()->create([
             'session_id' => $sessionB->id,
             'control_id' => $ctrl->id,
             'unit_id' => $this->unitA->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
         ]);
 
         // Explicit ?session_id override wins over the most-recent-session rule.
@@ -737,13 +737,13 @@ class DashboardAnalyticsTest extends TestCase
             'session_id' => $currentSession->id,
             'control_id' => $ctrl->id,
             'unit_id' => $this->unitA->id,
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI,
         ]);
         ChecklistEntry::factory()->create([
             'session_id' => $currentSession->id,
             'control_id' => $ctrl->id,
             'unit_id' => $this->unitA->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
         ]);
 
         // A session two periods ago must NOT bleed into the current or middle bucket.
@@ -756,7 +756,7 @@ class DashboardAnalyticsTest extends TestCase
             'session_id' => $oldSession->id,
             'control_id' => $ctrl->id,
             'unit_id' => $this->unitA->id,
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI,
         ]);
 
         $response = $this->actingAs($this->admin)->getJson('/api/v1/dashboard/trends?months=3');
@@ -806,7 +806,7 @@ class DashboardAnalyticsTest extends TestCase
             'session_id' => $sessionOld->id,
             'control_id' => $ctrl->id,
             'unit_id' => $this->unitA->id,
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI,
         ]);
 
         $response = $this->actingAs($this->admin)->getJson('/api/v1/dashboard/trends?months=4');
@@ -827,13 +827,13 @@ class DashboardAnalyticsTest extends TestCase
             'session_id' => $augSession->id,
             'control_id' => $ctrl->id,
             'unit_id' => $this->unitA->id,
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI,
         ]);
         ChecklistEntry::factory()->create([
             'session_id' => $augSession->id,
             'control_id' => $ctrl->id,
             'unit_id' => $this->unitA->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
         ]);
 
         $response = $this->actingAs($this->admin)->getJson('/api/v1/dashboard/trends?months=4');
@@ -864,14 +864,14 @@ class DashboardAnalyticsTest extends TestCase
             'session_id' => $session->id,
             'control_id' => $ctrl->id,
             'unit_id' => $this->unitA->id,
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI,
         ]);
 
         ChecklistEntry::factory()->create([
             'session_id' => $session->id,
             'control_id' => $ctrl->id,
             'unit_id' => $this->unitA->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
         ]);
 
         Finding::factory()->create([
@@ -964,14 +964,14 @@ class DashboardAnalyticsTest extends TestCase
             'session_id' => $session->id,
             'control_id' => $ctrl->id,
             'unit_id' => $this->unitA->id,
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI,
         ]);
 
         ChecklistEntry::factory()->create([
             'session_id' => $session->id,
             'control_id' => $ctrl->id,
             'unit_id' => $this->unitA->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
         ]);
 
         $response = $this->actingAs($this->admin)
@@ -1019,14 +1019,14 @@ class DashboardAnalyticsTest extends TestCase
         ChecklistEntry::factory()->create([
             'control_id' => $ctrl->id,
             'unit_id' => $this->unitA->id,
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI,
             'tanggal_input' => now(),
         ]);
 
         ChecklistEntry::factory()->create([
             'control_id' => $ctrl->id,
             'unit_id' => $this->unitB->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
             'tanggal_input' => now(),
         ]);
 
@@ -1179,7 +1179,7 @@ class DashboardAnalyticsTest extends TestCase
             'session_id' => $current->id,
             'control_id' => $ctrl->id,
             'unit_id' => $this->unitA->id,
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI,
         ]);
 
         // Old session (5 months ago): non-compliant
@@ -1192,7 +1192,7 @@ class DashboardAnalyticsTest extends TestCase
             'session_id' => $old->id,
             'control_id' => $ctrl->id,
             'unit_id' => $this->unitA->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
         ]);
 
         // All-time: uses most-recent session (compliant) => 100%
@@ -1226,7 +1226,7 @@ class DashboardAnalyticsTest extends TestCase
             'session_id' => $recent->id,
             'control_id' => $ctrl->id,
             'unit_id' => $this->unitA->id,
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI,
         ]);
 
         // Old session: non-compliant
@@ -1239,7 +1239,7 @@ class DashboardAnalyticsTest extends TestCase
             'session_id' => $old->id,
             'control_id' => $ctrl->id,
             'unit_id' => $this->unitA->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
         ]);
 
         // All-time: both entries counted => 1 compliant of 2 applicable = 50%

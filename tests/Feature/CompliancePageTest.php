@@ -174,9 +174,9 @@ class CompliancePageTest extends TestCase
         $ctrlA = Control::factory()->create(['framework_id' => $iso27001->id]);
         $ctrlB = Control::factory()->create(['framework_id' => $iso27701->id]);
 
-        ChecklistEntry::factory()->create(['session_id' => $session->id, 'control_id' => $ctrlA->id, 'unit_id' => $unit->id, 'status' => ChecklistEntry::STATUS_COMPLIANT]);
-        ChecklistEntry::factory()->create(['session_id' => $session->id, 'control_id' => $ctrlA->id, 'unit_id' => $unit->id, 'status' => ChecklistEntry::STATUS_NON_COMPLIANT]);
-        ChecklistEntry::factory()->create(['session_id' => $session->id, 'control_id' => $ctrlB->id, 'unit_id' => $unit->id, 'status' => ChecklistEntry::STATUS_NA]);
+        ChecklistEntry::factory()->create(['session_id' => $session->id, 'control_id' => $ctrlA->id, 'unit_id' => $unit->id, 'status' => ChecklistEntry::WORKFLOW_SELESAI]);
+        ChecklistEntry::factory()->create(['session_id' => $session->id, 'control_id' => $ctrlA->id, 'unit_id' => $unit->id, 'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI]);
+        ChecklistEntry::factory()->create(['session_id' => $session->id, 'control_id' => $ctrlB->id, 'unit_id' => $unit->id, 'status' => ChecklistEntry::WORKFLOW_TIDAK_BERLAKU]);
 
         $response = $this->actingAs($user)->get('/admin/kepatuhan/compliance');
 

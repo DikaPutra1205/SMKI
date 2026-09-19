@@ -54,10 +54,10 @@ class DashboardAnalyticsService
                     COUNT(DISTINCT CASE WHEN checklist_entries.status = ? THEN checklist_entries.control_id END) as non_compliant_count,
                     COUNT(DISTINCT CASE WHEN checklist_entries.status = ? THEN checklist_entries.control_id END) as na_count
                 ', [
-                    ChecklistEntry::STATUS_COMPLIANT,
-                    ChecklistEntry::STATUS_PARTIAL,
-                    ChecklistEntry::STATUS_NON_COMPLIANT,
-                    ChecklistEntry::STATUS_NA,
+                    ChecklistEntry::WORKFLOW_SELESAI,
+                    ChecklistEntry::WORKFLOW_DALAM_PROSES,
+                    ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
+                    ChecklistEntry::WORKFLOW_TIDAK_BERLAKU,
                 ]);
 
             if ($scopedUnitId) {
@@ -87,10 +87,10 @@ class DashboardAnalyticsService
                     COUNT(DISTINCT CASE WHEN checklist_entries.status = ? THEN checklist_entries.control_id END) as non_compliant_count,
                     COUNT(DISTINCT CASE WHEN checklist_entries.status = ? THEN checklist_entries.control_id END) as na_count
                 ', [
-                    ChecklistEntry::STATUS_COMPLIANT,
-                    ChecklistEntry::STATUS_PARTIAL,
-                    ChecklistEntry::STATUS_NON_COMPLIANT,
-                    ChecklistEntry::STATUS_NA,
+                    ChecklistEntry::WORKFLOW_SELESAI,
+                    ChecklistEntry::WORKFLOW_DALAM_PROSES,
+                    ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
+                    ChecklistEntry::WORKFLOW_TIDAK_BERLAKU,
                 ])
                 ->where('ms.rn', 1);
 
@@ -272,12 +272,12 @@ class DashboardAnalyticsService
                 SUM(CASE WHEN checklist_entries.status = ? THEN 1 ELSE 0 END) as overall_compliant,
                 SUM(CASE WHEN checklist_entries.status IN (?, ?, ?) THEN 1 ELSE 0 END) as overall_applicable
             ', [
-                ChecklistEntry::STATUS_COMPLIANT,
-                ChecklistEntry::STATUS_COMPLIANT, ChecklistEntry::STATUS_PARTIAL, ChecklistEntry::STATUS_NON_COMPLIANT,
-                ChecklistEntry::STATUS_COMPLIANT,
-                ChecklistEntry::STATUS_COMPLIANT, ChecklistEntry::STATUS_PARTIAL, ChecklistEntry::STATUS_NON_COMPLIANT,
-                ChecklistEntry::STATUS_COMPLIANT,
-                ChecklistEntry::STATUS_COMPLIANT, ChecklistEntry::STATUS_PARTIAL, ChecklistEntry::STATUS_NON_COMPLIANT,
+                ChecklistEntry::WORKFLOW_SELESAI,
+                ChecklistEntry::WORKFLOW_SELESAI, ChecklistEntry::WORKFLOW_DALAM_PROSES, ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
+                ChecklistEntry::WORKFLOW_SELESAI,
+                ChecklistEntry::WORKFLOW_SELESAI, ChecklistEntry::WORKFLOW_DALAM_PROSES, ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
+                ChecklistEntry::WORKFLOW_SELESAI,
+                ChecklistEntry::WORKFLOW_SELESAI, ChecklistEntry::WORKFLOW_DALAM_PROSES, ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
             ])->first();
 
             $iso27001App = (int) ($stats->iso27001_applicable ?? 0);
@@ -334,10 +334,10 @@ class DashboardAnalyticsService
                 SUM(CASE WHEN checklist_entries.status = ? THEN 1 ELSE 0 END) as compliant_count,
                 SUM(CASE WHEN checklist_entries.status IN (?, ?, ?) THEN 1 ELSE 0 END) as applicable_count
             ', [
-                ChecklistEntry::STATUS_COMPLIANT,
-                ChecklistEntry::STATUS_COMPLIANT,
-                ChecklistEntry::STATUS_PARTIAL,
-                ChecklistEntry::STATUS_NON_COMPLIANT,
+                ChecklistEntry::WORKFLOW_SELESAI,
+                ChecklistEntry::WORKFLOW_SELESAI,
+                ChecklistEntry::WORKFLOW_DALAM_PROSES,
+                ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
             ])
             ->groupBy('checklist_entries.unit_id')
             ->get()
@@ -428,10 +428,10 @@ class DashboardAnalyticsService
             SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as compliant_count,
             SUM(CASE WHEN status IN (?, ?, ?) THEN 1 ELSE 0 END) as applicable_count
         ', [
-            ChecklistEntry::STATUS_COMPLIANT,
-            ChecklistEntry::STATUS_COMPLIANT,
-            ChecklistEntry::STATUS_PARTIAL,
-            ChecklistEntry::STATUS_NON_COMPLIANT,
+            ChecklistEntry::WORKFLOW_SELESAI,
+            ChecklistEntry::WORKFLOW_SELESAI,
+            ChecklistEntry::WORKFLOW_DALAM_PROSES,
+            ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
         ])->first();
 
         $applicableCount = (int) ($stats->applicable_count ?? 0);

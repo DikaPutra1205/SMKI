@@ -26,7 +26,7 @@ class AuthAuthorizationGapTest extends TestCase
         $pic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unit->id]);
         $entry = ChecklistEntry::create([
             'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
         ]);
 
         return ['pic' => $pic, 'entry' => $entry];
@@ -42,10 +42,11 @@ class AuthAuthorizationGapTest extends TestCase
     public function test_pic_reaches_verify_endpoint(): void
     {
         ['pic' => $pic, 'entry' => $entry] = $this->seedEntry();
+        $entry->update(['status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN]);
 
         $this->actingAs($pic)
             ->patchJson("/api/checklist-entries/{$entry->id}/verify",
-                ['admin_id' => $pic->id, 'status' => ChecklistEntry::STATUS_COMPLIANT])
+                ['admin_id' => $pic->id, 'decision' => 'approve'])
             ->assertOk();
 
         $this->assertNotNull(ChecklistEntry::find($entry->id)->tanggal_verifikasi);

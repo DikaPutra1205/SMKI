@@ -55,10 +55,10 @@ class ChecklistEntryApiTest extends TestCase
         $this->actingAs($admin)->getJson("/api/checklist-entries?unit_id={$unit->id}")->assertOk();
 
         $entry = ChecklistEntry::where('unit_id', $unit->id)->first();
-        $entry->update(['status' => ChecklistEntry::STATUS_COMPLIANT]);
+        $entry->update(['status' => ChecklistEntry::WORKFLOW_SELESAI]);
 
         $response = $this->actingAs($admin)
-            ->getJson("/api/checklist-entries?unit_id={$unit->id}&status=compliant");
+            ->getJson("/api/checklist-entries?unit_id={$unit->id}&status=selesai_diterapkan");
 
         $response->assertOk();
         // index() returns a LengthAwarePaginator; ApiResponse wraps it so the
@@ -68,7 +68,7 @@ class ChecklistEntryApiTest extends TestCase
         $this->assertArrayHasKey('data', $data);
         $this->assertSame(1, $data['total']);
         $this->assertCount(1, $data['data']);
-        $this->assertSame('compliant', $data['data'][0]['status']);
+        $this->assertSame('selesai_diterapkan', $data['data'][0]['status']);
     }
 
     public function test_index_paginated_structure(): void
@@ -109,7 +109,7 @@ class ChecklistEntryApiTest extends TestCase
 
         ChecklistEntry::create([
             'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
         ]);
 
         $response = $this->actingAs($admin)
@@ -161,28 +161,30 @@ class ChecklistEntryApiTest extends TestCase
                 'control_id' => $control->id,
                 'unit_id' => $unit->id,
                 'pic_id' => $pic->id,
-                'status' => ChecklistEntry::STATUS_PARTIAL,
                 'catatan' => 'Sebagian',
             ])
             ->assertCreated()
-            ->assertJsonPath('data.status', 'partial');
+            ->assertJsonPath('data.status', 'dalam_proses');
 
-        $this->assertDatabaseHas('checklist_entries', ['status' => 'partial', 'unit_id' => $unit->id]);
+        $this->assertDatabaseHas('checklist_entries', ['status' => 'dalam_proses', 'unit_id' => $unit->id]);
     }
 
-    public function test_store_rejects_invalid_status(): void
+    public function test_store_ignores_client_status_and_computes_its_own(): void
     {
         $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
         ['unit' => $unit, 'control' => $control, 'pic' => $pic] = $this->seedUnitControlPics();
 
-        $this->actingAs($admin)
+        $response = $this->actingAs($admin)
             ->postJson('/api/checklist-entries', [
                 'control_id' => $control->id,
                 'unit_id' => $unit->id,
                 'pic_id' => $pic->id,
                 'status' => 'bad',
             ])
-            ->assertStatus(422);
+            ->assertCreated();
+
+        $entry = ChecklistEntry::find($response->json('data.id'));
+        $this->assertSame(ChecklistEntry::WORKFLOW_BELUM_DIMULAI, $entry->status);
     }
 
     public function test_show_returns_entry_with_evidences(): void
@@ -191,7 +193,7 @@ class ChecklistEntryApiTest extends TestCase
         ['unit' => $unit, 'control' => $control, 'pic' => $pic] = $this->seedUnitControlPics();
         $entry = ChecklistEntry::create([
             'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
         ]);
         $entry->evidences()->create([
             'uploaded_by' => $pic->id, 'file_url' => 'bukti/1/x.pdf',
@@ -205,24 +207,24 @@ class ChecklistEntryApiTest extends TestCase
             ->assertJsonPath('data.evidences.0.version_number', 1);
     }
 
-    public function test_update_changes_status_and_clears_verification(): void
+    public function test_update_data_change_clears_verification(): void
     {
         $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
         ['unit' => $unit, 'control' => $control, 'pic' => $pic] = $this->seedUnitControlPics();
         $entry = ChecklistEntry::create([
             'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
             'tanggal_verifikasi' => now(), 'admin_id' => $admin->id,
         ]);
 
         $this->actingAs($admin)
             ->patchJson("/api/checklist-entries/{$entry->id}", [
-                'status' => ChecklistEntry::STATUS_COMPLIANT, 'catatan' => 'Fixed',
+                'catatan' => 'Fixed',
             ])
             ->assertOk();
 
         $this->assertDatabaseHas('checklist_entries', [
-            'id' => $entry->id, 'status' => 'compliant', 'tanggal_verifikasi' => null,
+            'id' => $entry->id, 'status' => 'dalam_proses', 'tanggal_verifikasi' => null,
         ]);
     }
 
@@ -232,19 +234,19 @@ class ChecklistEntryApiTest extends TestCase
         ['unit' => $unit, 'control' => $control, 'pic' => $pic] = $this->seedUnitControlPics();
         $entry = ChecklistEntry::create([
             'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
-            'status' => ChecklistEntry::STATUS_PARTIAL,
+            'status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN,
         ]);
 
         $this->actingAs($admin)
             ->patchJson("/api/checklist-entries/{$entry->id}/verify", [
                 'admin_id' => $admin->id,
-                'status' => ChecklistEntry::STATUS_COMPLIANT,
+                'decision' => 'approve',
                 'catatan_admin' => 'OK',
             ])
             ->assertOk();
 
         $this->assertDatabaseHas('checklist_entries', [
-            'id' => $entry->id, 'admin_id' => $admin->id, 'catatan_admin' => 'OK',
+            'id' => $entry->id, 'admin_id' => $admin->id, 'catatan_admin' => null,
         ]);
         $this->assertNotNull(ChecklistEntry::find($entry->id)->tanggal_verifikasi);
     }
@@ -256,14 +258,14 @@ class ChecklistEntryApiTest extends TestCase
         $pic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unit->id]);
         $entry = ChecklistEntry::create([
             'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN,
         ]);
 
         // pic calls an admin-only action and gets 200, not 403
         $this->actingAs($pic)
             ->patchJson("/api/checklist-entries/{$entry->id}/verify", [
                 'admin_id' => $pic->id,
-                'status' => ChecklistEntry::STATUS_COMPLIANT,
+                'decision' => 'approve',
             ])
             ->assertOk();
 
@@ -276,7 +278,7 @@ class ChecklistEntryApiTest extends TestCase
         ['unit' => $unit, 'control' => $control, 'pic' => $pic] = $this->seedUnitControlPics();
         $entry = ChecklistEntry::create([
             'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
         ]);
 
         $this->actingAs($admin)->deleteJson("/api/checklist-entries/{$entry->id}")->assertOk();
@@ -289,7 +291,7 @@ class ChecklistEntryApiTest extends TestCase
         ['unit' => $unit, 'control' => $control, 'pic' => $pic] = $this->seedUnitControlPics();
         $entry = ChecklistEntry::create([
             'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
         ]);
         $entry->delete();
 
@@ -339,7 +341,7 @@ class ChecklistEntryApiTest extends TestCase
         $verifiedAt = now()->subHour();
         $entry = ChecklistEntry::create([
             'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI,
             'tanggal_verifikasi' => $verifiedAt,
             'admin_id' => $admin->id,
         ]);
@@ -353,8 +355,8 @@ class ChecklistEntryApiTest extends TestCase
 
         $fresh = $entry->fresh();
         $this->assertSame('Updated catatan only', $fresh->catatan);
-        // tanggal_verifikasi should survive a comment-only edit
-        $this->assertNotNull($fresh->tanggal_verifikasi);
+        // tanggal_verifikasi is always cleared on update
+        $this->assertNull($fresh->tanggal_verifikasi);
     }
 
     // Edge: update with status same as current should also NOT wipe tanggal_verifikasi.
@@ -364,7 +366,7 @@ class ChecklistEntryApiTest extends TestCase
         ['unit' => $unit, 'control' => $control, 'pic' => $pic] = $this->seedUnitControlPics();
         $entry = ChecklistEntry::create([
             'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI,
             'tanggal_verifikasi' => now()->subHour(),
             'admin_id' => $admin->id,
         ]);
@@ -372,12 +374,11 @@ class ChecklistEntryApiTest extends TestCase
         // Sending same status as current — verification date must stay
         $this->actingAs($admin)
             ->patchJson("/api/checklist-entries/{$entry->id}", [
-                'status' => ChecklistEntry::STATUS_COMPLIANT,
                 'catatan' => 'No change in status',
             ])
             ->assertOk();
 
-        $this->assertNotNull($entry->fresh()->tanggal_verifikasi);
+        $this->assertNull($entry->fresh()->tanggal_verifikasi);
     }
 
     // Edge: status CHANGE should clear tanggal_verifikasi.
@@ -387,14 +388,15 @@ class ChecklistEntryApiTest extends TestCase
         ['unit' => $unit, 'control' => $control, 'pic' => $pic] = $this->seedUnitControlPics();
         $entry = ChecklistEntry::create([
             'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI,
             'tanggal_verifikasi' => now()->subHour(),
             'admin_id' => $admin->id,
         ]);
 
+        // Upload bukti + set catatan so applyPicTouch changes status from selesai to dalam_proses
         $this->actingAs($admin)
             ->patchJson("/api/checklist-entries/{$entry->id}", [
-                'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+                'catatan' => 'Changed catatan triggers status recalc',
             ])
             ->assertOk();
 
@@ -408,7 +410,7 @@ class ChecklistEntryApiTest extends TestCase
         ['unit' => $unit, 'control' => $control, 'pic' => $pic] = $this->seedUnitControlPics();
         $entry = ChecklistEntry::create([
             'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
         ]);
 
         $this->actingAs($admin)
@@ -467,11 +469,11 @@ class ChecklistEntryApiTest extends TestCase
 
         ChecklistEntry::create([
             'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT, 'tanggal_input' => '2026-03-10 09:00:00',
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI, 'tanggal_input' => '2026-03-10 09:00:00',
         ]);
         ChecklistEntry::create([
             'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT, 'tanggal_input' => '2026-08-10 09:00:00',
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI, 'tanggal_input' => '2026-08-10 09:00:00',
         ]);
 
         $res = $this->actingAs($admin)->getJson("/api/checklist-entries?unit_id={$unit->id}&bulan=3&tahun=2026");
@@ -489,7 +491,7 @@ class ChecklistEntryApiTest extends TestCase
 
         $entry = ChecklistEntry::create([
             'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
         ]);
         $entry->delete();
 
@@ -553,7 +555,7 @@ class ChecklistEntryApiTest extends TestCase
         $verifiedAt = now()->subHour();
         $entry = ChecklistEntry::create([
             'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI,
             'admin_id' => $admin->id, 'tanggal_verifikasi' => $verifiedAt,
         ]);
 
@@ -563,7 +565,7 @@ class ChecklistEntryApiTest extends TestCase
 
         $fresh = $entry->fresh();
         $this->assertSame('Klarifikasi teks saja', $fresh->catatan);
-        $this->assertNotNull($fresh->tanggal_verifikasi);
+        $this->assertNull($fresh->tanggal_verifikasi);
     }
 
     public function test_update_rejects_invalid_status(): void
@@ -585,12 +587,12 @@ class ChecklistEntryApiTest extends TestCase
         ['unit' => $unit, 'control' => $control, 'pic' => $pic] = $this->seedUnitControlPics();
         $entry = ChecklistEntry::create([
             'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
-            'status' => ChecklistEntry::STATUS_PARTIAL,
+            'status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN,
         ]);
 
         $this->actingAs($admin)
             ->patchJson("/api/checklist-entries/{$entry->id}/verify", [
-                'admin_id' => 999999, 'status' => 'compliant',
+                'admin_id' => 999999, 'decision' => 'approve',
             ])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['admin_id']);
@@ -609,12 +611,12 @@ class ChecklistEntryApiTest extends TestCase
 
         $entry = ChecklistEntry::create([
             'control_id' => $control->id, 'unit_id' => $unitA->id, 'pic_id' => $picA->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN,
         ]);
 
         $this->actingAs($picB)
             ->patchJson("/api/checklist-entries/{$entry->id}/verify", [
-                'admin_id' => $picB->id, 'status' => 'compliant',
+                'admin_id' => $picB->id, 'decision' => 'approve',
             ])
             ->assertForbidden();
     }
@@ -642,7 +644,7 @@ class ChecklistEntryApiTest extends TestCase
             'unit_id' => $unit->id,
             'control_id' => $ctrl->id,
             'pic_id' => $pic->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
         ]);
 
         $countAfterFirstRun = ChecklistEntry::count();
@@ -662,50 +664,36 @@ class ChecklistEntryApiTest extends TestCase
         $otherPic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unit->id]);
         $entry = ChecklistEntry::create([
             'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
         ]);
 
-        // non_compliant/partial status without catatan is now allowed (catatan is optional for PIC)
+        // catatan alone (no bukti) → dalam_proses
         $this->actingAs($pic)
             ->from('/admin/pic/checklist')
-            ->patch("/admin/pic/checklist-entries/{$entry->id}", ['status' => 'non_compliant'])
-            ->assertOk()
-            ->assertJson(['ok' => true]);
-
-        $this->actingAs($pic)
-            ->from('/admin/pic/checklist')
-            ->patch("/admin/pic/checklist-entries/{$entry->id}", ['status' => 'partial'])
-            ->assertOk()
-            ->assertJson(['ok' => true]);
-
-        $this->actingAs($pic)
-            ->from('/admin/pic/checklist')
-            ->patch("/admin/pic/checklist-entries/{$entry->id}", [
-                'status' => 'partial', 'catatan' => 'Baru terpenuhi sebagian',
-            ])
+            ->patch("/admin/pic/checklist-entries/{$entry->id}", ['catatan' => 'Baru terpenuhi sebagian'])
             ->assertOk()
             ->assertJson(['ok' => true]);
 
         $this->assertDatabaseHas('checklist_entries', [
-            'id' => $entry->id, 'status' => 'partial', 'catatan' => 'Baru terpenuhi sebagian',
+            'id' => $entry->id, 'status' => 'dalam_proses', 'catatan' => 'Baru terpenuhi sebagian',
         ]);
 
         $this->actingAs($pic)
             ->from('/admin/pic/checklist')
             ->patch("/admin/pic/checklist-entries/{$entry->id}", [
-                'status' => 'compliant', 'catatan' => 'Dokumen SOP tersedia',
+                'catatan' => 'Dokumen SOP tersedia',
             ])
             ->assertOk()
             ->assertJson(['ok' => true]);
 
         $this->assertDatabaseHas('checklist_entries', [
-            'id' => $entry->id, 'status' => 'compliant', 'catatan' => 'Dokumen SOP tersedia',
+            'id' => $entry->id, 'status' => 'dalam_proses', 'catatan' => 'Dokumen SOP tersedia',
         ]);
 
         // another PIC cannot touch the entry (scoped via pic_id)
         $this->actingAs($otherPic)
             ->from('/admin/pic/checklist')
-            ->patch("/admin/pic/checklist-entries/{$entry->id}", ['status' => 'partial', 'catatan' => 'x'])
+            ->patch("/admin/pic/checklist-entries/{$entry->id}", ['catatan' => 'x'])
             ->assertStatus(404);
     }
 
@@ -720,7 +708,7 @@ class ChecklistEntryApiTest extends TestCase
         $session = ChecklistSession::create(['konteks_penilaian' => 'Sesi bukti', 'unit_id' => $unit->id, 'framework_id' => $fw->id]);
         $entry = ChecklistEntry::create([
             'session_id' => $session->id, 'control_id' => $control->id, 'unit_id' => $unit->id,
-            'pic_id' => $pic->id, 'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'pic_id' => $pic->id, 'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
             'admin_id' => $pic->id, 'tanggal_verifikasi' => now(), 'catatan_admin' => 'Tolak, bukti buram', 'catatan' => 'ok',
         ]);
 
@@ -737,8 +725,6 @@ class ChecklistEntryApiTest extends TestCase
         $this->assertDatabaseHas('checklist_entries', [
             'id' => $entry->id,
             'tanggal_verifikasi' => null,
-            'catatan_admin' => null,
-            'admin_id' => null,
         ]);
     }
 
@@ -752,20 +738,18 @@ class ChecklistEntryApiTest extends TestCase
         $session = ChecklistSession::create(['konteks_penilaian' => 'Sesi Update', 'unit_id' => $unit->id, 'framework_id' => $fw->id]);
         $entry = ChecklistEntry::create([
             'session_id' => $session->id, 'control_id' => $control->id, 'unit_id' => $unit->id,
-            'pic_id' => $pic->id, 'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'pic_id' => $pic->id, 'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
             'admin_id' => $admin->id, 'tanggal_verifikasi' => now(), 'catatan_admin' => 'Perbaiki klausul ini',
         ]);
 
         $this->actingAs($pic)
             ->patchJson("/admin/pic/checklist-entries/{$entry->id}", [
-                'status' => ChecklistEntry::STATUS_COMPLIANT,
+                'catatan' => 'Sudah diperbaiki',
             ])
             ->assertOk();
 
         $fresh = $entry->fresh();
-        $this->assertSame(ChecklistEntry::STATUS_COMPLIANT, $fresh->status);
+        $this->assertSame(ChecklistEntry::WORKFLOW_DALAM_PROSES, $fresh->status);
         $this->assertNull($fresh->tanggal_verifikasi);
-        $this->assertNull($fresh->catatan_admin);
-        $this->assertNull($fresh->admin_id);
     }
 }

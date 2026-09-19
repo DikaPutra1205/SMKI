@@ -38,7 +38,7 @@ class ComplianceSessionsPageTest extends TestCase
         ChecklistEntry::factory()->count(10)->create([
             'session_id' => $session->id,
             'unit_id' => $unit->id,
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI,
             'tanggal_input' => now(),
         ]);
 
@@ -94,7 +94,7 @@ class ComplianceSessionsPageTest extends TestCase
         ChecklistEntry::factory()->count(2)->create([
             'session_id' => $session->id,
             'unit_id' => $unit->id,
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI,
             'tanggal_input' => now(),
             'tanggal_verifikasi' => now(),
         ]);
@@ -132,8 +132,8 @@ class ComplianceSessionsPageTest extends TestCase
         $this->assertDatabaseHas('checklist_entries', [
             'session_id' => $session->id,
             'pic_id' => $pic->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
-            'catatan' => 'Belum diisi oleh PIC.',
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
+            'catatan' => '',
         ]);
     }
 
@@ -251,7 +251,7 @@ class ComplianceSessionsPageTest extends TestCase
             'session_id' => $sessionA->id,
             'unit_id' => $unitA->id,
             'pic_id' => $picA->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
         ]);
     }
 

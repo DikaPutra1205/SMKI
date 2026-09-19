@@ -29,16 +29,16 @@ class ChecklistSessionController extends Controller
             ->where('unit_id', $user->unit_id)
             ->withCount([
                 'entries as total_entries',
-                'entries as completed_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_COMPLIANT)
+                'entries as completed_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_SELESAI)
                     ->orWhere(function ($q2) {
-                        $q2->whereIn('status', [ChecklistEntry::STATUS_PARTIAL, ChecklistEntry::STATUS_NON_COMPLIANT, ChecklistEntry::STATUS_NA])
+                        $q2->whereIn('status', [ChecklistEntry::WORKFLOW_DALAM_PROSES, ChecklistEntry::WORKFLOW_DALAM_PROSES, ChecklistEntry::WORKFLOW_TIDAK_BERLAKU])
                             ->where('catatan', '!=', '')
                             ->whereNotNull('catatan');
                     }),
-                'entries as compliant_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_COMPLIANT),
-                'entries as partial_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_PARTIAL),
-                'entries as non_compliant_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_NON_COMPLIANT),
-                'entries as na_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_NA),
+                'entries as compliant_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_SELESAI),
+                'entries as partial_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_DALAM_PROSES),
+                'entries as non_compliant_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_DALAM_PROSES),
+                'entries as na_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_TIDAK_BERLAKU),
             ])
             ->orderByDesc('id')
             ->get();
@@ -375,7 +375,7 @@ class ChecklistSessionController extends Controller
         }
 
         $incomplete = $checklistSession->entries()
-            ->whereIn('status', [ChecklistEntry::STATUS_PARTIAL, ChecklistEntry::STATUS_NON_COMPLIANT, ChecklistEntry::STATUS_NA])
+            ->whereIn('status', [ChecklistEntry::WORKFLOW_DALAM_PROSES, ChecklistEntry::WORKFLOW_DALAM_PROSES, ChecklistEntry::WORKFLOW_TIDAK_BERLAKU])
             ->where(fn ($q) => $q->whereNull('catatan')->orWhere('catatan', ''))
             ->count();
 

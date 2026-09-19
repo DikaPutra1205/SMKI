@@ -37,8 +37,8 @@ class PicDashboardController extends Controller
         $recent = $recentQuery
             ->withCount([
                 'entries as total_entries',
-                'entries as completed_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_COMPLIANT)
-                    ->orWhere(fn ($q2) => $q2->whereIn('status', [ChecklistEntry::STATUS_PARTIAL, ChecklistEntry::STATUS_NON_COMPLIANT, ChecklistEntry::STATUS_NA])->where('catatan', '!=', '')->whereNotNull('catatan')),
+                'entries as completed_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_SELESAI)
+                    ->orWhere(fn ($q2) => $q2->whereIn('status', [ChecklistEntry::WORKFLOW_DALAM_PROSES, ChecklistEntry::WORKFLOW_DALAM_PROSES, ChecklistEntry::WORKFLOW_TIDAK_BERLAKU])->where('catatan', '!=', '')->whereNotNull('catatan')),
             ])
             ->orderByDesc('id')->limit(10)->get()
             ->map(fn ($s) => [

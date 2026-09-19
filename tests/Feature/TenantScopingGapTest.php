@@ -35,7 +35,7 @@ class TenantScopingGapTest extends TestCase
 
         ChecklistEntry::create([
             'control_id' => $control->id, 'unit_id' => $unitB->id, 'pic_id' => $picB->id,
-            'status' => ChecklistEntry::STATUS_PARTIAL,
+            'status' => ChecklistEntry::WORKFLOW_DALAM_PROSES,
         ]);
 
         $this->actingAs($picA)
@@ -51,12 +51,12 @@ class TenantScopingGapTest extends TestCase
 
         $entryInB = ChecklistEntry::create([
             'control_id' => $control->id, 'unit_id' => $unitB->id, 'pic_id' => $picB->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
         ]);
 
         $this->actingAs($picA)
             ->patch("/api/checklist-entries/{$entryInB->id}", [
-                'status' => ChecklistEntry::STATUS_COMPLIANT,
+                'status' => ChecklistEntry::WORKFLOW_SELESAI,
                 'catatan' => 'cross-unit attempt',
             ])
             ->assertForbidden(); // expected once scoped; currently 200 (gap)

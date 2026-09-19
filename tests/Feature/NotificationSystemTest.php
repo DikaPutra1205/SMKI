@@ -177,11 +177,11 @@ class NotificationSystemTest extends TestCase
             'control_id' => $this->control->id,
             'unit_id' => $this->unitA->id,
             'pic_id' => $this->picA->id,
-            'status' => 'pending_verification',
+            'status' => 'dalam_tinjauan',
         ]);
 
         $response = $this->actingAs($this->admin)->post("/admin/kepatuhan/checklist/verify/{$entry->id}", [
-            'status' => 'non_compliant',
+            'decision' => 'reject',
             'admin_notes' => 'Dokumen SOP belum ditandatangani oleh pimpinan satker.',
         ]);
 
@@ -214,7 +214,7 @@ class NotificationSystemTest extends TestCase
             'control_id' => $this->control->id,
             'unit_id' => $this->unitA->id,
             'pic_id' => $this->picA->id,
-            'status' => 'pending_verification',
+            'status' => 'dalam_tinjauan',
         ]);
 
         $response = $this->actingAs($this->admin)->postJson('/api/v1/compliance-officer/bulk-verify', [
@@ -520,7 +520,7 @@ class NotificationSystemTest extends TestCase
             'control_id' => $this->control->id,
             'unit_id' => $this->unitA->id,
             'pic_id' => $this->picA->id,
-            'status' => 'pending_verification',
+            'status' => 'dalam_tinjauan',
         ]);
 
         $notification = new ChecklistEntryRejectedNotification(

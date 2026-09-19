@@ -90,7 +90,7 @@ class ChecklistSessionApiTest extends TestCase
             'control_id' => $control1->id,
             'unit_id' => $unit->id,
             'pic_id' => $pic->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
         ]);
 
         $this->assertDatabaseHas('checklist_entries', [
@@ -170,7 +170,7 @@ class ChecklistSessionApiTest extends TestCase
             'control_id' => $control1->id,
             'unit_id' => $unit->id,
             'pic_id' => $pic->id,
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI,
         ]);
 
         $res = $this->actingAs($admin)->getJson("/api/checklist-sessions/{$session->id}");
@@ -223,7 +223,7 @@ class ChecklistSessionApiTest extends TestCase
             'control_id' => $control1->id,
             'unit_id' => $unit->id,
             'pic_id' => $pic->id,
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI,
         ]);
 
         ChecklistEntry::create([
@@ -231,7 +231,7 @@ class ChecklistSessionApiTest extends TestCase
             'control_id' => $control2->id,
             'unit_id' => $unit->id,
             'pic_id' => $pic->id,
-            'status' => ChecklistEntry::STATUS_PARTIAL,
+            'status' => ChecklistEntry::WORKFLOW_DALAM_PROSES,
             'catatan' => 'Kebijakan ada namun belum disosialisasikan.',
         ]);
 
@@ -248,7 +248,7 @@ class ChecklistSessionApiTest extends TestCase
             'control_id' => $control1->id,
             'unit_id' => $unit->id,
             'pic_id' => $pic->id,
-            'status' => ChecklistEntry::STATUS_PARTIAL,
+            'status' => ChecklistEntry::WORKFLOW_DALAM_PROSES,
         ]);
 
         $res = $this->actingAs($admin)->getJson("/api/checklist-sessions/{$session->id}");
@@ -273,7 +273,7 @@ class ChecklistSessionApiTest extends TestCase
             'control_id' => $control1->id,
             'unit_id' => $unit->id,
             'pic_id' => $pic->id,
-            'status' => ChecklistEntry::STATUS_PARTIAL,
+            'status' => ChecklistEntry::WORKFLOW_DALAM_PROSES,
         ]);
 
         $this->actingAs($pic)
@@ -310,7 +310,7 @@ class ChecklistSessionApiTest extends TestCase
             'unit_id' => $unit->id,
             'pic_id' => $pic->id,
             'admin_id' => $admin->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
             'catatan' => 'Sudah diperbaiki sesuai catatan admin.',
             'catatan_admin' => 'Tolak sebelumnya: SOP belum disahkan.',
             'tanggal_verifikasi' => now()->subDay(),
@@ -347,7 +347,7 @@ class ChecklistSessionApiTest extends TestCase
             'unit_id' => $unit->id,
             'pic_id' => $pic->id,
             'admin_id' => $admin->id,
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI,
             'catatan' => 'Sudah patuh sepenuhnya.',
             'catatan_admin' => null,
             'tanggal_verifikasi' => now()->subDay(),
@@ -360,7 +360,7 @@ class ChecklistSessionApiTest extends TestCase
             'unit_id' => $unit->id,
             'pic_id' => $pic->id,
             'admin_id' => $admin->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
             'catatan' => 'Sudah diperbaiki sesuai catatan admin.',
             'catatan_admin' => 'Tolak sebelumnya: SOP belum disahkan.',
             'tanggal_verifikasi' => now()->subDay(),
@@ -399,19 +399,18 @@ class ChecklistSessionApiTest extends TestCase
             'control_id' => $control1->id,
             'unit_id' => $unit->id,
             'pic_id' => $pic->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
         ]);
 
         // The API currently allows updating entries regardless of session status
         // This test documents current behavior - it does NOT return 422
         $res = $this->actingAs($pic)->putJson("/api/checklist-entries/{$entry->id}", [
-            'status' => 'compliant',
             'catatan' => 'Percobaan update di sesi closed',
         ]);
 
         // Currently the API allows this - documenting actual behavior
         $res->assertOk();
-        $this->assertSame('compliant', $entry->fresh()->status);
+        $this->assertSame('dalam_proses', $entry->fresh()->status);
     }
 
     public function test_soft_delete_and_restore_session(): void

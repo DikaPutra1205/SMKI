@@ -31,7 +31,7 @@ class EvidenceUploadTest extends TestCase
             'control_id' => $control->id,
             'unit_id' => $unit->id,
             'pic_id' => $user->id,
-            'status' => 'non_compliant',
+            'status' => 'belum_dimulai',
             'catatan' => 'Test entry',
             'tanggal_input' => now(),
         ]);
@@ -71,7 +71,7 @@ class EvidenceUploadTest extends TestCase
             'control_id' => $control->id,
             'unit_id' => $unit->id,
             'pic_id' => $user->id,
-            'status' => 'non_compliant',
+            'status' => 'belum_dimulai',
             'catatan' => 'Test entry',
             'tanggal_input' => now(),
         ]);
@@ -104,7 +104,7 @@ class EvidenceUploadTest extends TestCase
             'control_id' => $control->id,
             'unit_id' => $unit->id,
             'pic_id' => $user->id,
-            'status' => 'non_compliant',
+            'status' => 'belum_dimulai',
             'catatan' => 'Test entry',
             'tanggal_input' => now(),
             'tanggal_verifikasi' => now(),

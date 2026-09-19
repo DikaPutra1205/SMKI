@@ -176,7 +176,7 @@ class ReportExportTest extends TestCase
         ChecklistEntry::factory()->create([
             'control_id' => $this->control->id,
             'unit_id' => $this->unit->id,
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI,
         ]);
 
         $response = $this->actingAs($this->admin)->getJson('/api/v1/reports/compliance-summary');
@@ -200,7 +200,7 @@ class ReportExportTest extends TestCase
         ChecklistEntry::factory()->create([
             'control_id' => $this->control->id,
             'unit_id' => $this->unit->id,
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI,
         ]);
 
         $response = $this->actingAs($this->admin)->get('/api/v1/reports/export-csv');
@@ -231,7 +231,7 @@ class ReportExportTest extends TestCase
             'control_id' => $this->control->id,
             'unit_id' => $this->unit->id,
             'admin_id' => $this->admin->id,
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI,
             'catatan_admin' => 'Bukti lengkap',
             'tanggal_verifikasi' => now(),
         ]);
@@ -277,12 +277,12 @@ class ReportExportTest extends TestCase
         ChecklistEntry::factory()->create([
             'control_id' => $this->control->id,
             'unit_id' => $this->unit->id,
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI,
         ]);
         ChecklistEntry::factory()->create([
             'control_id' => $this->control->id,
             'unit_id' => $otherUnit->id,
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI,
         ]);
 
         $response = $this->actingAs($this->admin)->get('/api/v1/reports/export-csv?unit_id='.$otherUnit->id);
@@ -309,8 +309,8 @@ class ReportExportTest extends TestCase
         Risk::factory()->withControl($otherControl)->create(['level_risiko' => Risk::LEVEL_CRITICAL]);
         Risk::factory()->withControl($otherControl)->create(['level_risiko' => Risk::LEVEL_LOW]);
 
-        ChecklistEntry::factory()->create(['control_id' => $this->control->id, 'unit_id' => $this->unit->id, 'status' => ChecklistEntry::STATUS_COMPLIANT]);
-        ChecklistEntry::factory()->create(['control_id' => $otherControl->id, 'unit_id' => $otherUnit->id, 'status' => ChecklistEntry::STATUS_COMPLIANT]);
+        ChecklistEntry::factory()->create(['control_id' => $this->control->id, 'unit_id' => $this->unit->id, 'status' => ChecklistEntry::WORKFLOW_SELESAI]);
+        ChecklistEntry::factory()->create(['control_id' => $otherControl->id, 'unit_id' => $otherUnit->id, 'status' => ChecklistEntry::WORKFLOW_SELESAI]);
 
         $all = $this->actingAs($this->admin)->getJson('/api/v1/reports/compliance-summary');
         $all->assertOk();
@@ -340,7 +340,7 @@ class ReportExportTest extends TestCase
         ChecklistEntry::factory()->create([
             'control_id' => $this->control->id,
             'unit_id' => $this->unit->id,
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI,
         ]);
 
         $response = $this->actingAs($this->admin)->get('/admin/kepatuhan/reports/export');
@@ -355,7 +355,7 @@ class ReportExportTest extends TestCase
         ChecklistEntry::factory()->create([
             'control_id' => $this->control->id,
             'unit_id' => $this->unit->id,
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI,
         ]);
 
         $response = $this->actingAs($this->admin)->get('/api/v1/reports/export-pdf');

@@ -35,7 +35,7 @@ class ComplianceEvidenceApiTest extends TestCase
         $pic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unit->id]);
         $entry = ChecklistEntry::create([
             'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
         ]);
 
         return ['unit' => $unit, 'control' => $control, 'pic' => $pic, 'entry' => $entry];
@@ -223,11 +223,11 @@ class ComplianceEvidenceApiTest extends TestCase
         $before = $entry->evidences()->count();
 
         $this->actingAs($pic)->patchJson("/api/checklist-entries/{$entry->id}",
-            ['status' => ChecklistEntry::STATUS_COMPLIANT, 'bukti_file' => UploadedFile::fake()->create('a.pdf', 100, 'application/pdf'), 'uploaded_by' => $pic->id])
+            ['bukti_file' => UploadedFile::fake()->create('a.pdf', 100, 'application/pdf'), 'uploaded_by' => $pic->id])
             ->assertOk();
 
         $this->assertSame($before, $entry->fresh()->evidences()->count());
-        $this->assertDatabaseHas('checklist_entries', ['id' => $entry->id, 'status' => 'compliant', 'tanggal_verifikasi' => null]);
+        $this->assertDatabaseHas('checklist_entries', ['id' => $entry->id, 'status' => 'belum_dimulai', 'tanggal_verifikasi' => null]);
     }
 
     public function test_destroy_soft_deletes_evidence(): void
@@ -484,7 +484,7 @@ class ComplianceEvidenceApiTest extends TestCase
         ['entry' => $entry, 'pic' => $pic] = $this->seedEntry();
 
         $this->actingAs($pic)->patchJson("/api/checklist-entries/{$entry->id}",
-            ['status' => ChecklistEntry::STATUS_COMPLIANT, 'bukti_file' => UploadedFile::fake()->create('a.pdf', 100, 'application/pdf'), 'uploaded_by' => $pic->id])
+            ['bukti_file' => UploadedFile::fake()->create('a.pdf', 100, 'application/pdf'), 'uploaded_by' => $pic->id])
             ->assertOk();
 
         $this->assertDatabaseHas('compliance_evidences', [

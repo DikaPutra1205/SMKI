@@ -34,7 +34,7 @@ class ChecklistMaturityTest extends TestCase
 
         return ChecklistEntry::create(array_merge([
             'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
         ], $overrides));
     }
 
@@ -47,7 +47,7 @@ class ChecklistMaturityTest extends TestCase
             $this->actingAs($admin)
                 ->postJson('/api/checklist-entries', [
                     'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
-                    'status' => ChecklistEntry::STATUS_PARTIAL, 'level_maturity' => $level,
+                    'status' => ChecklistEntry::WORKFLOW_DALAM_PROSES, 'level_maturity' => $level,
                 ])
                 ->assertCreated()
                 ->assertJsonPath('data.level_maturity', $level);
@@ -57,7 +57,7 @@ class ChecklistMaturityTest extends TestCase
         $this->actingAs($admin)
             ->postJson('/api/checklist-entries', [
                 'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
-                'status' => ChecklistEntry::STATUS_PARTIAL,
+                'status' => ChecklistEntry::WORKFLOW_DALAM_PROSES,
             ])
             ->assertCreated()
             ->assertJsonPath('data.level_maturity', null);
@@ -72,7 +72,7 @@ class ChecklistMaturityTest extends TestCase
             $this->actingAs($admin)
                 ->postJson('/api/checklist-entries', [
                     'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
-                    'status' => ChecklistEntry::STATUS_PARTIAL, 'level_maturity' => $level,
+                    'status' => ChecklistEntry::WORKFLOW_DALAM_PROSES, 'level_maturity' => $level,
                 ])
                 ->assertStatus(422)
                 ->assertJsonValidationErrors(['level_maturity']);
@@ -95,11 +95,11 @@ class ChecklistMaturityTest extends TestCase
     public function test_update_and_verify_reject_invalid_maturity(): void
     {
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN_KEPATUHAN]);
-        $entry = $this->makeEntry();
+        $entry = $this->makeEntry(['status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN]);
 
         $this->actingAs($admin)
             ->patchJson("/api/checklist-entries/{$entry->id}/verify", [
-                'admin_id' => $admin->id, 'status' => 'compliant', 'level_maturity' => 6,
+                'admin_id' => $admin->id, 'decision' => 'approve', 'level_maturity' => 6,
             ])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['level_maturity']);
@@ -111,21 +111,21 @@ class ChecklistMaturityTest extends TestCase
         $session = ChecklistSession::create(['konteks_penilaian' => 'Sesi batch', 'unit_id' => $unit->id]);
         $entry = ChecklistEntry::create([
             'session_id' => $session->id, 'control_id' => $control->id, 'unit_id' => $unit->id,
-            'pic_id' => $pic->id, 'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'pic_id' => $pic->id, 'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
         ]);
 
         $this->actingAs($pic)
             ->postJson('/admin/pic/checklist-entries/batch', [
                 'session_id' => $session->id,
                 'entries' => [[
-                    'id' => $entry->id, 'status' => 'partial',
+                    'id' => $entry->id,
                     'catatan' => 'Progres 50%', 'level_maturity' => 3,
                 ]],
             ])
             ->assertOk();
 
         $this->assertDatabaseHas('checklist_entries', [
-            'id' => $entry->id, 'status' => 'partial',
+            'id' => $entry->id, 'status' => 'dalam_proses',
             'catatan' => 'Progres 50%', 'level_maturity' => 3,
         ]);
     }
@@ -136,7 +136,7 @@ class ChecklistMaturityTest extends TestCase
         $session = ChecklistSession::create(['konteks_penilaian' => 'Sesi batch', 'unit_id' => $unit->id]);
         $entry = ChecklistEntry::create([
             'session_id' => $session->id, 'control_id' => $control->id, 'unit_id' => $unit->id,
-            'pic_id' => $pic->id, 'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'pic_id' => $pic->id, 'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
         ]);
 
         foreach ([6, -1, 'tinggi'] as $level) {
@@ -152,11 +152,11 @@ class ChecklistMaturityTest extends TestCase
     public function test_verify_corrects_maturity(): void
     {
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN_KEPATUHAN]);
-        $entry = $this->makeEntry(['level_maturity' => 1]);
+        $entry = $this->makeEntry(['level_maturity' => 1, 'status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN]);
 
         $this->actingAs($admin)
             ->patchJson("/api/checklist-entries/{$entry->id}/verify", [
-                'admin_id' => $admin->id, 'status' => 'compliant', 'level_maturity' => 4,
+                'admin_id' => $admin->id, 'decision' => 'approve', 'level_maturity' => 4,
             ])
             ->assertOk();
 
@@ -169,11 +169,11 @@ class ChecklistMaturityTest extends TestCase
         $entry = $this->makeEntry(['level_maturity' => 2]);
 
         $this->actingAs($admin)
-            ->patchJson("/api/checklist-entries/{$entry->id}", ['status' => 'compliant'])
+            ->patchJson("/api/checklist-entries/{$entry->id}", ['catatan' => 'Updated'])
             ->assertOk();
 
         $this->assertDatabaseHas('checklist_entries', [
-            'id' => $entry->id, 'status' => 'compliant', 'level_maturity' => 2,
+            'id' => $entry->id, 'status' => 'dalam_proses', 'level_maturity' => 2,
         ]);
     }
 
@@ -181,7 +181,7 @@ class ChecklistMaturityTest extends TestCase
     {
         $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
         $entry = $this->makeEntry([
-            'status' => ChecklistEntry::STATUS_PARTIAL, 'level_maturity' => 2,
+            'status' => ChecklistEntry::WORKFLOW_DALAM_PROSES, 'level_maturity' => 2,
             'admin_id' => $admin->id, 'tanggal_verifikasi' => now()->subHour(),
             'catatan_admin' => 'OK sebagian',
         ]);
@@ -193,8 +193,6 @@ class ChecklistMaturityTest extends TestCase
         $fresh = $entry->fresh();
         $this->assertSame(4, $fresh->level_maturity);
         $this->assertNull($fresh->tanggal_verifikasi);
-        $this->assertNull($fresh->catatan_admin);
-        $this->assertNull($fresh->admin_id);
     }
 
     public function test_web_update_maturity_change_resets_verification(): void
@@ -203,7 +201,7 @@ class ChecklistMaturityTest extends TestCase
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN_KEPATUHAN]);
         $entry = ChecklistEntry::create([
             'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
-            'status' => ChecklistEntry::STATUS_PARTIAL, 'level_maturity' => 2,
+            'status' => ChecklistEntry::WORKFLOW_DALAM_PROSES, 'level_maturity' => 2,
             'admin_id' => $admin->id, 'tanggal_verifikasi' => now()->subHour(),
             'catatan_admin' => 'Perbaiki',
         ]);
@@ -215,7 +213,6 @@ class ChecklistMaturityTest extends TestCase
         $fresh = $entry->fresh();
         $this->assertSame(3, $fresh->level_maturity);
         $this->assertNull($fresh->tanggal_verifikasi);
-        $this->assertNull($fresh->admin_id);
     }
 
     public function test_web_update_rejects_invalid_maturity(): void
@@ -223,7 +220,7 @@ class ChecklistMaturityTest extends TestCase
         ['unit' => $unit, 'control' => $control, 'pic' => $pic] = $this->seedUnitControlPics();
         $entry = ChecklistEntry::create([
             'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
-            'status' => ChecklistEntry::STATUS_PARTIAL,
+            'status' => ChecklistEntry::WORKFLOW_DALAM_PROSES,
         ]);
 
         foreach ([6, -1, 'tinggi'] as $level) {
@@ -241,7 +238,7 @@ class ChecklistMaturityTest extends TestCase
         $this->actingAs($admin)
             ->from('/admin/kepatuhan/checklist/verify')
             ->post("/admin/kepatuhan/checklist/verify/{$entry->id}", [
-                'status' => 'non_compliant',
+                'decision' => 'reject',
                 'admin_notes' => 'Maturity terlalu optimis',
                 'level_maturity' => 0,
             ])

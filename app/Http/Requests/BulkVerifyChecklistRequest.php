@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use App\Models\ChecklistEntry;
 use Illuminate\Foundation\Http\FormRequest;
 
 class BulkVerifyChecklistRequest extends FormRequest
