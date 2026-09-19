@@ -6,8 +6,10 @@ use App\Models\ChecklistEntry;
 use App\Models\Framework;
 use App\Models\User;
 use App\Models\WorkUnit;
+use App\Services\ComplianceOfficerService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 class ChecklistEntryWorkflowTest extends TestCase
@@ -251,7 +253,7 @@ class ChecklistEntryWorkflowTest extends TestCase
             'status' => ChecklistEntry::WORKFLOW_TIDAK_BERLAKU,
         ]);
 
-        $service = app(\App\Services\ComplianceOfficerService::class);
+        $service = app(ComplianceOfficerService::class);
         $count = $service->bulkVerifyChecklistEntries($admin, [$entry1->id, $entry2->id], 'approve');
 
         $this->assertEquals(2, $count);
@@ -272,7 +274,7 @@ class ChecklistEntryWorkflowTest extends TestCase
             'status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN,
         ]);
 
-        $service = app(\App\Services\ComplianceOfficerService::class);
+        $service = app(ComplianceOfficerService::class);
         $count = $service->bulkVerifyChecklistEntries($admin, [$entry->id], 'reject', 'Perbaiki bukti');
 
         $this->assertEquals(1, $count);
@@ -293,8 +295,56 @@ class ChecklistEntryWorkflowTest extends TestCase
             'status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN,
         ]);
 
-        $service = app(\App\Services\ComplianceOfficerService::class);
-        $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+        $service = app(ComplianceOfficerService::class);
+        $this->expectException(HttpException::class);
         $service->bulkVerifyChecklistEntries($admin, [$entry->id], 'selesai_diterapkan');
+    }
+
+    public function test_web_pic_update_catatan_derives_proses_and_clears_timestamp_only(): void
+    {
+        ['pic' => $pic, 'entry' => $entry] = $this->seedWfEntry();
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN_KEPATUHAN]);
+        $entry->update([
+            'status' => ChecklistEntry::WORKFLOW_SELESAI,
+            'tanggal_verifikasi' => now(),
+            'admin_id' => $admin->id,
+            'catatan_admin' => 'OK immers?',
+        ]);
+
+        $this->actingAs($pic)
+            ->patchJson("/admin/pic/checklist-entries/{$entry->id}", ['catatan' => 'SOP diperbarui'])
+            ->assertOk();
+
+        $fresh = $entry->fresh();
+        $this->assertSame(ChecklistEntry::WORKFLOW_DALAM_PROSES, $fresh->status);
+        $this->assertNull($fresh->tanggal_verifikasi);
+        $this->assertSame('OK immers?', $fresh->catatan_admin);
+        $this->assertSame($admin->id, $fresh->admin_id);
+    }
+
+    public function test_web_evidence_delete_recomputes_to_proses(): void
+    {
+        Storage::fake('supabase');
+        ['pic' => $pic, 'entry' => $entry] = $this->seedWfEntry();
+        $entry->update([
+            'catatan' => 'SOP tersedia',
+            'status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN,
+        ]);
+
+        $evidence = $entry->evidences()->create([
+            'uploaded_by' => $pic->id,
+            'file_url' => 'bukti/'.$entry->id.'/sop.pdf',
+            'version_number' => 1,
+            'is_active' => true,
+            'uploaded_at' => now(),
+        ]);
+
+        $this->actingAs($pic)
+            ->deleteJson("/admin/pic/checklist-entries/{$entry->id}/evidence/{$evidence->id}")
+            ->assertOk();
+
+        $fresh = $entry->fresh();
+        $this->assertSame(ChecklistEntry::WORKFLOW_DALAM_PROSES, $fresh->status);
+        $this->assertNull($fresh->tanggal_verifikasi);
     }
 }

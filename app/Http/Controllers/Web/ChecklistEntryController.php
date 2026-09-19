@@ -19,24 +19,27 @@ class ChecklistEntryController extends Controller
         $entry = ChecklistEntry::where('pic_id', $user->id)->findOrFail($id);
 
         $validated = $request->validate([
-            'status' => 'sometimes|nullable|string|in:compliant,partial,non_compliant,na',
+            'tidak_berlaku' => 'sometimes|boolean',
+            'status' => 'prohibited',
             'level_maturity' => 'sometimes|nullable|integer|min:0|max:5',
-            'catatan' => 'nullable|string|max:2000',
+            'catatan' => 'required_if:tidak_berlaku,true|nullable|string|max:2000',
         ]);
 
-        $updateData = array_merge(
-            $validated,
-            ['tanggal_input' => now()]
-        );
+        $newCatatan = array_key_exists('catatan', $validated) ? $validated['catatan'] : $entry->catatan;
+        $naSelected = (bool) ($validated['tidak_berlaku'] ?? $entry->status === ChecklistEntry::WORKFLOW_TIDAK_BERLAKU);
+        $hasBukti = $entry->evidences()->exists();
 
-        // Loose compare: request may carry '3' (string) vs 3 (int cast).
-        $maturityChanging = array_key_exists('level_maturity', $validated)
-            && $validated['level_maturity'] != $entry->level_maturity;
+        $updateData = [
+            'status' => $entry->applyPicTouch($newCatatan, $hasBukti, $naSelected),
+            'tanggal_input' => now(),
+            'tanggal_verifikasi' => null,
+        ];
 
-        if ((isset($validated['status']) && $validated['status'] !== $entry->status) || $maturityChanging) {
-            $updateData['tanggal_verifikasi'] = null;
-            $updateData['catatan_admin'] = null;
-            $updateData['admin_id'] = null;
+        if (array_key_exists('catatan', $validated)) {
+            $updateData['catatan'] = $validated['catatan'];
+        }
+        if (array_key_exists('level_maturity', $validated)) {
+            $updateData['level_maturity'] = $validated['level_maturity'];
         }
 
         $entry->update($updateData);
@@ -52,9 +55,10 @@ class ChecklistEntryController extends Controller
             'session_id' => 'required|integer|exists:checklist_sessions,id',
             'entries' => 'required|array|min:1|max:100',
             'entries.*.id' => 'required|integer|exists:checklist_entries,id',
-            'entries.*.status' => 'sometimes|nullable|string|in:compliant,partial,non_compliant,na',
+            'entries.*.tidak_berlaku' => 'sometimes|boolean',
+            'entries.*.status' => 'prohibited',
             'entries.*.level_maturity' => 'sometimes|nullable|integer|min:0|max:5',
-            'entries.*.catatan' => 'sometimes|nullable|string|max:2000',
+            'entries.*.catatan' => 'required_if:entries.*.tidak_berlaku,true|sometimes|nullable|string|max:2000',
         ]);
 
         $session = ChecklistSession::where('id', $validated['session_id'])
@@ -78,32 +82,25 @@ class ChecklistEntryController extends Controller
                     continue;
                 }
 
-                $updateData = ['updated_at' => $now];
+                $newCatatan = array_key_exists('catatan', $item) ? $item['catatan'] : $entry->catatan;
+                $naSelected = (bool) ($item['tidak_berlaku'] ?? $entry->status === ChecklistEntry::WORKFLOW_TIDAK_BERLAKU);
+                $hasBukti = $entry->evidences()->exists();
 
-                $statusChanging = array_key_exists('status', $item) && $item['status'] !== $entry->status;
-                $maturityChanging = array_key_exists('level_maturity', $item) && $item['level_maturity'] != $entry->level_maturity;
+                $updateData = [
+                    'status' => $entry->applyPicTouch($newCatatan, $hasBukti, $naSelected),
+                    'tanggal_input' => $now,
+                    'tanggal_verifikasi' => null,
+                ];
 
-                if ($statusChanging) {
-                    $updateData['status'] = $item['status'];
-                }
-                if ($maturityChanging) {
-                    $updateData['level_maturity'] = $item['level_maturity'];
-                }
-                if ($statusChanging || $maturityChanging) {
-                    $updateData['tanggal_verifikasi'] = null;
-                    $updateData['catatan_admin'] = null;
-                    $updateData['admin_id'] = null;
-                    $updateData['tanggal_input'] = $now;
-                }
                 if (array_key_exists('catatan', $item)) {
                     $updateData['catatan'] = $item['catatan'];
-                    $updateData['tanggal_input'] = $now;
+                }
+                if (array_key_exists('level_maturity', $item)) {
+                    $updateData['level_maturity'] = $item['level_maturity'];
                 }
 
-                if (count($updateData) > 1) {
-                    $entry->update($updateData);
-                    $updated++;
-                }
+                $entry->update($updateData);
+                $updated++;
             }
         });
 
@@ -143,10 +140,9 @@ class ChecklistEntryController extends Controller
         ]);
 
         $entry->update([
+            'status' => $entry->applyPicTouch($entry->catatan, true, $entry->status === ChecklistEntry::WORKFLOW_TIDAK_BERLAKU),
             'tanggal_input' => now(),
             'tanggal_verifikasi' => null,
-            'catatan_admin' => null,
-            'admin_id' => null,
         ]);
 
         if ($request->wantsJson()) {
@@ -167,5 +163,25 @@ class ChecklistEntryController extends Controller
             'type' => 'success',
             'message' => 'Bukti berhasil diunggah.',
         ]);
+    }
+
+    public function deleteEvidence(Request $request, int $id, int $evidenceId)
+    {
+        $user = $request->user();
+        $entry = ChecklistEntry::where('pic_id', $user->id)->findOrFail($id);
+        $evidence = ComplianceEvidence::where('checklist_entry_id', $entry->id)->findOrFail($evidenceId);
+
+        $evidence->delete();
+
+        $hasBukti = $entry->evidences()->exists();
+        $naSelected = $entry->status === ChecklistEntry::WORKFLOW_TIDAK_BERLAKU;
+
+        $entry->update([
+            'status' => $entry->applyPicTouch($entry->catatan, $hasBukti, $naSelected),
+            'tanggal_input' => now(),
+            'tanggal_verifikasi' => null,
+        ]);
+
+        return response()->json(['ok' => true]);
     }
 }

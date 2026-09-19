@@ -170,6 +170,7 @@ Route::middleware('auth')->group(function () {
         Route::patch('/checklist-entries/{id}', [ChecklistEntryController::class, 'update'])->name('entries.update');
         Route::post('/checklist-entries/batch', [ChecklistEntryController::class, 'batchUpdate'])->name('entries.batch');
         Route::post('/checklist-entries/{id}/evidence', [ChecklistEntryController::class, 'uploadEvidence'])->name('entries.evidence');
+        Route::delete('/checklist-entries/{id}/evidence/{evidenceId}', [ChecklistEntryController::class, 'deleteEvidence'])->name('entries.evidence.delete');
     });
 });
 
