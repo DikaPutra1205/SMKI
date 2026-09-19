@@ -207,14 +207,10 @@ class ComplianceOfficerController extends Controller
     {
         $user = $request->user();
         $entryIds = $request->input('entry_ids', []);
-        $status = $request->input('status');
+        $decision = $request->input('decision');
         $adminNotes = $request->input('admin_notes');
 
-        $entries = ChecklistEntry::whereIn('id', $entryIds)->get();
-
-        // No note requirement: approving (compliant) must stay catatan-free, and
-        // the service only attaches a note on rejection when one is supplied.
-        $verifiedCount = $this->complianceOfficerService->bulkVerifyChecklistEntries($user, $entryIds, $status, $adminNotes);
+        $verifiedCount = $this->complianceOfficerService->bulkVerifyChecklistEntries($user, $entryIds, $decision, $adminNotes);
 
         return back()->with('flash', [
             'type' => 'success',
@@ -304,23 +300,30 @@ class ComplianceOfficerController extends Controller
         }
 
         $validated = $request->validate([
-            'status' => 'required|string|in:compliant,non_compliant',
-            'admin_notes' => 'nullable|string|max:2000',
+            'decision' => 'required|in:approve,reject',
+            'status' => 'prohibited',
+            'admin_notes' => 'required_if:decision,reject|nullable|string|max:2000',
             'level_maturity' => 'sometimes|nullable|integer|min:0|max:5',
         ]);
 
-        // Catatan admin only applies to the reject (non_compliant) path.
-        // Approving (compliant) must not attach a note — a note drives the
-        // red "Ditolak" cue on the PIC screen, so approval stays catatan-free.
-        $isReject = $validated['status'] === 'non_compliant';
-        $adminNotes = $isReject && ! empty(trim($validated['admin_notes'] ?? '')) ? trim($validated['admin_notes']) : null;
+        $decision = $validated['decision'];
+        $isReject = $decision === 'reject';
+        $isNa = $entry->status === ChecklistEntry::WORKFLOW_TIDAK_BERLAKU;
 
-        $entry->update(array_merge([
-            'status' => $validated['status'],
+        $adminNotes = $isReject ? trim($validated['admin_notes']) : null;
+
+        $updatePayload = [
+            'status' => $isReject ? ChecklistEntry::WORKFLOW_DALAM_PROSES : ($isNa ? ChecklistEntry::WORKFLOW_TIDAK_BERLAKU : ChecklistEntry::WORKFLOW_SELESAI),
             'catatan_admin' => $adminNotes,
-            'tanggal_verifikasi' => now(),
+            'tanggal_verifikasi' => $isReject ? null : now(),
             'admin_id' => $user->id,
-        ], array_key_exists('level_maturity', $validated) ? ['level_maturity' => $validated['level_maturity']] : []));
+        ];
+
+        if (array_key_exists('level_maturity', $validated)) {
+            $updatePayload['level_maturity'] = $validated['level_maturity'];
+        }
+
+        $entry->update($updatePayload);
 
         if ($isReject) {
             $targetPic = $entry->pic ?? User::where('unit_id', $entry->unit_id)->whereHas('role', fn ($q) => $q->where('name', User::ROLE_PIC))->first();
@@ -329,7 +332,7 @@ class ComplianceOfficerController extends Controller
             }
         }
 
-        $statusLabel = $validated['status'] === 'compliant' ? 'Patuh' : 'Tidak Patuh';
+        $statusLabel = $isReject ? 'Dikembalikan ke PIC' : ($isNa ? 'Tidak Berlaku (terverifikasi)' : 'Selesai Diterapkan');
 
         return back()->with('flash', [
             'type' => 'success',

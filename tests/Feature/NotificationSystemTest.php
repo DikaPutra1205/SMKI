@@ -219,7 +219,7 @@ class NotificationSystemTest extends TestCase
 
         $response = $this->actingAs($this->admin)->postJson('/api/v1/compliance-officer/bulk-verify', [
             'entry_ids' => [$entry->id],
-            'status' => 'non_compliant',
+            'decision' => 'reject',
             'admin_notes' => 'Bukti implementasi belum memenuhi klausul.',
         ]);
 

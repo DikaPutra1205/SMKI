@@ -544,31 +544,37 @@ class ComplianceOfficerService
 
     /**
      * Bulk verify checklist entries by compliance officer or superadmin.
+     *
+     * Decision-based: 'approve' seals (SELESAI or NA stays NA), 'reject' sends
+     * back to PIC (PROSES) with admin note.
      */
-    public function bulkVerifyChecklistEntries(User $user, array $entryIds, string $status, ?string $adminNotes = null): int
+    public function bulkVerifyChecklistEntries(User $user, array $entryIds, string $decision, ?string $adminNotes = null): int
     {
         if (! $user->hasPermissionTo('checklist.bulk-verify')) {
             throw new AuthorizationException('Hanya Admin Kepatuhan dan Superadmin yang memiliki wewenang verifikasi massal.');
         }
 
-        return DB::transaction(function () use ($user, $entryIds, $status, $adminNotes) {
-            $updatePayload = [
-                'status' => $status,
-                'tanggal_verifikasi' => now(),
-                'admin_id' => $user->id,
-            ];
+        abort_unless(in_array($decision, ['approve', 'reject'], true), 422, 'Decision must be approve or reject.');
 
-            // Approving (compliant) must stay catatan-free — clear any prior note
-            // so the PIC screen never shows a red "Ditolak" cue on a compliant
-            // entry. On rejection (non_compliant) a supplied note overrides the
-            // existing one; if no note is given, the existing note is preserved.
-            if ($status === 'compliant') {
-                $updatePayload['catatan_admin'] = null;
-            } elseif ($adminNotes !== null) {
-                $updatePayload['catatan_admin'] = $adminNotes;
+        return DB::transaction(function () use ($user, $entryIds, $decision, $adminNotes) {
+            $isApprove = $decision === 'approve';
+
+            $entries = ChecklistEntry::whereIn('id', $entryIds)->get();
+
+            $updatedCount = 0;
+            foreach ($entries as $entry) {
+                $isNa = $entry->status === ChecklistEntry::WORKFLOW_TIDAK_BERLAKU;
+
+                $payload = [
+                    'status' => $isApprove ? ($isNa ? ChecklistEntry::WORKFLOW_TIDAK_BERLAKU : ChecklistEntry::WORKFLOW_SELESAI) : ChecklistEntry::WORKFLOW_DALAM_PROSES,
+                    'tanggal_verifikasi' => $isApprove ? now() : null,
+                    'admin_id' => $user->id,
+                    'catatan_admin' => $isApprove ? null : $adminNotes,
+                ];
+
+                $entry->update($payload);
+                $updatedCount++;
             }
-
-            $updatedCount = ChecklistEntry::whereIn('id', $entryIds)->update($updatePayload);
 
             AuditLog::catat(
                 'ChecklistEntry',
@@ -577,15 +583,14 @@ class ComplianceOfficerService
                 $user->id,
                 [
                     'count' => $updatedCount,
-                    'status' => $status,
+                    'decision' => $decision,
                     'admin_notes' => $adminNotes,
                     'entry_ids' => $entryIds,
                 ]
             );
 
-            if ($status === 'non_compliant') {
-                $rejectedEntries = ChecklistEntry::with(['control', 'pic'])->whereIn('id', $entryIds)->get();
-                foreach ($rejectedEntries as $entry) {
+            if (! $isApprove) {
+                foreach ($entries as $entry) {
                     $targetPic = $entry->pic ?? User::where('unit_id', $entry->unit_id)->whereHas('role', fn ($q) => $q->where('name', User::ROLE_PIC))->first();
                     if ($targetPic && $targetPic->id !== $user->id) {
                         $targetPic->notify(new ChecklistEntryRejectedNotification($entry, $user, $adminNotes));

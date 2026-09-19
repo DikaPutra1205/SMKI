@@ -17,13 +17,9 @@ class BulkVerifyChecklistRequest extends FormRequest
         return [
             'entry_ids' => 'required|array|min:1',
             'entry_ids.*' => 'required|integer|exists:checklist_entries,id',
-            'status' => 'required|in:'.implode(',', [
-                ChecklistEntry::STATUS_COMPLIANT,
-                ChecklistEntry::STATUS_PARTIAL,
-                ChecklistEntry::STATUS_NON_COMPLIANT,
-                ChecklistEntry::STATUS_NA,
-            ]),
-            'admin_notes' => 'nullable|string|max:2000',
+            'status' => 'prohibited',
+            'decision' => 'required|in:approve,reject',
+            'admin_notes' => 'required_if:decision,reject|nullable|string|max:2000',
         ];
     }
 }

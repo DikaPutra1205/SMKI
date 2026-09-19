@@ -261,18 +261,17 @@ class ComplianceOfficerTest extends TestCase
     public function test_admin_can_bulk_verify_checklist_entries_clearing_existing_notes_on_approve(): void
     {
         $entry1 = ChecklistEntry::factory()->create([
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN,
             'catatan_admin' => 'Catatan terdahulu unit 1',
         ]);
         $entry2 = ChecklistEntry::factory()->create([
-            'status' => ChecklistEntry::STATUS_PARTIAL,
+            'status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN,
             'catatan_admin' => 'Catatan terdahulu unit 2',
         ]);
 
-        // Bulk verify without admin_notes should preserve existing notes
         $response = $this->actingAs($this->admin)->postJson('/api/v1/compliance-officer/bulk-verify', [
             'entry_ids' => [$entry1->id, $entry2->id],
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'decision' => 'approve',
         ]);
 
         $response->assertOk()
@@ -283,10 +282,9 @@ class ComplianceOfficerTest extends TestCase
                 ],
             ]);
 
-        $this->assertEquals(ChecklistEntry::STATUS_COMPLIANT, $entry1->fresh()->status);
-        // Bulk approve must clear any prior catatan_admin — notes only apply on reject.
+        $this->assertEquals(ChecklistEntry::WORKFLOW_SELESAI, $entry1->fresh()->status);
         $this->assertNull($entry1->fresh()->catatan_admin);
-        $this->assertEquals(ChecklistEntry::STATUS_COMPLIANT, $entry2->fresh()->status);
+        $this->assertEquals(ChecklistEntry::WORKFLOW_SELESAI, $entry2->fresh()->status);
         $this->assertNull($entry2->fresh()->catatan_admin);
         $this->assertNotNull($entry1->fresh()->tanggal_verifikasi);
         $this->assertEquals($this->admin->id, $entry1->fresh()->admin_id);
@@ -301,16 +299,14 @@ class ComplianceOfficerTest extends TestCase
     public function test_admin_can_verify_single_entry_without_admin_notes(): void
     {
         $entry = ChecklistEntry::factory()->create([
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN,
             'catatan' => 'Catatan PIC',
         ]);
 
-        // Verifying without a note must succeed (no longer required) and leave
-        // catatan_admin null — this drives the green state on the PIC screen.
         $response = $this->actingAs($this->admin)
             ->from('/admin/kepatuhan/checklist/verify')
             ->post("/admin/kepatuhan/checklist/verify/{$entry->id}", [
-                'status' => ChecklistEntry::STATUS_COMPLIANT,
+                'decision' => 'approve',
             ]);
 
         $response->assertRedirect();
@@ -318,20 +314,20 @@ class ComplianceOfficerTest extends TestCase
 
         $this->assertNull($fresh->catatan_admin);
         $this->assertNotNull($fresh->tanggal_verifikasi);
-        $this->assertEquals(ChecklistEntry::STATUS_COMPLIANT, $fresh->status);
+        $this->assertEquals(ChecklistEntry::WORKFLOW_SELESAI, $fresh->status);
         $this->assertEquals($this->admin->id, $fresh->admin_id);
     }
 
     public function test_admin_can_verify_single_entry_with_admin_notes(): void
     {
         $entry = ChecklistEntry::factory()->create([
-            'status' => ChecklistEntry::STATUS_PARTIAL,
+            'status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN,
         ]);
 
         $response = $this->actingAs($this->admin)
             ->from('/admin/kepatuhan/checklist/verify')
             ->post("/admin/kepatuhan/checklist/verify/{$entry->id}", [
-                'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+                'decision' => 'reject',
                 'admin_notes' => 'Perlu perbaikan bukti unggah',
             ]);
 
@@ -339,21 +335,21 @@ class ComplianceOfficerTest extends TestCase
         $fresh = $entry->fresh();
 
         $this->assertEquals('Perlu perbaikan bukti unggah', $fresh->catatan_admin);
-        $this->assertNotNull($fresh->tanggal_verifikasi);
+        $this->assertNull($fresh->tanggal_verifikasi);
+        $this->assertEquals(ChecklistEntry::WORKFLOW_DALAM_PROSES, $fresh->status);
     }
 
     public function test_admin_cannot_attach_catatan_when_approving_single_entry(): void
     {
         $entry = ChecklistEntry::factory()->create([
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN,
             'catatan_admin' => 'Catatan lama',
         ]);
 
-        // Approving (compliant) must ignore a supplied note and clear any prior one.
         $response = $this->actingAs($this->admin)
             ->from('/admin/kepatuhan/checklist/verify')
             ->post("/admin/kepatuhan/checklist/verify/{$entry->id}", [
-                'status' => ChecklistEntry::STATUS_COMPLIANT,
+                'decision' => 'approve',
                 'admin_notes' => 'Catatan ini seharusnya diabaikan',
             ]);
 
@@ -361,18 +357,17 @@ class ComplianceOfficerTest extends TestCase
         $fresh = $entry->fresh();
 
         $this->assertNull($fresh->catatan_admin);
-        $this->assertEquals(ChecklistEntry::STATUS_COMPLIANT, $fresh->status);
+        $this->assertEquals(ChecklistEntry::WORKFLOW_SELESAI, $fresh->status);
         $this->assertNotNull($fresh->tanggal_verifikasi);
     }
 
     public function test_admin_cannot_attach_catatan_when_bulk_approving(): void
     {
-        $entry = ChecklistEntry::factory()->create(['status' => ChecklistEntry::STATUS_NON_COMPLIANT]);
+        $entry = ChecklistEntry::factory()->create(['status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN]);
 
-        // Bulk approve (compliant) ignores the supplied admin_notes entirely.
         $response = $this->actingAs($this->admin)->postJson('/api/v1/compliance-officer/bulk-verify', [
             'entry_ids' => [$entry->id],
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'decision' => 'approve',
             'admin_notes' => 'Catatan ini seharusnya diabaikan',
         ]);
 
@@ -380,16 +375,16 @@ class ComplianceOfficerTest extends TestCase
         $fresh = $entry->fresh();
 
         $this->assertNull($fresh->catatan_admin);
-        $this->assertEquals(ChecklistEntry::STATUS_COMPLIANT, $fresh->status);
+        $this->assertEquals(ChecklistEntry::WORKFLOW_SELESAI, $fresh->status);
     }
 
     public function test_admin_attaches_catatan_when_bulk_rejecting(): void
     {
-        $entry = ChecklistEntry::factory()->create(['status' => ChecklistEntry::STATUS_PARTIAL]);
+        $entry = ChecklistEntry::factory()->create(['status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN]);
 
         $response = $this->actingAs($this->admin)->postJson('/api/v1/compliance-officer/bulk-verify', [
             'entry_ids' => [$entry->id],
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'decision' => 'reject',
             'admin_notes' => 'Perlu perbaikan bukti',
         ]);
 
@@ -397,8 +392,8 @@ class ComplianceOfficerTest extends TestCase
         $fresh = $entry->fresh();
 
         $this->assertEquals('Perlu perbaikan bukti', $fresh->catatan_admin);
-        $this->assertEquals(ChecklistEntry::STATUS_NON_COMPLIANT, $fresh->status);
-        $this->assertNotNull($fresh->tanggal_verifikasi);
+        $this->assertEquals(ChecklistEntry::WORKFLOW_DALAM_PROSES, $fresh->status);
+        $this->assertNull($fresh->tanggal_verifikasi);
     }
 
     public function test_pic_cannot_perform_bulk_verification(): void
@@ -407,7 +402,7 @@ class ComplianceOfficerTest extends TestCase
 
         $response = $this->actingAs($this->picA)->postJson('/api/v1/compliance-officer/bulk-verify', [
             'entry_ids' => [$entry->id],
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'decision' => 'approve',
         ]);
 
         $response->assertForbidden();
@@ -981,7 +976,7 @@ class ComplianceOfficerTest extends TestCase
     {
         $this->actingAs($this->admin)->postJson('/api/v1/compliance-officer/bulk-verify', [
             'entry_ids' => [],
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'decision' => 'approve',
         ])->assertStatus(422);
     }
 
@@ -989,40 +984,40 @@ class ComplianceOfficerTest extends TestCase
     {
         $this->actingAs($this->admin)->postJson('/api/v1/compliance-officer/bulk-verify', [
             'entry_ids' => [999999],
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'decision' => 'approve',
         ])->assertStatus(422);
     }
 
-    public function test_bulk_verify_rejects_invalid_status(): void
+    public function test_bulk_verify_rejects_invalid_decision(): void
     {
         $entry = ChecklistEntry::factory()->create();
 
         $this->actingAs($this->admin)->postJson('/api/v1/compliance-officer/bulk-verify', [
             'entry_ids' => [$entry->id],
-            'status' => 'bogus_status',
+            'decision' => 'bogus_decision',
         ])->assertStatus(422);
     }
 
     public function test_bulk_verify_with_mixed_valid_and_invalid_ids_is_all_or_nothing(): void
     {
-        $entry = ChecklistEntry::factory()->create(['status' => ChecklistEntry::STATUS_NON_COMPLIANT]);
+        $entry = ChecklistEntry::factory()->create(['status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN]);
 
         $this->actingAs($this->admin)->postJson('/api/v1/compliance-officer/bulk-verify', [
             'entry_ids' => [$entry->id, 999999],
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'decision' => 'approve',
         ])->assertStatus(422);
 
-        $this->assertEquals(ChecklistEntry::STATUS_NON_COMPLIANT, $entry->fresh()->status);
+        $this->assertEquals(ChecklistEntry::WORKFLOW_DALAM_TINJAUAN, $entry->fresh()->status);
         $this->assertNull($entry->fresh()->tanggal_verifikasi);
     }
 
     public function test_bulk_verify_with_duplicate_ids_counts_rows_not_input(): void
     {
-        $entry = ChecklistEntry::factory()->create(['status' => ChecklistEntry::STATUS_PARTIAL]);
+        $entry = ChecklistEntry::factory()->create(['status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN]);
 
         $response = $this->actingAs($this->admin)->postJson('/api/v1/compliance-officer/bulk-verify', [
             'entry_ids' => [$entry->id, $entry->id],
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'decision' => 'approve',
         ]);
 
         $response->assertOk();
@@ -1032,32 +1027,32 @@ class ComplianceOfficerTest extends TestCase
     public function test_superadmin_can_bulk_verify(): void
     {
         $superadmin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
-        $entry = ChecklistEntry::factory()->create(['status' => ChecklistEntry::STATUS_NON_COMPLIANT]);
+        $entry = ChecklistEntry::factory()->create(['status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN]);
 
         $response = $this->actingAs($superadmin)->postJson('/api/v1/compliance-officer/bulk-verify', [
             'entry_ids' => [$entry->id],
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'decision' => 'approve',
         ]);
 
         $response->assertOk();
-        $this->assertEquals(ChecklistEntry::STATUS_COMPLIANT, $entry->fresh()->status);
+        $this->assertEquals(ChecklistEntry::WORKFLOW_SELESAI, $entry->fresh()->status);
         $this->assertEquals($superadmin->id, $entry->fresh()->admin_id);
     }
 
-    public function test_bulk_verify_without_notes_preserves_existing_admin_notes_on_reject(): void
+    public function test_bulk_verify_reject_replaces_existing_admin_notes(): void
     {
         $entry = ChecklistEntry::factory()->create([
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN,
             'catatan_admin' => 'Dokumentasi bukti sudah lengkap',
         ]);
 
-        // A rejection keeps the existing catatan_admin when no new note is sent.
         $this->actingAs($this->admin)->postJson('/api/v1/compliance-officer/bulk-verify', [
             'entry_ids' => [$entry->id],
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'decision' => 'reject',
+            'admin_notes' => 'Perlu perbaikan',
         ])->assertOk();
 
-        $this->assertSame('Dokumentasi bukti sudah lengkap', $entry->fresh()->catatan_admin);
+        $this->assertSame('Perlu perbaikan', $entry->fresh()->catatan_admin);
     }
 
     public function test_web_findings_page_renders_with_expected_props(): void
@@ -1153,19 +1148,18 @@ class ComplianceOfficerTest extends TestCase
 
     public function test_web_bulk_verify_redirects_back_with_flash(): void
     {
-        $entry = ChecklistEntry::factory()->create(['status' => ChecklistEntry::STATUS_NON_COMPLIANT]);
+        $entry = ChecklistEntry::factory()->create(['status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN]);
 
         $this->actingAs($this->admin)
             ->from('/admin/kepatuhan/risks')
             ->post('/admin/kepatuhan/bulk-verify', [
                 'entry_ids' => [$entry->id],
-                'status' => ChecklistEntry::STATUS_COMPLIANT,
-                'admin_notes' => 'Telah diverifikasi sesuai standar SMKI',
+                'decision' => 'approve',
             ])
             ->assertRedirect('/admin/kepatuhan/risks')
             ->assertSessionHas('flash.type', 'success');
 
-        $this->assertEquals(ChecklistEntry::STATUS_COMPLIANT, $entry->fresh()->status);
+        $this->assertEquals(ChecklistEntry::WORKFLOW_SELESAI, $entry->fresh()->status);
         $this->assertNotNull($entry->fresh()->tanggal_verifikasi);
     }
 
@@ -1240,7 +1234,7 @@ class ComplianceOfficerTest extends TestCase
             'control_id' => $this->control->id,
             'unit_id' => $this->unitA->id,
             'pic_id' => $this->picA->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN,
         ]);
 
         $response = $this->actingAs($this->admin)->get("/admin/kepatuhan/checklist/verify?session_id={$session->id}");
@@ -1252,7 +1246,7 @@ class ComplianceOfficerTest extends TestCase
             ->where('entries.data.0.control.kode_klausul', 'A.5.1')
             ->where('entries.data.0.unit.nama', 'Pusat Ekosistem SDM')
             ->where('entries.data.0.pic.name', $this->picA->name)
-            ->where('entries.data.0.status', ChecklistEntry::STATUS_NON_COMPLIANT)
+            ->where('entries.data.0.status', ChecklistEntry::WORKFLOW_DALAM_TINJAUAN)
             ->has('workUnits')
             ->has('filters'));
     }
@@ -1265,7 +1259,7 @@ class ComplianceOfficerTest extends TestCase
             'control_id' => $this->control->id,
             'unit_id' => $this->unitA->id,
             'pic_id' => $this->picA->id,
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI,
             'tanggal_verifikasi' => now(),
             'admin_id' => $this->admin->id,
         ]);
@@ -1306,11 +1300,10 @@ class ComplianceOfficerTest extends TestCase
             'control_id' => $this->control->id,
             'unit_id' => $this->unitA->id,
             'pic_id' => $this->picA->id,
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN,
         ]);
 
         foreach ([$this->koordinator, $this->auditor] as $viewer) {
-            // Landing + detail pages render read-only (same view as Verifikasi Checklists).
             $this->actingAs($viewer)->get('/admin/kepatuhan/checklist/verify')->assertOk();
             $this->actingAs($viewer)
                 ->get("/admin/kepatuhan/checklist/verify?session_id={$session->id}")
@@ -1319,35 +1312,30 @@ class ComplianceOfficerTest extends TestCase
                     ->component('admin-kepatuhan/checklist/verify', false)
                     ->has('entries.data', 1));
 
-            // Verify actions stay forbidden.
             $this->actingAs($viewer)
                 ->from('/admin/kepatuhan/checklist/verify')
-                ->post("/admin/kepatuhan/checklist/verify/{$entry->id}", ['status' => 'compliant'])
+                ->post("/admin/kepatuhan/checklist/verify/{$entry->id}", ['decision' => 'approve'])
                 ->assertForbidden();
             $this->actingAs($viewer)
                 ->from('/admin/kepatuhan/checklist/verify')
                 ->post('/admin/kepatuhan/bulk-verify', [
                     'entry_ids' => [$entry->id],
-                    'status' => 'compliant',
+                    'decision' => 'approve',
                 ])
                 ->assertForbidden();
         }
 
-        // PIC still cannot view at all.
         $this->actingAs($this->picA)->get('/admin/kepatuhan/checklist/verify')->assertForbidden();
     }
 
     public function test_single_verify_allows_catatan_when_status_changes(): void
     {
-        $entry = ChecklistEntry::factory()->create(['status' => ChecklistEntry::STATUS_NON_COMPLIANT]);
+        $entry = ChecklistEntry::factory()->create(['status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN]);
 
-        // Changing status without notes now succeeds (no longer required) and
-        // leaves catatan_admin null — this drives the green state on the PIC screen.
         $this->actingAs($this->admin)
             ->from('/admin/kepatuhan/checklist/verify')
             ->post("/admin/kepatuhan/checklist/verify/{$entry->id}", [
-                'status' => 'compliant',
-                'admin_notes' => '',
+                'decision' => 'approve',
             ])
             ->assertRedirect('/admin/kepatuhan/checklist/verify')
             ->assertSessionHas('flash.type', 'success');
@@ -1355,81 +1343,75 @@ class ComplianceOfficerTest extends TestCase
         $this->assertNull($entry->fresh()->catatan_admin);
         $this->assertNotNull($entry->fresh()->tanggal_verifikasi);
 
-        // With notes on the reject (non_compliant) path, catatan_admin is stored.
-        $entry2 = ChecklistEntry::factory()->create(['status' => ChecklistEntry::STATUS_PARTIAL]);
+        $entry2 = ChecklistEntry::factory()->create(['status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN]);
 
         $this->actingAs($this->admin)
             ->from('/admin/kepatuhan/checklist/verify')
             ->post("/admin/kepatuhan/checklist/verify/{$entry2->id}", [
-                'status' => 'non_compliant',
+                'decision' => 'reject',
                 'admin_notes' => 'Telah diverifikasi sesuai standar',
             ])
             ->assertRedirect('/admin/kepatuhan/checklist/verify')
             ->assertSessionHas('flash.type', 'success');
 
-        $this->assertEquals(ChecklistEntry::STATUS_NON_COMPLIANT, $entry2->fresh()->status);
+        $this->assertEquals(ChecklistEntry::WORKFLOW_DALAM_PROSES, $entry2->fresh()->status);
         $this->assertEquals('Telah diverifikasi sesuai standar', $entry2->fresh()->catatan_admin);
     }
 
     public function test_single_verify_allows_nullable_catatan_when_status_unchanged(): void
     {
         $entry = ChecklistEntry::factory()->create([
-            'status' => ChecklistEntry::STATUS_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI,
             'catatan_admin' => 'Catatan lama',
         ]);
 
         $this->actingAs($this->admin)
             ->from('/admin/kepatuhan/checklist/verify')
             ->post("/admin/kepatuhan/checklist/verify/{$entry->id}", [
-                'status' => 'compliant',
-                'admin_notes' => '',
+                'decision' => 'approve',
             ])
             ->assertRedirect('/admin/kepatuhan/checklist/verify')
             ->assertSessionHas('flash.type', 'success');
 
-        $this->assertEquals(ChecklistEntry::STATUS_COMPLIANT, $entry->fresh()->status);
+        $this->assertEquals(ChecklistEntry::WORKFLOW_SELESAI, $entry->fresh()->status);
         $this->assertNotNull($entry->fresh()->tanggal_verifikasi);
     }
 
     public function test_bulk_verify_allows_status_change_without_catatan(): void
     {
         $entry = ChecklistEntry::factory()->create([
-            'status' => ChecklistEntry::STATUS_NON_COMPLIANT,
+            'status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN,
             'catatan_admin' => 'Catatan lama',
         ]);
 
-        // Bulk-approving (compliant) no longer requires a catatan; any prior
-        // note is cleared so the PIC screen does not show a "Ditolak" cue.
         $this->actingAs($this->admin)
             ->from('/admin/kepatuhan/checklist/verify')
             ->post('/admin/kepatuhan/bulk-verify', [
                 'entry_ids' => [$entry->id],
-                'status' => 'compliant',
-                'admin_notes' => '',
+                'decision' => 'approve',
             ])
             ->assertRedirect('/admin/kepatuhan/checklist/verify')
             ->assertSessionHas('flash.type', 'success');
 
         $fresh = $entry->fresh();
-        $this->assertEquals(ChecklistEntry::STATUS_COMPLIANT, $fresh->status);
+        $this->assertEquals(ChecklistEntry::WORKFLOW_SELESAI, $fresh->status);
         $this->assertNull($fresh->catatan_admin);
     }
 
     public function test_bulk_verify_allows_nullable_catatan_when_status_unchanged(): void
     {
-        $entry = ChecklistEntry::factory()->create(['status' => ChecklistEntry::STATUS_COMPLIANT]);
+        $entry = ChecklistEntry::factory()->create(['status' => ChecklistEntry::WORKFLOW_SELESAI]);
 
         $this->actingAs($this->admin)
             ->from('/admin/kepatuhan/checklist/verify')
             ->post('/admin/kepatuhan/bulk-verify', [
                 'entry_ids' => [$entry->id],
-                'status' => 'compliant',
-                'admin_notes' => '',
+                'decision' => 'approve',
             ])
             ->assertRedirect('/admin/kepatuhan/checklist/verify')
             ->assertSessionHas('flash.type', 'success');
 
-        $this->assertEquals(ChecklistEntry::STATUS_COMPLIANT, $entry->fresh()->status);
+        $this->assertEquals(ChecklistEntry::WORKFLOW_SELESAI, $entry->fresh()->status);
         $this->assertNotNull($entry->fresh()->tanggal_verifikasi);
     }
 }

@@ -23,7 +23,7 @@ class ComplianceService
                 controls.framework_id,
                 COUNT(*) as total_entries,
                 SUM(CASE WHEN checklist_entries.status = ? THEN 1 ELSE 0 END) as compliant_entries
-            ', [ChecklistEntry::STATUS_COMPLIANT])
+            ', [ChecklistEntry::WORKFLOW_SELESAI])
             ->groupBy('controls.framework_id')
             ->get()
             ->keyBy('framework_id');
@@ -68,16 +68,16 @@ class ComplianceService
             'updater:id,name',
         ])->withCount([
             'entries as total_entries',
-            'entries as compliant_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_COMPLIANT),
-            'entries as partial_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_PARTIAL),
-            'entries as non_compliant_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_NON_COMPLIANT),
-            'entries as na_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_NA),
+            'entries as compliant_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_SELESAI),
+            'entries as partial_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_DALAM_PROSES),
+            'entries as non_compliant_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_DALAM_TINJAUAN),
+            'entries as na_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_TIDAK_BERLAKU),
             'entries as verified_entries' => fn ($q) => $q->whereNotNull('tanggal_verifikasi'),
-            'entries as completed_entries' => fn ($q) => $q->where(fn ($q2) => $q2->where('status', ChecklistEntry::STATUS_COMPLIANT)
+            'entries as completed_entries' => fn ($q) => $q->where(fn ($q2) => $q2->where('status', ChecklistEntry::WORKFLOW_SELESAI)
                 ->orWhere(fn ($q3) => $q3->whereIn('status', [
-                    ChecklistEntry::STATUS_PARTIAL,
-                    ChecklistEntry::STATUS_NON_COMPLIANT,
-                    ChecklistEntry::STATUS_NA,
+                    ChecklistEntry::WORKFLOW_DALAM_PROSES,
+                    ChecklistEntry::WORKFLOW_DALAM_TINJAUAN,
+                    ChecklistEntry::WORKFLOW_TIDAK_BERLAKU,
                 ])->whereNotNull('catatan')->where('catatan', '!=', ''))),
         ]);
 
@@ -143,10 +143,10 @@ class ComplianceService
             'updater:id,name',
         ])->withCount([
             'entries as total_entries',
-            'entries as compliant_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_COMPLIANT),
-            'entries as partial_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_PARTIAL),
-            'entries as non_compliant_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_NON_COMPLIANT),
-            'entries as na_entries' => fn ($q) => $q->where('status', ChecklistEntry::STATUS_NA),
+            'entries as compliant_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_SELESAI),
+            'entries as partial_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_DALAM_PROSES),
+            'entries as non_compliant_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_DALAM_TINJAUAN),
+            'entries as na_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_TIDAK_BERLAKU),
             'entries as verified_entries' => fn ($q) => $q->whereNotNull('tanggal_verifikasi'),
         ]);
 

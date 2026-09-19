@@ -189,10 +189,10 @@ class ComplianceOfficerApiController extends Controller
     {
         $user = $request->user();
         $entryIds = $request->input('entry_ids', []);
-        $status = $request->input('status');
+        $decision = $request->input('decision');
         $adminNotes = $request->input('admin_notes');
 
-        $verifiedCount = $this->complianceOfficerService->bulkVerifyChecklistEntries($user, $entryIds, $status, $adminNotes);
+        $verifiedCount = $this->complianceOfficerService->bulkVerifyChecklistEntries($user, $entryIds, $decision, $adminNotes);
 
         return response()->json([
             'status' => 'success',

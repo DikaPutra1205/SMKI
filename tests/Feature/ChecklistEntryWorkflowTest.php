@@ -236,4 +236,65 @@ class ChecklistEntryWorkflowTest extends TestCase
             'decision' => 'approve',
         ])->assertStatus(422);
     }
+
+    public function test_bulk_approve_mixed_with_na(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN_KEPATUHAN]);
+
+        ['pic' => $pic, 'control' => $control, 'unit' => $unit] = $this->seedWfEntry();
+        $entry1 = ChecklistEntry::create([
+            'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
+            'status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN,
+        ]);
+        $entry2 = ChecklistEntry::create([
+            'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
+            'status' => ChecklistEntry::WORKFLOW_TIDAK_BERLAKU,
+        ]);
+
+        $service = app(\App\Services\ComplianceOfficerService::class);
+        $count = $service->bulkVerifyChecklistEntries($admin, [$entry1->id, $entry2->id], 'approve');
+
+        $this->assertEquals(2, $count);
+        $this->assertSame(ChecklistEntry::WORKFLOW_SELESAI, $entry1->fresh()->status);
+        $this->assertNotNull($entry1->fresh()->tanggal_verifikasi);
+        $this->assertSame(ChecklistEntry::WORKFLOW_TIDAK_BERLAKU, $entry2->fresh()->status);
+        $this->assertNotNull($entry2->fresh()->tanggal_verifikasi);
+        $this->assertNull($entry1->fresh()->catatan_admin);
+    }
+
+    public function test_bulk_reject_sets_proses_and_keeps_note(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN_KEPATUHAN]);
+
+        ['pic' => $pic, 'control' => $control, 'unit' => $unit] = $this->seedWfEntry();
+        $entry = ChecklistEntry::create([
+            'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
+            'status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN,
+        ]);
+
+        $service = app(\App\Services\ComplianceOfficerService::class);
+        $count = $service->bulkVerifyChecklistEntries($admin, [$entry->id], 'reject', 'Perbaiki bukti');
+
+        $this->assertEquals(1, $count);
+        $fresh = $entry->fresh();
+        $this->assertSame(ChecklistEntry::WORKFLOW_DALAM_PROSES, $fresh->status);
+        $this->assertSame('Perbaiki bukti', $fresh->catatan_admin);
+        $this->assertNull($fresh->tanggal_verifikasi);
+        $this->assertSame($admin->id, $fresh->admin_id);
+    }
+
+    public function test_bulk_verify_rejects_unknown_decision(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN_KEPATUHAN]);
+
+        ['pic' => $pic, 'control' => $control, 'unit' => $unit] = $this->seedWfEntry();
+        $entry = ChecklistEntry::create([
+            'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
+            'status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN,
+        ]);
+
+        $service = app(\App\Services\ComplianceOfficerService::class);
+        $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+        $service->bulkVerifyChecklistEntries($admin, [$entry->id], 'selesai_diterapkan');
+    }
 }
