@@ -798,6 +798,7 @@ class ReportGeneratorService
         $chartBarPerStandar = [];
         $totalDiterapkan = 0;
         $totalDalamProses = 0;
+        $totalDalamTinjauan = 0;
         $totalBelumDimulai = 0;
         $totalTidakBerlaku = 0;
         $totalKontrolCount = 0;
@@ -811,6 +812,7 @@ class ReportGeneratorService
             $groupBerlaku = 0;
             $groupDiterapkan = 0;
             $groupProses = 0;
+            $groupTinjauan = 0;
             $groupBelum = 0;
             $groupNa = 0;
 
@@ -818,26 +820,32 @@ class ReportGeneratorService
 
             foreach ($controlsInGroup as $ctrl) {
                 $entry = $uniqueControls->get($ctrl->id);
-                $status = $entry?->status ?? 'non_compliant';
+                $status = $entry?->status ?? ChecklistEntry::WORKFLOW_BELUM_DIMULAI;
 
                 $picText = '-';
                 if (! empty($entry?->pic_name)) {
                     $picText = $entry->pic_name.($entry->pic_unit_name ? " ({$entry->pic_unit_name})" : '');
                 }
 
-                if ($status === 'compliant') {
+                if ($status === ChecklistEntry::WORKFLOW_SELESAI) {
                     $groupDiterapkan++;
                     $groupBerlaku++;
                     $statusLabel = 'Diterapkan';
                     $pct = 100;
                     $maturity = $entry?->level_maturity ?? 3;
-                } elseif ($status === 'partial') {
+                } elseif ($status === ChecklistEntry::WORKFLOW_DALAM_PROSES) {
                     $groupProses++;
                     $groupBerlaku++;
                     $statusLabel = 'Dalam Proses';
                     $pct = 50;
                     $maturity = $entry?->level_maturity ?? 2;
-                } elseif ($status === 'na') {
+                } elseif ($status === ChecklistEntry::WORKFLOW_DALAM_TINJAUAN) {
+                    $groupTinjauan++;
+                    $groupBerlaku++;
+                    $statusLabel = 'Dalam Tinjauan';
+                    $pct = 75;
+                    $maturity = $entry?->level_maturity ?? 2;
+                } elseif ($status === ChecklistEntry::WORKFLOW_TIDAK_BERLAKU) {
                     $groupNa++;
                     $statusLabel = 'Tidak Berlaku';
                     $pct = 0;
@@ -860,7 +868,7 @@ class ReportGeneratorService
                 ];
                 $groupDetails[] = $detailItem;
 
-                if (in_array($statusLabel, ['Belum Dimulai', 'Dalam Proses'], true)) {
+                if (in_array($statusLabel, ['Belum Dimulai', 'Dalam Proses', 'Dalam Tinjauan'], true)) {
                     $openControls[] = [
                         'id' => $ctrl->kode_klausul,
                         'nama_kontrol' => $ctrl->judul,
@@ -882,6 +890,7 @@ class ReportGeneratorService
                 'berlaku' => $groupBerlaku,
                 'diterapkan' => $groupDiterapkan,
                 'proses' => $groupProses,
+                'tinjauan' => $groupTinjauan,
                 'belum' => $groupBelum,
                 'na' => $groupNa,
                 'persen_progres' => $groupPct,
@@ -904,6 +913,7 @@ class ReportGeneratorService
             $totalBerlakuCount += $groupBerlaku;
             $totalDiterapkan += $groupDiterapkan;
             $totalDalamProses += $groupProses;
+            $totalDalamTinjauan += $groupTinjauan;
             $totalBelumDimulai += $groupBelum;
             $totalTidakBerlaku += $groupNa;
         }
@@ -926,7 +936,7 @@ class ReportGeneratorService
             $dDiterapkan = 0;
             foreach ($ctrls as $c) {
                 $entry = $uniqueControls->get($c->id);
-                if (($entry?->status ?? 'non_compliant') === 'compliant') {
+                if (($entry?->status ?? ChecklistEntry::WORKFLOW_BELUM_DIMULAI) === ChecklistEntry::WORKFLOW_SELESAI) {
                     $dDiterapkan++;
                 }
             }
@@ -957,11 +967,12 @@ class ReportGeneratorService
                 'progres_keseluruhan_persen' => $overallPct,
             ],
             'ringkasan_eksekutif' => [
-                'narasi_ringkasan' => 'Per '.now()->isoFormat('D MMMM Y').", dari total {$totalKontrolCount} kontrol yang dicakup pada {$unitName}, sebanyak {$totalBerlakuCount} kontrol dinyatakan berlaku (applicable) sesuai Statement of Applicability. Dari jumlah tersebut, {$totalDiterapkan} kontrol (".($totalBerlakuCount > 0 ? round(($totalDiterapkan / $totalBerlakuCount) * 100, 1) : 0)."%) telah diterapkan sepenuhnya, {$totalDalamProses} kontrol dalam proses implementasi, dan {$totalBelumDimulai} kontrol belum dimulai.",
+                'narasi_ringkasan' => 'Per '.now()->isoFormat('D MMMM Y').", dari total {$totalKontrolCount} kontrol yang dicakup pada {$unitName}, sebanyak {$totalBerlakuCount} kontrol dinyatakan berlaku (applicable) sesuai Statement of Applicability. Dari jumlah tersebut, {$totalDiterapkan} kontrol (".($totalBerlakuCount > 0 ? round(($totalDiterapkan / $totalBerlakuCount) * 100, 1) : 0)."%) telah diterapkan sepenuhnya, {$totalDalamProses} kontrol dalam proses implementasi, {$totalDalamTinjauan} dalam tinjauan, dan {$totalBelumDimulai} kontrol belum dimulai.",
                 'chart_bar_per_standar' => $chartBarPerStandar,
                 'chart_donut_distribusi' => [
                     'diterapkan' => $totalDiterapkan,
                     'dalam_proses' => $totalDalamProses,
+                    'dalam_tinjauan' => $totalDalamTinjauan,
                     'belum_dimulai' => $totalBelumDimulai,
                     'tidak_berlaku' => $totalTidakBerlaku,
                 ],
@@ -1020,11 +1031,12 @@ class ReportGeneratorService
         } else {
             // When aggregating across multiple units for an organization-wide report,
             // prioritize implemented/in-progress controls
-            $query->orderByRaw("CASE 
-                WHEN checklist_entries.status = 'compliant' THEN 1 
-                WHEN checklist_entries.status = 'partial' THEN 2 
-                WHEN checklist_entries.status = 'non_compliant' THEN 3 
-                ELSE 4 
+            $query->orderByRaw("CASE
+                WHEN checklist_entries.status = '".ChecklistEntry::WORKFLOW_SELESAI."' THEN 1
+                WHEN checklist_entries.status = '".ChecklistEntry::WORKFLOW_DALAM_TINJAUAN."' THEN 2
+                WHEN checklist_entries.status = '".ChecklistEntry::WORKFLOW_DALAM_PROSES."' THEN 3
+                WHEN checklist_entries.status = '".ChecklistEntry::WORKFLOW_BELUM_DIMULAI."' THEN 4
+                ELSE 5
             END");
         }
 
@@ -1049,11 +1061,18 @@ class ReportGeneratorService
             foreach ($controls as $c) {
                 $entry = $uniqueEntries->get($c->id);
                 if ($entry) {
-                    if (in_array($entry->status, ['compliant', 'partial', 'non_compliant'])) {
+                    if (in_array($entry->status, [
+                        ChecklistEntry::WORKFLOW_SELESAI,
+                        ChecklistEntry::WORKFLOW_DALAM_PROSES,
+                        ChecklistEntry::WORKFLOW_DALAM_TINJAUAN,
+                        ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
+                    ], true)) {
                         $totalApplicable++;
-                        if ($entry->status === 'compliant') {
+                        if ($entry->status === ChecklistEntry::WORKFLOW_SELESAI) {
                             $totalCompliant += 1;
-                        } elseif ($entry->status === 'partial') {
+                        } elseif ($entry->status === ChecklistEntry::WORKFLOW_DALAM_TINJAUAN) {
+                            $totalCompliant += 0.75;
+                        } elseif ($entry->status === ChecklistEntry::WORKFLOW_DALAM_PROSES) {
                             $totalCompliant += 0.5;
                         }
                     }
@@ -1067,16 +1086,19 @@ class ReportGeneratorService
         $iso27701Progress = $calculateProgress($iso27701Controls, $uniqueControls);
 
         $mapStatus = function ($status) {
-            if ($status === 'compliant') {
+            if ($status === ChecklistEntry::WORKFLOW_SELESAI) {
                 return ['progress' => 100, 'label' => 'Selesai', 'badge' => 'diterapkan'];
             }
-            if ($status === 'partial') {
+            if ($status === ChecklistEntry::WORKFLOW_DALAM_TINJAUAN) {
+                return ['progress' => 75, 'label' => 'Tinjauan', 'badge' => 'tinjauan'];
+            }
+            if ($status === ChecklistEntry::WORKFLOW_DALAM_PROSES) {
                 return ['progress' => 50, 'label' => 'Proses', 'badge' => 'proses'];
             }
-            if ($status === 'non_compliant') {
+            if ($status === ChecklistEntry::WORKFLOW_BELUM_DIMULAI) {
                 return ['progress' => 0, 'label' => 'Belum', 'badge' => 'belum'];
             }
-            if ($status === 'na') {
+            if ($status === ChecklistEntry::WORKFLOW_TIDAK_BERLAKU) {
                 return ['progress' => 0, 'label' => 'N/A', 'badge' => 'belum'];
             }
 

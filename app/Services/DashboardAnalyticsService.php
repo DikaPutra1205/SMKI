@@ -273,18 +273,18 @@ class DashboardAnalyticsService
 
             $stats = $query->selectRaw('
                 SUM(CASE WHEN controls.framework_id = 1 AND checklist_entries.status = ? THEN 1 ELSE 0 END) as iso27001_compliant,
-                SUM(CASE WHEN controls.framework_id = 1 AND checklist_entries.status IN (?, ?, ?) THEN 1 ELSE 0 END) as iso27001_applicable,
+                SUM(CASE WHEN controls.framework_id = 1 AND checklist_entries.status IN (?, ?, ?, ?) THEN 1 ELSE 0 END) as iso27001_applicable,
                 SUM(CASE WHEN controls.framework_id = 2 AND checklist_entries.status = ? THEN 1 ELSE 0 END) as iso27701_compliant,
-                SUM(CASE WHEN controls.framework_id = 2 AND checklist_entries.status IN (?, ?, ?) THEN 1 ELSE 0 END) as iso27701_applicable,
+                SUM(CASE WHEN controls.framework_id = 2 AND checklist_entries.status IN (?, ?, ?, ?) THEN 1 ELSE 0 END) as iso27701_applicable,
                 SUM(CASE WHEN checklist_entries.status = ? THEN 1 ELSE 0 END) as overall_compliant,
-                SUM(CASE WHEN checklist_entries.status IN (?, ?, ?) THEN 1 ELSE 0 END) as overall_applicable
+                SUM(CASE WHEN checklist_entries.status IN (?, ?, ?, ?) THEN 1 ELSE 0 END) as overall_applicable
             ', [
                 ChecklistEntry::WORKFLOW_SELESAI,
-                ChecklistEntry::WORKFLOW_SELESAI, ChecklistEntry::WORKFLOW_DALAM_PROSES, ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
+                ChecklistEntry::WORKFLOW_SELESAI, ChecklistEntry::WORKFLOW_DALAM_PROSES, ChecklistEntry::WORKFLOW_DALAM_TINJAUAN, ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
                 ChecklistEntry::WORKFLOW_SELESAI,
-                ChecklistEntry::WORKFLOW_SELESAI, ChecklistEntry::WORKFLOW_DALAM_PROSES, ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
+                ChecklistEntry::WORKFLOW_SELESAI, ChecklistEntry::WORKFLOW_DALAM_PROSES, ChecklistEntry::WORKFLOW_DALAM_TINJAUAN, ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
                 ChecklistEntry::WORKFLOW_SELESAI,
-                ChecklistEntry::WORKFLOW_SELESAI, ChecklistEntry::WORKFLOW_DALAM_PROSES, ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
+                ChecklistEntry::WORKFLOW_SELESAI, ChecklistEntry::WORKFLOW_DALAM_PROSES, ChecklistEntry::WORKFLOW_DALAM_TINJAUAN, ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
             ])->first();
 
             $iso27001App = (int) ($stats->iso27001_applicable ?? 0);
@@ -339,11 +339,12 @@ class DashboardAnalyticsService
                 checklist_entries.unit_id,
                 COUNT(*) as total_entries,
                 SUM(CASE WHEN checklist_entries.status = ? THEN 1 ELSE 0 END) as selesai_count,
-                SUM(CASE WHEN checklist_entries.status IN (?, ?, ?) THEN 1 ELSE 0 END) as applicable_count
+                SUM(CASE WHEN checklist_entries.status IN (?, ?, ?, ?) THEN 1 ELSE 0 END) as applicable_count
             ', [
                 ChecklistEntry::WORKFLOW_SELESAI,
                 ChecklistEntry::WORKFLOW_SELESAI,
                 ChecklistEntry::WORKFLOW_DALAM_PROSES,
+                ChecklistEntry::WORKFLOW_DALAM_TINJAUAN,
                 ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
             ])
             ->groupBy('checklist_entries.unit_id')
@@ -433,11 +434,12 @@ class DashboardAnalyticsService
 
         $stats = $query->selectRaw('
             SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as selesai_count,
-            SUM(CASE WHEN status IN (?, ?, ?) THEN 1 ELSE 0 END) as applicable_count
+            SUM(CASE WHEN status IN (?, ?, ?, ?) THEN 1 ELSE 0 END) as applicable_count
         ', [
             ChecklistEntry::WORKFLOW_SELESAI,
             ChecklistEntry::WORKFLOW_SELESAI,
             ChecklistEntry::WORKFLOW_DALAM_PROSES,
+            ChecklistEntry::WORKFLOW_DALAM_TINJAUAN,
             ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
         ])->first();
 
