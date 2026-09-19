@@ -134,12 +134,9 @@ class ComplianceOfficerController extends Controller
      */
     public function restoreFinding(Request $request, int $id): RedirectResponse
     {
-        $user = $request->user();
-        if ($user->isPic() || ! ($user->isAdmin() || $user->isSuperAdmin() || $user->hasPermissionTo('finding.delete'))) {
-            throw new AuthorizationException('Hanya Admin Kepatuhan atau Superadmin yang dapat memulihkan temuan.');
-        }
-
         $finding = Finding::onlyTrashed()->findOrFail($id);
+        Gate::authorize('restore', $finding);
+
         $finding->restore();
 
         return back()->with('flash', [
@@ -294,10 +291,7 @@ class ComplianceOfficerController extends Controller
     public function verifySingle(Request $request, ChecklistEntry $entry): RedirectResponse
     {
         $user = $request->user();
-
-        if (! $user->hasPermissionTo('checklist.bulk-verify')) {
-            abort(403);
-        }
+        Gate::authorize('verify', $entry);
 
         $validated = $request->validate([
             'decision' => 'required|in:approve,reject',

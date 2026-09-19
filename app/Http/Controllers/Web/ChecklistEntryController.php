@@ -126,24 +126,30 @@ class ChecklistEntryController extends Controller
         $file = $validated['bukti_file'];
         $path = $file->storeAs('bukti/'.$entry->id, $file->getClientOriginalName(), 'supabase');
 
-        $lastVersion = ComplianceEvidence::withTrashed()
-            ->where('checklist_entry_id', $entry->id)
-            ->max('version_number') ?? 0;
+        $evidence = DB::transaction(function () use ($entry, $user, $path) {
+            $lockedVersions = ComplianceEvidence::withTrashed()
+                ->where('checklist_entry_id', $entry->id)
+                ->lockForUpdate()
+                ->pluck('version_number');
+            $lastVersion = $lockedVersions->max() ?? 0;
 
-        $evidence = ComplianceEvidence::create([
-            'checklist_entry_id' => $entry->id,
-            'uploaded_by' => $user->id,
-            'file_url' => $path,
-            'version_number' => $lastVersion + 1,
-            'is_active' => true,
-            'uploaded_at' => now(),
-        ]);
+            $evidence = ComplianceEvidence::create([
+                'checklist_entry_id' => $entry->id,
+                'uploaded_by' => $user->id,
+                'file_url' => $path,
+                'version_number' => $lastVersion + 1,
+                'is_active' => true,
+                'uploaded_at' => now(),
+            ]);
 
-        $entry->update([
-            'status' => $entry->applyPicTouch($entry->catatan, true, $entry->status === ChecklistEntry::WORKFLOW_TIDAK_BERLAKU),
-            'tanggal_input' => now(),
-            'tanggal_verifikasi' => null,
-        ]);
+            $entry->update([
+                'status' => $entry->applyPicTouch($entry->catatan, true, $entry->status === ChecklistEntry::WORKFLOW_TIDAK_BERLAKU),
+                'tanggal_input' => now(),
+                'tanggal_verifikasi' => null,
+            ]);
+
+            return $evidence;
+        });
 
         if ($request->wantsJson()) {
             return response()->json([

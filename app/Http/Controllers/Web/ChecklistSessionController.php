@@ -376,7 +376,7 @@ class ChecklistSessionController extends Controller
         }
 
         $incomplete = $checklistSession->entries()
-            ->whereIn('status', [ChecklistEntry::WORKFLOW_DALAM_PROSES, ChecklistEntry::WORKFLOW_DALAM_PROSES, ChecklistEntry::WORKFLOW_TIDAK_BERLAKU])
+            ->whereIn('status', [ChecklistEntry::WORKFLOW_DALAM_PROSES, ChecklistEntry::WORKFLOW_DALAM_TINJAUAN, ChecklistEntry::WORKFLOW_TIDAK_BERLAKU])
             ->where(fn ($q) => $q->whereNull('catatan')->orWhere('catatan', ''))
             ->count();
 
@@ -410,15 +410,9 @@ class ChecklistSessionController extends Controller
     public function update(Request $request, ChecklistSession $checklistSession): RedirectResponse
     {
         Gate::authorize('checklist-session.update');
+        Gate::authorize('update', $checklistSession);
 
-        // Admins (superadmin / admin_kepatuhan) may edit any session; PICs are
-        // scoped to their own unit elsewhere. This screen is admin-only.
         $user = $request->user();
-        if ($user->role !== User::ROLE_SUPERADMIN && $user->role !== User::ROLE_ADMIN_KEPATUHAN
-            && $checklistSession->unit_id !== $user->unit_id) {
-            abort(403);
-        }
-
         $validated = $request->validate([
             'konteks_penilaian' => 'sometimes|required|string|max:255',
             'periode' => 'nullable|string|max:100',
