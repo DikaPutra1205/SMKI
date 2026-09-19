@@ -193,7 +193,7 @@ class NotificationSystemTest extends TestCase
             function ($notification) {
                 $mail = $notification->toMail($this->picA);
                 $this->assertStringContainsString('A.8.8', $mail->subject);
-                $this->assertStringContainsString('Tidak Patuh', $mail->subject);
+                $this->assertStringContainsString('Ditolak', $mail->subject);
 
                 $dbData = $notification->toDatabase($this->picA);
                 $this->assertEquals('checklist_rejected', $dbData['type']);

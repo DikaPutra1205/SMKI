@@ -28,7 +28,7 @@ interface SessionItem {
     proses_entries: number;
     na_entries: number;
     verified_entries: number;
-    compliance_percentage: number;
+    completion_percentage: number;
     created_at: string;
     updated_at: string;
 }
@@ -320,7 +320,7 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
             ) : (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {paginatedSessions.map((s) => {
-                        const pct = s.compliance_percentage;
+                        const pct = s.completion_percentage;
                         const total = s.total_entries || 0;
                         const selesaiPct = total > 0 ? (s.selesai_entries / total) * 100 : 0;
                         const tinjauanPct = total > 0 ? ((s.tinjauan_entries || 0) / total) * 100 : 0;
@@ -358,7 +358,7 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
                                 <div className="mb-3">
                                     <div className="mb-1 flex items-baseline justify-between">
                                         <span className="text-xs text-slate-500 dark:text-slate-400">
-                                            {s.compliant_entries}/{s.total_entries} Patuh
+                                            {s.selesai_entries}/{s.total_entries} Selesai Diterapkan
                                         </span>
                                         <span className="text-primary text-xs font-bold">{pct}%</span>
                                     </div>

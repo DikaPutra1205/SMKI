@@ -1,6 +1,6 @@
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Pagination } from '@/components/ui/Pagination';
-import { SegmentedProgressBar, complianceSegments } from '@/components/ui/SegmentedProgressBar';
+import { SegmentedProgressBar, workflowSegments } from '@/components/ui/SegmentedProgressBar';
 import { Select } from '@/components/ui/Select';
 import AppLayout from '@/layouts/AppLayout';
 import { useCan } from '@/lib/can';
@@ -59,10 +59,11 @@ function complianceColor(pct: number): string {
 /* ─── Session Card ───────────────────────────────────────────────────────── */
 
 function SessionCard({ session }: { session: SessionItem }) {
-    const segments = complianceSegments({
-        compliant: session.selesai_entries,
-        partial: session.tinjauan_entries,
-        nonCompliant: session.proses_entries,
+    const segments = workflowSegments({
+        selesai: session.selesai_entries,
+        tinjauan: session.tinjauan_entries,
+        proses: session.proses_entries,
+        belum: session.belum_entries,
         na: session.na_entries,
     });
     const pct = session.compliance_percentage;

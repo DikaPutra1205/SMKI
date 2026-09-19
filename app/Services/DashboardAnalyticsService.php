@@ -237,7 +237,7 @@ class DashboardAnalyticsService
         ];
 
         return [
-            'overall_compliance_rate' => $overallCompletionRate,
+            'overall_completion_rate' => $overallCompletionRate,
             'growth_from_last_period' => $growthFromLastPeriod,
             'total_controls_active' => array_sum(array_column($frameworksBreakdown, 'total_controls')),
             'frameworks_breakdown' => $frameworksBreakdown,
@@ -338,7 +338,7 @@ class DashboardAnalyticsService
             ->selectRaw('
                 checklist_entries.unit_id,
                 COUNT(*) as total_entries,
-                SUM(CASE WHEN checklist_entries.status = ? THEN 1 ELSE 0 END) as compliant_count,
+                SUM(CASE WHEN checklist_entries.status = ? THEN 1 ELSE 0 END) as selesai_count,
                 SUM(CASE WHEN checklist_entries.status IN (?, ?, ?) THEN 1 ELSE 0 END) as applicable_count
             ', [
                 ChecklistEntry::WORKFLOW_SELESAI,
@@ -365,18 +365,18 @@ class DashboardAnalyticsService
         return $units->map(function (WorkUnit $unit) use ($entriesByUnit, $findingsByUnit) {
             $entryStat = $entriesByUnit->get($unit->id);
             $totalEntries = $entryStat ? (int) $entryStat->total_entries : 0;
-            $compliantCount = $entryStat ? (int) $entryStat->compliant_count : 0;
+            $selesaiCount = $entryStat ? (int) $entryStat->selesai_count : 0;
             $applicableCount = $entryStat ? (int) $entryStat->applicable_count : 0;
 
-            $rate = $applicableCount > 0 ? (int) round(($compliantCount / $applicableCount) * 100) : 0;
+            $rate = $applicableCount > 0 ? (int) round(($selesaiCount / $applicableCount) * 100) : 0;
             $openFindings = (int) ($findingsByUnit->get($unit->id)?->open_count ?? 0);
 
             return [
                 'unit_id' => $unit->id,
                 'unit_nama' => $unit->nama,
-                'compliance_rate' => $rate,
+                'completion_rate' => $rate,
                 'total_entries' => $totalEntries,
-                'compliant_count' => $compliantCount,
+                'selesai_count' => $selesaiCount,
                 'open_findings' => $openFindings,
             ];
         })->toArray();
@@ -432,7 +432,7 @@ class DashboardAnalyticsService
         }
 
         $stats = $query->selectRaw('
-            SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as compliant_count,
+            SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as selesai_count,
             SUM(CASE WHEN status IN (?, ?, ?) THEN 1 ELSE 0 END) as applicable_count
         ', [
             ChecklistEntry::WORKFLOW_SELESAI,
@@ -442,9 +442,9 @@ class DashboardAnalyticsService
         ])->first();
 
         $applicableCount = (int) ($stats->applicable_count ?? 0);
-        $compliantCount = (int) ($stats->compliant_count ?? 0);
+        $selesaiCount = (int) ($stats->selesai_count ?? 0);
 
-        $previousRate = $applicableCount > 0 ? (int) round(($compliantCount / $applicableCount) * 100) : 0;
+        $previousRate = $applicableCount > 0 ? (int) round(($selesaiCount / $applicableCount) * 100) : 0;
 
         return (float) round($currentRate - $previousRate, 1);
     }

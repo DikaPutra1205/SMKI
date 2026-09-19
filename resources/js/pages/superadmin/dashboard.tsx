@@ -13,7 +13,7 @@ interface FrameworkSummary {
     nama: string;
     versi: string;
     controls_count: number;
-    compliance_rate?: number;
+    completion_rate?: number;
 }
 
 interface RecentActivity {
@@ -32,14 +32,14 @@ interface SuperadminDashboardProps {
     totalControls: number;
     frameworks: FrameworkSummary[];
     summary?: {
-        overall_compliance_rate: number;
+        overall_completion_rate: number;
         growth_from_last_period: number;
         frameworks_breakdown: Array<{
             id: number;
             nama: string;
             versi: string;
-            compliance_rate: number;
-            compliant_count: number;
+            completion_rate: number;
+            selesai_count: number;
             total_controls: number;
         }>;
         findings_summary: { total_active: number; major: number; minor: number; observasi: number; overdue: number };
@@ -64,14 +64,14 @@ export default function SuperadminDashboard({
 }: SuperadminDashboardProps) {
     const breadcrumbs = [{ label: 'Command Center' }];
 
-    const overallRate = summary?.overall_compliance_rate ?? 0;
+    const overallRate = summary?.overall_completion_rate ?? 0;
     const growth = summary?.growth_from_last_period ?? 0;
     const findings = summary?.findings_summary ?? { total_active: 0, major: 0, minor: 0, observasi: 0, overdue: 0 };
     const risks = summary?.risks_summary ?? { total_active: 0, critical: 0, high: 0, medium: 0, low: 0 };
     const breakdown = summary?.frameworks_breakdown ?? [];
 
-    const frameworkRate = (id: number) => breakdown.find((f) => f.id === id)?.compliance_rate ?? 0;
-    const frameworkCompliant = (id: number) => breakdown.find((f) => f.id === id)?.compliant_count ?? 0;
+    const frameworkRate = (id: number) => breakdown.find((f) => f.id === id)?.completion_rate ?? 0;
+    const frameworkCompliant = (id: number) => breakdown.find((f) => f.id === id)?.selesai_count ?? 0;
     const frameworkTotal = (id: number) => breakdown.find((f) => f.id === id)?.total_controls ?? 0;
 
     const totalRisks = (risks.critical || 0) + (risks.high || 0) + (risks.medium || 0) + (risks.low || 0);
@@ -255,7 +255,7 @@ export default function SuperadminDashboard({
                         <div className="flex items-center justify-between text-xs">
                             <span className="font-medium text-slate-500 dark:text-slate-400">Realisasi Kontrol Organisasi</span>
                             <span className="font-bold text-slate-900 dark:text-white">
-                                {frameworkCompliant(1)} dari {frameworkTotal(1)} Kontrol Terpenuhi
+                                {frameworkCompliant(1)} dari {frameworkTotal(1)} Kontrol Selesai Diterapkan
                             </span>
                         </div>
                         <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
@@ -284,7 +284,7 @@ export default function SuperadminDashboard({
                         <div className="flex items-center justify-between text-xs">
                             <span className="font-medium text-slate-500 dark:text-slate-400">Realisasi Kontrol Organisasi</span>
                             <span className="font-bold text-slate-900 dark:text-white">
-                                {frameworkCompliant(2)} dari {frameworkTotal(2)} Kontrol Terpenuhi
+                                {frameworkCompliant(2)} dari {frameworkTotal(2)} Kontrol Selesai Diterapkan
                             </span>
                         </div>
                         <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">

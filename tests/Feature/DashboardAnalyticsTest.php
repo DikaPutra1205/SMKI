@@ -134,7 +134,7 @@ class DashboardAnalyticsTest extends TestCase
         $response->assertInertia(fn ($page) => $page
             ->component('admin-kepatuhan/dashboard')
             ->has('summary')
-            ->has('summary.overall_compliance_rate')
+            ->has('summary.overall_completion_rate')
             ->has('summary.frameworks_breakdown', 2)
             ->has('summary.findings_summary')
             ->has('summary.risks_summary')
@@ -166,7 +166,7 @@ class DashboardAnalyticsTest extends TestCase
         $response->assertInertia(fn ($page) => $page
             ->component('auditor/dashboard')
             ->has('summary')
-            ->has('summary.overall_compliance_rate')
+            ->has('summary.overall_completion_rate')
             ->has('summary.frameworks_breakdown')
             ->has('summary.findings_summary')
             ->has('summary.risks_summary')
@@ -231,7 +231,7 @@ class DashboardAnalyticsTest extends TestCase
         $data = $response->json('data');
 
         // PIC of Unit A should only see 1 entry compliant = 100% for Unit A
-        $this->assertEquals(100, $data['overall_compliance_rate']);
+        $this->assertEquals(100, $data['overall_completion_rate']);
         // PIC should only see 1 finding from Unit A, not the major finding from Unit B
         $this->assertEquals(1, $data['findings_summary']['total_active']);
         $this->assertEquals(1, $data['findings_summary']['minor']);
@@ -294,7 +294,7 @@ class DashboardAnalyticsTest extends TestCase
             ->assertJsonStructure([
                 'status',
                 'data' => [
-                    '*' => ['unit_id', 'unit_nama', 'compliance_rate', 'total_entries', 'compliant_count', 'open_findings'],
+                    '*' => ['unit_id', 'unit_nama', 'completion_rate', 'total_entries', 'selesai_count', 'open_findings'],
                 ],
             ]);
     }
@@ -330,7 +330,7 @@ class DashboardAnalyticsTest extends TestCase
             ]);
     }
 
-    public function test_summary_compliance_rate_math_per_framework(): void
+    public function test_summary_completion_rate_math_per_framework(): void
     {
         $ctrlA = Control::factory()->create(['framework_id' => $this->iso27001->id]);
         $ctrlB = Control::factory()->create(['framework_id' => $this->iso27701->id]);
@@ -375,7 +375,7 @@ class DashboardAnalyticsTest extends TestCase
         $response->assertOk();
         $data = $response->json('data');
 
-        $this->assertEquals(33, $data['overall_compliance_rate']);
+        $this->assertEquals(33, $data['overall_completion_rate']);
         $this->assertEquals(33, $data['frameworks_breakdown'][0]['completion_rate']);
         $this->assertEquals(1, $data['frameworks_breakdown'][0]['selesai_count']);
         $this->assertEquals(0, $data['frameworks_breakdown'][0]['tinjauan_count']);
@@ -425,12 +425,12 @@ class DashboardAnalyticsTest extends TestCase
         $data = $response->json('data');
 
         // Only the newest periode session counts: 0 compliant of 1 applicable.
-        $this->assertEquals(0, $data['overall_compliance_rate']);
+        $this->assertEquals(0, $data['overall_completion_rate']);
         $this->assertEquals(0, $data['frameworks_breakdown'][0]['selesai_count']);
         $this->assertEquals(1, $data['frameworks_breakdown'][0]['belum_count']);
     }
 
-    public function test_non_unit_role_averages_per_unit_compliant_counts(): void
+    public function test_non_unit_role_averages_per_unit_selesai_counts(): void
     {
         // admin_kepatuhan is a non-unit-scoped role (no ?unit_id) => overall is
         // the average of each unit's compliant-control count from its latest session.
@@ -555,7 +555,7 @@ class DashboardAnalyticsTest extends TestCase
         $data = $response->json('data');
 
         // current overall rate 50 (1 of 2), previous period rate 0 => growth +50.0
-        $this->assertEquals(50, $data['overall_compliance_rate']);
+        $this->assertEquals(50, $data['overall_completion_rate']);
         $this->assertEquals(50.0, $data['growth_from_last_period']);
     }
 
@@ -639,7 +639,7 @@ class DashboardAnalyticsTest extends TestCase
         $response->assertOk();
         $data = $response->json('data');
 
-        $this->assertEquals(0, $data['overall_compliance_rate']);
+        $this->assertEquals(0, $data['overall_completion_rate']);
         $this->assertEquals(0.0, $data['growth_from_last_period']);
         $this->assertEquals(0, $data['total_controls_active']);
         $this->assertEquals(0, $data['findings_summary']['total_active']);
@@ -713,7 +713,7 @@ class DashboardAnalyticsTest extends TestCase
             ->getJson("/api/v1/dashboard/summary?unit_id={$this->unitA->id}&session_id={$sessionA->id}");
 
         $scoped->assertOk();
-        $this->assertEquals(100, $scoped->json('data.overall_compliance_rate'));
+        $this->assertEquals(100, $scoped->json('data.overall_completion_rate'));
 
         // No session override: the most-recent session (sessionB, non-compliant)
         // is used, not the older compliant sessionA.
@@ -721,7 +721,7 @@ class DashboardAnalyticsTest extends TestCase
             ->getJson("/api/v1/dashboard/summary?unit_id={$this->unitA->id}");
 
         $unscoped->assertOk();
-        $this->assertEquals(0, $unscoped->json('data.overall_compliance_rate'));
+        $this->assertEquals(0, $unscoped->json('data.overall_completion_rate'));
     }
 
     public function test_trends_buckets_by_session_periode_not_tanggal_input(): void
@@ -889,14 +889,14 @@ class DashboardAnalyticsTest extends TestCase
         // Ordered by nama: 'Biro Teknologi Informasi' before 'Pusat Ekosistem SDM'
         $this->assertCount(2, $data);
         $this->assertEquals($this->unitB->id, $data[0]['unit_id']);
-        $this->assertEquals(0, $data[0]['compliance_rate']);
+        $this->assertEquals(0, $data[0]['completion_rate']);
         $this->assertEquals(0, $data[0]['total_entries']);
         $this->assertEquals(0, $data[0]['open_findings']);
 
         $this->assertEquals($this->unitA->id, $data[1]['unit_id']);
-        $this->assertEquals(50, $data[1]['compliance_rate']);
+        $this->assertEquals(50, $data[1]['completion_rate']);
         $this->assertEquals(2, $data[1]['total_entries']);
-        $this->assertEquals(1, $data[1]['compliant_count']);
+        $this->assertEquals(1, $data[1]['selesai_count']);
         $this->assertEquals(1, $data[1]['open_findings']);
     }
 
@@ -981,7 +981,7 @@ class DashboardAnalyticsTest extends TestCase
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
             ->component('admin-kepatuhan/dashboard')
-            ->where('summary.overall_compliance_rate', 50)
+            ->where('summary.overall_completion_rate', 50)
             ->where('filters.unit_id', $this->unitA->id)
             ->where('filters.session_id', $session->id)
             ->where('filters.months', 'all')
@@ -1201,7 +1201,7 @@ class DashboardAnalyticsTest extends TestCase
             ->get("/admin/kepatuhan/dashboard?unit_id={$this->unitA->id}");
         $responseAll->assertOk();
         $responseAll->assertInertia(fn ($page) => $page
-            ->where('summary.overall_compliance_rate', 100)
+            ->where('summary.overall_completion_rate', 100)
         );
 
         // 3 months: old session excluded, current session used => still 100%
@@ -1209,7 +1209,7 @@ class DashboardAnalyticsTest extends TestCase
             ->get("/admin/kepatuhan/dashboard?unit_id={$this->unitA->id}&months=3");
         $response3->assertOk();
         $response3->assertInertia(fn ($page) => $page
-            ->where('summary.overall_compliance_rate', 100)
+            ->where('summary.overall_completion_rate', 100)
         );
     }
 
@@ -1247,7 +1247,7 @@ class DashboardAnalyticsTest extends TestCase
         $responseAll = $this->actingAs($this->admin)->get('/admin/kepatuhan/dashboard');
         $responseAll->assertOk();
         $responseAll->assertInertia(fn ($page) => $page
-            ->where('unit_comparisons.1.compliance_rate', 50)
+            ->where('unit_comparisons.1.completion_rate', 50)
             ->where('unit_comparisons.1.total_entries', 2)
         );
 
@@ -1255,7 +1255,7 @@ class DashboardAnalyticsTest extends TestCase
         $response3 = $this->actingAs($this->admin)->get('/admin/kepatuhan/dashboard?months=3');
         $response3->assertOk();
         $response3->assertInertia(fn ($page) => $page
-            ->where('unit_comparisons.1.compliance_rate', 100)
+            ->where('unit_comparisons.1.completion_rate', 100)
             ->where('unit_comparisons.1.total_entries', 1)
         );
     }

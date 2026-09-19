@@ -52,11 +52,12 @@ interface SessionData {
 
 interface SummaryData {
     total_entries: number;
-    compliant: number;
-    partial: number;
-    non_compliant: number;
-    na: number;
-    compliance_percentage: number;
+    selesai_entries: number;
+    tinjauan_entries: number;
+    proses_entries: number;
+    belum_entries: number;
+    na_entries: number;
+    completion_percentage: number;
 }
 
 interface AssessmentSummaryProps {
@@ -71,26 +72,29 @@ function formatKategori(kategori: string): string {
 
 function DonutChart({
     percentage,
-    compliant,
-    partial,
-    nonCompliant,
+    selesai,
+    tinjauan,
+    proses,
+    belum,
     na,
 }: {
     percentage: number;
-    compliant: number;
-    partial: number;
-    nonCompliant: number;
+    selesai: number;
+    tinjauan: number;
+    proses: number;
+    belum: number;
     na: number;
 }) {
     const radius = 48;
     const circumference = 2 * Math.PI * radius;
-    const total = compliant + partial + nonCompliant + na;
+    const total = selesai + tinjauan + proses + belum + na;
 
     const segments = [
-        { value: compliant, color: '#10b981' },
-        { value: partial, color: '#f59e0b' },
-        { value: nonCompliant, color: '#ef4444' },
-        { value: na, color: '#94a3b8' },
+        { value: selesai, color: '#10b981' },
+        { value: tinjauan, color: '#60a5fa' },
+        { value: proses, color: '#f59e0b' },
+        { value: belum, color: '#94a3b8' },
+        { value: na, color: '#cbd5e1' },
     ];
 
     let startOffset = 0;
@@ -246,18 +250,18 @@ function verifiedRedCardClass(entry: EntryItem): string {
     return entry.tanggal_verifikasi && entry.catatan_admin ? 'border-red-200 bg-red-50/60 dark:border-red-900/50 dark:bg-red-950/20' : '';
 }
 
-function NonCompliantCard({ entry, index }: { entry: EntryItem; index: number }) {
+function TinjauanCard({ entry, index }: { entry: EntryItem; index: number }) {
     return (
         <div
-            className={`flex h-full flex-col rounded-xl border p-4 shadow-sm dark:bg-slate-900 ${verifiedRedCardClass(entry) || 'border-red-100 bg-white dark:border-red-900/40'}`}
+            className={`flex h-full flex-col rounded-xl border p-4 shadow-sm dark:bg-slate-900 ${verifiedRedCardClass(entry) || 'border-blue-100 bg-white dark:border-blue-900/40'}`}
         >
             <div className="mb-2 flex items-center justify-between gap-2">
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-100 text-xs font-bold text-red-600 dark:bg-red-900/40 dark:text-red-400">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600 dark:bg-blue-900/40 dark:text-blue-400">
                     {index}
                 </div>
-                <div className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-400">
+                <div className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
                     <ShieldAlert className="h-3.5 w-3.5" />
-                    Ketidaksesuaian
+                    Perlu Tinjauan
                 </div>
             </div>
             <ControlCardHeader entry={entry} />
@@ -318,7 +322,7 @@ function NaCard({ entry, index }: { entry: EntryItem; index: number }) {
     );
 }
 
-function PartialCard({ entry, index }: { entry: EntryItem; index: number }) {
+function ProsesCard({ entry, index }: { entry: EntryItem; index: number }) {
     return (
         <div
             className={`flex h-full flex-col rounded-xl border p-4 shadow-sm dark:bg-slate-900 ${verifiedRedCardClass(entry) || 'border-amber-100 bg-white dark:border-amber-900/40'}`}
@@ -329,7 +333,7 @@ function PartialCard({ entry, index }: { entry: EntryItem; index: number }) {
                 </div>
                 <div className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
                     <ShieldHalf className="h-3.5 w-3.5" />
-                    Sebagian Patuh
+                    Dalam Proses
                 </div>
             </div>
             <ControlCardHeader entry={entry} />
@@ -354,7 +358,7 @@ function PartialCard({ entry, index }: { entry: EntryItem; index: number }) {
     );
 }
 
-function CompliantCard({ entry }: { entry: EntryItem }) {
+function SelesaiCard({ entry }: { entry: EntryItem }) {
     return (
         <div
             className={`flex h-full flex-col rounded-xl border p-4 shadow-sm dark:bg-slate-900 ${verifiedRedCardClass(entry) || 'border-emerald-100 bg-white dark:border-emerald-900/40'}`}
@@ -362,7 +366,7 @@ function CompliantCard({ entry }: { entry: EntryItem }) {
             <div className="mb-2 flex items-center justify-between gap-2">
                 <div className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
                     <CheckCircle2 className="h-3 w-3" />
-                    Patuh
+                    Selesai Diterapkan
                 </div>
             </div>
             <ControlCardHeader entry={entry} />
@@ -416,13 +420,13 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
         [entries, frameworkFilter, kategoriFilter],
     );
 
-    const nonCompliantEntries = useMemo(() => filteredEntries.filter((e) => e.status === 'non_compliant'), [filteredEntries]);
+    const tinjauanEntries = useMemo(() => filteredEntries.filter((e) => e.status === 'dalam_tinjauan'), [filteredEntries]);
 
-    const partialEntries = useMemo(() => filteredEntries.filter((e) => e.status === 'partial'), [filteredEntries]);
+    const prosesEntries = useMemo(() => filteredEntries.filter((e) => e.status === 'dalam_proses'), [filteredEntries]);
 
-    const naEntries = useMemo(() => filteredEntries.filter((e) => e.status === 'na'), [filteredEntries]);
+    const naEntries = useMemo(() => filteredEntries.filter((e) => e.status === 'tidak_berlaku'), [filteredEntries]);
 
-    const compliantEntries = useMemo(() => filteredEntries.filter((e) => e.status === 'compliant'), [filteredEntries]);
+    const selesaiEntries = useMemo(() => filteredEntries.filter((e) => e.status === 'selesai_diterapkan'), [filteredEntries]);
 
     const hasActiveFilter = frameworkFilter !== '' || kategoriFilter !== '';
 
@@ -447,8 +451,8 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
         );
     };
 
-    const complianceColor =
-        summary.compliance_percentage >= 80 ? 'text-emerald-600' : summary.compliance_percentage >= 50 ? 'text-amber-600' : 'text-red-600';
+    const completionColor =
+        summary.completion_percentage >= 80 ? 'text-emerald-600' : summary.completion_percentage >= 50 ? 'text-amber-600' : 'text-red-600';
 
     if (isLoading) {
         return <AssessmentSummarySkeleton />;
@@ -492,19 +496,20 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
                     {/* Donut Chart */}
                     <div className="flex items-center gap-8">
                         <DonutChart
-                            percentage={summary.compliance_percentage}
-                            compliant={summary.compliant}
-                            partial={summary.partial}
-                            nonCompliant={summary.non_compliant}
-                            na={summary.na}
+                            percentage={summary.completion_percentage}
+                            selesai={summary.selesai_entries}
+                            tinjauan={summary.tinjauan_entries}
+                            proses={summary.proses_entries}
+                            belum={summary.belum_entries}
+                            na={summary.na_entries}
                         />
                         <div className="text-left">
-                            <p className={`text-sm font-bold ${complianceColor}`}>
-                                {summary.compliance_percentage >= 80
-                                    ? 'Tingkat Kepatuhan Baik'
-                                    : summary.compliance_percentage >= 50
+                            <p className={`text-sm font-bold ${completionColor}`}>
+                                {summary.completion_percentage >= 80
+                                    ? 'Tingkat Penyelesaian Baik'
+                                    : summary.completion_percentage >= 50
                                       ? 'Perlu Perbaikan'
-                                      : 'Tingkat Kepatuhan Rendah'}
+                                      : 'Tingkat Penyelesaian Rendah'}
                             </p>
                             <p className="text-xs text-slate-400">{summary.total_entries} total kontrol dievaluasi</p>
                         </div>
@@ -514,29 +519,29 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
                     <div className="grid flex-1 grid-cols-2 gap-3 lg:grid-cols-3">
                         <StatCard
                             icon={ShieldCheck}
-                            label="Patuh"
-                            value={summary.compliant}
+                            label="Selesai Diterapkan"
+                            value={summary.selesai_entries}
                             color="bg-emerald-500"
                             bgColor="border-emerald-100 bg-emerald-50/50 dark:border-emerald-900 dark:bg-emerald-950/30"
                         />
                         <StatCard
                             icon={ShieldHalf}
-                            label="Sebagian Patuh"
-                            value={summary.partial}
+                            label="Dalam Tinjauan"
+                            value={summary.tinjauan_entries}
+                            color="bg-blue-400"
+                            bgColor="border-blue-100 bg-blue-50/50 dark:border-blue-900 dark:bg-blue-950/30"
+                        />
+                        <StatCard
+                            icon={ShieldAlert}
+                            label="Dalam Proses"
+                            value={summary.proses_entries}
                             color="bg-amber-500"
                             bgColor="border-amber-100 bg-amber-50/50 dark:border-amber-900 dark:bg-amber-950/30"
                         />
                         <StatCard
-                            icon={ShieldAlert}
-                            label="Ketidaksesuaian"
-                            value={summary.non_compliant}
-                            color="bg-red-500"
-                            bgColor="border-red-100 bg-red-50/50 dark:border-red-900 dark:bg-red-950/30"
-                        />
-                        <StatCard
                             icon={Shield}
                             label="Tidak Berlaku"
-                            value={summary.na}
+                            value={summary.na_entries}
                             color="bg-slate-400"
                             bgColor="border-slate-100 bg-slate-50/50 dark:border-slate-700 dark:bg-slate-800/50"
                         />
@@ -579,45 +584,45 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
                 )}
             </div>
 
-            {/* Non-Compliant Findings */}
-            {nonCompliantEntries.length > 0 && (
+            {/* Tinjauan Items */}
+            {tinjauanEntries.length > 0 && (
                 <div className="mb-8">
                     <div className="mb-3 flex items-center gap-2">
                         <div className="flex h-6 w-6 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/40">
                             <ShieldAlert className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
                         </div>
-                        <h2 className="text-lg font-bold text-slate-900 dark:text-white">Temuan Ketidaksesuaian</h2>
-                        <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-700 dark:bg-red-900/40 dark:text-red-400">
-                            {nonCompliantEntries.length}
+                        <h2 className="text-lg font-bold text-slate-900 dark:text-white">Kontrol Perlu Tinjauan</h2>
+                        <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-400">
+                            {tinjauanEntries.length}
                         </span>
                     </div>
-                    <p className="mb-4 text-sm text-slate-500">Kontrol berikut memerlukan tindakan perbaikan untuk mencapai kepatuhan.</p>
+                    <p className="mb-4 text-sm text-slate-500">Kontrol berikut masih dalam proses penyelesaian.</p>
 
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {nonCompliantEntries.map((entry, idx) => (
-                            <NonCompliantCard key={entry.id} entry={entry} index={idx + 1} />
+                        {tinjauanEntries.map((entry, idx) => (
+                            <TinjauanCard key={entry.id} entry={entry} index={idx + 1} />
                         ))}
                     </div>
                 </div>
             )}
 
-            {/* Partial Compliance Items */}
-            {partialEntries.length > 0 && (
+            {/* Dalam Proses Items */}
+            {prosesEntries.length > 0 && (
                 <div className="mb-8">
                     <div className="mb-3 flex items-center gap-2">
                         <div className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/40">
                             <ShieldHalf className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
                         </div>
-                        <h2 className="text-lg font-bold text-slate-900 dark:text-white">Kontrol Sebagian Patuh</h2>
+                        <h2 className="text-lg font-bold text-slate-900 dark:text-white">Kontrol Dalam Proses</h2>
                         <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
-                            {partialEntries.length}
+                            {prosesEntries.length}
                         </span>
                     </div>
-                    <p className="mb-4 text-sm text-slate-500">Kontrol berikut baru terpenuhi sebagian dan memerlukan tindak lanjut.</p>
+                    <p className="mb-4 text-sm text-slate-500">Kontrol berikut belum selesai dan perlu diselesaikan.</p>
 
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {partialEntries.map((entry, idx) => (
-                            <PartialCard key={entry.id} entry={entry} index={idx + 1} />
+                        {prosesEntries.map((entry, idx) => (
+                            <ProsesCard key={entry.id} entry={entry} index={idx + 1} />
                         ))}
                     </div>
                 </div>
@@ -643,21 +648,21 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
                 </div>
             )}
 
-            {/* Compliant Summary */}
-            {compliantEntries.length > 0 && (
+            {/* Selesai Diterapkan Summary */}
+            {selesaiEntries.length > 0 && (
                 <div className="mb-8">
                     <div className="mb-3 flex items-center gap-2">
                         <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/40">
                             <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                         </div>
-                        <h2 className="text-lg font-bold text-slate-900 dark:text-white">Kontrol Patuh</h2>
+                        <h2 className="text-lg font-bold text-slate-900 dark:text-white">Kontrol Selesai Diterapkan</h2>
                         <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
-                            {compliantEntries.length}
+                            {selesaiEntries.length}
                         </span>
                     </div>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {compliantEntries.map((entry) => (
-                            <CompliantCard key={entry.id} entry={entry} />
+                        {selesaiEntries.map((entry) => (
+                            <SelesaiCard key={entry.id} entry={entry} />
                         ))}
                     </div>
                 </div>
@@ -707,16 +712,16 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
                             diperlukan.
                         </p>
 
-                        {nonCompliantEntries.length > 0 && (
+                        {tinjauanEntries.length > 0 && (
                             <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-900/20">
                                 <div className="flex items-start gap-2">
                                     <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
                                     <div>
                                         <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
-                                            {nonCompliantEntries.length} temuan ketidaksesuaian
+                                            {tinjauanEntries.length} kontrol perlu tinjauan
                                         </p>
                                         <p className="text-[11px] text-amber-700 dark:text-amber-400">
-                                            Temuan ini akan dicatat dan mungkin memerlukan tindakan perbaikan.
+                                            Kontrol ini akan dicatat dan mungkin memerlukan tindakan perbaikan.
                                         </p>
                                     </div>
                                 </div>

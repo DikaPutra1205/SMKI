@@ -68,9 +68,9 @@ class ComplianceService
             'updater:id,name',
         ])->withCount([
             'entries as total_entries',
-            'entries as compliant_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_SELESAI),
+            'entries as selesai_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_SELESAI),
             'entries as partial_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_DALAM_PROSES),
-            'entries as non_compliant_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_DALAM_TINJAUAN),
+            'entries as tinjauan_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_DALAM_TINJAUAN),
             'entries as na_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_TIDAK_BERLAKU),
             'entries as verified_entries' => fn ($q) => $q->whereNotNull('tanggal_verifikasi'),
             'entries as completed_entries' => fn ($q) => $q->where(fn ($q2) => $q2->where('status', ChecklistEntry::WORKFLOW_SELESAI)
@@ -98,7 +98,7 @@ class ComplianceService
             ->map(function (ChecklistSession $session) {
                 $total = (int) $session->total_entries;
                 $completed = (int) $session->completed_entries;
-                $compliant = (int) $session->compliant_entries;
+                $selesai = (int) $session->selesai_entries;
 
                 return [
                     'id' => $session->id,
@@ -115,14 +115,13 @@ class ComplianceService
                     'catatan' => $session->catatan ?? '',
                     'summary' => [
                         'total_entries' => $total,
-                        'compliant' => $compliant,
-                        'partial' => (int) $session->partial_entries,
-                        'non_compliant' => (int) $session->non_compliant_entries,
-                        'na' => (int) $session->na_entries,
+                        'selesai_entries' => $selesai,
+                        'proses_entries' => (int) $session->partial_entries,
+                        'tinjauan_entries' => (int) $session->tinjauan_entries,
+                        'na_entries' => (int) $session->na_entries,
                         'verified_entries' => (int) $session->verified_entries,
                         'completed' => $completed,
                         'completion_percentage' => $total > 0 ? (int) round(($completed / $total) * 100) : 0,
-                        'compliance_percentage' => $total > 0 ? (int) round(($compliant / $total) * 100) : 0,
                     ],
                 ];
             })
@@ -143,9 +142,9 @@ class ComplianceService
             'updater:id,name',
         ])->withCount([
             'entries as total_entries',
-            'entries as compliant_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_SELESAI),
+            'entries as selesai_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_SELESAI),
             'entries as partial_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_DALAM_PROSES),
-            'entries as non_compliant_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_DALAM_TINJAUAN),
+            'entries as tinjauan_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_DALAM_TINJAUAN),
             'entries as na_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_TIDAK_BERLAKU),
             'entries as verified_entries' => fn ($q) => $q->whereNotNull('tanggal_verifikasi'),
         ]);
@@ -180,7 +179,7 @@ class ComplianceService
         return $sessions->map(function (ChecklistSession $session) {
             $total = (int) $session->total_entries;
             $verified = (int) $session->verified_entries;
-            $compliant = (int) $session->compliant_entries;
+            $selesai = (int) $session->selesai_entries;
 
             return [
                 'id' => $session->id,
@@ -194,12 +193,12 @@ class ComplianceService
                 'creator_name' => $session->creator?->name ?? '',
                 'catatan' => $session->catatan,
                 'total_entries' => $total,
-                'compliant_entries' => $compliant,
-                'partial_entries' => (int) $session->partial_entries,
-                'non_compliant_entries' => (int) $session->non_compliant_entries,
+                'selesai_entries' => $selesai,
+                'proses_entries' => (int) $session->partial_entries,
+                'tinjauan_entries' => (int) $session->tinjauan_entries,
                 'na_entries' => (int) $session->na_entries,
                 'verified_entries' => $verified,
-                'compliance_percentage' => $total > 0 ? (int) round(($compliant / $total) * 100) : 0,
+                'completion_percentage' => $total > 0 ? (int) round(($selesai / $total) * 100) : 0,
                 'created_at' => $session->created_at,
                 'updated_at' => $session->updated_at,
             ];

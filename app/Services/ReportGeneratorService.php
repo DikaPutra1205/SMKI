@@ -348,7 +348,7 @@ class ReportGeneratorService
         $scopedUnitId = $this->analyticsService->resolveScopedUnitId($user, $unitId);
         $data = $this->analyticsService->getSummary($user, $scopedUnitId);
         $unitName = $scopedUnitId ? (WorkUnit::find($scopedUnitId)?->nama ?? 'Unit Kerja') : 'Seluruh Satuan Unit Kerja (Komdigi)';
-        $overallRate = $data['overall_compliance_rate'] ?? 0;
+        $overallRate = $data['overall_completion_rate'] ?? 0;
         $findings = $data['findings'] ?? [];
         $risks = $data['risks'] ?? [];
         $generatedAt = now()->isoFormat('D MMMM Y, HH:mm [WIB]');
@@ -371,10 +371,10 @@ class ReportGeneratorService
         foreach ($data['frameworks_breakdown'] ?? [] as $fw) {
             $name = htmlspecialchars($fw['nama'] ?? '-');
             $total = (int) ($fw['total_controls'] ?? 0);
-            $compliant = (int) ($fw['compliant'] ?? 0);
-            $partial = (int) ($fw['partial'] ?? 0);
-            $nonCompliant = (int) ($fw['non_compliant'] ?? 0);
-            $rate = (float) ($fw['compliance_rate'] ?? 0);
+            $compliant = (int) ($fw['selesai_count'] ?? 0);
+            $partial = (int) ($fw['proses_count'] ?? 0);
+            $nonCompliant = (int) ($fw['tinjauan_count'] ?? 0);
+            $rate = (float) ($fw['completion_rate'] ?? 0);
 
             $frameworkRows .= "<tr>
                 <td style='padding: 8px 12px; border: 1px solid #cbd5e1;'>{$name}</td>

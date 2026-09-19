@@ -57,20 +57,25 @@ class ChecklistSession extends Model
                 SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as proses,
                 SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as belum,
                 SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as na_terverifikasi,
-                SUM(CASE WHEN tanggal_verifikasi IS NOT NULL THEN 1 ELSE 0 END) as verified_entries
+                SUM(CASE WHEN tanggal_verifikasi IS NOT NULL THEN 1 ELSE 0 END) as verified_entries,
+                SUM(CASE WHEN status = ? OR (status IN (?, ?, ?) AND catatan IS NOT NULL AND catatan != ?) THEN 1 ELSE 0 END) as completed_entries
             ', [
                 ChecklistEntry::WORKFLOW_SELESAI,
                 ChecklistEntry::WORKFLOW_DALAM_TINJAUAN,
                 ChecklistEntry::WORKFLOW_DALAM_PROSES,
                 ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
                 ChecklistEntry::WORKFLOW_TIDAK_BERLAKU,
+                ChecklistEntry::WORKFLOW_SELESAI,
+                ChecklistEntry::WORKFLOW_DALAM_PROSES,
+                ChecklistEntry::WORKFLOW_DALAM_TINJAUAN,
+                ChecklistEntry::WORKFLOW_TIDAK_BERLAKU,
+                '',
             ])
             ->first();
 
         $total = (int) $stats->total_entries;
         $selesai = (int) $stats->selesai;
-        $naTerverifikasi = (int) $stats->na_terverifikasi;
-        $completed = $selesai + $naTerverifikasi;
+        $completed = (int) $stats->completed_entries;
 
         return [
             'total_entries' => $total,
@@ -78,7 +83,7 @@ class ChecklistSession extends Model
             'tinjauan_entries' => (int) $stats->tinjauan,
             'proses_entries' => (int) $stats->proses,
             'belum_entries' => (int) $stats->belum,
-            'na_entries' => $naTerverifikasi,
+            'na_entries' => (int) $stats->na_terverifikasi,
             'verified_entries' => (int) $stats->verified_entries,
             'completed' => $completed,
             'completion_percentage' => $total > 0 ? (int) round(($completed / $total) * 100) : 0,

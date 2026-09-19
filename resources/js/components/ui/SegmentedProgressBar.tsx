@@ -51,17 +51,19 @@ export function SegmentedProgressBar({ total, segments, heightClass = 'h-2', cla
     );
 }
 
-/** Pre-built compliance segment configuration (compliant / partial / non-compliant / NA) */
-export function complianceSegments(args: {
-    compliant: number;
-    partial: number;
-    nonCompliant: number;
+/** Pre-built workflow segment configuration (selesai / tinjauan / proses / belum / NA) */
+export function workflowSegments(args: {
+    selesai: number;
+    tinjauan: number;
+    proses: number;
+    belum?: number;
     na?: number;
 }): ProgressSegment[] {
     return [
-        { value: args.compliant, colorClass: 'bg-emerald-500', label: 'Patuh' },
-        { value: args.partial, colorClass: 'bg-amber-400', label: 'Sebagian Patuh' },
-        { value: args.nonCompliant, colorClass: 'bg-red-500', label: 'Tidak Patuh' },
+        { value: args.selesai, colorClass: 'bg-emerald-500', label: 'Selesai Diterapkan' },
+        { value: args.tinjauan, colorClass: 'bg-blue-400', label: 'Dalam Tinjauan' },
+        { value: args.proses, colorClass: 'bg-amber-500', label: 'Dalam Proses' },
+        { value: args.belum ?? 0, colorClass: 'bg-slate-400', label: 'Belum Dimulai' },
         { value: args.na ?? 0, colorClass: 'bg-slate-300 dark:bg-slate-600', label: 'Tidak Berlaku' },
     ];
 }

@@ -23,10 +23,10 @@ interface RecentActivity {
 
 interface AuditorDashboardProps {
     summary?: {
-        overall_compliance_rate: number;
+        overall_completion_rate: number;
         growth_from_last_period: number;
         total_controls_active: number;
-        frameworks_breakdown: { id: number; nama: string; versi: string; compliance_rate: number; compliant_count: number; total_controls: number }[];
+        frameworks_breakdown: { id: number; nama: string; versi: string; completion_rate: number; selesai_count: number; total_controls: number }[];
         findings_summary: { total_active: number; major: number; minor: number; observasi: number; overdue: number };
         risks_summary: {
             total_active: number;
@@ -53,7 +53,7 @@ export default function AuditorDashboard({ summary, trends = [], recent_activiti
 
     const breadcrumbs = [{ label: 'Dashboard Auditor' }];
 
-    const overallRate = summary?.overall_compliance_rate ?? 0;
+    const overallRate = summary?.overall_completion_rate ?? 0;
     const growth = summary?.growth_from_last_period ?? 0;
     const frameworks = summary?.frameworks_breakdown ?? [];
     const findings = summary?.findings_summary ?? { total_active: 0, major: 0, minor: 0, observasi: 0, overdue: 0 };
@@ -252,7 +252,7 @@ export default function AuditorDashboard({ summary, trends = [], recent_activiti
                             </div>
                         </div>
                         <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
-                            {iso27001?.compliance_rate ?? 0}% Patuh
+                            {iso27001?.completion_rate ?? 0}% Patuh
                         </span>
                     </div>
 
@@ -260,13 +260,13 @@ export default function AuditorDashboard({ summary, trends = [], recent_activiti
                         <div className="flex items-center justify-between text-xs">
                             <span className="font-medium text-slate-500 dark:text-slate-400">Realisasi Kontrol</span>
                             <span className="font-bold text-slate-900 dark:text-white">
-                                {iso27001?.compliant_count ?? 0} dari {iso27001?.total_controls ?? 0} Kontrol Terpenuhi
+                                {iso27001?.selesai_count ?? 0} dari {iso27001?.total_controls ?? 0} Kontrol Selesai Diterapkan
                             </span>
                         </div>
                         <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                             <div
                                 className="bg-primary h-full rounded-full transition-all duration-500"
-                                style={{ width: `${iso27001?.compliance_rate ?? 0}%` }}
+                                style={{ width: `${iso27001?.completion_rate ?? 0}%` }}
                             />
                         </div>
                     </div>
@@ -284,7 +284,7 @@ export default function AuditorDashboard({ summary, trends = [], recent_activiti
                             </div>
                         </div>
                         <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
-                            {iso27701?.compliance_rate ?? 0}% Patuh
+                            {iso27701?.completion_rate ?? 0}% Patuh
                         </span>
                     </div>
 
@@ -292,13 +292,13 @@ export default function AuditorDashboard({ summary, trends = [], recent_activiti
                         <div className="flex items-center justify-between text-xs">
                             <span className="font-medium text-slate-500 dark:text-slate-400">Realisasi Kontrol</span>
                             <span className="font-bold text-slate-900 dark:text-white">
-                                {iso27701?.compliant_count ?? 0} dari {iso27701?.total_controls ?? 0} Kontrol Terpenuhi
+                                {iso27701?.selesai_count ?? 0} dari {iso27701?.total_controls ?? 0} Kontrol Selesai Diterapkan
                             </span>
                         </div>
                         <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                             <div
                                 className="bg-primary-800 dark:bg-primary-400 h-full rounded-full transition-all duration-500"
-                                style={{ width: `${iso27701?.compliance_rate ?? 0}%` }}
+                                style={{ width: `${iso27701?.completion_rate ?? 0}%` }}
                             />
                         </div>
                     </div>

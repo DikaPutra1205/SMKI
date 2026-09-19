@@ -1,13 +1,13 @@
 @extends('emails.layouts.smki', [
-    'subject' => "[SMKI] Evaluasi Kontrol Tidak Patuh: {$kodeKlausul}",
-    'preheader' => "Entri checklist kontrol {$kodeKlausul} dinyatakan Tidak Patuh. Harap tinjau catatan verifikator dan lengkapi bukti yang sesuai.",
+    'subject' => "[SMKI] Entri Ditolak: {$kodeKlausul}",
+    'preheader' => "Entri checklist kontrol {$kodeKlausul} ditolak oleh verifikator. Harap tinjau catatan dan lengkapi bukti yang sesuai.",
 ])
 
 @section('content')
     <!-- Status Badge (Left-aligned, crisp, clean) -->
     <div style="margin-bottom: 14px;">
         <span style="display: inline-block; background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 4px 10px; font-size: 11px; font-weight: 700; color: #991b1b; text-transform: uppercase; letter-spacing: 0.5px;">
-            Tidak Patuh (Perlu Revisi)
+            Ditolak (Perlu Revisi)
         </span>
     </div>
 
@@ -26,7 +26,7 @@
         Yth. <strong>{{ $recipientName }}</strong>,
     </p>
     <p style="color: #475569; font-size: 14px; line-height: 1.65; margin: 0 0 24px 0;">
-        Admin Kepatuhan telah memverifikasi bukti pemenuhan kontrol yang Anda unggah dan menetapkan status <strong>Tidak Patuh</strong>. Dokumen pendukung belum memenuhi standar kriteria kelayakan ISO/IEC 27001:2022.
+        Admin Kepatuhan telah memverifikasi bukti pemenuhan kontrol yang Anda unggah dan menetapkan status <strong>Ditolak</strong>. Dokumen pendukung belum memenuhi standar kriteria kelayakan ISO/IEC 27001:2022.
     </p>
 
     <!-- Modern Summary Card -->
@@ -45,7 +45,7 @@
                     Hasil Evaluasi
                 </td>
                 <td style="padding: 9px 0; border-bottom: 1px solid #edf2f7; color: #b91c1c; font-size: 14px; font-weight: 700;">
-                    Tidak Patuh (Non-Compliant)
+                    Ditolak (Non-Compliant)
                 </td>
             </tr>
             <tr>

@@ -73,7 +73,7 @@ class ChecklistSessionApiTest extends TestCase
             'message',
             'data' => [
                 'session' => ['id', 'konteks_penilaian', 'periode', 'unit_id', 'framework_id'],
-                'summary' => ['total_entries', 'compliant', 'compliance_percentage'],
+                'summary' => ['total_entries', 'selesai_entries', 'completion_percentage'],
             ],
         ]);
 
@@ -177,8 +177,8 @@ class ChecklistSessionApiTest extends TestCase
         $res->assertOk();
         $res->assertJsonPath('data.session.id', $session->id);
         $res->assertJsonPath('data.summary.total_entries', 1);
-        $res->assertJsonPath('data.summary.compliant', 1);
-        $res->assertJsonPath('data.summary.compliance_percentage', 100);
+        $res->assertJsonPath('data.summary.selesai_entries', 1);
+        $res->assertJsonPath('data.summary.completion_percentage', 100);
     }
 
     public function test_submit_and_verify_session_flow(): void
@@ -238,9 +238,9 @@ class ChecklistSessionApiTest extends TestCase
         $res = $this->actingAs($admin)->getJson("/api/checklist-sessions/{$session->id}");
         $res->assertOk();
         $res->assertJsonPath('data.summary.total_entries', 2);
-        $res->assertJsonPath('data.summary.compliant', 1);
-        $res->assertJsonPath('data.summary.partial', 1);
-        $res->assertJsonPath('data.summary.compliance_percentage', 100);
+        $res->assertJsonPath('data.summary.selesai_entries', 1);
+        $res->assertJsonPath('data.summary.proses_entries', 1);
+        $res->assertJsonPath('data.summary.completion_percentage', 100);
 
         // Partial without catatan must not count as completed
         ChecklistEntry::create([
@@ -254,7 +254,7 @@ class ChecklistSessionApiTest extends TestCase
         $res = $this->actingAs($admin)->getJson("/api/checklist-sessions/{$session->id}");
         $res->assertOk();
         $res->assertJsonPath('data.summary.total_entries', 3);
-        $res->assertJsonPath('data.summary.compliance_percentage', 67);
+        $res->assertJsonPath('data.summary.completion_percentage', 67);
     }
 
     public function test_web_submit_blocks_partial_without_catatan(): void
