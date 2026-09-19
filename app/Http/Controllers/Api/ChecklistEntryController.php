@@ -187,7 +187,6 @@ class ChecklistEntryController extends Controller
             'control_id' => 'required|exists:controls,id',
             'unit_id' => 'required|exists:work_units,id',
             'pic_id' => 'required|exists:users,id',
-            'status' => 'required|in:compliant,partial,non_compliant,na',
             'level_maturity' => 'nullable|integer|min:0|max:5',
             'catatan' => 'nullable|string',
             'tanggal_input' => 'nullable|date',
@@ -195,6 +194,8 @@ class ChecklistEntryController extends Controller
 
         Gate::authorize('create', [ChecklistEntry::class, (int) $data['unit_id']]);
 
+        $data['catatan'] = $data['catatan'] ?? '';
+        $data['status'] = ChecklistEntry::resolvePicWorkflow(trim((string) ($data['catatan'] ?? '')) !== '', false);
         $data['tanggal_input'] = $data['tanggal_input'] ?? now();
 
         $entry = ChecklistEntry::create($data);
@@ -309,23 +310,49 @@ class ChecklistEntryController extends Controller
 
         $data = $request->validate([
             'admin_id' => 'required|exists:users,id',
-            'catatan_admin' => 'nullable|string',
-            'status' => 'required|in:compliant,partial,non_compliant,na',
+            'decision' => 'required|in:approve,reject',
+            'status' => 'prohibited',
+            'catatan_admin' => 'required_if:decision,reject|nullable|string|max:2000',
             'level_maturity' => 'nullable|integer|min:0|max:5',
         ]);
 
-        $checklistEntry->update(array_merge([
-            'admin_id' => $data['admin_id'],
-            'catatan_admin' => $data['catatan_admin'] ?? null,
-            'status' => $data['status'],
-            'tanggal_verifikasi' => now(),
-        ], array_key_exists('level_maturity', $data) ? ['level_maturity' => $data['level_maturity']] : []));
+        if (! in_array($checklistEntry->status, [
+            ChecklistEntry::WORKFLOW_DALAM_TINJAUAN,
+            ChecklistEntry::WORKFLOW_TIDAK_BERLAKU,
+        ], true)) {
+            return response()->json([
+                'message' => 'Verifikasi hanya dapat dilakukan pada entri dengan status dalam tinjauan atau tidak berlaku.',
+            ], 422);
+        }
 
-        if ($data['status'] === 'non_compliant') {
-            $user = $request->user() ?? User::find($data['admin_id']);
-            $targetPic = $checklistEntry->pic ?? User::where('unit_id', $checklistEntry->unit_id)->whereHas('role', fn ($q) => $q->where('name', User::ROLE_PIC))->first();
+        $adminId = $request->user()?->id ?? $data['admin_id'];
+        $isNa = $checklistEntry->status === ChecklistEntry::WORKFLOW_TIDAK_BERLAKU;
+
+        if ($data['decision'] === 'approve') {
+            $checklistEntry->update(array_merge([
+                'admin_id' => $adminId,
+                'status' => $isNa ? ChecklistEntry::WORKFLOW_TIDAK_BERLAKU : ChecklistEntry::WORKFLOW_SELESAI,
+                'tanggal_verifikasi' => now(),
+                'catatan_admin' => null,
+            ], array_key_exists('level_maturity', $data) ? ['level_maturity' => $data['level_maturity']] : []));
+        } else {
+            $checklistEntry->update(array_merge([
+                'admin_id' => $adminId,
+                'status' => ChecklistEntry::WORKFLOW_DALAM_PROSES,
+                'tanggal_verifikasi' => null,
+                'catatan_admin' => $data['catatan_admin'] ?? null,
+            ], array_key_exists('level_maturity', $data) ? ['level_maturity' => $data['level_maturity']] : []));
+
+            $user = $request->user() ?? User::find($adminId);
+            $targetPic = $checklistEntry->pic ?? User::where('unit_id', $checklistEntry->unit_id)
+                ->whereHas('role', fn ($q) => $q->where('name', User::ROLE_PIC))
+                ->first();
             if ($targetPic && $user && $targetPic->id !== $user->id) {
-                $targetPic->notify(new ChecklistEntryRejectedNotification($checklistEntry->fresh(['control', 'session']), $user, $data['catatan_admin'] ?? null));
+                $targetPic->notify(new ChecklistEntryRejectedNotification(
+                    $checklistEntry->fresh(['control', 'session']),
+                    $user,
+                    $data['catatan_admin'] ?? null
+                ));
             }
         }
 

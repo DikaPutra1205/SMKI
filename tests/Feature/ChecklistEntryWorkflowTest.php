@@ -6,6 +6,8 @@ use App\Models\ChecklistEntry;
 use App\Models\Framework;
 use App\Models\User;
 use App\Models\WorkUnit;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ChecklistEntryWorkflowTest extends TestCase
@@ -69,12 +71,12 @@ class ChecklistEntryWorkflowTest extends TestCase
 
     public function test_api_update_catatan_plus_evidence_derives_tinjauan(): void
     {
-        \Illuminate\Support\Facades\Storage::fake('supabase');
+        Storage::fake('supabase');
         ['pic' => $pic, 'entry' => $entry] = $this->seedWfEntry();
 
         $this->actingAs($pic)->patchJson("/api/checklist-entries/{$entry->id}", [
             'catatan' => 'SOP tersedia',
-            'bukti_file' => \Illuminate\Http\UploadedFile::fake()->create('sop.pdf', 100, 'application/pdf'),
+            'bukti_file' => UploadedFile::fake()->create('sop.pdf', 100, 'application/pdf'),
         ])->assertOk();
 
         $this->assertSame(ChecklistEntry::WORKFLOW_DALAM_TINJAUAN, $entry->fresh()->status);
@@ -126,5 +128,112 @@ class ChecklistEntryWorkflowTest extends TestCase
         $entry = ChecklistEntry::where('unit_id', $unit->id)->firstOrFail();
         $this->assertSame(ChecklistEntry::WORKFLOW_BELUM_DIMULAI, $entry->status);
         $this->assertSame('', $entry->catatan);
+    }
+
+    public function test_api_store_sets_workflow_from_catatan(): void
+    {
+        $unit = WorkUnit::create(['nama' => 'Unit Store']);
+        $fw = Framework::create(['nama' => 'ISO 27001:2022', 'versi' => '2022']);
+        $control = $fw->controls()->create(['kode_klausul' => 'A.5.2', 'judul' => 'Policies', 'kategori' => 'teknologi']);
+        $pic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unit->id]);
+
+        $this->actingAs($pic)->postJson('/api/checklist-entries', [
+            'control_id' => $control->id,
+            'unit_id' => $unit->id,
+            'pic_id' => $pic->id,
+            'catatan' => 'SOP tersedia',
+        ])->assertCreated();
+
+        $entry = ChecklistEntry::where('control_id', $control->id)->where('unit_id', $unit->id)->firstOrFail();
+        $this->assertSame(ChecklistEntry::WORKFLOW_DALAM_PROSES, $entry->status);
+        $this->assertSame('SOP tersedia', $entry->catatan);
+    }
+
+    public function test_api_verify_approve_sets_selesai(): void
+    {
+        ['pic' => $pic, 'entry' => $entry] = $this->seedWfEntry();
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        $entry->update(['status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN]);
+
+        $this->actingAs($admin)->patchJson("/api/checklist-entries/{$entry->id}/verify", [
+            'admin_id' => $admin->id,
+            'decision' => 'approve',
+        ])->assertOk();
+
+        $fresh = $entry->fresh();
+        $this->assertSame(ChecklistEntry::WORKFLOW_SELESAI, $fresh->status);
+        $this->assertNotNull($fresh->tanggal_verifikasi);
+    }
+
+    public function test_api_verify_approve_na_keeps_na(): void
+    {
+        ['pic' => $pic, 'entry' => $entry] = $this->seedWfEntry();
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        $entry->update(['status' => ChecklistEntry::WORKFLOW_TIDAK_BERLAKU]);
+
+        $this->actingAs($admin)->patchJson("/api/checklist-entries/{$entry->id}/verify", [
+            'admin_id' => $admin->id,
+            'decision' => 'approve',
+        ])->assertOk();
+
+        $fresh = $entry->fresh();
+        $this->assertSame(ChecklistEntry::WORKFLOW_TIDAK_BERLAKU, $fresh->status);
+        $this->assertNotNull($fresh->tanggal_verifikasi);
+    }
+
+    public function test_api_verify_reject_returns_proses(): void
+    {
+        ['pic' => $pic, 'entry' => $entry] = $this->seedWfEntry();
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        $entry->update(['status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN]);
+
+        $this->actingAs($admin)->patchJson("/api/checklist-entries/{$entry->id}/verify", [
+            'admin_id' => $admin->id,
+            'decision' => 'reject',
+            'catatan_admin' => 'Bukti tidak lengkap',
+        ])->assertOk();
+
+        $fresh = $entry->fresh();
+        $this->assertSame(ChecklistEntry::WORKFLOW_DALAM_PROSES, $fresh->status);
+        $this->assertNull($fresh->tanggal_verifikasi);
+        $this->assertSame('Bukti tidak lengkap', $fresh->catatan_admin);
+    }
+
+    public function test_api_verify_reject_requires_note_422(): void
+    {
+        ['pic' => $pic, 'entry' => $entry] = $this->seedWfEntry();
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        $entry->update(['status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN]);
+
+        $this->actingAs($admin)->patchJson("/api/checklist-entries/{$entry->id}/verify", [
+            'admin_id' => $admin->id,
+            'decision' => 'reject',
+        ])->assertStatus(422);
+    }
+
+    public function test_api_verify_stamps_authed_user(): void
+    {
+        ['pic' => $pic, 'entry' => $entry] = $this->seedWfEntry();
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        $entry->update(['status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN]);
+
+        $this->actingAs($admin)->patchJson("/api/checklist-entries/{$entry->id}/verify", [
+            'admin_id' => $admin->id,
+            'decision' => 'approve',
+        ])->assertOk();
+
+        $this->assertSame($admin->id, $entry->fresh()->admin_id);
+    }
+
+    public function test_api_verify_rejects_stale_status_422(): void
+    {
+        ['pic' => $pic, 'entry' => $entry] = $this->seedWfEntry();
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        $entry->update(['status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI]);
+
+        $this->actingAs($admin)->patchJson("/api/checklist-entries/{$entry->id}/verify", [
+            'admin_id' => $admin->id,
+            'decision' => 'approve',
+        ])->assertStatus(422);
     }
 }
