@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\ChecklistEntry;
 use App\Models\User;
+use App\Models\WorkUnit;
 
 class ChecklistEntryPolicy
 {
@@ -13,8 +14,17 @@ class ChecklistEntryPolicy
             return true;
         }
 
+        if ((int) $checklistEntry->unit_id === (int) $user->unit_id) {
+            return true;
+        }
+
         if ($user->unit_id !== null) {
-            return (int) $checklistEntry->unit_id === (int) $user->unit_id;
+            $userUnit = $user->unit()->first();
+            $entryUnit = $checklistEntry->unit()->first();
+
+            if ($userUnit && $entryUnit && $userUnit->isAncestorOf($entryUnit)) {
+                return true;
+            }
         }
 
         return (int) $checklistEntry->pic_id === (int) $user->id;
@@ -25,13 +35,22 @@ class ChecklistEntryPolicy
      */
     public function viewAny(User $user, ?int $targetUnitId = null): bool
     {
-        if ($user->isPic()) {
-            if ($targetUnitId !== null && (int) $targetUnitId !== (int) $user->unit_id) {
-                return false;
-            }
+        if (! $user->isPic()) {
+            return true;
         }
 
-        return true;
+        if ($targetUnitId === null || (int) $targetUnitId === (int) $user->unit_id) {
+            return true;
+        }
+
+        $userUnit = WorkUnit::find($user->unit_id);
+        $targetUnit = WorkUnit::find($targetUnitId);
+
+        if ($userUnit && $targetUnit && $userUnit->isAncestorOf($targetUnit)) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -47,13 +66,22 @@ class ChecklistEntryPolicy
      */
     public function create(User $user, ?int $targetUnitId = null): bool
     {
-        if ($user->isPic()) {
-            if ($targetUnitId !== null && (int) $targetUnitId !== (int) $user->unit_id) {
-                return false;
-            }
+        if (! $user->isPic()) {
+            return true;
         }
 
-        return true;
+        if ($targetUnitId === null || (int) $targetUnitId === (int) $user->unit_id) {
+            return true;
+        }
+
+        $userUnit = WorkUnit::find($user->unit_id);
+        $targetUnit = WorkUnit::find($targetUnitId);
+
+        if ($userUnit && $targetUnit && $userUnit->isAncestorOf($targetUnit)) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
