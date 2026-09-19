@@ -7,8 +7,10 @@ export function resolveWorkflow(catatan: string | null, hasBukti: boolean, naSel
     return 'belum_dimulai';
 }
 
-export function isEntryComplete(status: WorkflowStatus, catatan: string | null, hasBukti: boolean, verified: boolean): boolean {
+export function isEntryComplete(status: WorkflowStatus, catatan: string | null): boolean {
     if (status === 'selesai_diterapkan') return true;
-    if (status === 'tidak_berlaku') return verified;
-    return Boolean(catatan) && hasBukti;
+    if (status === 'dalam_proses' || status === 'dalam_tinjauan' || status === 'tidak_berlaku') {
+        return Boolean(catatan && catatan.trim() !== '');
+    }
+    return false;
 }

@@ -186,7 +186,7 @@ function EntryItemRow({
     const isEvidenceMissing = !entry.active_evidence;
     const isNa = entry.status === 'tidak_berlaku';
     const workflowStatus = resolveWorkflow(entry.catatan, !!entry.active_evidence, isNa);
-    const isIncomplete = !isEntryComplete(workflowStatus, entry.catatan, !!entry.active_evidence, isVerified);
+    const isIncomplete = !isEntryComplete(workflowStatus, entry.catatan);
     const showErrorLabels = highlight && isIncomplete;
 
     // A verified entry's color is driven by whether the admin left a note,
@@ -444,7 +444,7 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
     const isEntryIncomplete = (e: EntryInput): boolean => {
         const isNa = e.status === 'tidak_berlaku';
         const ws = resolveWorkflow(e.catatan, !!e.active_evidence, isNa);
-        return !isEntryComplete(ws, e.catatan, !!e.active_evidence, e.tanggal_verifikasi !== null);
+        return !isEntryComplete(ws, e.catatan);
     };
 
     const filteredEntries = useMemo(() => {

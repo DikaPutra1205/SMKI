@@ -141,15 +141,19 @@ function DonutChart({
             <div className="flex flex-wrap items-center justify-center gap-3">
                 <div className="flex items-center gap-1.5">
                     <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Patuh</span>
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Selesai</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-blue-400" />
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Tinjauan</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                     <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
-                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Sebagian Patuh</span>
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Proses</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                    <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
-                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Ketidaksesuaian</span>
+                    <span className="h-2.5 w-2.5 rounded-full bg-slate-400" />
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Belum</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                     <span className="h-2.5 w-2.5 rounded-full bg-slate-300 dark:bg-slate-500" />

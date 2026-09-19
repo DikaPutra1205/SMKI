@@ -26,26 +26,29 @@ describe('resolveWorkflow', () => {
 
 describe('isEntryComplete', () => {
     it('selesai_diterapkan always complete', () => {
-        expect(isEntryComplete('selesai_diterapkan', null, false, false)).toBe(true);
-        expect(isEntryComplete('selesai_diterapkan', 'note', true, false)).toBe(true);
+        expect(isEntryComplete('selesai_diterapkan', null)).toBe(true);
+        expect(isEntryComplete('selesai_diterapkan', 'note')).toBe(true);
     });
 
-    it('tidak_berlaku complete only when verified', () => {
-        expect(isEntryComplete('tidak_berlaku', null, false, true)).toBe(true);
-        expect(isEntryComplete('tidak_berlaku', null, false, false)).toBe(false);
+    it('tidak_berlaku complete when catatan present (backend parity)', () => {
+        expect(isEntryComplete('tidak_berlaku', 'justifikasi')).toBe(true);
+        expect(isEntryComplete('tidak_berlaku', null)).toBe(false);
+        expect(isEntryComplete('tidak_berlaku', '')).toBe(false);
     });
 
-    it('dalam_tinjauan complete when catatan and bukti', () => {
-        expect(isEntryComplete('dalam_tinjauan', 'note', true, false)).toBe(true);
-        expect(isEntryComplete('dalam_tinjauan', null, true, false)).toBe(false);
-        expect(isEntryComplete('dalam_tinjauan', 'note', false, false)).toBe(false);
+    it('dalam_tinjauan complete when catatan present', () => {
+        expect(isEntryComplete('dalam_tinjauan', 'note')).toBe(true);
+        expect(isEntryComplete('dalam_tinjauan', null)).toBe(false);
+        expect(isEntryComplete('dalam_tinjauan', '')).toBe(false);
     });
 
-    it('dalam_proses incomplete', () => {
-        expect(isEntryComplete('dalam_proses', 'note', false, false)).toBe(false);
+    it('dalam_proses complete when catatan present', () => {
+        expect(isEntryComplete('dalam_proses', 'note')).toBe(true);
+        expect(isEntryComplete('dalam_proses', null)).toBe(false);
     });
 
     it('belum_dimulai incomplete', () => {
-        expect(isEntryComplete('belum_dimulai', null, false, false)).toBe(false);
+        expect(isEntryComplete('belum_dimulai', null)).toBe(false);
+        expect(isEntryComplete('belum_dimulai', 'note')).toBe(false);
     });
 });

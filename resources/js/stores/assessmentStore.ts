@@ -205,22 +205,33 @@ class AssessmentStore {
         let naCount = 0;
 
         for (const e of entries) {
-            const isNa = e.status === 'tidak_berlaku';
-            const hasBukti = !!e.active_evidence;
-            if (isNa) {
-                naCount++;
-            } else if (e.catatan && hasBukti) {
-                tinjauanCount++;
-            } else if (e.catatan || hasBukti) {
-                prosesCount++;
-            } else {
-                belumCount++;
+            switch (e.status) {
+                case 'selesai_diterapkan':
+                    selesaiCount++;
+                    break;
+                case 'dalam_tinjauan':
+                    tinjauanCount++;
+                    break;
+                case 'dalam_proses':
+                    prosesCount++;
+                    break;
+                case 'tidak_berlaku':
+                    naCount++;
+                    break;
+                default:
+                    belumCount++;
+                    break;
             }
         }
 
-        const verifiedNa = entries.filter((e) => e.status === 'tidak_berlaku' && e.tanggal_verifikasi !== null).length;
-        selesaiCount = entries.filter((e) => e.tanggal_verifikasi !== null && e.status !== 'tidak_berlaku').length;
-        const completed = selesaiCount + verifiedNa;
+        // Backend parity: completed = selesai OR (dalam_proses|dalam_tinjauan|tidak_berlaku with catatan)
+        const completed = entries.filter((e) => {
+            if (e.status === 'selesai_diterapkan') return true;
+            if (['dalam_proses', 'dalam_tinjauan', 'tidak_berlaku'].includes(e.status)) {
+                return Boolean(e.catatan && e.catatan.trim() !== '');
+            }
+            return false;
+        }).length;
         const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
         const invalidCount = total - completed;
 
