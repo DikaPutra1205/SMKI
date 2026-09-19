@@ -37,16 +37,31 @@ export function StatusBadge({ tone = 'gray', children, className }: StatusBadgeP
 export function statusTone(status?: string | null): StatusTone {
     const s = (status || '').toLowerCase();
 
-    if (['compliant', 'approved', 'verified', 'patuh', 'aktif', 'disetujui', 'terverifikasi', 'closed', 'ditutup', 'low', 'rendah'].includes(s)) {
-        return 'green';
+    if (['belum_dimulai', 'belum dimulai'].includes(s)) {
+        return 'gray';
     }
-    if (['partial', 'sebagian', 'sebagian patuh', 'pending', 'menunggu', 'menunggu verifikasi', 'in_progress', 'sedang diproses', 'terbuka', 'open', 'medium', 'sedang'].includes(s)) {
+    if (['dalam_proses', 'dalam proses'].includes(s)) {
         return 'amber';
     }
-    if (['non_compliant', 'tidak patuh', 'rejected', 'ditolak', 'overdue', 'critical', 'kritis', 'high', 'tinggi'].includes(s)) {
+    if (['dalam_tinjauan', 'dalam tinjauan'].includes(s)) {
+        return 'blue';
+    }
+    if (['selesai_diterapkan', 'selesai diterapkan'].includes(s)) {
+        return 'green';
+    }
+    if (['tidak_berlaku', 'tidak berlaku', 'na'].includes(s)) {
+        return 'navy';
+    }
+    if (['approved', 'verified', 'disetujui', 'terverifikasi', 'closed', 'ditutup', 'low', 'rendah'].includes(s)) {
+        return 'green';
+    }
+    if (['pending', 'menunggu', 'menunggu verifikasi', 'in_progress', 'sedang diproses', 'terbuka', 'open', 'medium', 'sedang'].includes(s)) {
+        return 'amber';
+    }
+    if (['rejected', 'ditolak', 'overdue', 'critical', 'kritis', 'high', 'tinggi'].includes(s)) {
         return 'red';
     }
-    if (['na', 'tidak berlaku', 'automatic', 'otomatis'].includes(s)) {
+    if (['automatic', 'otomatis'].includes(s)) {
         return 'gray';
     }
     if (['major', 'mayor'].includes(s)) {
