@@ -225,9 +225,10 @@ class ChecklistEntryController extends Controller
         Gate::authorize('update', $checklistEntry);
 
         $data = $request->validate([
-            'status' => 'sometimes|in:compliant,partial,non_compliant,na',
             'level_maturity' => 'nullable|integer|min:0|max:5',
-            'catatan' => 'nullable|string',
+            'catatan' => 'required_if:tidak_berlaku,true|nullable|string',
+            'tidak_berlaku' => 'sometimes|boolean',
+            'status' => 'prohibited',
             'bukti_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240',
             'uploaded_by' => 'nullable|exists:users,id',
         ]);
@@ -269,28 +270,19 @@ class ChecklistEntryController extends Controller
             }
         }
 
-        // Only reset tanggal_verifikasi when the status actually changes.
-        // A comment-only edit (no 'status' key, or same status) must preserve
-        // the existing verification timestamp.
-        $statusChanging = isset($data['status']) && $data['status'] !== $checklistEntry->status;
-        // Loose compare: request may carry '3' (string) vs 3 (int cast).
-        $maturityChanging = array_key_exists('level_maturity', $data) && $data['level_maturity'] != $checklistEntry->level_maturity;
-        $verificationResetting = $statusChanging || $maturityChanging;
+        $newCatatan = array_key_exists('catatan', $data) ? $data['catatan'] : $checklistEntry->catatan;
+        $hasBukti = $evidenceData !== null || $checklistEntry->evidences()->exists();
+        $naSelected = (bool) ($data['tidak_berlaku'] ?? $checklistEntry->status === ChecklistEntry::WORKFLOW_TIDAK_BERLAKU);
 
         $updatePayload = [
-            'status' => $data['status'] ?? $checklistEntry->status,
-            'catatan' => $data['catatan'] ?? $checklistEntry->catatan,
+            'status' => $checklistEntry->applyPicTouch($newCatatan, $hasBukti, $naSelected),
+            'catatan' => $newCatatan,
             'tanggal_input' => now(),
-            'tanggal_verifikasi' => $verificationResetting ? null : $checklistEntry->tanggal_verifikasi,
+            'tanggal_verifikasi' => null,
         ];
 
         if (array_key_exists('level_maturity', $data)) {
             $updatePayload['level_maturity'] = $data['level_maturity'];
-        }
-
-        if ($verificationResetting) {
-            $updatePayload['catatan_admin'] = null;
-            $updatePayload['admin_id'] = null;
         }
 
         $checklistEntry->update($updatePayload);
