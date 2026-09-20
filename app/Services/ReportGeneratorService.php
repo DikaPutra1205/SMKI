@@ -301,17 +301,17 @@ class ReportGeneratorService
             throw new AuthorizationException('Anda tidak memiliki wewenang untuk mengekspor laporan kepatuhan.');
         }
 
-        $scopedUnitId = $this->analyticsService->resolveScopedUnitId($user, $unitId);
+        $scopedUnitIds = $this->analyticsService->resolveScopedUnitIds($user, array_merge($unitId !== null ? ['unit_id' => $unitId] : []));
 
-        $summary = $this->analyticsService->getSummary($user, $scopedUnitId);
+        $summary = $this->analyticsService->getSummary($user, $unitId);
         $unitComparisons = $this->analyticsService->getUnitComparisons($user);
 
         $findingsQuery = Finding::with(['control', 'unit']);
         $risksQuery = Risk::with(['controls']);
 
-        if ($scopedUnitId) {
-            $findingsQuery->where('unit_id', $scopedUnitId);
-            $risksQuery->whereHas('controls.checklistEntries', fn ($q) => $q->where('unit_id', $scopedUnitId));
+        if ($scopedUnitIds !== null) {
+            $findingsQuery->whereIn('unit_id', $scopedUnitIds);
+            $risksQuery->whereHas('controls.checklistEntries', fn ($q) => $q->whereIn('unit_id', $scopedUnitIds));
         }
 
         $openFindings = $findingsQuery->whereIn('status', [Finding::STATUS_OPEN, Finding::STATUS_IN_PROGRESS])->count();
@@ -325,7 +325,7 @@ class ReportGeneratorService
                 'name' => $user->name,
                 'role' => $user->role,
             ],
-            'scoped_unit' => $scopedUnitId ? (WorkUnit::find($scopedUnitId)?->nama ?? 'Unit Kerja Terpilih') : 'Semua Unit Kerja',
+            'scoped_unit' => $scopedUnitIds !== null ? 'Unit Kerja Terpilih' : 'Semua Unit Kerja',
             'summary' => $summary,
             'unit_metrics' => $unitComparisons,
             'audit_metrics' => [
@@ -345,9 +345,9 @@ class ReportGeneratorService
             throw new AuthorizationException('Anda tidak memiliki wewenang untuk mengekspor laporan kepatuhan.');
         }
 
-        $scopedUnitId = $this->analyticsService->resolveScopedUnitId($user, $unitId);
-        $data = $this->analyticsService->getSummary($user, $scopedUnitId);
-        $unitName = $scopedUnitId ? (WorkUnit::find($scopedUnitId)?->nama ?? 'Unit Kerja') : 'Seluruh Satuan Unit Kerja (Komdigi)';
+        $scopedUnitIds = $this->analyticsService->resolveScopedUnitIds($user, array_merge($unitId !== null ? ['unit_id' => $unitId] : []));
+        $data = $this->analyticsService->getSummary($user, $unitId);
+        $unitName = $scopedUnitIds !== null ? 'Unit Kerja' : 'Seluruh Satuan Unit Kerja (Komdigi)';
         $overallRate = $data['overall_completion_rate'] ?? 0;
         $findings = $data['findings'] ?? [];
         $risks = $data['risks'] ?? [];
@@ -361,7 +361,7 @@ class ReportGeneratorService
             $user->id,
             [
                 'report_type' => 'compliance_summary_pdf',
-                'scoped_unit_id' => $scopedUnitId,
+                'scoped_unit_id' => $scopedUnitIds,
                 'exported_at' => now()->toIso8601String(),
                 'ip_address' => request()->ip(),
             ]
@@ -496,7 +496,7 @@ class ReportGeneratorService
             throw new AuthorizationException('Anda tidak memiliki wewenang untuk mengekspor laporan kepatuhan.');
         }
 
-        $scopedUnitId = $this->analyticsService->resolveScopedUnitId($user, $unitId);
+        $scopedUnitIds = $this->analyticsService->resolveScopedUnitIds($user, array_merge($unitId !== null ? ['unit_id' => $unitId] : []));
 
         AuditLog::catat(
             'Report',
@@ -505,7 +505,7 @@ class ReportGeneratorService
             $user->id,
             [
                 'report_type' => 'compliance_summary_csv',
-                'scoped_unit_id' => $scopedUnitId,
+                'scoped_unit_id' => $scopedUnitIds,
                 'exported_at' => now()->toIso8601String(),
                 'ip_address' => request()->ip(),
             ]
@@ -514,8 +514,8 @@ class ReportGeneratorService
         $filename = 'SMKI_Compliance_Report_'.now()->format('Ymd_His').'.csv';
 
         $entriesQuery = ChecklistEntry::with(['control.framework', 'unit', 'admin']);
-        if ($scopedUnitId) {
-            $entriesQuery->where('unit_id', $scopedUnitId);
+        if ($scopedUnitIds !== null) {
+            $entriesQuery->whereIn('unit_id', $scopedUnitIds);
         }
         $entries = $entriesQuery->get();
 

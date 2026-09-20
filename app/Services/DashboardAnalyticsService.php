@@ -10,20 +10,34 @@ use App\Models\Risk;
 use App\Models\User;
 use App\Models\WorkUnit;
 use Carbon\Carbon;
+use Illuminate\Auth\Access\AuthorizationException;
 
 class DashboardAnalyticsService
 {
     /**
-     * Resolve effective unit_id based on User role scoping.
-     * PIC is strictly scoped to their assigned unit.
+     * Resolve scoped unit IDs for subtree visibility.
+     *
+     * @param  array{unit_id?: int|string|null}  $filters
+     * @return array<int>|null
+     *
+     * @throws AuthorizationException
      */
-    public function resolveScopedUnitId(User $user, ?int $requestedUnitId = null): ?int
+    public function resolveScopedUnitIds(User $user, array $filters = []): ?array
     {
-        if ($user->isPic()) {
-            return $user->unit_id ? (int) $user->unit_id : null;
+        $accessible = $user->accessibleUnitIds();
+        $requested = $filters['unit_id'] ?? null;
+
+        if ($requested === null || $requested === '') {
+            return $accessible;
         }
 
-        return $requestedUnitId;
+        $requested = (int) $requested;
+
+        if (is_array($accessible) && ! in_array($requested, $accessible, true)) {
+            throw new AuthorizationException('Unit di luar lingkup akses Anda.');
+        }
+
+        return [$requested];
     }
 
     /**
@@ -31,7 +45,7 @@ class DashboardAnalyticsService
      */
     public function getSummary(User $user, ?int $unitId = null, ?int $sessionId = null, ?int $months = null): array
     {
-        $scopedUnitId = $this->resolveScopedUnitId($user, $unitId);
+        $scopedUnitIds = $this->resolveScopedUnitIds($user, array_merge($unitId !== null ? ['unit_id' => $unitId] : []));
         $cutoffDate = $months ? Carbon::now()->startOfMonth()->subMonths($months - 1)->startOfMonth() : null;
         $cutoffPeriode = $months ? Carbon::now()->startOfMonth()->subMonths($months - 1)->format('Y-m') : null;
 
@@ -62,8 +76,8 @@ class DashboardAnalyticsService
                     ChecklistEntry::WORKFLOW_TIDAK_BERLAKU,
                 ]);
 
-            if ($scopedUnitId) {
-                $entryQuery->where('checklist_entries.unit_id', $scopedUnitId);
+            if ($scopedUnitIds !== null) {
+                $entryQuery->whereIn('checklist_entries.unit_id', $scopedUnitIds);
             }
 
             $statsByFrameworkUnit = $entryQuery->groupBy('controls.framework_id', 'checklist_entries.unit_id')->get();
@@ -98,8 +112,8 @@ class DashboardAnalyticsService
                 ])
                 ->where('ms.rn', 1);
 
-            if ($scopedUnitId) {
-                $entryQuery->where('ms.unit_id', $scopedUnitId);
+            if ($scopedUnitIds !== null) {
+                $entryQuery->whereIn('ms.unit_id', $scopedUnitIds);
             }
 
             $statsByFrameworkUnit = $entryQuery->groupBy('controls.framework_id', 'ms.unit_id')->get();
@@ -108,16 +122,32 @@ class DashboardAnalyticsService
         foreach ($frameworks as $fw) {
             $unitRows = $statsByFrameworkUnit->where('framework_id', $fw->id);
 
-            if ($scopedUnitId) {
-                $stats = $unitRows->first();
-                $selesaiCount = $stats ? (int) $stats->selesai_count : 0;
-                $tinjauanCount = $stats ? (int) $stats->tinjauan_count : 0;
-                $prosesCount = $stats ? (int) $stats->proses_count : 0;
-                $belumCount = $stats ? (int) $stats->belum_count : 0;
-                $naCount = $stats ? (int) $stats->na_count : 0;
+            if ($scopedUnitIds !== null) {
+                // Subtree or single unit: aggregate all matching unit rows.
+                $perUnitRates = [];
+                $perUnitSelesai = [];
+                foreach ($unitRows as $row) {
+                    $selesai = (int) $row->selesai_count;
+                    $applicable = $selesai + (int) $row->tinjauan_count + (int) $row->proses_count + (int) $row->belum_count;
+                    $perUnitSelesai[] = $selesai;
+                    if ($applicable > 0) {
+                        $perUnitRates[] = $selesai / $applicable;
+                    }
+                }
+
+                $selesaiCount = $perUnitSelesai
+                    ? (int) round(array_sum($perUnitSelesai) / count($perUnitSelesai))
+                    : 0;
+                $tinjauanCount = (int) $unitRows->sum('tinjauan_count');
+                $prosesCount = (int) $unitRows->sum('proses_count');
+                $belumCount = (int) $unitRows->sum('belum_count');
+                $naCount = (int) $unitRows->sum('na_count');
+
+                $completionRate = $perUnitRates
+                    ? (int) round((array_sum($perUnitRates) / count($perUnitRates)) * 100)
+                    : 0;
 
                 $applicableCount = $selesaiCount + $tinjauanCount + $prosesCount + $belumCount;
-                $completionRate = $applicableCount > 0 ? (int) round(($selesaiCount / $applicableCount) * 100) : 0;
             } else {
                 // Overall (non-unit roles): average each unit's selesai-control
                 // count and rate from its most-recent session. Units never
@@ -171,13 +201,13 @@ class DashboardAnalyticsService
             : 0;
 
         // 2. Growth from last period (compare with previous month / session)
-        $growthFromLastPeriod = $this->calculateGrowthRate($scopedUnitId, $overallCompletionRate);
+        $growthFromLastPeriod = $this->calculateGrowthRate($scopedUnitIds, $overallCompletionRate);
 
         // 3. Findings Summary & Overdue Calculation via SQL Aggregate
         $today = Carbon::today();
         $findingQuery = Finding::query();
-        if ($scopedUnitId) {
-            $findingQuery->where('unit_id', $scopedUnitId);
+        if ($scopedUnitIds !== null) {
+            $findingQuery->whereIn('unit_id', $scopedUnitIds);
         }
         if ($cutoffDate) {
             $findingQuery->where('created_at', '>=', $cutoffDate);
@@ -207,8 +237,8 @@ class DashboardAnalyticsService
 
         // 4. Risks Summary via SQL Aggregate
         $riskQuery = Risk::query();
-        if ($scopedUnitId) {
-            $riskQuery->whereHas('controls.checklistEntries', fn ($q) => $q->where('unit_id', $scopedUnitId));
+        if ($scopedUnitIds !== null) {
+            $riskQuery->whereHas('controls.checklistEntries', fn ($q) => $q->whereIn('unit_id', $scopedUnitIds));
         }
         if ($cutoffDate) {
             $riskQuery->where('created_at', '>=', $cutoffDate);
@@ -253,7 +283,7 @@ class DashboardAnalyticsService
      */
     public function getTrends(User $user, ?int $unitId = null, ?int $months = null): array
     {
-        $scopedUnitId = $this->resolveScopedUnitId($user, $unitId);
+        $scopedUnitIds = $this->resolveScopedUnitIds($user, array_merge($unitId !== null ? ['unit_id' => $unitId] : []));
         $safeMonths = $months ? max(1, min($months, 24)) : 12;
         $trends = [];
 
@@ -267,8 +297,8 @@ class DashboardAnalyticsService
                 ->join('checklist_sessions', 'checklist_entries.session_id', '=', 'checklist_sessions.id')
                 ->where('checklist_sessions.periode', '=', $yearMonth);
 
-            if ($scopedUnitId) {
-                $query->where('checklist_entries.unit_id', $scopedUnitId);
+            if ($scopedUnitIds !== null) {
+                $query->whereIn('checklist_entries.unit_id', $scopedUnitIds);
             }
 
             $stats = $query->selectRaw('
@@ -316,13 +346,13 @@ class DashboardAnalyticsService
      */
     public function getUnitComparisons(User $user, ?int $months = null): array
     {
-        $scopedUnitId = $this->resolveScopedUnitId($user);
+        $scopedUnitIds = $this->resolveScopedUnitIds($user);
         $cutoffDate = $months ? Carbon::now()->startOfMonth()->subMonths($months - 1)->startOfMonth() : null;
         $cutoffPeriode = $months ? Carbon::now()->startOfMonth()->subMonths($months - 1)->format('Y-m') : null;
 
         $unitsQuery = WorkUnit::select('id', 'nama')->orderBy('nama');
-        if ($scopedUnitId) {
-            $unitsQuery->where('id', $scopedUnitId);
+        if ($scopedUnitIds !== null) {
+            $unitsQuery->whereIn('id', $scopedUnitIds);
         }
 
         $units = $unitsQuery->get();
@@ -422,14 +452,14 @@ class DashboardAnalyticsService
     /**
      * Calculate growth rate compared to previous period.
      */
-    protected function calculateGrowthRate(?int $unitId, int $currentRate): float
+    protected function calculateGrowthRate(?array $scopedUnitIds, int $currentRate): float
     {
         $endOfLastMonth = Carbon::now()->subMonth()->endOfMonth();
 
         $query = ChecklistEntry::where('tanggal_input', '<=', $endOfLastMonth);
 
-        if ($unitId) {
-            $query->where('unit_id', $unitId);
+        if ($scopedUnitIds !== null) {
+            $query->whereIn('unit_id', $scopedUnitIds);
         }
 
         $stats = $query->selectRaw('
