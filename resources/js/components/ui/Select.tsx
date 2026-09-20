@@ -24,17 +24,17 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                 }
                 return null;
             })
-            .filter(Boolean) as { value: any; label: React.ReactNode; disabled?: boolean }[];
+            .filter(Boolean) as { value: string | number | readonly string[] | undefined; label: React.ReactNode; disabled?: boolean }[];
 
         const selectedOption = options.find((opt) => String(opt.value) === String(value)) || options[0];
 
-        const handleValueChange = (newVal: any) => {
+        const handleValueChange = (newVal: string | number | readonly string[] | undefined) => {
             if (onChange) {
                 // Mock native event object so existing code using e.target.value continues to work
                 const e = {
                     target: { value: newVal, name },
                     currentTarget: { value: newVal, name },
-                } as any;
+                } as unknown as React.ChangeEvent<HTMLSelectElement>;
                 onChange(e);
             }
         };
@@ -82,7 +82,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                                         value={option.value}
                                         disabled={option.disabled}
                                     >
-                                        {({ selected, active }) => (
+                                        {({ selected }) => (
                                             <>
                                                 <span className={cn('block truncate', selected ? 'font-semibold' : 'font-normal')}>
                                                     {option.label}
@@ -103,7 +103,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                 {error && <span className="text-[11px] font-medium text-danger dark:text-red-400">{error}</span>}
 
                 {/* Hidden select for actual form submission if they rely on it */}
-                <select ref={ref} id={selectId} name={name} value={value} className="hidden" disabled={disabled} readOnly>
+                <select ref={ref} id={selectId} name={name} value={value} className="hidden" disabled={disabled} readOnly {...props}>
                     {children}
                 </select>
             </div>
