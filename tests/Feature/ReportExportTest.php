@@ -246,7 +246,7 @@ class ReportExportTest extends TestCase
         $this->assertStringContainsString('A.5.1', $content);
         $this->assertStringContainsString('ISO/IEC 27001', $content);
         $this->assertStringContainsString('Pusat Data Komdigi', $content);
-        $this->assertStringContainsString('COMPLIANT', $content);
+        $this->assertStringContainsString('SELESAI_DITERAPKAN', $content);
         $this->assertStringContainsString('Bukti lengkap', $content);
         $this->assertStringContainsString($this->admin->name, $content);
         $this->assertStringContainsString(now()->format('Y-m-d H:i'), $content);

@@ -195,7 +195,8 @@ class ChecklistEntryPolicyTest extends TestCase
 
         $this->assertTrue($auditor->can('view', $entry));
         $this->assertTrue($auditor->can('update', $entry));
-        $this->assertTrue($auditor->can('verify', $entry));
+        // Verify requires checklist.bulk-verify (read-only view for auditor/koordinator).
+        $this->assertFalse($auditor->can('verify', $entry));
     }
 
     public function test_pic_other_unit_cannot_view_update_delete(): void

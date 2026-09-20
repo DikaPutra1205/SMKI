@@ -251,7 +251,7 @@ class ChecklistEntryApiTest extends TestCase
         $this->assertNotNull(ChecklistEntry::find($entry->id)->tanggal_verifikasi);
     }
 
-    // D6 — verify endpoint reachable by a pic (no authorization layer). Verify, don't fix.
+    // D6 — pic is denied on the admin-only verify endpoint (see AuthAuthorizationGapTest).
     public function test_verify_reachable_by_pic_role(): void
     {
         ['unit' => $unit, 'control' => $control] = $this->seedUnitControlPics();
@@ -261,15 +261,15 @@ class ChecklistEntryApiTest extends TestCase
             'status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN,
         ]);
 
-        // pic calls an admin-only action and gets 200, not 403
+        // pic calls an admin-only action and gets 403, not 200
         $this->actingAs($pic)
             ->patchJson("/api/checklist-entries/{$entry->id}/verify", [
                 'admin_id' => $pic->id,
                 'decision' => 'approve',
             ])
-            ->assertOk();
+            ->assertForbidden();
 
-        $this->assertNotNull(ChecklistEntry::find($entry->id)->tanggal_verifikasi);
+        $this->assertNull(ChecklistEntry::find($entry->id)->tanggal_verifikasi);
     }
 
     public function test_destroy_soft_deletes(): void

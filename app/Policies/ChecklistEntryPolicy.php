@@ -101,6 +101,10 @@ class ChecklistEntryPolicy
             return false;
         }
 
+        if (! $user->hasPermissionTo('checklist.bulk-verify')) {
+            return false;
+        }
+
         return $this->isUserAuthorizedForEntry($user, $checklistEntry);
     }
 

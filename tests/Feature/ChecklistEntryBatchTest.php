@@ -128,6 +128,7 @@ class ChecklistEntryBatchTest extends TestCase
             'unit_id' => $this->unit->id,
             'pic_id' => $otherPic->id,
             'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
+            'catatan' => null,
         ]);
 
         $this->actingAs($this->pic)->postJson('/admin/pic/checklist-entries/batch', [

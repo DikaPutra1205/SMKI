@@ -53,11 +53,12 @@ class RbacMatrixConfigTest extends TestCase
         $this->assertCount(50, $config['roles']['admin_kepatuhan']);
         $this->assertCount(23, $config['roles']['koordinator_smki']);
         $this->assertCount(20, $config['roles']['auditor']);
-        $this->assertCount(23, $config['roles']['pic']);
+        $this->assertCount(22, $config['roles']['pic']);
 
         $this->assertSame(array_values(array_diff($config['roles']['koordinator_smki'], ['risk.create', 'risk.update', 'risk.delete'])), $config['roles']['auditor']);
         $this->assertContains('checklist.bulk-verify', $config['roles']['admin_kepatuhan']);
         $this->assertNotContains('checklist.bulk-verify', $config['roles']['pic']);
+        $this->assertNotContains('checklist.verify', $config['roles']['pic']);
         $this->assertNotContains('checklist-session.view', $config['roles']['pic']);
         $this->assertNotContains('checklist-session.view', $config['roles']['koordinator_smki']);
         $this->assertNotContains('checklist-session.view', $config['roles']['auditor']);
