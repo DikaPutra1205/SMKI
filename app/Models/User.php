@@ -195,6 +195,6 @@ class User extends Authenticatable
             $ids = array_merge($ids, $this->unit->getDescendantIds());
         }
 
-        return array_values(array_unique($ids));
+        return array_values(array_map('intval', array_unique($ids)));
     }
 }

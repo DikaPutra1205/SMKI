@@ -19,19 +19,6 @@ use Illuminate\Support\Facades\DB;
 class ComplianceOfficerService
 {
     /**
-     * Resolve effective unit ID based on role scoping.
-     * PIC is strictly scoped to their assigned unit.
-     */
-    public function resolveScopedUnitId(User $user, ?int $requestedUnitId = null): ?int
-    {
-        if ($user->isPic()) {
-            return $user->unit_id ? (int) $user->unit_id : null;
-        }
-
-        return $requestedUnitId;
-    }
-
-    /**
      * Resolve unit scope for a PIC user: honours an explicit unit_id
      * filter only when it falls inside the caller's accessible set,
      * otherwise defaults to the full accessible subtree.
