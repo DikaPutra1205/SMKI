@@ -22,7 +22,7 @@ class ComplianceService
             ->selectRaw('
                 controls.framework_id,
                 COUNT(*) as total_entries,
-                SUM(CASE WHEN checklist_entries.status = ? THEN 1 ELSE 0 END) as compliant_entries
+                SUM(CASE WHEN checklist_entries.status = ? THEN 1 ELSE 0 END) as selesai_entries
             ', [ChecklistEntry::WORKFLOW_SELESAI])
             ->groupBy('controls.framework_id')
             ->get()
@@ -31,8 +31,8 @@ class ComplianceService
         return $frameworks->map(function (Framework $fw) use ($stats) {
             $fwStat = $stats->get($fw->id);
             $totalEntries = $fwStat ? (int) $fwStat->total_entries : 0;
-            $compliantEntries = $fwStat ? (int) $fwStat->compliant_entries : 0;
-            $percentage = $totalEntries > 0 ? (int) round(($compliantEntries / $totalEntries) * 100) : 0;
+            $selesaiEntries = $fwStat ? (int) $fwStat->selesai_entries : 0;
+            $percentage = $totalEntries > 0 ? (int) round(($selesaiEntries / $totalEntries) * 100) : 0;
 
             return [
                 'id' => $fw->id,

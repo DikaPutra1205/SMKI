@@ -280,7 +280,7 @@ class ComplianceOfficerController extends Controller
     /**
      * Single-entry verify POST action.
      *
-     * Accepts: status ('compliant'|'non_compliant'), admin_notes (nullable string).
+     * Accepts: decision ('approve'|'reject'), admin_notes (nullable string).
      * Sets tanggal_verifikasi and admin_id on the entry.
      * Requires 'checklist.bulk-verify' permission (same as bulk-verify).
      *

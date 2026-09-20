@@ -553,7 +553,7 @@ class ReportGeneratorService
                     $entry->control?->judul ?? '-',
                     $entry->control?->framework?->nama ?? '-',
                     $entry->unit?->nama ?? '-',
-                    strtoupper($entry->status ?? 'NOT_EVALUATED'),
+                    strtoupper($entry->status ?? ChecklistEntry::WORKFLOW_BELUM_DIMULAI),
                     $entry->catatan_admin ?? '-',
                     $entry->admin?->name ?? '-',
                     $entry->tanggal_verifikasi ? $entry->tanggal_verifikasi->format('Y-m-d H:i') : '-',
