@@ -90,14 +90,28 @@ class GenerateMonthlyChecklistCommand extends Command
                     ->flip()
                     ->toArray();
 
+                $prevPeriod = Carbon::parse($period)->subMonth()->format('Y-m');
+                $prevSession = ChecklistSession::where('unit_id', $unit->id)
+                    ->where('framework_id', $frameworkId)
+                    ->where('periode', $prevPeriod)
+                    ->first();
+                $prevVerified = $prevSession
+                    ? ChecklistEntry::where('session_id', $prevSession->id)
+                        ->where('status', ChecklistEntry::WORKFLOW_SELESAI)
+                        ->get()
+                        ->keyBy('control_id')
+                    : collect();
+
                 foreach ($frameworkControls as $ctrl) {
                     if (! isset($existingControlIds[$ctrl->id])) {
+                        $prev = $prevVerified[$ctrl->id] ?? null;
                         $rowsToInsert[] = [
                             'session_id' => $session->id,
                             'control_id' => $ctrl->id,
                             'unit_id' => $unit->id,
                             'pic_id' => $pic?->id,
-                            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
+                            'status' => $prev?->status ?? ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
+                            'level_maturity' => $prev?->level_maturity,
                             'catatan' => '',
                             'tanggal_input' => $now,
                             'created_at' => $now,

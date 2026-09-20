@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
@@ -180,11 +181,31 @@ class ChecklistSessionController extends Controller
                     'unit_id' => $session->unit_id,
                     'pic_id' => $pic?->id,
                     'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
+                    'level_maturity' => null,
                     'catatan' => '',
                     'tanggal_input' => null,
                     'created_at' => $now,
                     'updated_at' => $now,
                 ];
+            }
+
+            $prevPeriod = Carbon::parse($period)->subMonth()->format('Y-m');
+            $prevSession = ChecklistSession::where('unit_id', $session->unit_id)
+                ->where('framework_id', $frameworkId)
+                ->where('periode', $prevPeriod)
+                ->first();
+            if ($prevSession) {
+                $prevVerified = ChecklistEntry::where('session_id', $prevSession->id)
+                    ->where('status', ChecklistEntry::WORKFLOW_SELESAI)
+                    ->get()
+                    ->keyBy('control_id');
+                foreach ($insertData as &$row) {
+                    if (isset($prevVerified[$row['control_id']])) {
+                        $row['status'] = $prevVerified[$row['control_id']]->status;
+                        $row['level_maturity'] = $prevVerified[$row['control_id']]->level_maturity;
+                    }
+                }
+                unset($row);
             }
 
             foreach (array_chunk($insertData, 100) as $chunk) {

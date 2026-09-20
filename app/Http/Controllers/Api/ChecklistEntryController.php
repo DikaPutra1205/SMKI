@@ -11,6 +11,7 @@ use App\Models\Framework;
 use App\Models\User;
 use App\Models\WorkUnit;
 use App\Notifications\ChecklistEntryRejectedNotification;
+use App\Services\Concerns\ResolvesUnitScope;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -22,6 +23,7 @@ use Illuminate\Support\Facades\Storage;
 class ChecklistEntryController extends Controller
 {
     use ApiResponse;
+    use ResolvesUnitScope;
 
     /**
      * Mengambil daftar checklist dengan urutan konsisten berdasarkan Klausul Standar ISO.
@@ -66,11 +68,10 @@ class ChecklistEntryController extends Controller
             $query->where('checklist_entries.session_id', $request->session_id);
         }
 
-        // ── Filter Unit Kerja ──
-        if ($request->filled('unit_id')) {
-            $query->where('checklist_entries.unit_id', $request->unit_id);
-        } elseif ($user?->isPic()) {
-            $query->where('checklist_entries.unit_id', $user->unit_id);
+        // ── Filter Unit Kerja (subtree-aware, fail-closed) ──
+        $scopedUnitIds = $user ? $this->resolveScopedUnitIds($user, $request->only('unit_id')) : null;
+        if ($scopedUnitIds !== null) {
+            $query->whereIn('checklist_entries.unit_id', $scopedUnitIds);
         }
 
         // ── Filter Status Kepatuhan ──
