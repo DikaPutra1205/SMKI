@@ -15,7 +15,16 @@ class ComplianceEvidencePolicy
         }
 
         if ($user->unit_id !== null) {
-            return (int) $checklistEntry->unit_id === (int) $user->unit_id;
+            if ((int) $checklistEntry->unit_id === (int) $user->unit_id) {
+                return true;
+            }
+            $userUnit = $user->unit()->first();
+            $entryUnit = $checklistEntry->unit()->first();
+            if ($userUnit && $entryUnit && $userUnit->isAncestorOf($entryUnit)) {
+                return true;
+            }
+
+            return false;
         }
 
         return (int) $checklistEntry->pic_id === (int) $user->id;

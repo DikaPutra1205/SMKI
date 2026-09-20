@@ -90,6 +90,23 @@ class ComplianceEvidencePolicyTest extends TestCase
         $this->assertFalse($this->picB->can('view', $evidence));
     }
 
+    public function test_view_parent_pic_child_entry_evidence(): void
+    {
+        $childUnit = WorkUnit::create(['nama' => 'Child A', 'parent_id' => $this->unitA->id]);
+        $childPic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $childUnit->id]);
+        $entry = ChecklistEntry::create([
+            'control_id' => $this->entryA->control_id, 'unit_id' => $childUnit->id, 'pic_id' => $childPic->id,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
+        ]);
+        $evidence = $entry->evidences()->create([
+            'uploaded_by' => $childPic->id, 'file_url' => 'bukti/1/a.pdf',
+            'version_number' => 1, 'is_active' => true, 'uploaded_at' => now(),
+        ]);
+
+        $this->assertTrue($this->picA->can('view', $evidence));
+        $this->assertFalse($this->picB->can('view', $evidence));
+    }
+
     public function test_view_deleted_entry_evidence_returns_true(): void
     {
         $entry = $this->entryA->fresh();
