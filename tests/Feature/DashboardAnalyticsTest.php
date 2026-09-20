@@ -1403,6 +1403,37 @@ class DashboardAnalyticsTest extends TestCase
         );
     }
 
+    public function test_pic_summary_aggregates_child_unit_subtree(): void
+    {
+        $parent = WorkUnit::factory()->create(['nama' => 'Parent']);
+        $child = WorkUnit::factory()->create(['nama' => 'Child', 'parent_id' => $parent->id]);
+        $parentPic = User::factory()->create(['role' => 'pic', 'unit_id' => $parent->id]);
+        $ctrl = Control::factory()->create(['framework_id' => $this->iso27001->id]);
+        $period = now()->format('Y-m');
+
+        $parentSession = ChecklistSession::factory()->create([
+            'unit_id' => $parent->id, 'framework_id' => $this->iso27001->id, 'periode' => $period,
+        ]);
+        ChecklistEntry::factory()->create([
+            'session_id' => $parentSession->id, 'control_id' => $ctrl->id,
+            'unit_id' => $parent->id, 'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
+        ]);
+
+        $childSession = ChecklistSession::factory()->create([
+            'unit_id' => $child->id, 'framework_id' => $this->iso27001->id, 'periode' => $period,
+        ]);
+        ChecklistEntry::factory()->create([
+            'session_id' => $childSession->id, 'control_id' => $ctrl->id,
+            'unit_id' => $child->id, 'status' => ChecklistEntry::WORKFLOW_SELESAI,
+        ]);
+
+        $response = $this->actingAs($parentPic)->getJson('/api/v1/dashboard/summary');
+
+        $response->assertOk();
+        // Subtree: 1 selesai of 2 applicable → 50. Own-only scoping would report 0.
+        $this->assertSame(50, $response->json('data.overall_completion_rate'));
+    }
+
     public function test_admin_dashboard_requires_audit_log_view_permission(): void
     {
         // PIC holds dashboard.read but lacks audit-log.view → 403 on the

@@ -208,4 +208,14 @@ class ChecklistSessionPolicyTest extends TestCase
         $this->assertFalse($auditor->can('update', $session));
         $this->assertFalse($auditor->can('restore', $session));
     }
+
+    public function test_parent_pic_can_view_child_session(): void
+    {
+        $parent = WorkUnit::create(['nama' => 'Parent']);
+        $child = WorkUnit::create(['nama' => 'Child', 'parent_id' => $parent->id]);
+        $parentPic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $parent->id]);
+        $session = ChecklistSession::create(['konteks_penilaian' => 'Child', 'unit_id' => $child->id]);
+
+        $this->assertTrue((new ChecklistSessionPolicy)->view($parentPic, $session));
+    }
 }

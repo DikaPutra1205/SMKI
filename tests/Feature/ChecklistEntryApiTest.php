@@ -752,4 +752,75 @@ class ChecklistEntryApiTest extends TestCase
         $this->assertSame(ChecklistEntry::WORKFLOW_DALAM_PROSES, $fresh->status);
         $this->assertNull($fresh->tanggal_verifikasi);
     }
+
+    public function test_index_parent_pic_lists_child_unit_entries_by_default(): void
+    {
+        $parent = WorkUnit::create(['nama' => 'Parent']);
+        $child = WorkUnit::create(['nama' => 'Child', 'parent_id' => $parent->id]);
+        $fw = Framework::create(['nama' => 'ISO 27001', 'versi' => '2022']);
+        $control = $fw->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'teknologi']);
+        $parentPic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $parent->id]);
+        $childPic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $child->id]);
+
+        ChecklistEntry::create([
+            'control_id' => $control->id, 'unit_id' => $parent->id, 'pic_id' => $parentPic->id,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
+        ]);
+        ChecklistEntry::create([
+            'control_id' => $control->id, 'unit_id' => $child->id, 'pic_id' => $childPic->id,
+            'status' => ChecklistEntry::WORKFLOW_DALAM_PROSES,
+        ]);
+
+        $response = $this->actingAs($parentPic)->getJson('/api/checklist-entries?all=true');
+
+        $response->assertOk();
+        $unitIds = collect($response->json('data'))->pluck('unit_id')->unique()->sort()->values()->all();
+        $this->assertSame([$parent->id, $child->id], $unitIds);
+    }
+
+    public function test_generate_monthly_carries_verified_status_and_maturity_forward(): void
+    {
+        $unit = WorkUnit::create(['nama' => 'Unit Rollover']);
+        $fw = Framework::create(['nama' => 'ISO 27001', 'versi' => '2022']);
+        $carried = $fw->controls()->create(['kode_klausul' => 'A.5.1', 'judul' => 'Policies', 'kategori' => 'teknologi']);
+        $reset = $fw->controls()->create(['kode_klausul' => 'A.5.2', 'judul' => 'Roles', 'kategori' => 'teknologi']);
+        $fresh = $fw->controls()->create(['kode_klausul' => 'A.5.3', 'judul' => 'Contacts', 'kategori' => 'teknologi']);
+        $pic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unit->id]);
+
+        $prevSession = ChecklistSession::create([
+            'konteks_penilaian' => 'Bulan lalu', 'unit_id' => $unit->id,
+            'framework_id' => $fw->id, 'periode' => now()->startOfMonth()->subMonth()->format('Y-m'),
+        ]);
+        ChecklistEntry::create([
+            'session_id' => $prevSession->id, 'control_id' => $carried->id,
+            'unit_id' => $unit->id, 'pic_id' => $pic->id,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI, 'level_maturity' => 4,
+            'catatan' => 'SOP terpenuhi', 'tanggal_verifikasi' => now()->subMonth(),
+        ]);
+        ChecklistEntry::create([
+            'session_id' => $prevSession->id, 'control_id' => $reset->id,
+            'unit_id' => $unit->id, 'pic_id' => $pic->id,
+            'status' => ChecklistEntry::WORKFLOW_DALAM_PROSES, 'catatan' => 'Parsial',
+        ]);
+
+        $this->artisan('smki:generate-monthly-checklist')->assertSuccessful();
+
+        $newSession = ChecklistSession::where('unit_id', $unit->id)
+            ->where('periode', now()->format('Y-m'))
+            ->first();
+        $this->assertNotNull($newSession);
+
+        $this->assertDatabaseHas('checklist_entries', [
+            'session_id' => $newSession->id, 'control_id' => $carried->id,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI, 'level_maturity' => 4,
+        ]);
+        $this->assertDatabaseHas('checklist_entries', [
+            'session_id' => $newSession->id, 'control_id' => $reset->id,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
+        ]);
+        $this->assertDatabaseHas('checklist_entries', [
+            'session_id' => $newSession->id, 'control_id' => $fresh->id,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
+        ]);
+    }
 }

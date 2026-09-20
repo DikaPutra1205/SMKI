@@ -11,6 +11,8 @@ use App\Models\Framework;
 use App\Models\Risk;
 use App\Models\User;
 use App\Models\WorkUnit;
+use App\Services\ComplianceOfficerService;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -1413,5 +1415,52 @@ class ComplianceOfficerTest extends TestCase
 
         $this->assertEquals(ChecklistEntry::WORKFLOW_SELESAI, $entry->fresh()->status);
         $this->assertNotNull($entry->fresh()->tanggal_verifikasi);
+    }
+
+    public function test_review_queue_includes_child_unit_items_for_parent_pic(): void
+    {
+        $parent = WorkUnit::create(['nama' => 'Parent']);
+        $child = WorkUnit::create(['nama' => 'Child', 'parent_id' => $parent->id]);
+        $parentPic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $parent->id]);
+        ChecklistEntry::factory()->create(['unit_id' => $child->id, 'status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN]);
+
+        $queue = app(ComplianceOfficerService::class)->getReviewQueueEntries($parentPic);
+
+        $this->assertTrue($queue->getCollection()->contains(fn ($e) => (int) $e->unit_id === $child->id));
+    }
+
+    public function test_findings_include_child_unit_for_parent_pic(): void
+    {
+        $parent = WorkUnit::create(['nama' => 'Parent']);
+        $child = WorkUnit::create(['nama' => 'Child', 'parent_id' => $parent->id]);
+        $parentPic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $parent->id]);
+        Finding::factory()->create(['unit_id' => $child->id]);
+
+        $findings = app(ComplianceOfficerService::class)->getFindings($parentPic);
+
+        $this->assertTrue($findings->getCollection()->contains(fn ($f) => (int) $f->unit_id === $child->id));
+    }
+
+    public function test_explicit_sibling_unit_filter_throws_for_pic(): void
+    {
+        $parent = WorkUnit::create(['nama' => 'Parent']);
+        $sibling = WorkUnit::create(['nama' => 'Sibling']);
+        $parentPic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $parent->id]);
+
+        $this->expectException(AuthorizationException::class);
+
+        app(ComplianceOfficerService::class)->getFindings($parentPic, ['unit_id' => $sibling->id]);
+    }
+
+    public function test_explicit_child_unit_filter_allowed_for_parent_pic(): void
+    {
+        $parent = WorkUnit::create(['nama' => 'Parent']);
+        $child = WorkUnit::create(['nama' => 'Child', 'parent_id' => $parent->id]);
+        $parentPic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $parent->id]);
+        Finding::factory()->create(['unit_id' => $child->id]);
+
+        $findings = app(ComplianceOfficerService::class)->getFindings($parentPic, ['unit_id' => $child->id]);
+
+        $this->assertTrue($findings->getCollection()->contains(fn ($f) => (int) $f->unit_id === $child->id));
     }
 }

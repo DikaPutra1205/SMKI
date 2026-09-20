@@ -204,6 +204,53 @@ class ChecklistSessionWebTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_show_parent_pic_can_view_child_unit_session(): void
+    {
+        $parent = WorkUnit::create(['nama' => 'Parent']);
+        $child = WorkUnit::create(['nama' => 'Child', 'parent_id' => $parent->id]);
+        $parentPic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $parent->id]);
+        $session = ChecklistSession::create([
+            'konteks_penilaian' => 'Child session', 'unit_id' => $child->id,
+            'framework_id' => $this->fw->id, 'periode' => now()->format('Y-m'),
+        ]);
+
+        $this->actingAs($parentPic)
+            ->get("/admin/pic/checklist/{$session->id}")
+            ->assertOk();
+    }
+
+    public function test_generate_carries_forward_verified_entries(): void
+    {
+        $prevSession = ChecklistSession::create([
+            'konteks_penilaian' => 'Bulan lalu', 'unit_id' => $this->unit->id,
+            'framework_id' => $this->fw->id, 'periode' => now()->startOfMonth()->subMonth()->format('Y-m'),
+        ]);
+        ChecklistEntry::create([
+            'session_id' => $prevSession->id, 'control_id' => $this->control->id,
+            'unit_id' => $this->unit->id, 'pic_id' => $this->pic->id,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI, 'level_maturity' => 3,
+            'catatan' => 'Terverifikasi', 'tanggal_verifikasi' => now()->subMonth(),
+        ]);
+
+        $this->actingAs($this->admin)
+            ->postJson('/admin/kepatuhan/checklist-sessions', [
+                'konteks_penilaian' => 'Bulan ini',
+                'unit_id' => $this->unit->id,
+                'framework_id' => $this->fw->id,
+                'periode' => now()->format('Y-m'),
+            ])
+            ->assertRedirect();
+
+        $newSession = ChecklistSession::where('unit_id', $this->unit->id)
+            ->where('periode', now()->format('Y-m'))
+            ->first();
+        $this->assertNotNull($newSession);
+        $this->assertDatabaseHas('checklist_entries', [
+            'session_id' => $newSession->id, 'control_id' => $this->control->id,
+            'status' => ChecklistEntry::WORKFLOW_SELESAI, 'level_maturity' => 3,
+        ]);
+    }
+
     public function test_pic_cannot_restore_session(): void
     {
         $session = ChecklistSession::create([
@@ -214,5 +261,20 @@ class ChecklistSessionWebTest extends TestCase
         $this->actingAs($this->pic)
             ->postJson("/admin/kepatuhan/checklist-sessions/{$session->id}/restore")
             ->assertForbidden();
+    }
+
+    public function test_summary_parent_pic_can_view_child_unit_session(): void
+    {
+        $parent = WorkUnit::create(['nama' => 'Parent']);
+        $child = WorkUnit::create(['nama' => 'Child', 'parent_id' => $parent->id]);
+        $parentPic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $parent->id]);
+        $session = ChecklistSession::create([
+            'konteks_penilaian' => 'Child', 'unit_id' => $child->id,
+            'framework_id' => $this->fw->id, 'periode' => now()->format('Y-m'),
+        ]);
+
+        $this->actingAs($parentPic)
+            ->get("/admin/pic/checklist/{$session->id}/summary")
+            ->assertOk();
     }
 }
