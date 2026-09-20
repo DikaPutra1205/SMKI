@@ -541,7 +541,7 @@ class ChecklistEntryApiTest extends TestCase
 
         $this->actingAs($admin)->postJson('/api/checklist-entries', [
             'control_id' => $control->id, 'unit_id' => $unit->id, 'pic_id' => $pic->id,
-            'status' => 'compliant', 'session_id' => 999999,
+            'tidak_berlaku' => false, 'session_id' => 999999,
         ])->assertStatus(422)->assertJsonValidationErrors(['session_id']);
 
         $this->assertSame(0, ChecklistEntry::count());

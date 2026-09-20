@@ -373,17 +373,17 @@ class ReportGeneratorService
         foreach ($data['frameworks_breakdown'] ?? [] as $fw) {
             $name = htmlspecialchars($fw['nama'] ?? '-');
             $total = (int) ($fw['total_controls'] ?? 0);
-            $compliant = (int) ($fw['selesai_count'] ?? 0);
-            $partial = (int) ($fw['proses_count'] ?? 0);
-            $nonCompliant = (int) ($fw['tinjauan_count'] ?? 0);
+            $selesai = (int) ($fw['selesai_count'] ?? 0);
+            $proses = (int) ($fw['proses_count'] ?? 0);
+            $tinjauan = (int) ($fw['tinjauan_count'] ?? 0);
             $rate = (float) ($fw['completion_rate'] ?? 0);
 
             $frameworkRows .= "<tr>
                 <td style='padding: 8px 12px; border: 1px solid #cbd5e1;'>{$name}</td>
                 <td style='padding: 8px 12px; text-align: center; border: 1px solid #cbd5e1;'>{$total}</td>
-                <td style='padding: 8px 12px; text-align: center; border: 1px solid #cbd5e1; color: #16a34a; font-weight: 600;'>{$compliant}</td>
-                <td style='padding: 8px 12px; text-align: center; border: 1px solid #cbd5e1; color: #d97706;'>{$partial}</td>
-                <td style='padding: 8px 12px; text-align: center; border: 1px solid #cbd5e1; color: #dc2626;'>{$nonCompliant}</td>
+                <td style='padding: 8px 12px; text-align: center; border: 1px solid #cbd5e1; color: #16a34a; font-weight: 600;'>{$selesai}</td>
+                <td style='padding: 8px 12px; text-align: center; border: 1px solid #cbd5e1; color: #d97706;'>{$proses}</td>
+                <td style='padding: 8px 12px; text-align: center; border: 1px solid #cbd5e1; color: #dc2626;'>{$tinjauan}</td>
                 <td style='padding: 8px 12px; text-align: center; border: 1px solid #cbd5e1; font-weight: bold;'>{$rate}%</td>
             </tr>";
         }

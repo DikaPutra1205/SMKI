@@ -119,7 +119,6 @@ export const id = {
         status: 'Status',
         actions: 'Aksi',
         controlsUnit: 'kontrol',
-        compliantPct: 'compliant',
         controlsManagement: 'Manajemen Keamanan Informasi',
         privacyManagement: 'Manajemen Informasi Privasi',
         noResults: 'Tidak ada kontrol yang cocok dengan kriteria pencarian.',

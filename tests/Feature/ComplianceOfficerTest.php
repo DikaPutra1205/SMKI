@@ -1326,7 +1326,7 @@ class ComplianceOfficerTest extends TestCase
         $this->actingAs($this->picA)->get('/admin/kepatuhan/checklist/verify')->assertForbidden();
     }
 
-    public function test_single_verify_allows_catatan_when_status_changes(): void
+    public function test_single_verify_allows_catatan_when_decision_changes_status(): void
     {
         $entry = ChecklistEntry::factory()->create(['status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN]);
 
@@ -1356,7 +1356,7 @@ class ComplianceOfficerTest extends TestCase
         $this->assertEquals('Telah diverifikasi sesuai standar', $entry2->fresh()->catatan_admin);
     }
 
-    public function test_single_verify_allows_nullable_catatan_when_status_unchanged(): void
+    public function test_single_verify_allows_nullable_catatan_when_decision_keeps_status(): void
     {
         $entry = ChecklistEntry::factory()->create([
             'status' => ChecklistEntry::WORKFLOW_SELESAI,
@@ -1375,7 +1375,7 @@ class ComplianceOfficerTest extends TestCase
         $this->assertNotNull($entry->fresh()->tanggal_verifikasi);
     }
 
-    public function test_bulk_verify_allows_status_change_without_catatan(): void
+    public function test_bulk_verify_allows_decision_change_without_catatan(): void
     {
         $entry = ChecklistEntry::factory()->create([
             'status' => ChecklistEntry::WORKFLOW_DALAM_TINJAUAN,
@@ -1396,7 +1396,7 @@ class ComplianceOfficerTest extends TestCase
         $this->assertNull($fresh->catatan_admin);
     }
 
-    public function test_bulk_verify_allows_nullable_catatan_when_status_unchanged(): void
+    public function test_bulk_verify_allows_nullable_catatan_when_decision_keeps_status(): void
     {
         $entry = ChecklistEntry::factory()->create(['status' => ChecklistEntry::WORKFLOW_SELESAI]);
 

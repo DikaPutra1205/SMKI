@@ -348,7 +348,7 @@ class DashboardAnalyticsTest extends TestCase
             'periode' => now()->format('Y-m'),
         ]);
 
-        // Framework 1: 1 compliant + 1 partial + 1 non-compliant => applicable 3, rate round(1/3*100)=33
+        // Framework 1: 1 selesai + 1 proses + 1 belum => applicable 3, rate round(1/3*100)=33
         foreach ([
             ChecklistEntry::WORKFLOW_SELESAI,
             ChecklistEntry::WORKFLOW_DALAM_PROSES,

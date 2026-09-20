@@ -69,7 +69,7 @@ class ComplianceService
         ])->withCount([
             'entries as total_entries',
             'entries as selesai_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_SELESAI),
-            'entries as partial_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_DALAM_PROSES),
+            'entries as proses_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_DALAM_PROSES),
             'entries as tinjauan_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_DALAM_TINJAUAN),
             'entries as na_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_TIDAK_BERLAKU),
             'entries as verified_entries' => fn ($q) => $q->whereNotNull('tanggal_verifikasi'),
@@ -116,7 +116,7 @@ class ComplianceService
                     'summary' => [
                         'total_entries' => $total,
                         'selesai_entries' => $selesai,
-                        'proses_entries' => (int) $session->partial_entries,
+                        'proses_entries' => (int) $session->proses_entries,
                         'tinjauan_entries' => (int) $session->tinjauan_entries,
                         'na_entries' => (int) $session->na_entries,
                         'verified_entries' => (int) $session->verified_entries,
@@ -143,7 +143,7 @@ class ComplianceService
         ])->withCount([
             'entries as total_entries',
             'entries as selesai_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_SELESAI),
-            'entries as partial_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_DALAM_PROSES),
+            'entries as proses_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_DALAM_PROSES),
             'entries as tinjauan_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_DALAM_TINJAUAN),
             'entries as na_entries' => fn ($q) => $q->where('status', ChecklistEntry::WORKFLOW_TIDAK_BERLAKU),
             'entries as verified_entries' => fn ($q) => $q->whereNotNull('tanggal_verifikasi'),
@@ -194,7 +194,7 @@ class ComplianceService
                 'catatan' => $session->catatan,
                 'total_entries' => $total,
                 'selesai_entries' => $selesai,
-                'proses_entries' => (int) $session->partial_entries,
+                'proses_entries' => (int) $session->proses_entries,
                 'tinjauan_entries' => (int) $session->tinjauan_entries,
                 'na_entries' => (int) $session->na_entries,
                 'verified_entries' => $verified,

@@ -73,7 +73,7 @@ class CompliancePageTest extends TestCase
         ]);
 
         $response = $this->actingAs($user)
-            ->get("/admin/kepatuhan/compliance?unit_id={$unit->id}&framework_id={$framework->id}&search=abc&status=compliant&kategori=Teknologi");
+            ->get("/admin/kepatuhan/compliance?unit_id={$unit->id}&framework_id={$framework->id}&search=abc&status=selesai_diterapkan&kategori=Teknologi");
 
         $response->assertOk();
 
@@ -90,7 +90,7 @@ class CompliancePageTest extends TestCase
             ->where('filters.unit_id', (string) $unit->id)
             ->where('filters.framework_id', (string) $framework->id)
             ->where('filters.search', 'abc')
-            ->where('filters.status', 'compliant')
+            ->where('filters.status', 'selesai_diterapkan')
             ->where('filters.kategori', 'Teknologi')
         );
     }

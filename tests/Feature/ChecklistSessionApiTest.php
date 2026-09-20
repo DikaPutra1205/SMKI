@@ -207,12 +207,12 @@ class ChecklistSessionApiTest extends TestCase
         $this->assertSame('Semua klausul terverifikasi memuaskan.', $session->fresh()->catatan);
     }
 
-    public function test_summary_counts_partial_with_catatan_as_completed(): void
+    public function test_summary_counts_proses_with_catatan_as_completed(): void
     {
         extract($this->setupData());
 
         $session = ChecklistSession::create([
-            'konteks_penilaian' => 'Sesi Partial Summary',
+            'konteks_penilaian' => 'Sesi Proses Summary',
             'unit_id' => $unit->id,
             'framework_id' => $fw->id,
             'status' => 'in_progress',
@@ -242,7 +242,7 @@ class ChecklistSessionApiTest extends TestCase
         $res->assertJsonPath('data.summary.proses_entries', 1);
         $res->assertJsonPath('data.summary.completion_percentage', 100);
 
-        // Partial without catatan must not count as completed
+        // Proses without catatan must not count as completed
         ChecklistEntry::create([
             'session_id' => $session->id,
             'control_id' => $control1->id,
@@ -257,12 +257,12 @@ class ChecklistSessionApiTest extends TestCase
         $res->assertJsonPath('data.summary.completion_percentage', 67);
     }
 
-    public function test_web_submit_blocks_partial_without_catatan(): void
+    public function test_web_submit_blocks_proses_without_catatan(): void
     {
         extract($this->setupData());
 
         $session = ChecklistSession::create([
-            'konteks_penilaian' => 'Sesi Submit Partial',
+            'konteks_penilaian' => 'Sesi Submit Proses',
             'unit_id' => $unit->id,
             'framework_id' => $fw->id,
             'status' => 'in_progress',
