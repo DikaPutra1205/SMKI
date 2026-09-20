@@ -175,4 +175,26 @@ class User extends Authenticatable
     {
         return $this->role === self::ROLE_KOORDINATOR_SMKI;
     }
+
+    /**
+     * Unit IDs visible to this user: own unit + all descendants.
+     * Null = global scope (superadmin / role without unit).
+     * Single seam for parent-unit visibility — every listing calls this.
+     *
+     * @return array<int>|null
+     */
+    public function accessibleUnitIds(): ?array
+    {
+        if ($this->isSuperAdmin() || ! $this->isPic() || ! $this->unit_id) {
+            return null;
+        }
+
+        $ids = [$this->unit_id];
+
+        if ($this->unit) {
+            $ids = array_merge($ids, $this->unit->getDescendantIds());
+        }
+
+        return array_values(array_unique($ids));
+    }
 }
