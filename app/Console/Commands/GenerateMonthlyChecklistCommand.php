@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Actions\CarryForwardVerifiedMap;
 use App\Models\ChecklistEntry;
 use App\Models\ChecklistSession;
 use App\Models\Control;
@@ -90,17 +91,7 @@ class GenerateMonthlyChecklistCommand extends Command
                     ->flip()
                     ->toArray();
 
-                $prevPeriod = Carbon::parse($period)->subMonth()->format('Y-m');
-                $prevSession = ChecklistSession::where('unit_id', $unit->id)
-                    ->where('framework_id', $frameworkId)
-                    ->where('periode', $prevPeriod)
-                    ->first();
-                $prevVerified = $prevSession
-                    ? ChecklistEntry::where('session_id', $prevSession->id)
-                        ->where('status', ChecklistEntry::WORKFLOW_SELESAI)
-                        ->get()
-                        ->keyBy('control_id')
-                    : collect();
+                $prevVerified = CarryForwardVerifiedMap::fromPreviousPeriod($unit->id, $frameworkId, $period);
 
                 foreach ($frameworkControls as $ctrl) {
                     if (! isset($existingControlIds[$ctrl->id])) {
