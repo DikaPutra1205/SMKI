@@ -32,19 +32,47 @@ class ComplianceOfficerService
     }
 
     /**
+     * Resolve unit scope for a PIC user: honours an explicit unit_id
+     * filter only when it falls inside the caller's accessible set,
+     * otherwise defaults to the full accessible subtree.
+     *
+     * @param  array{unit_id?: int|string|null}  $filters
+     * @return array<int>|null
+     *
+     * @throws AuthorizationException
+     */
+    private function resolveScopedUnitIds(User $user, array $filters = []): ?array
+    {
+        $accessible = $user->accessibleUnitIds();
+        $requested = $filters['unit_id'] ?? null;
+
+        if ($requested === null || $requested === '') {
+            return $accessible;
+        }
+
+        $requested = (int) $requested;
+
+        if (is_array($accessible) && ! in_array($requested, $accessible, true)) {
+            throw new AuthorizationException('Unit di luar lingkup akses Anda.');
+        }
+
+        return [$requested];
+    }
+
+    /**
      * Get paginated findings list with SLA and overdue calculations.
      */
     public function getFindings(User $user, array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
-        $scopedUnitId = $this->resolveScopedUnitId($user, $filters['unit_id'] ?? null);
+        $scopedUnitIds = $this->resolveScopedUnitIds($user, $filters);
 
         $query = Finding::with(['control.framework', 'unit:id,nama', 'pic:id,name', 'admin:id,name', 'histories.user.role', 'histories.user.unit'])
             ->orderByRaw("CASE WHEN status = 'closed' THEN 1 ELSE 0 END")
             ->orderBy('deadline', 'asc')
             ->orderByDesc('id');
 
-        if ($scopedUnitId) {
-            $query->where('unit_id', $scopedUnitId);
+        if ($scopedUnitIds !== null) {
+            $query->whereIn('unit_id', $scopedUnitIds);
         }
 
         if (! empty($filters['status'])) {
@@ -101,8 +129,11 @@ class ComplianceOfficerService
         }
         $finding = $query->findOrFail($id);
 
-        if ($user->isPic() && (int) $finding->unit_id !== (int) $user->unit_id) {
-            throw new AuthorizationException('Anda tidak memiliki hak akses untuk temuan unit lain.');
+        if ($user->isPic()) {
+            $accessible = $user->accessibleUnitIds();
+            if ($accessible !== null && ! in_array((int) $finding->unit_id, $accessible, true)) {
+                throw new AuthorizationException('Anda tidak memiliki hak akses untuk temuan unit lain.');
+            }
         }
 
         return $this->formatFindingResource($finding, Carbon::today());
@@ -284,14 +315,14 @@ class ComplianceOfficerService
      */
     public function getRisks(User $user, array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
-        $scopedUnitId = $this->resolveScopedUnitId($user, $filters['unit_id'] ?? null);
+        $scopedUnitIds = $this->resolveScopedUnitIds($user, $filters);
 
         $query = Risk::with(['controls.framework', 'unit:id,nama'])->orderByDesc('id');
 
-        if ($scopedUnitId) {
-            $query->where(function ($q) use ($scopedUnitId) {
-                $q->where('unit_id', $scopedUnitId)
-                    ->orWhereHas('controls.checklistEntries', fn ($cq) => $cq->where('unit_id', $scopedUnitId));
+        if ($scopedUnitIds !== null) {
+            $query->where(function ($q) use ($scopedUnitIds) {
+                $q->whereIn('unit_id', $scopedUnitIds)
+                    ->orWhereHas('controls.checklistEntries', fn ($cq) => $cq->whereIn('unit_id', $scopedUnitIds));
             });
         }
 
@@ -327,13 +358,13 @@ class ComplianceOfficerService
      */
     public function getRiskMatrix(User $user): array
     {
-        $scopedUnitId = $this->resolveScopedUnitId($user);
+        $scopedUnitIds = $this->resolveScopedUnitIds($user);
 
         $query = Risk::query();
-        if ($scopedUnitId) {
-            $query->where(function ($q) use ($scopedUnitId) {
-                $q->where('unit_id', $scopedUnitId)
-                    ->orWhereHas('controls.checklistEntries', fn ($cq) => $cq->where('unit_id', $scopedUnitId));
+        if ($scopedUnitIds !== null) {
+            $query->where(function ($q) use ($scopedUnitIds) {
+                $q->whereIn('unit_id', $scopedUnitIds)
+                    ->orWhereHas('controls.checklistEntries', fn ($cq) => $cq->whereIn('unit_id', $scopedUnitIds));
             });
         }
 
@@ -609,7 +640,7 @@ class ComplianceOfficerService
      */
     public function getReviewQueueEntries(User $user, array $filters = [], int $perPage = 20): LengthAwarePaginator
     {
-        $scopedUnitId = $this->resolveScopedUnitId($user, $filters['unit_id'] ?? null);
+        $scopedUnitIds = $this->resolveScopedUnitIds($user, $filters);
 
         $query = ChecklistEntry::select('checklist_entries.*')
             ->join('controls', 'controls.id', '=', 'checklist_entries.control_id')
@@ -622,8 +653,8 @@ class ComplianceOfficerService
                 'activeEvidence:id,checklist_entry_id,version_number,file_url,is_active',
             ]);
 
-        if ($scopedUnitId) {
-            $query->where('checklist_entries.unit_id', $scopedUnitId);
+        if ($scopedUnitIds !== null) {
+            $query->whereIn('checklist_entries.unit_id', $scopedUnitIds);
         }
 
         if (! empty($filters['status'])) {
