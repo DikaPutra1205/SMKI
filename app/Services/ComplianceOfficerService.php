@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Notifications\ChecklistEntryRejectedNotification;
 use App\Notifications\FindingCreatedNotification;
 use App\Notifications\FindingStatusChangedNotification;
+use App\Services\Concerns\ResolvesUnitScope;
 use Carbon\Carbon;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -18,33 +19,7 @@ use Illuminate\Support\Facades\DB;
 
 class ComplianceOfficerService
 {
-    /**
-     * Resolve unit scope for a PIC user: honours an explicit unit_id
-     * filter only when it falls inside the caller's accessible set,
-     * otherwise defaults to the full accessible subtree.
-     *
-     * @param  array{unit_id?: int|string|null}  $filters
-     * @return array<int>|null
-     *
-     * @throws AuthorizationException
-     */
-    private function resolveScopedUnitIds(User $user, array $filters = []): ?array
-    {
-        $accessible = $user->accessibleUnitIds();
-        $requested = $filters['unit_id'] ?? null;
-
-        if ($requested === null || $requested === '') {
-            return $accessible;
-        }
-
-        $requested = (int) $requested;
-
-        if (is_array($accessible) && ! in_array($requested, $accessible, true)) {
-            throw new AuthorizationException('Unit di luar lingkup akses Anda.');
-        }
-
-        return [$requested];
-    }
+    use ResolvesUnitScope;
 
     /**
      * Get paginated findings list with SLA and overdue calculations.

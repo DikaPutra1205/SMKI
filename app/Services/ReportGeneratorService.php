@@ -325,7 +325,9 @@ class ReportGeneratorService
                 'name' => $user->name,
                 'role' => $user->role,
             ],
-            'scoped_unit' => $scopedUnitIds !== null ? 'Unit Kerja Terpilih' : 'Semua Unit Kerja',
+            'scoped_unit' => $scopedUnitIds !== null
+                ? (count($scopedUnitIds) === 1 ? WorkUnit::find($scopedUnitIds[0])?->nama ?? 'Unit Kerja Terpilih' : 'Unit Kerja Terpilih')
+                : 'Semua Unit Kerja',
             'summary' => $summary,
             'unit_metrics' => $unitComparisons,
             'audit_metrics' => [
@@ -361,7 +363,7 @@ class ReportGeneratorService
             $user->id,
             [
                 'report_type' => 'compliance_summary_pdf',
-                'scoped_unit_id' => $scopedUnitIds,
+                'scoped_unit_id' => count($scopedUnitIds) === 1 ? $scopedUnitIds[0] : $scopedUnitIds,
                 'exported_at' => now()->toIso8601String(),
                 'ip_address' => request()->ip(),
             ]
@@ -505,7 +507,7 @@ class ReportGeneratorService
             $user->id,
             [
                 'report_type' => 'compliance_summary_csv',
-                'scoped_unit_id' => $scopedUnitIds,
+                'scoped_unit_id' => count($scopedUnitIds) === 1 ? $scopedUnitIds[0] : $scopedUnitIds,
                 'exported_at' => now()->toIso8601String(),
                 'ip_address' => request()->ip(),
             ]
