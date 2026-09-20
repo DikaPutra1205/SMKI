@@ -18,7 +18,14 @@ class ChecklistSessionPolicy
             return true;
         }
 
-        return (int) $session->unit_id === (int) $user->unit_id;
+        if ((int) $session->unit_id === (int) $user->unit_id) {
+            return true;
+        }
+
+        $userUnit = $user->unit()->first();
+        $sessionUnit = $session->unit()->first();
+
+        return $userUnit && $sessionUnit && $userUnit->isAncestorOf($sessionUnit);
     }
 
     public function create(User $user): bool

@@ -248,11 +248,7 @@ class ChecklistSessionController extends Controller
 
     public function show(ChecklistSession $checklistSession): Response
     {
-        $user = request()->user();
-
-        if ($checklistSession->unit_id !== $user->unit_id) {
-            abort(403);
-        }
+        Gate::authorize('view', $checklistSession);
 
         $checklistSession->load([
             'unit:id,nama',
@@ -297,11 +293,7 @@ class ChecklistSessionController extends Controller
 
     public function checklistPage(ChecklistSession $checklistSession, Request $request): JsonResponse
     {
-        $user = $request->user();
-
-        if ($checklistSession->unit_id !== $user->unit_id) {
-            abort(403);
-        }
+        Gate::authorize('view', $checklistSession);
 
         $allEntries = ChecklistEntry::where('checklist_entries.session_id', $checklistSession->id)
             ->with([
@@ -344,11 +336,7 @@ class ChecklistSessionController extends Controller
 
     public function summary(ChecklistSession $checklistSession): Response
     {
-        $user = request()->user();
-
-        if ($checklistSession->unit_id !== $user->unit_id) {
-            abort(403);
-        }
+        Gate::authorize('view', $checklistSession);
 
         $checklistSession->load([
             'unit:id,nama',
