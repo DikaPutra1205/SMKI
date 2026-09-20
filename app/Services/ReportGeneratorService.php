@@ -363,7 +363,7 @@ class ReportGeneratorService
             $user->id,
             [
                 'report_type' => 'compliance_summary_pdf',
-                'scoped_unit_id' => count($scopedUnitIds) === 1 ? $scopedUnitIds[0] : $scopedUnitIds,
+                'scoped_unit_id' => $scopedUnitIds !== null && count($scopedUnitIds) === 1 ? $scopedUnitIds[0] : $scopedUnitIds,
                 'exported_at' => now()->toIso8601String(),
                 'ip_address' => request()->ip(),
             ]
@@ -507,7 +507,7 @@ class ReportGeneratorService
             $user->id,
             [
                 'report_type' => 'compliance_summary_csv',
-                'scoped_unit_id' => count($scopedUnitIds) === 1 ? $scopedUnitIds[0] : $scopedUnitIds,
+                'scoped_unit_id' => $scopedUnitIds !== null && count($scopedUnitIds) === 1 ? $scopedUnitIds[0] : $scopedUnitIds,
                 'exported_at' => now()->toIso8601String(),
                 'ip_address' => request()->ip(),
             ]
