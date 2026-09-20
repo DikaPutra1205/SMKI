@@ -606,7 +606,7 @@ class ComplianceOfficerTest extends TestCase
         $this->assertEquals($future->id, $findings[0]['id']);
     }
 
-    public function test_pic_unit_id_filter_is_ignored_and_stays_scoped_to_own_unit(): void
+    public function test_pic_out_of_scope_unit_filter_is_forbidden(): void
     {
         Finding::factory()->create([
             'control_id' => $this->control->id,
@@ -622,11 +622,7 @@ class ComplianceOfficerTest extends TestCase
 
         $response = $this->actingAs($this->picA)->getJson('/api/v1/compliance-officer/findings?unit_id='.$this->unitB->id);
 
-        $response->assertOk();
-        $findings = $response->json('data.data');
-
-        $this->assertCount(1, $findings);
-        $this->assertEquals($this->unitA->id, $findings[0]['unit_id']);
+        $response->assertForbidden();
     }
 
     public function test_show_finding_returns_formatted_sla_resource(): void
