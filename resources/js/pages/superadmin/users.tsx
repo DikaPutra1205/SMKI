@@ -1,5 +1,6 @@
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Modal } from '@/components/ui/Modal';
+import { Select } from '@/components/ui/Select';
 import { Toast } from '@/components/ui/Toast';
 import AppLayout from '@/layouts/AppLayout';
 import { useCan } from '@/lib/can';
@@ -323,10 +324,10 @@ export default function Users({ users, roles, units }: Props) {
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <select
+                        <Select
                             value={selectedRole}
                             onChange={(e) => setSelectedRole(e.target.value)}
-                            className="focus:border-primary focus:ring-primary rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs text-slate-700 focus:ring-1 sm:text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                            className="min-w-[160px]"
                         >
                             <option value="all">Semua Peran (Role)</option>
                             {roles.map((r) => (
@@ -334,12 +335,12 @@ export default function Users({ users, roles, units }: Props) {
                                     {r.label}
                                 </option>
                             ))}
-                        </select>
+                        </Select>
 
-                        <select
+                        <Select
                             value={selectedUnit}
                             onChange={(e) => setSelectedUnit(e.target.value)}
-                            className="focus:border-primary focus:ring-primary rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs text-slate-700 focus:ring-1 sm:text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                            className="min-w-[170px]"
                         >
                             <option value="all">Semua Unit Kerja</option>
                             <option value="none">Tanpa Unit Kerja</option>
@@ -348,7 +349,7 @@ export default function Users({ users, roles, units }: Props) {
                                     {u.nama}
                                 </option>
                             ))}
-                        </select>
+                        </Select>
                     </div>
                 </div>
 
@@ -512,10 +513,10 @@ export default function Users({ users, roles, units }: Props) {
                         <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
                             Peran Pengguna (Role) <span className="text-red-500">*</span>
                         </label>
-                        <select
+                        <Select
                             value={form.data.role_id}
                             onChange={(e) => form.setData('role_id', e.target.value)}
-                            className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                            error={form.errors.role_id}
                         >
                             <option value="">— Pilih Role —</option>
                             {roles.map((r) => (
@@ -523,18 +524,17 @@ export default function Users({ users, roles, units }: Props) {
                                     {r.label} ({r.name})
                                 </option>
                             ))}
-                        </select>
-                        {form.errors.role_id && <p className="mt-1 text-xs text-red-500">{form.errors.role_id}</p>}
+                        </Select>
                     </div>
 
                     <div>
                         <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
                             Unit Kerja <span className="font-normal text-slate-400">(Wajib untuk PIC)</span>
                         </label>
-                        <select
+                        <Select
                             value={form.data.unit_id}
                             onChange={(e) => form.setData('unit_id', e.target.value)}
-                            className="focus:border-primary focus:ring-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                            error={form.errors.unit_id}
                         >
                             <option value="">— Tanpa Unit Kerja —</option>
                             {units.map((u) => (
@@ -542,8 +542,7 @@ export default function Users({ users, roles, units }: Props) {
                                     {u.nama}
                                 </option>
                             ))}
-                        </select>
-                        {form.errors.unit_id && <p className="mt-1 text-xs text-red-500">{form.errors.unit_id}</p>}
+                        </Select>
                     </div>
                 </form>
             </Modal>

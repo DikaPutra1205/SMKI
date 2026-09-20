@@ -1,5 +1,6 @@
 import AssessmentSummarySkeleton from '@/components/skeletons/AssessmentSummarySkeleton';
 import { usePageLoading } from '@/hooks/usePageLoading';
+import { Select } from '@/components/ui/Select';
 import AppLayout from '@/layouts/AppLayout';
 import { assessmentStore } from '@/stores/assessmentStore';
 import { Head, router } from '@inertiajs/react';
@@ -556,10 +557,10 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
             {/* Filters */}
             <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
-                    <select
+                    <Select
                         value={frameworkFilter}
                         onChange={(e) => setFrameworkFilter(e.target.value)}
-                        className="focus:border-primary focus:ring-primary rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:ring-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                        className="min-w-[180px]"
                     >
                         <option value="">Semua Framework</option>
                         {frameworks.map(([name, ver]) => (
@@ -567,11 +568,11 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
                                 {name} ({ver})
                             </option>
                         ))}
-                    </select>
-                    <select
+                    </Select>
+                    <Select
                         value={kategoriFilter}
                         onChange={(e) => setKategoriFilter(e.target.value)}
-                        className="focus:border-primary focus:ring-primary rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:ring-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                        className="min-w-[160px]"
                     >
                         <option value="">Semua Kategori</option>
                         {kategoris.map((k) => (
@@ -579,7 +580,7 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
                                 {formatKategori(k)}
                             </option>
                         ))}
-                    </select>
+                    </Select>
                 </div>
                 {hasActiveFilter && (
                     <span className="text-xs text-slate-400">

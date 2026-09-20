@@ -229,7 +229,7 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
             <Head title="Manajemen Sesi Checklist - Admin Kepatuhan" />
 
             {flash?.message && flashVisible && (
-                <div className="border-border mb-4 flex items-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium shadow-sm dark:border-slate-700">
+                <div className="border-border mb-4 flex items-center gap-2 rounded-lg border bg-white px-4 py-3 text-sm font-medium shadow-sm dark:border-slate-700 dark:bg-slate-900">
                     {flash.type === 'success' ? (
                         <div className="text-success flex items-center gap-2 dark:text-emerald-400">
                             <CheckCircle2 className="h-4 w-4" />
