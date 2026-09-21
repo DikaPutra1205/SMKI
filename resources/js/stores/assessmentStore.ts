@@ -1,3 +1,5 @@
+import { resolveWorkflow } from '@/lib/workflow-status';
+
 export interface ControlData {
     id: number;
     framework_id: number;
@@ -121,11 +123,17 @@ class AssessmentStore {
         return this._cachedAllEntries;
     }
 
-    updateEntry(id: number, changes: Partial<EntryItem>) {
+    updateEntry(id: number, changes: Partial<EntryItem> & { tidak_berlaku?: boolean }) {
         const entry = this._entries.get(id);
         if (!entry) return;
 
-        this._entries.set(id, { ...entry, ...changes });
+        const { tidak_berlaku, ...restChanges } = changes;
+        const updated = { ...entry, ...restChanges };
+
+        const isNa = tidak_berlaku !== undefined ? tidak_berlaku : updated.status === 'tidak_berlaku';
+        updated.status = resolveWorkflow(updated.catatan, !!updated.active_evidence, isNa);
+
+        this._entries.set(id, updated);
         this._dirtyIds.add(id);
         this._rebuildCache();
         this._notify();
@@ -135,7 +143,10 @@ class AssessmentStore {
         const entry = this._entries.get(id);
         if (!entry) return;
 
-        this._entries.set(id, { ...entry, active_evidence: evidence });
+        const isNa = entry.status === 'tidak_berlaku';
+        const newStatus = resolveWorkflow(entry.catatan, true, isNa);
+
+        this._entries.set(id, { ...entry, active_evidence: evidence, status: newStatus });
         this._rebuildCache();
         this._notify();
     }

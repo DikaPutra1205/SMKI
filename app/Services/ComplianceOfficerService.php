@@ -282,9 +282,12 @@ class ComplianceOfficerService
         $query = Risk::with(['controls.framework', 'unit:id,nama'])->orderByDesc('id');
 
         if ($scopedUnitIds !== null) {
-            $query->where(function ($q) use ($scopedUnitIds) {
-                $q->whereIn('unit_id', $scopedUnitIds)
-                    ->orWhereHas('controls.checklistEntries', fn ($cq) => $cq->whereIn('unit_id', $scopedUnitIds));
+            $query->where(function ($q) use ($scopedUnitIds, $user) {
+                $q->whereIn('unit_id', $scopedUnitIds);
+                // PIC also sees unassigned (NULL unit_id) risks.
+                if ($user->isPic()) {
+                    $q->orWhereNull('unit_id');
+                }
             });
         }
 
@@ -324,9 +327,12 @@ class ComplianceOfficerService
 
         $query = Risk::query();
         if ($scopedUnitIds !== null) {
-            $query->where(function ($q) use ($scopedUnitIds) {
-                $q->whereIn('unit_id', $scopedUnitIds)
-                    ->orWhereHas('controls.checklistEntries', fn ($cq) => $cq->whereIn('unit_id', $scopedUnitIds));
+            $query->where(function ($q) use ($scopedUnitIds, $user) {
+                $q->whereIn('unit_id', $scopedUnitIds);
+                // PIC also sees unassigned (NULL unit_id) risks.
+                if ($user->isPic()) {
+                    $q->orWhereNull('unit_id');
+                }
             });
         }
 
@@ -360,16 +366,10 @@ class ComplianceOfficerService
         $risk = Risk::with(['controls.framework', 'unit:id,nama'])->findOrFail($id);
 
         if ($user->isPic()) {
-            $isAuthorized = false;
-            if ($user->unit_id !== null && $risk->unit_id !== null) {
-                $isAuthorized = (int) $risk->unit_id === (int) $user->unit_id;
-            } elseif ($user->unit_id !== null) {
-                $isAuthorized = $risk->controls()
-                    ->whereHas('checklistEntries', fn ($q) => $q->where('unit_id', $user->unit_id))
-                    ->exists();
-            } else {
-                $isAuthorized = true;
-            }
+            $scopedUnitIds = $user->accessibleUnitIds();
+            $isAuthorized = $scopedUnitIds === null
+                || $risk->unit_id === null
+                || in_array((int) $risk->unit_id, $scopedUnitIds, true);
 
             if (! $isAuthorized) {
                 throw new AuthorizationException('Anda tidak memiliki wewenang untuk melihat risiko unit lain.');
@@ -433,16 +433,10 @@ class ComplianceOfficerService
     public function updateRisk(User $user, Risk $risk, array $data): Risk
     {
         if ($user->isPic()) {
-            $isAuthorized = false;
-            if ($user->unit_id !== null && $risk->unit_id !== null) {
-                $isAuthorized = (int) $risk->unit_id === (int) $user->unit_id;
-            } elseif ($user->unit_id !== null) {
-                $isAuthorized = $risk->controls()
-                    ->whereHas('checklistEntries', fn ($q) => $q->where('unit_id', $user->unit_id))
-                    ->exists();
-            } else {
-                $isAuthorized = true;
-            }
+            $scopedUnitIds = $user->accessibleUnitIds();
+            $isAuthorized = $scopedUnitIds === null
+                || $risk->unit_id === null
+                || in_array((int) $risk->unit_id, $scopedUnitIds, true);
 
             if (! $isAuthorized) {
                 throw new AuthorizationException('Anda tidak memiliki wewenang untuk mengubah risiko unit lain.');
@@ -461,7 +455,7 @@ class ComplianceOfficerService
         }
 
         return DB::transaction(function () use ($user, $risk, $data) {
-            $oldValues = $risk->only(['level_risiko', 'pemilik_risiko', 'rencana_mitigasi', 'status', 'catatan_admin']);
+            $oldValues = $risk->only(['unit_id', 'level_risiko', 'pemilik_risiko', 'rencana_mitigasi', 'status', 'catatan_admin']);
             $oldValues['control_ids'] = $risk->controls()->allRelatedIds()->toArray();
 
             $updateData = [];
@@ -488,8 +482,8 @@ class ComplianceOfficerService
                 $updateData['pemilik_risiko'] = $data['pemilik_risiko'];
             }
 
-            if (array_key_exists('unit_id', $data) && $data['unit_id'] !== null) {
-                $updateData['unit_id'] = $data['unit_id'];
+            if (array_key_exists('unit_id', $data)) {
+                $updateData['unit_id'] = $data['unit_id'] === '' ? null : $data['unit_id'];
             }
 
             if (array_key_exists('admin_notes', $data)) {

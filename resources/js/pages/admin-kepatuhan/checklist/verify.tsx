@@ -145,7 +145,7 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
     const [actionSubmitting, setActionSubmitting] = useState<'approve' | 'reject' | null>(null);
 
     useEffect(() => {
-        setAdminNote(entry?.tanggal_verifikasi ? entry?.catatan_admin || '' : '');
+        setAdminNote(entry?.catatan_admin || '');
         setMaturity(entry?.level_maturity === null || entry?.level_maturity === undefined ? '' : String(entry.level_maturity));
         setNoteError(null);
         setConfirmAction(null);
@@ -222,6 +222,9 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
         : null;
     const hasEvidence = Boolean(entry.active_evidence?.file_url);
     const alreadyVerified = Boolean(entry.tanggal_verifikasi);
+    // Rejected entries carry catatan_admin with tanggal_verifikasi=null
+    // (approve clears note, reject clears timestamp) -> surface note explicitly.
+    const hasRejectedNote = !alreadyVerified && !!entry.catatan_admin?.trim();
 
     return (
         <>
@@ -389,6 +392,17 @@ function DetailPanel({ entry, onClose, onPreviewEvidence }: DetailPanelProps) {
                                 {entry.admin?.name ? ` oleh ${entry.admin.name}` : ''}
                             </p>
                             {entry.catatan_admin && <p className="mt-1 text-xs text-slate-700 dark:text-slate-300">{entry.catatan_admin}</p>}
+                        </div>
+                    )}
+
+                    {/* Rejected note (visible while entry awaits PIC follow-up) */}
+                    {hasRejectedNote && (
+                        <div className="rounded-xl border border-rose-200 bg-rose-50/70 px-3.5 py-3 dark:border-rose-800/60 dark:bg-rose-950/30">
+                            <p className="text-xs font-semibold text-rose-800 dark:text-rose-300">
+                                Ditolak · dikembalikan ke PIC
+                                {entry.admin?.name ? ` oleh ${entry.admin.name}` : ''}
+                            </p>
+                            <p className="mt-1 text-xs text-slate-700 dark:text-slate-300">{entry.catatan_admin}</p>
                         </div>
                     )}
 
@@ -866,7 +880,19 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                                                 )}
                                             </td>
                                             <td className="px-4 py-3">
-                                                {entry.tanggal_verifikasi ? (
+                                                {entry.catatan_admin?.trim() ? (
+                                                    <div className="flex flex-col">
+                                                        <span className="text-xs font-semibold text-rose-600 dark:text-rose-400">
+                                                            Ditolak
+                                                        </span>
+                                                        <span
+                                                            className="mt-0.5 line-clamp-2 max-w-[220px] text-[11px] font-medium text-slate-500 dark:text-slate-400"
+                                                            title={entry.catatan_admin}
+                                                        >
+                                                            {entry.catatan_admin}
+                                                        </span>
+                                                    </div>
+                                                ) : entry.tanggal_verifikasi ? (
                                                     <div className="flex flex-col">
                                                         <span className="text-xs font-semibold text-slate-900 dark:text-slate-200">
                                                             {fmtDateTime(entry.tanggal_verifikasi)}

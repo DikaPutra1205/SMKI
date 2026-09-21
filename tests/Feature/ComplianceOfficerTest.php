@@ -833,11 +833,8 @@ class ComplianceOfficerTest extends TestCase
 
     public function test_pic_risks_are_scoped_to_their_unit_via_checklist_entries(): void
     {
-        ChecklistEntry::factory()->create([
-            'control_id' => $this->control->id,
-            'unit_id' => $this->unitA->id,
-        ]);
         $riskA = Risk::factory()->withControl($this->control)->create([
+            'unit_id' => $this->unitA->id,
             'level_risiko' => Risk::LEVEL_HIGH,
         ]);
 
@@ -845,11 +842,8 @@ class ComplianceOfficerTest extends TestCase
             'framework_id' => $this->control->framework_id,
             'kode_klausul' => 'A.99.99',
         ]);
-        ChecklistEntry::factory()->create([
-            'control_id' => $controlB->id,
-            'unit_id' => $this->unitB->id,
-        ]);
         $riskB = Risk::factory()->withControl($controlB)->create([
+            'unit_id' => $this->unitB->id,
             'level_risiko' => Risk::LEVEL_LOW,
         ]);
 
@@ -865,11 +859,8 @@ class ComplianceOfficerTest extends TestCase
 
     public function test_risk_matrix_for_pic_is_scoped_to_their_unit(): void
     {
-        ChecklistEntry::factory()->create([
-            'control_id' => $this->control->id,
-            'unit_id' => $this->unitA->id,
-        ]);
         Risk::factory()->withControl($this->control)->create([
+            'unit_id' => $this->unitA->id,
             'level_risiko' => Risk::LEVEL_CRITICAL,
         ]);
 
@@ -877,11 +868,8 @@ class ComplianceOfficerTest extends TestCase
             'framework_id' => $this->control->framework_id,
             'kode_klausul' => 'A.99.99',
         ]);
-        ChecklistEntry::factory()->create([
-            'control_id' => $controlB->id,
-            'unit_id' => $this->unitB->id,
-        ]);
         Risk::factory()->withControl($controlB)->create([
+            'unit_id' => $this->unitB->id,
             'level_risiko' => Risk::LEVEL_HIGH,
         ]);
 
@@ -1093,6 +1081,33 @@ class ComplianceOfficerTest extends TestCase
                 ->has('matrix.by_status')
                 ->has('workUnits')
                 ->has('filters'));
+    }
+
+    public function test_web_risks_page_scopes_work_units_for_pic(): void
+    {
+        $this->withoutVite();
+
+        $child = WorkUnit::factory()->create(['nama' => 'Child Unit A', 'parent_id' => $this->unitA->id]);
+
+        // Admin sees all units.
+        $this->actingAs($this->admin)
+            ->get('/admin/kepatuhan/risks')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('admin-kepatuhan/risks', false)
+                ->where('workUnits', fn ($units) => collect($units)->pluck('id')->contains($this->unitA->id)
+                    && collect($units)->pluck('id')->contains($this->unitB->id)
+                    && collect($units)->pluck('id')->contains($child->id)));
+
+        // PIC sees only own subtree (own unit + descendants).
+        $this->actingAs($this->picA)
+            ->get('/admin/kepatuhan/risks')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('admin-kepatuhan/risks', false)
+                ->where('workUnits', fn ($units) => collect($units)->pluck('id')->contains($this->unitA->id)
+                    && collect($units)->pluck('id')->contains($child->id)
+                    && ! collect($units)->pluck('id')->contains($this->unitB->id)));
     }
 
     public function test_web_update_finding_redirects_back_with_flash(): void

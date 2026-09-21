@@ -154,7 +154,7 @@ class ComplianceOfficerController extends Controller
         $filters = $request->only(['risk_level', 'level_risiko', 'status', 'unit_id', 'search']);
         $risks = $this->complianceOfficerService->getRisks($user, $filters, 20);
         $matrix = $this->complianceOfficerService->getRiskMatrix($user);
-        $workUnits = $this->complianceService->getWorkUnits();
+        $workUnits = $this->complianceService->getWorkUnits($user);
         $controls = Control::with('framework:id,nama,versi')
             ->select('id', 'framework_id', 'kode_klausul', 'judul')
             ->orderBy('kode_klausul')

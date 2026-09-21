@@ -99,6 +99,11 @@ function formatKategori(kategori: string): string {
     return kategori.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+function formatStatusLabel(status?: string | null): string {
+    if (!status) return 'Belum Dinilai';
+    return status.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 function fetchChecklistPage(sessionId: number, page: number): Promise<ChecklistPageResponse> {
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
@@ -182,16 +187,22 @@ function EntryItemRow({
     if (!entry) return null;
 
     const isVerified = entry.tanggal_verifikasi !== null;
-    const hasAdminCatatan = !!entry.catatan_admin;
+    const hasAdminCatatan = !!entry.catatan_admin?.trim();
+    // Rejected entries carry catatan_admin with tanggal_verifikasi=null
+    // (approve clears note, reject clears timestamp) -> red tint must key
+    // off verdict presence, not verification timestamp alone.
+    const hasRejectedNote = hasAdminCatatan && !isVerified;
+    const showVerdict = isVerified || hasRejectedNote;
     const isEvidenceMissing = !entry.active_evidence;
     const isNa = entry.status === 'tidak_berlaku';
     const workflowStatus = resolveWorkflow(entry.catatan, !!entry.active_evidence, isNa);
     const isIncomplete = !isEntryComplete(workflowStatus, entry.catatan);
     const showErrorLabels = highlight && isIncomplete;
 
-    // A verified entry's color is driven by whether the admin left a note,
+    // A verdict's color is driven by whether the admin left a note,
     // not by the PIC's live status — so it stays fixed on the PIC screen.
-    const verifiedRowTint = isVerified
+    // Rejected (note, no timestamp) -> red; approved (timestamp, no note) -> green.
+    const verifiedRowTint = showVerdict
         ? hasAdminCatatan
             ? 'rounded-lg border-l-4 border-l-red-400 bg-red-50/40 pr-2 pl-3 dark:bg-red-950/20'
             : 'rounded-lg border-l-4 border-l-emerald-400 bg-emerald-50/40 pr-2 pl-3 dark:bg-emerald-950/20'
@@ -201,7 +212,7 @@ function EntryItemRow({
         <div
             id={`entry-row-${entryId}`}
             className={`border-b border-slate-100 py-5 last:border-b-0 dark:border-slate-800 ${
-                isVerified
+                showVerdict
                     ? verifiedRowTint
                     : showErrorLabels
                       ? 'rounded-lg border-l-4 border-l-amber-400 bg-amber-50/50 pr-2 pl-3 dark:bg-amber-950/20'
@@ -227,7 +238,7 @@ function EntryItemRow({
 
             {entry.control.deskripsi && <p className="mb-3 text-xs leading-relaxed text-slate-500">{entry.control.deskripsi}</p>}
 
-            {isVerified &&
+            {showVerdict &&
                 (() => {
                     const verifiedStatusColor = hasAdminCatatan ? 'text-red-700 dark:text-red-400' : 'text-emerald-700 dark:text-emerald-400';
                     return (
@@ -247,7 +258,7 @@ function EntryItemRow({
                 })()}
 
             <div className="mb-3 flex flex-wrap items-center gap-2">
-                <StatusBadge tone={statusTone(entry.status)}>{entry.status?.replace(/_/g, ' ') || 'Belum dinilai'}</StatusBadge>
+                <StatusBadge tone={statusTone(entry.status)}>{formatStatusLabel(entry.status)}</StatusBadge>
                 {!isVerified && (
                     <button
                         type="button"

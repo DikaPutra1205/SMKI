@@ -6,6 +6,7 @@ use App\Models\ChecklistEntry;
 use App\Models\ChecklistSession;
 use App\Models\Control;
 use App\Models\Framework;
+use App\Models\User;
 use App\Models\WorkUnit;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
@@ -47,13 +48,21 @@ class ComplianceService
 
     /**
      * Get work units list for selection.
+     * PIC users only see units inside their own visibility subtree
+     * (own unit + descendants via accessibleUnitIds()).
      */
-    public function getWorkUnits(): array
+    public function getWorkUnits(?User $user = null): array
     {
-        return WorkUnit::select('id', 'nama')
-            ->orderBy('nama')
-            ->get()
-            ->toArray();
+        $query = WorkUnit::select('id', 'nama')->orderBy('nama');
+
+        if ($user !== null && $user->isPic()) {
+            $scopedUnitIds = $user->accessibleUnitIds();
+            if ($scopedUnitIds !== null) {
+                $query->whereIn('id', $scopedUnitIds);
+            }
+        }
+
+        return $query->get()->toArray();
     }
 
     /**
