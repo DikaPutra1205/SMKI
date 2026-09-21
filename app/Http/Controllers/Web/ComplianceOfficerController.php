@@ -184,7 +184,7 @@ class ComplianceOfficerController extends Controller
     }
 
     /**
-     * Update risk mitigation plan, status, deadline, and notes.
+     * Update risk mitigation plan, status, and notes.
      */
     public function updateRisk(UpdateRiskRequest $request, Risk $risk): RedirectResponse
     {

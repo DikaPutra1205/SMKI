@@ -401,7 +401,6 @@ class ComplianceOfficerService
                 'pemilik_risiko' => $data['pemilik_risiko'] ?? $data['risk_owner'] ?? $user->name,
                 'rencana_mitigasi' => $data['rencana_mitigasi'] ?? $data['mitigation_plan'] ?? null,
                 'status' => $data['status'] ?? Risk::STATUS_OPEN,
-                'deadline' => $data['deadline'] ?? null,
                 'catatan_admin' => $data['catatan_admin'] ?? $data['admin_notes'] ?? null,
             ]);
 
@@ -419,7 +418,6 @@ class ComplianceOfficerService
                     'unit_id' => $risk->unit_id,
                     'level_risiko' => $risk->level_risiko,
                     'status' => $risk->status,
-                    'deadline' => $risk->deadline?->toDateString(),
                 ]
             );
 
@@ -430,7 +428,7 @@ class ComplianceOfficerService
     }
 
     /**
-     * Update risk mitigation plan, status, deadline, and notes.
+     * Update risk mitigation plan, status, and notes.
      */
     public function updateRisk(User $user, Risk $risk, array $data): Risk
     {
@@ -450,13 +448,12 @@ class ComplianceOfficerService
                 throw new AuthorizationException('Anda tidak memiliki wewenang untuk mengubah risiko unit lain.');
             }
 
-            // PIC cannot edit level_risiko, pemilik_risiko, deadline, catatan_admin, or unit_id
+            // PIC cannot edit level_risiko, pemilik_risiko, catatan_admin, or unit_id
             unset(
                 $data['risk_level'],
                 $data['level_risiko'],
                 $data['risk_owner'],
                 $data['pemilik_risiko'],
-                $data['deadline'],
                 $data['admin_notes'],
                 $data['catatan_admin'],
                 $data['unit_id']
@@ -464,7 +461,7 @@ class ComplianceOfficerService
         }
 
         return DB::transaction(function () use ($user, $risk, $data) {
-            $oldValues = $risk->only(['level_risiko', 'pemilik_risiko', 'rencana_mitigasi', 'status', 'deadline', 'catatan_admin']);
+            $oldValues = $risk->only(['level_risiko', 'pemilik_risiko', 'rencana_mitigasi', 'status', 'catatan_admin']);
             $oldValues['control_ids'] = $risk->controls()->allRelatedIds()->toArray();
 
             $updateData = [];
@@ -493,10 +490,6 @@ class ComplianceOfficerService
 
             if (array_key_exists('unit_id', $data) && $data['unit_id'] !== null) {
                 $updateData['unit_id'] = $data['unit_id'];
-            }
-
-            if (array_key_exists('deadline', $data)) {
-                $updateData['deadline'] = $data['deadline'];
             }
 
             if (array_key_exists('admin_notes', $data)) {
@@ -685,22 +678,10 @@ class ComplianceOfficerService
      */
     protected function formatRiskResource(Risk $risk): Risk
     {
-        $today = Carbon::today();
-        $deadline = $risk->deadline ? Carbon::parse($risk->deadline) : null;
-        $isOverdue = false;
-        $daysRemaining = null;
-
-        if ($deadline) {
-            $isOverdue = ($risk->status === Risk::STATUS_OPEN) && $deadline->isBefore($today);
-            $daysRemaining = (int) $today->diffInDays($deadline, false);
-        }
-
         $risk->setAttribute('risk_level', $risk->level_risiko);
         $risk->setAttribute('risk_owner', $risk->pemilik_risiko);
         $risk->setAttribute('mitigation_plan', $risk->rencana_mitigasi);
         $risk->setAttribute('admin_notes', $risk->catatan_admin);
-        $risk->setAttribute('is_overdue', $isOverdue);
-        $risk->setAttribute('days_remaining', $daysRemaining);
 
         return $risk;
     }

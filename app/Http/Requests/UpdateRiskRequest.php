@@ -56,7 +56,7 @@ class UpdateRiskRequest extends FormRequest
             'risk_owner' => 'nullable|string|max:255',
             'pemilik_risiko' => 'nullable|string|max:255',
             'unit_id' => 'nullable|exists:work_units,id',
-            'deadline' => 'nullable|date',
+
             'catatan_admin' => 'nullable|string|max:3000',
             'admin_notes' => 'nullable|string|max:3000',
         ];

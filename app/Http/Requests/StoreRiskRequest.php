@@ -41,7 +41,7 @@ class StoreRiskRequest extends FormRequest
             'rencana_mitigasi' => 'nullable|string|max:3000',
             'mitigation_plan' => 'nullable|string|max:3000',
             'status' => 'sometimes|in:open,mitigated,accepted',
-            'deadline' => 'nullable|date',
+
             'catatan_admin' => 'nullable|string|max:3000',
             'admin_notes' => 'nullable|string|max:3000',
         ];

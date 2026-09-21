@@ -96,7 +96,6 @@ class RiskController extends Controller
                 $data['level_risiko'],
                 $data['risk_owner'],
                 $data['pemilik_risiko'],
-                $data['deadline'],
                 $data['admin_notes'],
                 $data['catatan_admin'],
                 $data['unit_id']
@@ -130,10 +129,6 @@ class RiskController extends Controller
 
         if (array_key_exists('unit_id', $data)) {
             $updateData['unit_id'] = $data['unit_id'];
-        }
-
-        if (array_key_exists('deadline', $data)) {
-            $updateData['deadline'] = $data['deadline'];
         }
 
         if (array_key_exists('admin_notes', $data)) {
