@@ -208,11 +208,11 @@
 
             <!-- Modul Keamanan Akun -->
             <div class="module-group">
-                <div class="module-title">3. Keamanan Akun Pengguna</div>
+                <div class="module-title">4. Keamanan Akun Pengguna</div>
                 
                 <div class="template-card" data-code="4-1" onclick="loadPreview('/email-preview/4-1-auth-reset-password', '4-1', this)">
                     <div class="card-header">
-                        <span class="card-tag tag-info">3.1 SECURITY</span>
+                        <span class="card-tag tag-info">4.1 SECURITY</span>
                         <span class="card-meta">Sistem &rarr; User</span>
                     </div>
                     <div class="card-title">Permintaan Reset Kata Sandi</div>

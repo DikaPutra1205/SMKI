@@ -1,6 +1,6 @@
 @extends('emails.layouts.smki', [
     'subject' => "[SMKI] Pengingat Tenggat Temuan: {$kodeKlausul}",
-    'preheader' => "Tenggat penanganan temuan {$kodeKlausul} ({!$daysRemaining} hari). Harap segera tindak lanjuti sebelum batas waktu berakhir.",
+    'preheader' => "Tenggat penanganan temuan {$kodeKlausul} ({$daysRemaining} hari). Harap segera tindak lanjuti sebelum batas waktu berakhir.",
 ])
 
 @section('content')
