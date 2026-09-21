@@ -274,6 +274,47 @@ class RiskManagementTest extends TestCase
         $this->assertEquals(Risk::STATUS_MITIGATED, $riskA->fresh()->status);
     }
 
+    public function test_pic_list_shows_only_own_unit_and_unassigned_risks(): void
+    {
+        $own = Risk::factory()->withControl($this->control)->create([
+            'unit_id' => $this->unitA->id,
+            'pemilik_risiko' => 'Owner Unit A',
+        ]);
+        $unassigned = Risk::factory()->withControl($this->control)->create([
+            'unit_id' => null,
+            'pemilik_risiko' => 'Unassigned Owner',
+        ]);
+        $other = Risk::factory()->withControl($this->control)->create([
+            'unit_id' => $this->unitB->id,
+            'pemilik_risiko' => 'Owner Unit B',
+        ]);
+
+        foreach (['/api/risks', '/api/v1/compliance-officer/risks'] as $endpoint) {
+            $items = $this->actingAs($this->picA)->getJson($endpoint)->assertOk()->json('data.data');
+            $ids = collect($items)->pluck('id')->all();
+            $this->assertContains($own->id, $ids);
+            $this->assertContains($unassigned->id, $ids);
+            $this->assertNotContains($other->id, $ids);
+        }
+    }
+
+    public function test_pic_can_view_unassigned_risk_but_not_other_unit_risk(): void
+    {
+        $unassigned = Risk::factory()->withControl($this->control)->create([
+            'unit_id' => null,
+            'status' => Risk::STATUS_OPEN,
+        ]);
+        $other = Risk::factory()->withControl($this->control)->create([
+            'unit_id' => $this->unitB->id,
+            'status' => Risk::STATUS_OPEN,
+        ]);
+
+        foreach (['/api/risks', '/api/v1/compliance-officer/risks'] as $base) {
+            $this->actingAs($this->picA)->getJson("{$base}/{$unassigned->id}")->assertOk();
+            $this->actingAs($this->picA)->getJson("{$base}/{$other->id}")->assertForbidden();
+        }
+    }
+
     public function test_pic_cannot_view_other_unit_risk_via_generic_api(): void
     {
         $riskB = Risk::factory()->withControl($this->control)->create([
@@ -321,5 +362,42 @@ class RiskManagementTest extends TestCase
         $this->assertEquals(Risk::LEVEL_CRITICAL, $fresh->level_risiko);
         $this->assertEquals('Original Owner', $fresh->pemilik_risiko);
         $this->assertEquals('Original Admin Note', $fresh->catatan_admin);
+    }
+
+    public function test_admin_can_reassign_risk_unit_id(): void
+    {
+        $risk = Risk::factory()->withControl($this->control)->create([
+            'unit_id' => $this->unitA->id,
+            'status' => Risk::STATUS_OPEN,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->putJson("/api/v1/compliance-officer/risks/{$risk->id}", [
+                'unit_id' => $this->unitB->id,
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.unit_id', $this->unitB->id)
+            ->assertJsonPath('data.unit.id', $this->unitB->id);
+
+        $this->assertEquals($this->unitB->id, $risk->fresh()->unit_id);
+    }
+
+    public function test_pic_cannot_reassign_risk_unit_id(): void
+    {
+        $risk = Risk::factory()->withControl($this->control)->create([
+            'unit_id' => $this->unitA->id,
+            'status' => Risk::STATUS_OPEN,
+        ]);
+
+        $this->actingAs($this->picA)
+            ->putJson("/api/v1/compliance-officer/risks/{$risk->id}", [
+                'status' => Risk::STATUS_MITIGATED,
+                'unit_id' => $this->unitB->id,
+            ])
+            ->assertOk();
+
+        $fresh = $risk->fresh();
+        $this->assertEquals($this->unitA->id, $fresh->unit_id);
+        $this->assertEquals(Risk::STATUS_MITIGATED, $fresh->status);
     }
 }

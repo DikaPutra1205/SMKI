@@ -23,10 +23,12 @@ class RiskController extends Controller
         $query = Risk::with(['controls.framework', 'unit']);
 
         if ($user->isPic()) {
-            $query->where(function ($q) use ($user) {
-                $q->where('unit_id', $user->unit_id)
-                    ->orWhereHas('controls.checklistEntries', fn ($cq) => $cq->where('unit_id', $user->unit_id));
-            });
+            $scopedUnitIds = $user->accessibleUnitIds();
+            if ($scopedUnitIds !== null) {
+                $query->where(function ($q) use ($scopedUnitIds) {
+                    $q->whereIn('unit_id', $scopedUnitIds)->orWhereNull('unit_id');
+                });
+            }
         } elseif ($request->filled('unit_id')) {
             $query->where('unit_id', $request->unit_id);
         }
@@ -128,7 +130,7 @@ class RiskController extends Controller
         }
 
         if (array_key_exists('unit_id', $data)) {
-            $updateData['unit_id'] = $data['unit_id'];
+            $updateData['unit_id'] = $data['unit_id'] === '' ? null : $data['unit_id'];
         }
 
         if (array_key_exists('admin_notes', $data)) {

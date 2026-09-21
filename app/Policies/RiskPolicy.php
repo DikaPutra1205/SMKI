@@ -13,17 +13,17 @@ class RiskPolicy
             return true;
         }
 
-        if ($user->unit_id !== null && $risk->unit_id !== null) {
-            return (int) $risk->unit_id === (int) $user->unit_id;
+        $scopedUnitIds = $user->accessibleUnitIds();
+        if ($scopedUnitIds === null) {
+            return true;
         }
 
-        if ($user->unit_id !== null) {
-            return $risk->controls()
-                ->whereHas('checklistEntries', fn ($q) => $q->where('unit_id', $user->unit_id))
-                ->exists();
+        // PIC sees only own-unit risks plus unassigned (NULL unit_id) risks.
+        if ($risk->unit_id === null) {
+            return true;
         }
 
-        return true;
+        return in_array((int) $risk->unit_id, $scopedUnitIds, true);
     }
 
     /**
