@@ -173,13 +173,15 @@ class FindingAuthzGapTest extends TestCase
             'catatan' => 'Catatan progres PIC tanpa ganti status.',
         ]);
 
-        // ...and the initial admin note is preserved, not overwritten.
+        // ...and the PIC latest note persists to its own column...
         $fresh = $finding->fresh();
+        $this->assertSame('Catatan progres PIC tanpa ganti status.', $fresh->catatan);
+        // ...while the admin note is preserved, not overwritten.
         $this->assertSame('Catatan awal dari admin.', $fresh->catatan_admin);
         $this->assertSame($finding->deadline->toDateString(), $fresh->deadline?->toDateString());
     }
 
-    public function test_note_only_update_preserves_initial_catatan_admin(): void
+    public function test_note_only_update_writes_admin_catatan_admin(): void
     {
         $finding = $this->makeFinding();
 
@@ -195,7 +197,8 @@ class FindingAuthzGapTest extends TestCase
             'catatan' => 'Catatan admin tanpa ganti status.',
         ]);
 
-        $this->assertSame('Catatan awal dari admin.', $finding->fresh()->catatan_admin);
+        // Role-owned latest note: admin generic note lands in catatan_admin.
+        $this->assertSame('Catatan admin tanpa ganti status.', $finding->fresh()->catatan_admin);
     }
 
     public function test_admin_can_still_change_deadline_and_category_via_legacy_api(): void

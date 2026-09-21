@@ -67,6 +67,7 @@ class ComplianceOfficerService
             $search = mb_strtolower(trim($filters['search']));
             $query->where(function ($q) use ($search) {
                 $q->whereRaw('LOWER(catatan_admin) LIKE ?', ["%{$search}%"])
+                    ->orWhereRaw('LOWER(catatan) LIKE ?', ["%{$search}%"])
                     ->orWhereHas('control', fn ($cq) => $cq->whereRaw('LOWER(kode_klausul) LIKE ?', ["%{$search}%"])->orWhereRaw('LOWER(judul) LIKE ?', ["%{$search}%"]));
             });
         }
@@ -187,6 +188,12 @@ class ComplianceOfficerService
             $updateData = [];
 
             $note = $data['catatan'] ?? $data['notes'] ?? $data['admin_notes'] ?? $data['catatan_admin'] ?? null;
+            if (! $user->isPic()) {
+                $adminNote = $data['catatan_admin'] ?? $data['admin_notes'] ?? $data['catatan'] ?? $data['notes'] ?? null;
+                if ($adminNote !== null && trim((string) $adminNote) !== '') {
+                    $note = $adminNote;
+                }
+            }
 
             if ($statusChanged && $user->isPic() && $newStatus === Finding::STATUS_CLOSED) {
                 throw new AuthorizationException('PIC tidak berwenang menutup dan memverifikasi temuan. Penutupan temuan hanya dapat dilakukan oleh Admin Kepatuhan.');
@@ -194,8 +201,8 @@ class ComplianceOfficerService
 
             // Every meaningful mutation gets an audit trail entry. A note attached
             // without a status change (e.g. PIC "Catat Progres") is recorded as a
-            // same-status comment, while catatan_admin ("Catatan Awal Temuan") is
-            // preserved and never overwritten by later updates.
+            // same-status comment, while role-owned latest notes persist to their
+            // own columns (`catatan` for PIC, `catatan_admin` for admin).
             if ($statusChanged || ($note !== null && trim($note) !== '')) {
                 FindingStatusHistory::create([
                     'finding_id' => $finding->id,
@@ -230,6 +237,20 @@ class ComplianceOfficerService
 
             if (array_key_exists('pic_id', $data) && $data['pic_id'] !== null) {
                 $updateData['pic_id'] = $data['pic_id'];
+            }
+
+            // Role-owned latest notes: PIC writes `catatan`, admin writes `catatan_admin`.
+            // History stays full audit trail; these columns hold counterpart-visible latest state.
+            if ($user->isPic()) {
+                $picNote = $data['catatan'] ?? $data['notes'] ?? null;
+                if ($picNote !== null && trim((string) $picNote) !== '') {
+                    $updateData['catatan'] = $picNote;
+                }
+            } else {
+                $adminNote = $data['catatan_admin'] ?? $data['admin_notes'] ?? $data['catatan'] ?? $data['notes'] ?? null;
+                if ($adminNote !== null && trim((string) $adminNote) !== '') {
+                    $updateData['catatan_admin'] = $adminNote;
+                }
             }
 
             if (! empty($updateData)) {

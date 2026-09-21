@@ -68,6 +68,9 @@ class FindingController extends Controller
         $note = $data['catatan'] ?? $data['catatan_admin'] ?? $data['admin_notes'] ?? 'Temuan audit diterbitkan.';
         $data['catatan_admin'] = $note;
 
+        // PIC-owned column is never set at publish time; keep create admin-owned.
+        unset($data['catatan'], $data['notes']);
+
         $finding = Finding::create($data);
 
         FindingStatusHistory::create([

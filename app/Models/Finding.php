@@ -20,6 +20,7 @@ class Finding extends Model
         'status',
         'deadline',
         'catatan_admin',
+        'catatan',
         'tanggal_verifikasi',
     ];
 

@@ -26,6 +26,7 @@ class FindingFactory extends Factory
             'status' => fake()->randomElement([Finding::STATUS_OPEN, Finding::STATUS_IN_PROGRESS, Finding::STATUS_CLOSED]),
             'deadline' => now()->addDays(14),
             'catatan_admin' => fake()->optional()->sentence(),
+            'catatan' => null,
             'tanggal_verifikasi' => null,
         ];
     }

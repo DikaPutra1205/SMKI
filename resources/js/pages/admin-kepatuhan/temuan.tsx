@@ -65,6 +65,7 @@ export interface FindingItem {
     verified_at: string | null;
     catatan_admin?: string | null;
     admin_notes?: string | null;
+    catatan?: string | null;
     control?: {
         id: number;
         kode_klausul: string;
@@ -441,15 +442,18 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
 
     useEffect(() => {
         if (detailTarget) {
+            const ownNote = isUserPic
+                ? (detailTarget.catatan ?? '')
+                : ((detailTarget.admin_notes as string) || detailTarget.catatan_admin || '');
             setUpdateData({
                 status: detailTarget.status || 'open',
                 category: detailTarget.kategori || 'minor',
                 deadline: detailTarget.deadline ? detailTarget.deadline.substring(0, 10) : '',
-                catatan: '',
+                catatan: ownNote ?? '',
             });
             setShowNoteFormOnSameStatus(false);
         }
-    }, [detailTarget, setUpdateData]);
+    }, [detailTarget, setUpdateData, isUserPic]);
 
     // Keep detailTarget fresh after props change
     useEffect(() => {
@@ -463,11 +467,14 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
 
     function handleCancelUpdate() {
         if (detailTarget) {
+            const ownNote = isUserPic
+                ? (detailTarget.catatan ?? '')
+                : ((detailTarget.admin_notes as string) || detailTarget.catatan_admin || '');
             setUpdateData({
                 status: detailTarget.status || 'open',
                 category: detailTarget.kategori || 'minor',
                 deadline: detailTarget.deadline ? detailTarget.deadline.substring(0, 10) : '',
-                catatan: '',
+                catatan: ownNote ?? '',
             });
         }
         setShowNoteFormOnSameStatus(false);
@@ -897,7 +904,7 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                             <div>
                                 <div className="mb-1 flex items-center justify-between">
                                     <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                                        Catatan Tindak Lanjut / Alasan <span className="text-rose-500">*</span>
+                                        {isUserPic ? 'Catatan PIC / Alasan' : 'Catatan Admin / Alasan'} <span className="text-rose-500">*</span>
                                     </label>
                                     <span className="text-[10px] text-slate-400">Tercatat di Audit Trail</span>
                                 </div>
@@ -906,6 +913,7 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                                     onChange={(e) => setUpdateData('catatan', e.target.value)}
                                     required
                                     rows={3}
+                                    maxLength={2000}
                                     placeholder={
                                         isDowngrade
                                             ? 'Wajib diisi: Berikan alasan pengembalian status ke tahap ini...'
@@ -1486,6 +1494,7 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                             onChange={(e) => setCreateData('catatan', e.target.value)}
                             required
                             rows={3}
+                            maxLength={2000}
                             placeholder="Jelaskan kondisi faktual yang ditemukan, gap kepatuhan terhadap kontrol, dan rekomendasi perbaikan..."
                             className="focus:border-primary w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                         />
@@ -1693,16 +1702,31 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                                         </div>
                                     </div>
 
-                                    {/* Catatan Awal Temuan */}
-                                    {(detailTarget.admin_notes || detailTarget.catatan_admin) && (
-                                        <div className="mt-3 rounded-xl border border-amber-200/90 bg-amber-50/60 p-3 text-xs dark:border-amber-900/50 dark:bg-amber-950/20">
-                                            <div className="flex items-center gap-1.5 font-bold text-amber-900 dark:text-amber-300">
-                                                <FileText className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                                                <span>Catatan Awal Temuan</span>
-                                            </div>
-                                            <p className="mt-1 leading-relaxed whitespace-pre-line text-slate-700 dark:text-slate-300">
-                                                {detailTarget.admin_notes || detailTarget.catatan_admin}
-                                            </p>
+                                    {/* Catatan Admin & Catatan PIC */}
+                                    {(detailTarget.admin_notes || detailTarget.catatan_admin || detailTarget.catatan) && (
+                                        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                            {(detailTarget.admin_notes || detailTarget.catatan_admin) && (
+                                                <div className="rounded-xl border border-amber-200/90 bg-amber-50/60 p-3 text-xs dark:border-amber-900/50 dark:bg-amber-950/20">
+                                                    <div className="flex items-center gap-1.5 font-bold text-amber-900 dark:text-amber-300">
+                                                        <FileText className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                                                        <span>Catatan Admin Kepatuhan</span>
+                                                    </div>
+                                                    <p className="mt-1 leading-relaxed whitespace-pre-line text-slate-700 dark:text-slate-300">
+                                                        {detailTarget.admin_notes || detailTarget.catatan_admin}
+                                                    </p>
+                                                </div>
+                                            )}
+                                            {detailTarget.catatan && (
+                                                <div className="rounded-xl border border-blue-200/90 bg-blue-50/60 p-3 text-xs dark:border-blue-900/50 dark:bg-blue-950/20">
+                                                    <div className="flex items-center gap-1.5 font-bold text-blue-900 dark:text-blue-300">
+                                                        <FileText className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                                                        <span>Catatan PIC</span>
+                                                    </div>
+                                                    <p className="mt-1 leading-relaxed whitespace-pre-line text-slate-700 dark:text-slate-300">
+                                                        {detailTarget.catatan}
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -1826,7 +1850,27 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                                                                 <div className="mt-2 rounded-lg bg-white p-2.5 text-xs leading-relaxed text-slate-700 shadow-2xs dark:bg-slate-900/80 dark:text-slate-300">
                                                                     <div className="flex items-start gap-1.5">
                                                                         <MessageSquare className="mt-0.5 h-3 w-3 shrink-0 text-slate-400" />
-                                                                        <p className="italic">"{hist.catatan}"</p>
+                                                                        <div className="min-w-0 flex-1">
+                                                                            {(() => {
+                                                                                const r =
+                                                                                    typeof hist.user?.role === 'string'
+                                                                                        ? hist.user.role
+                                                                                        : hist.user?.role?.name;
+                                                                                const isPicNote = r === 'pic';
+                                                                                return (
+                                                                                    <span
+                                                                                        className={`mb-1 inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold ${
+                                                                                            isPicNote
+                                                                                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300'
+                                                                                                : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                                                                                        }`}
+                                                                                    >
+                                                                                        {isPicNote ? 'Catatan PIC' : 'Catatan Admin'}
+                                                                                    </span>
+                                                                                );
+                                                                            })()}
+                                                                            <p className="italic">"{hist.catatan}"</p>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                             </div>
