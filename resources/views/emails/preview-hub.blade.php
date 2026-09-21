@@ -183,6 +183,29 @@
                 </div>
             </div>
 
+            <!-- Modul Pengingat Sistem -->
+            <div class="module-group">
+                <div class="module-title">3. Pengingat Sistem</div>
+                
+                <div class="template-card" data-code="3-1" onclick="loadPreview('/email-preview/3-1-finding-deadline', '3-1', this)">
+                    <div class="card-header">
+                        <span class="card-tag tag-warning">3.1 H-3</span>
+                        <span class="card-meta">Sistem &rarr; PIC</span>
+                    </div>
+                    <div class="card-title">Pengingat Tenggat Temuan</div>
+                    <div class="card-meta">Pengingat otomatis mendekati tenggat penanganan temuan.</div>
+                </div>
+
+                <div class="template-card" data-code="3-2" onclick="loadPreview('/email-preview/3-2-checklist-unfilled', '3-2', this)">
+                    <div class="card-header">
+                        <span class="card-tag tag-info">3.2 NUDGE</span>
+                        <span class="card-meta">Sistem &rarr; PIC</span>
+                    </div>
+                    <div class="card-title">Checklist Belum Dilengkapi</div>
+                    <div class="card-meta">Ringkasan entri checklist yang belum diisi PIC.</div>
+                </div>
+            </div>
+
             <!-- Modul Keamanan Akun -->
             <div class="module-group">
                 <div class="module-title">3. Keamanan Akun Pengguna</div>

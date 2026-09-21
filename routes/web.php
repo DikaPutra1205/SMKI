@@ -349,6 +349,37 @@ if (app()->isLocal()) {
         });
         Route::get('/checklist-rejected', fn () => redirect('/email-preview/2-1-checklist-rejected'));
 
+        // 3.1 Pengingat tenggat temuan -> PIC
+        Route::get('/3-1-finding-deadline', function () {
+            $findingId = Finding::value('id') ?? 8;
+
+            return view('emails.finding-deadline-reminder', [
+                'recipientName' => 'Dika Putra (PIC Unit TI)',
+                'kodeKlausul' => 'A.8.8',
+                'judulKontrol' => 'Pengelolaan Kerentanan Teknis',
+                'kategori' => 'major',
+                'deadlineStr' => now()->addDays(3)->format('d M Y'),
+                'daysRemaining' => 3,
+                'isOverdue' => false,
+                'hLabel' => 'H-3',
+                'actionUrl' => url("/temuan?id={$findingId}"),
+            ]);
+        });
+
+        // 3.2 Rangkuman checklist belum diisi -> PIC
+        Route::get('/3-2-checklist-unfilled', function () {
+            $sessionId = ChecklistSession::value('id') ?? 1;
+
+            return view('emails.checklist-unfilled-reminder', [
+                'recipientName' => 'Dika Putra (PIC Unit TI)',
+                'periode' => now()->format('Y-m'),
+                'unitName' => 'Pusat Teknologi Informasi (TI)',
+                'unfilledCount' => 4,
+                'totalCount' => 10,
+                'actionUrl' => url("/admin/pic/checklist/{$sessionId}"),
+            ]);
+        });
+
         // 4.1 Permintaan Reset Kata Sandi Akun
         Route::get('/4-1-auth-reset-password', function () {
             return view('emails.auth-reset-password', [

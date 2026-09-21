@@ -12,6 +12,8 @@ Artisan::command('inspire', function () {
 
 // Otomatis generate checklist untuk seluruh satuan kerja pada tanggal 1 tiap bulan pukul 00:00
 Schedule::command('smki:generate-monthly-checklist')->monthlyOn(1, '00:00');
+Schedule::command('smki:remind-finding-deadlines')->dailyAt('08:00');
+Schedule::command('smki:remind-unfilled-checklists')->dailyAt('08:00');
 
 Artisan::command('notify:test {userId?}', function ($userId = null) {
     $user = $userId ? User::find($userId) : User::first();
