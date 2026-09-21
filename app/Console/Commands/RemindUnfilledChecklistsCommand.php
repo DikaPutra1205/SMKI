@@ -41,6 +41,15 @@ class RemindUnfilledChecklistsCommand extends Command
             ->where('periode', $today->format('Y-m'))
             ->get();
 
+        // Pre-fetch PIC users keyed by unit_id (one query instead of N)
+        $picMap = User::whereHas('role', fn ($q) => $q->where('name', User::ROLE_PIC))
+            ->get()
+            ->unique('unit_id')
+            ->keyBy('unit_id');
+
+        // Cache today's per-user notification collections (one query per user)
+        $todaysCache = [];
+
         $sent = 0;
         foreach ($sessions as $session) {
             $total = $session->entries->count();
@@ -54,19 +63,22 @@ class RemindUnfilledChecklistsCommand extends Command
                 continue;
             }
 
-            $pic = User::where('unit_id', $session->unit_id)
-                ->whereHas('role', fn ($q) => $q->where('name', User::ROLE_PIC))
-                ->first();
+            $pic = $picMap->get($session->unit_id);
 
             if (! $pic) {
                 continue;
             }
 
-            $already = $pic->notifications()
-                ->whereDate('created_at', $today)
-                ->get()
-                ->contains(fn ($n) => ($n->data['type'] ?? null) === 'checklist_unfilled_reminder'
-                    && ($n->data['session_id'] ?? null) === $session->id);
+            // Fetch once per user, reuse across sessions
+            $userId = $pic->id;
+            if (! isset($todaysCache[$userId])) {
+                $todaysCache[$userId] = $pic->notifications()
+                    ->whereDate('created_at', $today)
+                    ->get()
+                    ->filter(fn ($n) => ($n->data['type'] ?? null) === 'checklist_unfilled_reminder');
+            }
+
+            $already = $todaysCache[$userId]->contains(fn ($n) => ($n->data['session_id'] ?? null) === $session->id);
 
             if ($already) {
                 continue;

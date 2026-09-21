@@ -33,6 +33,15 @@ class RemindFindingDeadlinesCommand extends Command
             ->where('status', '!=', Finding::STATUS_CLOSED)
             ->get();
 
+        // Pre-fetch PIC users keyed by unit_id (one query instead of N)
+        $picMap = User::whereHas('role', fn ($q) => $q->where('name', User::ROLE_PIC))
+            ->get()
+            ->unique('unit_id')
+            ->keyBy('unit_id');
+
+        // Cache today's per-user notification collections (one query per user)
+        $todaysCache = [];
+
         $sent = 0;
         foreach ($findings as $finding) {
             $deadline = Carbon::parse($finding->deadline)->startOfDay();
@@ -43,16 +52,27 @@ class RemindFindingDeadlinesCommand extends Command
                 continue;
             }
 
-            $target = $finding->pic
-                ?? User::where('unit_id', $finding->unit_id)
-                    ->whereHas('role', fn ($q) => $q->where('name', User::ROLE_PIC))
-                    ->first();
+            $target = $finding->pic ?? $picMap->get($finding->unit_id);
 
             if (! $target) {
                 continue;
             }
 
-            if ($this->alreadySentToday($target, (int) $finding->id, $days, $isOverdue)) {
+            // Fetch once per user, reuse across findings
+            $userId = $target->id;
+            if (! isset($todaysCache[$userId])) {
+                $todaysCache[$userId] = $target->notifications()
+                    ->whereDate('created_at', $today)
+                    ->get()
+                    ->filter(fn ($n) => ($n->data['type'] ?? null) === 'finding_deadline_reminder');
+            }
+
+            $alreadySent = $todaysCache[$userId]->contains(fn ($n) => ($n->data['finding_id'] ?? null) === $finding->id
+                && ($isOverdue
+                    ? ($n->data['days_remaining'] ?? 1) < 0
+                    : ($n->data['days_remaining'] ?? null) === $days));
+
+            if ($alreadySent) {
                 continue;
             }
 
@@ -63,17 +83,5 @@ class RemindFindingDeadlinesCommand extends Command
         $this->info("Terkirim {$sent} pengingat tenggat temuan.");
 
         return 0;
-    }
-
-    protected function alreadySentToday(User $user, int $findingId, int $days, bool $isOverdue): bool
-    {
-        return $user->notifications()
-            ->whereDate('created_at', Carbon::today())
-            ->get()
-            ->contains(fn ($n) => ($n->data['type'] ?? null) === 'finding_deadline_reminder'
-                && ($n->data['finding_id'] ?? null) === $findingId
-                && ($isOverdue
-                    ? ($n->data['days_remaining'] ?? 1) < 0
-                    : ($n->data['days_remaining'] ?? null) === $days));
     }
 }
