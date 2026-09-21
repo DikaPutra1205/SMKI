@@ -8,6 +8,7 @@ use App\Models\Risk;
 use App\Models\User;
 use App\Models\WorkUnit;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class RiskManagementTest extends TestCase
@@ -67,7 +68,7 @@ class RiskManagementTest extends TestCase
         ]);
     }
 
-    public function test_koordinator_or_admin_can_create_new_risk_with_custom_deadline(): void
+    public function test_create_risk_ignores_deadline_field(): void
     {
         $payload = [
             'control_ids' => [$this->control->id],
@@ -82,11 +83,13 @@ class RiskManagementTest extends TestCase
 
         $response = $this->actingAs($this->koordinator)->postJson('/api/v1/compliance-officer/risks', $payload);
 
-        $response->assertCreated()
-            ->assertJsonPath('status', 'success')
-            ->assertJsonPath('data.level_risiko', Risk::LEVEL_HIGH)
-            ->assertJsonPath('data.status', Risk::STATUS_OPEN)
-            ->assertJsonPath('data.admin_notes', 'Harap dikoordinasikan dengan PIC Satker.');
+        $response->assertCreated()->assertJsonPath('status', 'success');
+        $response->assertJsonPath('data.level_risiko', Risk::LEVEL_HIGH);
+        $response->assertJsonPath('data.status', Risk::STATUS_OPEN);
+        $response->assertJsonMissingPath('data.deadline');
+        $response->assertJsonMissingPath('data.is_overdue');
+        $response->assertJsonMissingPath('data.days_remaining');
+        $response->assertJsonPath('data.admin_notes', 'Harap dikoordinasikan dengan PIC Satker.');
 
         $this->assertDatabaseHas('risks', [
             'unit_id' => $this->unitA->id,
@@ -94,17 +97,7 @@ class RiskManagementTest extends TestCase
             'pemilik_risiko' => 'Koordinator Keamanan Sistem',
             'status' => Risk::STATUS_OPEN,
         ]);
-
-        $this->assertDatabaseHas('control_risk', [
-            'control_id' => $this->control->id,
-        ]);
-
-        // Verify immutable audit log
-        $this->assertDatabaseHas('audit_logs', [
-            'aksi' => 'created',
-            'entity_type' => 'Risk',
-            'actor_id' => $this->koordinator->id,
-        ]);
+        $this->assertFalse(Schema::hasColumn('risks', 'deadline'));
     }
 
     public function test_pic_and_admin_can_update_risk_status_and_admin_notes_iteratively(): void
@@ -115,7 +108,6 @@ class RiskManagementTest extends TestCase
             'pemilik_risiko' => 'Tim Infrastruktur',
             'rencana_mitigasi' => 'Tahap awal identifikasi kerentanan.',
             'status' => Risk::STATUS_OPEN,
-            'deadline' => now()->addDays(7)->toDateString(),
         ]);
 
         // Step 1: PIC updates progress & mitigation
@@ -149,32 +141,22 @@ class RiskManagementTest extends TestCase
         $this->assertEquals('Patching server cloud dan konfigurasi firewall selesai.', $freshRisk->rencana_mitigasi);
     }
 
-    public function test_risk_overdue_and_days_remaining_calculation(): void
+    public function test_risk_resource_carries_no_deadline_derived_fields(): void
     {
-        $overdueRisk = Risk::factory()->withControl($this->control)->create([
+        $risk = Risk::factory()->withControl($this->control)->create([
             'unit_id' => $this->unitA->id,
             'status' => Risk::STATUS_OPEN,
-            'deadline' => now()->subDays(4)->toDateString(),
-        ]);
-
-        $futureRisk = Risk::factory()->withControl($this->control)->create([
-            'unit_id' => $this->unitA->id,
-            'status' => Risk::STATUS_OPEN,
-            'deadline' => now()->addDays(5)->toDateString(),
         ]);
 
         $response = $this->actingAs($this->admin)->getJson('/api/v1/compliance-officer/risks');
 
         $response->assertOk();
-        $items = $response->json('data.data');
+        $item = collect($response->json('data.data'))->firstWhere('id', $risk->id);
 
-        $overdueItem = collect($items)->firstWhere('id', $overdueRisk->id);
-        $this->assertTrue($overdueItem['is_overdue']);
-        $this->assertLessThan(0, $overdueItem['days_remaining']);
-
-        $futureItem = collect($items)->firstWhere('id', $futureRisk->id);
-        $this->assertFalse($futureItem['is_overdue']);
-        $this->assertGreaterThan(0, $futureItem['days_remaining']);
+        $this->assertNotNull($item);
+        $this->assertArrayNotHasKey('deadline', $item);
+        $this->assertArrayNotHasKey('is_overdue', $item);
+        $this->assertArrayNotHasKey('days_remaining', $item);
     }
 
     public function test_pic_cannot_update_other_unit_risk(): void
@@ -304,14 +286,12 @@ class RiskManagementTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_pic_cannot_modify_level_deadline_owner_or_admin_notes(): void
+    public function test_pic_cannot_modify_level_owner_or_admin_notes(): void
     {
-        $originalDeadline = now()->addDays(10)->toDateString();
         $risk = Risk::factory()->withControl($this->control)->create([
             'unit_id' => $this->unitA->id,
             'level_risiko' => Risk::LEVEL_CRITICAL,
             'pemilik_risiko' => 'Original Owner',
-            'deadline' => $originalDeadline,
             'catatan_admin' => 'Original Admin Note',
             'rencana_mitigasi' => 'Original Mitigation',
             'status' => Risk::STATUS_OPEN,
@@ -332,16 +312,14 @@ class RiskManagementTest extends TestCase
         $response = $this->actingAs($this->picA)->putJson("/api/v1/compliance-officer/risks/{$risk->id}", $tamperPayload);
 
         $response->assertOk();
+        // deadline key sent by stale client -> ignored, never persisted, never returned
+        $response->assertJsonMissingPath('data.deadline');
 
         $fresh = $risk->fresh();
-        // Allowed changes
         $this->assertEquals(Risk::STATUS_MITIGATED, $fresh->status);
         $this->assertEquals('Updated Mitigation by PIC', $fresh->rencana_mitigasi);
-
-        // Restricted fields MUST remain untampered
         $this->assertEquals(Risk::LEVEL_CRITICAL, $fresh->level_risiko);
         $this->assertEquals('Original Owner', $fresh->pemilik_risiko);
-        $this->assertEquals($originalDeadline, $fresh->deadline?->toDateString());
         $this->assertEquals('Original Admin Note', $fresh->catatan_admin);
     }
 }

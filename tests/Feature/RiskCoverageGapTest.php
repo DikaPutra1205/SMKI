@@ -7,6 +7,7 @@ use App\Models\Framework;
 use App\Models\Risk;
 use App\Models\User;
 use App\Models\WorkUnit;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -157,30 +158,18 @@ class RiskCoverageGapTest extends TestCase
         $this->assertNotContains($risk->id, $ids);
     }
 
-    public function test_overdue_false_when_mitigated_or_accepted(): void
+    public function test_risk_model_has_no_deadline_column_or_accessors(): void
     {
-        $mitigated = Risk::factory()->withControl($this->control)->create([
-            'unit_id' => $this->unitA->id,
-            'status' => Risk::STATUS_MITIGATED, 'deadline' => now()->subDays(5)->toDateString(),
-        ]);
-        $accepted = Risk::factory()->withControl($this->control)->create([
-            'unit_id' => $this->unitA->id,
-            'status' => Risk::STATUS_ACCEPTED, 'deadline' => now()->subDays(5)->toDateString(),
-        ]);
+        $this->assertFalse(Schema::hasColumn('risks', 'deadline'));
 
-        $this->assertFalse($mitigated->is_overdue);
-        $this->assertFalse($accepted->is_overdue);
-    }
-
-    public function test_days_remaining_null_without_deadline(): void
-    {
         $risk = Risk::factory()->withControl($this->control)->create([
             'unit_id' => $this->unitA->id,
-            'status' => Risk::STATUS_OPEN, 'deadline' => null,
+            'status' => Risk::STATUS_OPEN,
         ]);
 
-        $this->assertNull($risk->days_remaining);
-        $this->assertFalse($risk->is_overdue);
+        $this->assertFalse(isset($risk->deadline));
+        $this->assertFalse(isset($risk->is_overdue));
+        $this->assertFalse(isset($risk->days_remaining));
     }
 
     public function test_web_risk_routes_render_and_mutate_with_flash(): void

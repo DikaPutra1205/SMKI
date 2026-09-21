@@ -1,5 +1,4 @@
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { DatePicker } from '@/components/ui/DatePicker';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Pagination } from '@/components/ui/Pagination';
 import { Select } from '@/components/ui/Select';
@@ -11,10 +10,8 @@ import { formatDateTimeIndonesian } from '@/lib/utils';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import {
     Activity,
-    AlertCircle,
     AlertTriangle,
     Building2,
-    Calendar,
     CheckCircle2,
     Clock,
     Edit2,
@@ -43,11 +40,8 @@ export interface RiskItem {
     mitigation_plan?: string | null;
     unit_id?: number | null;
     unit?: { id: number; nama: string } | null;
-    deadline?: string | null;
     catatan_admin?: string | null;
     admin_notes?: string | null;
-    is_overdue?: boolean;
-    days_remaining?: number | null;
     controls?: ControlItem[];
     control?: {
         id: number;
@@ -174,7 +168,6 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
         unit_id: string;
         risk_level: string;
         risk_owner: string;
-        deadline: string;
         mitigation_plan: string;
         admin_notes: string;
     }>({
@@ -182,7 +175,6 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
         unit_id: isPic && authUser?.unit_id ? String(authUser.unit_id) : '',
         risk_level: 'low',
         risk_owner: '',
-        deadline: '',
         mitigation_plan: '',
         admin_notes: '',
     });
@@ -193,7 +185,6 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
         status: string;
         mitigation_plan: string;
         risk_owner: string;
-        deadline: string;
         admin_notes: string;
     }>({
         control_ids: [],
@@ -201,7 +192,6 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
         status: '',
         mitigation_plan: '',
         risk_owner: '',
-        deadline: '',
         admin_notes: '',
     });
 
@@ -231,7 +221,6 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
             status: r.status || 'open',
             mitigation_plan: r.mitigation_plan || r.rencana_mitigasi || '',
             risk_owner: r.risk_owner || r.pemilik_risiko || '',
-            deadline: r.deadline ? String(r.deadline).split('T')[0] : '',
             admin_notes: (r.admin_notes || r.catatan_admin || '') as string,
         });
         setEditControlSearch('');
@@ -431,49 +420,6 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
         );
     };
 
-    const getDeadlineBadge = (r: RiskItem) => {
-        if (!r.deadline) {
-            return <span className="text-xs text-slate-400 italic dark:text-slate-500">Belum ditentukan</span>;
-        }
-
-        const dateStr = new Date(r.deadline).toLocaleDateString('id-ID', {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric',
-        });
-
-        if (r.is_overdue) {
-            return (
-                <div className="inline-flex flex-col items-start gap-0.5">
-                    <span className="inline-flex items-center gap-1 rounded-md border border-rose-200 bg-rose-50 px-2 py-0.5 text-[11px] font-bold text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-400">
-                        <AlertCircle className="h-3 w-3 text-rose-600 dark:text-rose-400" />
-                        Terlewat ({Math.abs(r.days_remaining ?? 0)} hari)
-                    </span>
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400">{dateStr}</span>
-                </div>
-            );
-        }
-
-        if (r.days_remaining !== null && r.days_remaining !== undefined && r.days_remaining <= 3 && r.days_remaining >= 0 && r.status === 'open') {
-            return (
-                <div className="inline-flex flex-col items-start gap-0.5">
-                    <span className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300">
-                        <Clock className="h-3 w-3 text-amber-600 dark:text-amber-400" />
-                        Sisa {r.days_remaining} hari
-                    </span>
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400">{dateStr}</span>
-                </div>
-            );
-        }
-
-        return (
-            <div className="inline-flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300">
-                <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                <span>{dateStr}</span>
-            </div>
-        );
-    };
-
     return (
         <AppLayout breadcrumbs={breadcrumbs} currentPath="/risks">
             <Head title={`${t('risks.title')} - SMKI`} />
@@ -642,7 +588,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                         <div className="shrink-0">{getRiskLevelBadge(r.risk_level || r.level_risiko)}</div>
                                     </div>
 
-                                    {/* Status + owner + deadline */}
+                                    {/* Status + owner */}
                                     <div className="flex flex-wrap items-center gap-2">
                                         {getMitigationStatus(r.status)}
                                         {(r.risk_owner || r.pemilik_risiko) && (
@@ -652,9 +598,6 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                             </span>
                                         )}
                                     </div>
-
-                                    {/* Deadline badge */}
-                                    <div className="pt-0.5">{getDeadlineBadge(r)}</div>
 
                                     {/* Mitigation snippet */}
                                     {(r.mitigation_plan || r.rencana_mitigasi) && (
@@ -727,9 +670,6 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                         {t('risks.owner')}
                                     </th>
                                     <th scope="col" className="px-5 py-3.5">
-                                        Tenggat Waktu
-                                    </th>
-                                    <th scope="col" className="px-5 py-3.5">
                                         {t('risks.statusMitigation')}
                                     </th>
                                     <th scope="col" className="px-5 py-3.5 text-right">
@@ -800,7 +740,6 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                                     <span>{r.risk_owner || r.pemilik_risiko || '—'}</span>
                                                 </div>
                                             </td>
-                                            <td className="px-5 py-4 whitespace-nowrap">{getDeadlineBadge(r)}</td>
                                             <td className="px-5 py-4 whitespace-nowrap">{getMitigationStatus(r.status)}</td>
                                             <td className="px-5 py-4 text-right whitespace-nowrap">
                                                 <div className="inline-flex items-center gap-3">
@@ -841,7 +780,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan={7}>
+                                        <td colSpan={6}>
                                             <EmptyState message={t('risks.noRisks')} />
                                         </td>
                                     </tr>
@@ -1098,13 +1037,6 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                 </select>
                                 {createForm.errors.risk_level && <p className="mt-1 text-xs text-red-500">{createForm.errors.risk_level}</p>}
                             </div>
-
-                            {/* Custom Deadline */}
-                            <div>
-                                <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">{t('risks.deadline')}</label>
-                                <DatePicker value={createForm.data.deadline} onChange={(val) => createForm.setData('deadline', val)} />
-                                {createForm.errors.deadline && <p className="mt-1 text-xs text-red-500">{createForm.errors.deadline}</p>}
-                            </div>
                         </div>
 
                         {/* Owner */}
@@ -1213,16 +1145,6 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                             ? 'cursor-not-allowed border-slate-200 bg-slate-100/70 text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400'
                                             : 'focus:border-primary focus:ring-primary border-slate-200 bg-white placeholder:text-slate-400 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white'
                                     }`}
-                                />
-                            </div>
-
-                            {/* Custom Deadline */}
-                            <div>
-                                <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">{t('risks.deadline')}</label>
-                                <DatePicker
-                                    value={updateForm.data.deadline}
-                                    onChange={(val) => updateForm.setData('deadline', val)}
-                                    disabled={isPic}
                                 />
                             </div>
                         </div>
@@ -1385,7 +1307,6 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                 <div>{getRiskLevelBadge(activeRisk.risk_level || activeRisk.level_risiko)}</div>
                                 <div>{getMitigationStatus(activeRisk.status)}</div>
                             </div>
-                            <div>{getDeadlineBadge(activeRisk)}</div>
                         </div>
 
                         {/* Linked SMKI Controls Header */}
@@ -1423,20 +1344,13 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                             </div>
                         </div>
 
-                        {/* Condensed Quick Context (2 Columns) */}
-                        <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-200/80 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                        {/* Condensed Quick Context (Owner) */}
+                        <div className="rounded-xl border border-slate-200/80 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
                             <div>
                                 <span className="text-[11px] font-medium text-slate-400">Pemilik Risiko (Risk Owner)</span>
                                 <div className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200">
                                     <UserCheck className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
                                     <span className="truncate">{activeRisk.risk_owner || activeRisk.pemilik_risiko || 'Belum ditugaskan'}</span>
-                                </div>
-                            </div>
-                            <div>
-                                <span className="text-[11px] font-medium text-slate-400">Tenggat Target (SLA)</span>
-                                <div className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200">
-                                    <Calendar className="h-3.5 w-3.5 shrink-0 text-rose-500" />
-                                    <span>{activeRisk.deadline ? formatDateTimeIndonesian(activeRisk.deadline) : 'Mengikuti SLA Level'}</span>
                                 </div>
                             </div>
                         </div>
