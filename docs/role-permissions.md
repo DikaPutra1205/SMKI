@@ -19,7 +19,7 @@ Rule: for `pic`, every ✓ grant is limited to records owned by the PIC's own un
 | checklist.read | ✓ | ✓ | ✓ | ✓ | ✓ |
 | checklist.create | ✓ | ✓ | ✗ | ✗ | ✗ |
 | checklist.update | ✓ | ✓ | ✗ | ✗ | ✓ |
-| checklist.verify | ✓ | ✓ | ✗ | ✗ | ✓ |
+| checklist.verify | ✓ | ✓ | ✗ | ✗ | ✗ |
 | checklist.bulk-verify | ✓ | ✓ | ✗ | ✗ | ✗ |
 | checklist.delete | ✓ | ✓ | ✗ | ✗ | ✗ |
 | checklist.restore | ✓ | ✓ | ✗ | ✗ | ✗ |
