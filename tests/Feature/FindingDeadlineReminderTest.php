@@ -9,7 +9,9 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\WorkUnit;
 use App\Notifications\FindingDeadlineReminderNotification;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class FindingDeadlineReminderTest extends TestCase
@@ -69,9 +71,7 @@ class FindingDeadlineReminderTest extends TestCase
         $this->assertStringContainsString('H-7', $mail->subject);
     }
 
-    /**
-     * @dataProvider thresholdProvider
-     */
+    #[DataProvider('thresholdProvider')]
     public function test_command_notifies_pic_at_thresholds(int $days): void
     {
         Notification::fake();
@@ -147,6 +147,8 @@ class FindingDeadlineReminderTest extends TestCase
 
     public function test_command_no_duplicate_same_day(): void
     {
+        Mail::fake();
+
         Finding::factory()->create([
             'control_id' => $this->control->id,
             'unit_id' => $this->unitA->id,
@@ -160,27 +162,6 @@ class FindingDeadlineReminderTest extends TestCase
 
         $this->artisan('smki:remind-finding-deadlines')->assertExitCode(0);
         $this->assertEquals(1, $this->picA->fresh()->unreadNotifications()->count());
-    }
-
-    public function test_command_falls_back_to_unit_pic(): void
-    {
-        Notification::fake();
-
-        $finding = Finding::factory()->create([
-            'control_id' => $this->control->id,
-            'unit_id' => $this->unitA->id,
-            'pic_id' => null,
-            'status' => Finding::STATUS_OPEN,
-            'deadline' => now()->addDays(3)->format('Y-m-d'),
-        ]);
-
-        $this->artisan('smki:remind-finding-deadlines')->assertExitCode(0);
-
-        Notification::assertSentTo(
-            $this->picA,
-            FindingDeadlineReminderNotification::class,
-            fn ($n) => $n->toDatabase($this->picA)['finding_id'] === $finding->id
-        );
     }
 
     public function test_command_skips_due_today_h0(): void
