@@ -311,7 +311,13 @@ class ReportGeneratorService
 
         if ($scopedUnitIds !== null) {
             $findingsQuery->whereIn('unit_id', $scopedUnitIds);
-            $risksQuery->whereHas('controls.checklistEntries', fn ($q) => $q->whereIn('unit_id', $scopedUnitIds));
+            $risksQuery->where(function ($q) use ($scopedUnitIds, $user) {
+                $q->whereIn('unit_id', $scopedUnitIds);
+                // PIC also sees unassigned (NULL unit_id) risks.
+                if ($user->isPic()) {
+                    $q->orWhereNull('unit_id');
+                }
+            });
         }
 
         $openFindings = $findingsQuery->whereIn('status', [Finding::STATUS_OPEN, Finding::STATUS_IN_PROGRESS])->count();

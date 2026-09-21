@@ -430,6 +430,44 @@ class DashboardAnalyticsTest extends TestCase
         $this->assertEquals(1, $data['frameworks_breakdown'][0]['belum_count']);
     }
 
+    public function test_pic_subtree_sums_selesai_instead_of_averaging(): void
+    {
+        // PIC scope = own unit + descendants. One selesai across 3 units
+        // must count as 1, not round(1/3) = 0.
+        $this->pic->update(['unit_id' => $this->unitA->id]);
+        $child1 = WorkUnit::factory()->create(['parent_id' => $this->unitA->id]);
+        $child2 = WorkUnit::factory()->create(['parent_id' => $this->unitA->id]);
+
+        $ctrls = Control::factory()->count(5)->create(['framework_id' => $this->iso27001->id]);
+        $makeSession = fn ($unit) => ChecklistSession::factory()->create([
+            'unit_id' => $unit->id,
+            'framework_id' => $this->iso27001->id,
+            'periode' => now()->format('Y-m'),
+        ]);
+
+        $sessionA = $makeSession($this->unitA);
+        ChecklistEntry::factory()->create([
+            'session_id' => $sessionA->id, 'control_id' => $ctrls[0]->id,
+            'unit_id' => $this->unitA->id, 'status' => ChecklistEntry::WORKFLOW_SELESAI,
+        ]);
+
+        foreach ([[$child1, [$ctrls[1], $ctrls[2]]], [$child2, [$ctrls[3], $ctrls[4]]]] as [$child, $pair]) {
+            $s = $makeSession($child);
+            foreach ($pair as $c) {
+                ChecklistEntry::factory()->create([
+                    'session_id' => $s->id, 'control_id' => $c->id,
+                    'unit_id' => $child->id, 'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
+                ]);
+            }
+        }
+
+        $data = $this->actingAs($this->pic)->getJson('/api/v1/dashboard/summary')->json('data');
+
+        // 1 selesai of 5 applicable => count 1, rate 20 (not avg-of-rates 33).
+        $this->assertEquals(1, $data['frameworks_breakdown'][0]['selesai_count']);
+        $this->assertEquals(20, $data['frameworks_breakdown'][0]['completion_rate']);
+    }
+
     public function test_non_unit_role_averages_per_unit_selesai_counts(): void
     {
         // admin_kepatuhan is a non-unit-scoped role (no ?unit_id) => overall is

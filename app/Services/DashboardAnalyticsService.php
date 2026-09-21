@@ -99,31 +99,18 @@ class DashboardAnalyticsService
             $unitRows = $statsByFrameworkUnit->where('framework_id', $fw->id);
 
             if ($scopedUnitIds !== null) {
-                // Subtree or single unit: aggregate all matching unit rows.
-                $perUnitRates = [];
-                $perUnitSelesai = [];
-                foreach ($unitRows as $row) {
-                    $selesai = (int) $row->selesai_count;
-                    $applicable = $selesai + (int) $row->tinjauan_count + (int) $row->proses_count + (int) $row->belum_count;
-                    $perUnitSelesai[] = $selesai;
-                    if ($applicable > 0) {
-                        $perUnitRates[] = $selesai / $applicable;
-                    }
-                }
-
-                $selesaiCount = $perUnitSelesai
-                    ? (int) round(array_sum($perUnitSelesai) / count($perUnitSelesai))
-                    : 0;
+                // Subtree or single unit: sum rows across scoped units so
+                // every selesai control counts (no averaging).
+                $selesaiCount = (int) $unitRows->sum('selesai_count');
                 $tinjauanCount = (int) $unitRows->sum('tinjauan_count');
                 $prosesCount = (int) $unitRows->sum('proses_count');
                 $belumCount = (int) $unitRows->sum('belum_count');
                 $naCount = (int) $unitRows->sum('na_count');
 
-                $completionRate = $perUnitRates
-                    ? (int) round((array_sum($perUnitRates) / count($perUnitRates)) * 100)
-                    : 0;
-
                 $applicableCount = $selesaiCount + $tinjauanCount + $prosesCount + $belumCount;
+                $completionRate = $applicableCount > 0
+                    ? (int) round(($selesaiCount / $applicableCount) * 100)
+                    : 0;
             } else {
                 // Overall (non-unit roles): average each unit's selesai-control
                 // count and rate from its most-recent session. Units never
@@ -140,7 +127,7 @@ class DashboardAnalyticsService
                 }
 
                 $selesaiCount = $perUnitSelesai
-                    ? (int) round(array_sum($perUnitSelesai) / count($perUnitSelesai))
+                    ? (int) ceil(array_sum($perUnitSelesai) / count($perUnitSelesai))
                     : 0;
                 $tinjauanCount = (int) $unitRows->sum('tinjauan_count');
                 $prosesCount = (int) $unitRows->sum('proses_count');
@@ -214,7 +201,13 @@ class DashboardAnalyticsService
         // 4. Risks Summary via SQL Aggregate
         $riskQuery = Risk::query();
         if ($scopedUnitIds !== null) {
-            $riskQuery->whereHas('controls.checklistEntries', fn ($q) => $q->whereIn('unit_id', $scopedUnitIds));
+            $riskQuery->where(function ($q) use ($scopedUnitIds, $user) {
+                $q->whereIn('unit_id', $scopedUnitIds);
+                // PIC also sees unassigned (NULL unit_id) risks.
+                if ($user->isPic()) {
+                    $q->orWhereNull('unit_id');
+                }
+            });
         }
         if ($cutoffDate) {
             $riskQuery->where('created_at', '>=', $cutoffDate);
