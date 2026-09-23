@@ -170,4 +170,13 @@ class NavigationServiceTest extends TestCase
         $this->assertNotContains('/admin/kepatuhan/compliance', $urls);
         $this->assertContains('/compliance', $urls);
     }
+
+    public function test_navigation_prioritizes_dashboard_and_groups_admin_pages_last(): void
+    {
+        $superadmin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        $labels = collect(app(NavigationService::class)->getForUser($superadmin))->pluck('label')->all();
+
+        $this->assertSame('Dashboard', $labels[0]);
+        $this->assertLessThan(array_search('Manajemen Framework', $labels, true), array_search('Audit Log', $labels, true));
+    }
 }

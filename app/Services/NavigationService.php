@@ -18,7 +18,7 @@ class NavigationService
     {
         $nav = $this->all();
 
-        return array_values(array_filter($nav, function (array $entry) use ($user) {
+        $nav = array_values(array_filter($nav, function (array $entry) use ($user) {
             if (! $this->hasAll($user, $entry['permissions'])) {
                 return false;
             }
@@ -37,6 +37,65 @@ class NavigationService
 
             return true;
         }));
+
+        return $this->sortEntries($nav);
+    }
+
+    private function sortEntries(array $entries): array
+    {
+        foreach ($entries as &$entry) {
+            if (isset($entry['children'])) {
+                $entry['children'] = $this->sortEntries($entry['children']);
+            }
+        }
+        unset($entry);
+
+        usort($entries, function (array $left, array $right): int {
+            $order = $this->entryPriority($left) <=> $this->entryPriority($right);
+
+            if ($order !== 0) {
+                return $order;
+            }
+
+            return strcmp($left['label'] ?? '', $right['label'] ?? '');
+        });
+
+        return array_values($entries);
+    }
+
+    private function entryPriority(array $entry): int
+    {
+        $label = strtolower((string) ($entry['label'] ?? ''));
+
+        if (str_contains($label, 'dashboard')) {
+            return 0;
+        }
+
+        if (str_contains($label, 'verifikasi') || str_contains($label, 'checklist')) {
+            return 10;
+        }
+
+        if (str_contains($label, 'temuan')) {
+            return 20;
+        }
+
+        if (str_contains($label, 'risiko') || str_contains($label, 'risk')) {
+            return 30;
+        }
+
+        if (str_contains($label, 'kontrol') || str_contains($label, 'compliance')) {
+            return 40;
+        }
+
+        if (str_contains($label, 'audit')) {
+            return 50;
+        }
+
+        if (str_contains($label, 'framework') || str_contains($label, 'user') || str_contains($label, 'role') || str_contains($label, 'unit') || str_contains($label, 'sesi')) {
+            return 100;
+        }
+
+        return 200;
     }
 
     private function hasAll(User $user, array $keys): bool
