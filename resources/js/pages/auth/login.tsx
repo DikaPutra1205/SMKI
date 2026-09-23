@@ -1,6 +1,6 @@
 import { t } from '@/lib/i18n';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { AlertCircle, Eye, EyeOff, Loader2, Lock, Mail, Shield, ShieldCheck, TrendingUp } from 'lucide-react';
+import { AlertCircle, Check, Eye, EyeOff, Loader2, Lock, Mail, Shield, ShieldCheck, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Login() {
@@ -185,11 +185,11 @@ export default function Login() {
                                 </div>
 
                                 <div className="flex items-center justify-between pt-1">
-                                    <label className="text-body flex cursor-pointer items-center gap-2 text-[13px] select-none dark:text-slate-300">
-                                        <input
-                                            type="checkbox"
-                                            className="border-border-strong accent-primary h-4 w-4 rounded dark:border-slate-600"
-                                        />
+                                    <label className="text-body group flex cursor-pointer items-center gap-2.5 text-[13px] select-none dark:text-slate-300">
+                                        <input type="checkbox" className="peer sr-only" />
+                                        <span className="flex h-[18px] w-[18px] items-center justify-center rounded-[6px] border border-border-strong bg-white transition-all group-focus-within:ring-2 group-focus-within:ring-primary/30 group-has-checked:border-primary group-has-checked:bg-primary dark:border-slate-600 dark:bg-slate-800 dark:group-has-checked:border-primary dark:group-has-checked:bg-primary">
+                                            <Check className="h-3 w-3 shrink-0 text-white opacity-0 transition-opacity group-has-checked:opacity-100" strokeWidth={3.5} />
+                                        </span>
                                         {t('auth.rememberMe')}
                                     </label>
                                     <Link
