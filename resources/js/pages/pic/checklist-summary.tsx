@@ -1,6 +1,6 @@
 import AssessmentSummarySkeleton from '@/components/skeletons/AssessmentSummarySkeleton';
-import { usePageLoading } from '@/hooks/usePageLoading';
 import { Select } from '@/components/ui/Select';
+import { usePageLoading } from '@/hooks/usePageLoading';
 import AppLayout from '@/layouts/AppLayout';
 import { assessmentStore } from '@/stores/assessmentStore';
 import { Head, router } from '@inertiajs/react';
@@ -557,11 +557,7 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
             {/* Filters */}
             <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
-                    <Select
-                        value={frameworkFilter}
-                        onChange={(e) => setFrameworkFilter(e.target.value)}
-                        className="min-w-[180px]"
-                    >
+                    <Select value={frameworkFilter} onChange={(e) => setFrameworkFilter(e.target.value)} className="min-w-[180px]">
                         <option value="">Semua Framework</option>
                         {frameworks.map(([name, ver]) => (
                             <option key={name} value={name}>
@@ -569,11 +565,7 @@ export default function AssessmentSummary({ session, entries, summary }: Assessm
                             </option>
                         ))}
                     </Select>
-                    <Select
-                        value={kategoriFilter}
-                        onChange={(e) => setKategoriFilter(e.target.value)}
-                        className="min-w-[160px]"
-                    >
+                    <Select value={kategoriFilter} onChange={(e) => setKategoriFilter(e.target.value)} className="min-w-[160px]">
                         <option value="">Semua Kategori</option>
                         {kategoris.map((k) => (
                             <option key={k} value={k}>

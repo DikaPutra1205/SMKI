@@ -324,11 +324,7 @@ export default function Users({ users, roles, units }: Props) {
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <Select
-                            value={selectedRole}
-                            onChange={(e) => setSelectedRole(e.target.value)}
-                            className="min-w-[160px]"
-                        >
+                        <Select value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)} className="min-w-[160px]">
                             <option value="all">Semua Peran (Role)</option>
                             {roles.map((r) => (
                                 <option key={r.id} value={String(r.id)}>
@@ -337,11 +333,7 @@ export default function Users({ users, roles, units }: Props) {
                             ))}
                         </Select>
 
-                        <Select
-                            value={selectedUnit}
-                            onChange={(e) => setSelectedUnit(e.target.value)}
-                            className="min-w-[170px]"
-                        >
+                        <Select value={selectedUnit} onChange={(e) => setSelectedUnit(e.target.value)} className="min-w-[170px]">
                             <option value="all">Semua Unit Kerja</option>
                             <option value="none">Tanpa Unit Kerja</option>
                             {units.map((u) => (
@@ -513,11 +505,7 @@ export default function Users({ users, roles, units }: Props) {
                         <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
                             Peran Pengguna (Role) <span className="text-red-500">*</span>
                         </label>
-                        <Select
-                            value={form.data.role_id}
-                            onChange={(e) => form.setData('role_id', e.target.value)}
-                            error={form.errors.role_id}
-                        >
+                        <Select value={form.data.role_id} onChange={(e) => form.setData('role_id', e.target.value)} error={form.errors.role_id}>
                             <option value="">— Pilih Role —</option>
                             {roles.map((r) => (
                                 <option key={r.id} value={String(r.id)}>
@@ -531,11 +519,7 @@ export default function Users({ users, roles, units }: Props) {
                         <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
                             Unit Kerja <span className="font-normal text-slate-400">(Wajib untuk PIC)</span>
                         </label>
-                        <Select
-                            value={form.data.unit_id}
-                            onChange={(e) => form.setData('unit_id', e.target.value)}
-                            error={form.errors.unit_id}
-                        >
+                        <Select value={form.data.unit_id} onChange={(e) => form.setData('unit_id', e.target.value)} error={form.errors.unit_id}>
                             <option value="">— Tanpa Unit Kerja —</option>
                             {units.map((u) => (
                                 <option key={u.id} value={String(u.id)}>

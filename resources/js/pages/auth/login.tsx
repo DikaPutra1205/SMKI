@@ -187,8 +187,11 @@ export default function Login() {
                                 <div className="flex items-center justify-between pt-1">
                                     <label className="text-body group flex cursor-pointer items-center gap-2.5 text-[13px] select-none dark:text-slate-300">
                                         <input type="checkbox" className="peer sr-only" />
-                                        <span className="flex h-[18px] w-[18px] items-center justify-center rounded-[6px] border border-border-strong bg-white transition-all group-focus-within:ring-2 group-focus-within:ring-primary/30 group-has-checked:border-primary group-has-checked:bg-primary dark:border-slate-600 dark:bg-slate-800 dark:group-has-checked:border-primary dark:group-has-checked:bg-primary">
-                                            <Check className="h-3 w-3 shrink-0 text-white opacity-0 transition-opacity group-has-checked:opacity-100" strokeWidth={3.5} />
+                                        <span className="border-border-strong group-focus-within:ring-primary/30 group-has-checked:border-primary group-has-checked:bg-primary dark:group-has-checked:border-primary dark:group-has-checked:bg-primary flex h-[18px] w-[18px] items-center justify-center rounded-[6px] border bg-white transition-all group-focus-within:ring-2 dark:border-slate-600 dark:bg-slate-800">
+                                            <Check
+                                                className="h-3 w-3 shrink-0 text-white opacity-0 transition-opacity group-has-checked:opacity-100"
+                                                strokeWidth={3.5}
+                                            />
                                         </span>
                                         {t('auth.rememberMe')}
                                     </label>

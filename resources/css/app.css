@@ -67,6 +67,8 @@
     /* Login-page input surfaces used by the :-webkit-autofill override below */
     --color-input-bg-dark: oklch(20.8% 0.042 265.755); /* = slate-900 */
     --color-input-text-dark: #ffffff;
+    --color-input-bg-light: #ffffff;
+    --color-input-text-light: #33475b;
 }
 
 @layer base {
@@ -135,7 +137,7 @@ html.theme-transition-shrink::view-transition-new(root) {
         background: transparent;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb {
-        @apply bg-slate-300 dark:bg-slate-700 rounded-full;
+        @apply rounded-full bg-slate-300 dark:bg-slate-700;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
         @apply bg-slate-400 dark:bg-slate-600;
@@ -146,15 +148,36 @@ html.theme-transition-shrink::view-transition-new(root) {
  * Issue #42 — dark-mode autofill bug
  * Browsers inject a hard white fill on :-webkit-autofill that overrides
  * `background-color`.  The only reliable workaround is an inset box-shadow.
+ *
+ * The shadow is applied unconditionally (not just while autofilled) so that
+ * transitioning out of the :-webkit-autofill state — e.g. select-all → delete
+ * — never reveals a white flash: the surface is set before, during, and after.
  * Scoped to #email / #password (login page only) so it doesn't bleed.
  */
+#email,
+#password {
+    -webkit-box-shadow: 0 0 0 1000px var(--color-input-bg-light) inset;
+}
+#email:-webkit-autofill,
+#email:-webkit-autofill:hover,
+#email:-webkit-autofill:focus,
+#password:-webkit-autofill,
+#password:-webkit-autofill:hover,
+#password:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--color-input-text-light) !important;
+    caret-color: var(--color-input-text-light);
+}
+
+.dark #email,
+.dark #password {
+    -webkit-box-shadow: 0 0 0 1000px var(--color-input-bg-dark) inset;
+}
 .dark #email:-webkit-autofill,
 .dark #email:-webkit-autofill:hover,
 .dark #email:-webkit-autofill:focus,
 .dark #password:-webkit-autofill,
 .dark #password:-webkit-autofill:hover,
 .dark #password:-webkit-autofill:focus {
-    -webkit-box-shadow: 0 0 0 1000px var(--color-input-bg-dark) inset !important;
     -webkit-text-fill-color: var(--color-input-text-dark) !important;
     caret-color: var(--color-input-text-dark);
 }

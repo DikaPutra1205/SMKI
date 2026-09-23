@@ -442,9 +442,7 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
 
     useEffect(() => {
         if (detailTarget) {
-            const ownNote = isUserPic
-                ? (detailTarget.catatan ?? '')
-                : ((detailTarget.admin_notes as string) || detailTarget.catatan_admin || '');
+            const ownNote = isUserPic ? (detailTarget.catatan ?? '') : (detailTarget.admin_notes as string) || detailTarget.catatan_admin || '';
             setUpdateData({
                 status: detailTarget.status || 'open',
                 category: detailTarget.kategori || 'minor',
@@ -467,9 +465,7 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
 
     function handleCancelUpdate() {
         if (detailTarget) {
-            const ownNote = isUserPic
-                ? (detailTarget.catatan ?? '')
-                : ((detailTarget.admin_notes as string) || detailTarget.catatan_admin || '');
+            const ownNote = isUserPic ? (detailTarget.catatan ?? '') : (detailTarget.admin_notes as string) || detailTarget.catatan_admin || '';
             setUpdateData({
                 status: detailTarget.status || 'open',
                 category: detailTarget.kategori || 'minor',

@@ -364,10 +364,7 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
                                     </div>
                                     <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                                         {selesaiPct > 0 && (
-                                            <div
-                                                className="h-full bg-emerald-500 transition-all duration-500"
-                                                style={{ width: `${selesaiPct}%` }}
-                                            />
+                                            <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${selesaiPct}%` }} />
                                         )}
                                         {tinjauanPct > 0 && (
                                             <div className="h-full bg-blue-400 transition-all duration-500" style={{ width: `${tinjauanPct}%` }} />

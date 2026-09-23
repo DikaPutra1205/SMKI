@@ -882,9 +882,7 @@ export default function Verify({ entries, session, workUnits = [], filters = {} 
                                             <td className="px-4 py-3">
                                                 {entry.catatan_admin?.trim() ? (
                                                     <div className="flex flex-col">
-                                                        <span className="text-xs font-semibold text-rose-600 dark:text-rose-400">
-                                                            Ditolak
-                                                        </span>
+                                                        <span className="text-xs font-semibold text-rose-600 dark:text-rose-400">Ditolak</span>
                                                         <span
                                                             className="mt-0.5 line-clamp-2 max-w-[220px] text-[11px] font-medium text-slate-500 dark:text-slate-400"
                                                             title={entry.catatan_admin}

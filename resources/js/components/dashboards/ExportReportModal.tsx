@@ -197,7 +197,7 @@ export default function ExportReportModal({ open, onClose, unitId, workUnits: in
                         type="button"
                         onClick={handleDownload}
                         disabled={loadingData || availableReports.length === 0}
-                        className="inline-flex items-center gap-2 rounded-xl bg-primary px-4.5 py-2 text-xs font-semibold text-white shadow-xs transition-all hover:bg-primary/90 active:scale-95 disabled:opacity-50"
+                        className="bg-primary hover:bg-primary/90 inline-flex items-center gap-2 rounded-xl px-4.5 py-2 text-xs font-semibold text-white shadow-xs transition-all active:scale-95 disabled:opacity-50"
                     >
                         <Download className="h-4 w-4" />
                         Cetak &amp; Unduh PDF
@@ -220,7 +220,7 @@ export default function ExportReportModal({ open, onClose, unitId, workUnits: in
                                         onClick={() => setSelectedType(report.id)}
                                         className={`flex flex-col items-start rounded-xl border p-2.5 text-left transition-all ${
                                             isSelected
-                                                ? 'border-primary bg-primary/10 text-primary shadow-xs dark:border-primary dark:bg-primary/20 dark:text-primary-200'
+                                                ? 'border-primary bg-primary/10 text-primary dark:border-primary dark:bg-primary/20 dark:text-primary-200 shadow-xs'
                                                 : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
                                         }`}
                                     >
@@ -235,11 +235,7 @@ export default function ExportReportModal({ open, onClose, unitId, workUnits: in
 
                 {/* 2. Filter Satuan Unit Kerja */}
                 <div>
-                    <Select
-                        label="Satuan Unit Kerja (Cakupan Penilaian)"
-                        value={selectedUnitId}
-                        onChange={(e) => setSelectedUnitId(e.target.value)}
-                    >
+                    <Select label="Satuan Unit Kerja (Cakupan Penilaian)" value={selectedUnitId} onChange={(e) => setSelectedUnitId(e.target.value)}>
                         <option value="">Seluruh Satuan Unit Kerja (Komdigi)</option>
                         {workUnits.map((u) => (
                             <option key={u.id} value={String(u.id)}>
@@ -265,28 +261,28 @@ export default function ExportReportModal({ open, onClose, unitId, workUnits: in
                         <button
                             type="button"
                             onClick={() => applyPreset('this-month')}
-                            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                            className="hover:border-primary/40 hover:bg-primary/5 hover:text-primary rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 transition-colors dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
                         >
                             Bulan Ini
                         </button>
                         <button
                             type="button"
                             onClick={() => applyPreset('last-3-months')}
-                            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                            className="hover:border-primary/40 hover:bg-primary/5 hover:text-primary rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 transition-colors dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
                         >
                             3 Bulan Terakhir
                         </button>
                         <button
                             type="button"
                             onClick={() => applyPreset('last-6-months')}
-                            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                            className="hover:border-primary/40 hover:bg-primary/5 hover:text-primary rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 transition-colors dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
                         >
                             Semester Ini (6 Bulan)
                         </button>
                         <button
                             type="button"
                             onClick={() => applyPreset('all-time')}
-                            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                            className="hover:border-primary/40 hover:bg-primary/5 hover:text-primary rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 transition-colors dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
                         >
                             Seluruh Riwayat
                         </button>
@@ -294,18 +290,8 @@ export default function ExportReportModal({ open, onClose, unitId, workUnits: in
 
                     {/* Kurun Awal & Kurun Akhir DatePicker */}
                     <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        <DatePicker
-                            label="Kurun Awal (Tanggal Mulai)"
-                            value={startDate}
-                            onChange={setStartDate}
-                            placeholder="Pilih tanggal mulai"
-                        />
-                        <DatePicker
-                            label="Kurun Akhir (Tanggal Selesai)"
-                            value={endDate}
-                            onChange={setEndDate}
-                            placeholder="Pilih tanggal selesai"
-                        />
+                        <DatePicker label="Kurun Awal (Tanggal Mulai)" value={startDate} onChange={setStartDate} placeholder="Pilih tanggal mulai" />
+                        <DatePicker label="Kurun Akhir (Tanggal Selesai)" value={endDate} onChange={setEndDate} placeholder="Pilih tanggal selesai" />
                     </div>
                 </div>
 
@@ -318,7 +304,7 @@ export default function ExportReportModal({ open, onClose, unitId, workUnits: in
                             onClick={() => setPrintMode('latest')}
                             className={`flex flex-col items-start rounded-xl border p-2.5 text-left transition-all ${
                                 printMode === 'latest'
-                                    ? 'border-primary bg-primary/10 text-primary shadow-xs dark:border-primary dark:bg-primary/20 dark:text-primary-200'
+                                    ? 'border-primary bg-primary/10 text-primary dark:border-primary dark:bg-primary/20 dark:text-primary-200 shadow-xs'
                                     : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
                             }`}
                         >
@@ -330,7 +316,7 @@ export default function ExportReportModal({ open, onClose, unitId, workUnits: in
                             onClick={() => setPrintMode('per_month')}
                             className={`flex flex-col items-start rounded-xl border p-2.5 text-left transition-all ${
                                 printMode === 'per_month'
-                                    ? 'border-primary bg-primary/10 text-primary shadow-xs dark:border-primary dark:bg-primary/20 dark:text-primary-200'
+                                    ? 'border-primary bg-primary/10 text-primary dark:border-primary dark:bg-primary/20 dark:text-primary-200 shadow-xs'
                                     : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
                             }`}
                         >

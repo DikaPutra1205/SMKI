@@ -104,7 +104,7 @@ export default function AuditorDashboard({ summary, trends = [], recent_activiti
                     <button
                         type="button"
                         onClick={() => setIsExportModalOpen(true)}
-                        className="inline-flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-3.5 py-2 text-xs font-semibold text-primary shadow-xs transition-colors hover:bg-primary/10 dark:border-primary/40 dark:bg-primary/10 dark:text-primary-200 dark:hover:bg-primary/20"
+                        className="border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 dark:border-primary/40 dark:bg-primary/10 dark:text-primary-200 dark:hover:bg-primary/20 inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-semibold shadow-xs transition-colors"
                     >
                         <FileDown className="h-4 w-4" />
                         Unduh Laporan PDF
