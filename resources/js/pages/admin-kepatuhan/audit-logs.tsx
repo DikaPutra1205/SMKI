@@ -351,7 +351,7 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
                         />
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="grid min-w-0 grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center [&>*:last-child]:col-span-2">
                         <Select value={selectedAction} onChange={(e) => setSelectedAction(e.target.value)} aria-label={t('audit.actionLabel')}>
                             <option value="all">{t('audit.allActions')}</option>
                             {actionOptions.map((a) => (

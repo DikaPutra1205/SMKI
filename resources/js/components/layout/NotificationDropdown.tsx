@@ -158,7 +158,7 @@ export function NotificationDropdown({ userId }: NotificationDropdownProps) {
                 {/* Dropdown Panel */}
                 {isOpen && (
                     <div
-                        className="animate-in fade-in slide-in-from-top-2 absolute right-0 z-[1000] mt-2 w-[340px] rounded-2xl border border-slate-200 bg-white/95 shadow-2xl backdrop-blur-md sm:w-[380px] dark:border-slate-800 dark:bg-[#00223d]/95"
+                        className="animate-in fade-in slide-in-from-top-2 fixed top-[76px] right-4 left-4 z-[1000] rounded-2xl border border-slate-200 bg-white/95 shadow-2xl backdrop-blur-md sm:absolute sm:top-auto sm:right-0 sm:left-auto sm:mt-2 sm:w-[380px] dark:border-slate-800 dark:bg-[#00223d]/95"
                         role="dialog"
                         aria-label="Daftar Notifikasi"
                     >
@@ -329,7 +329,7 @@ export function NotificationDropdown({ userId }: NotificationDropdownProps) {
                             setIsOpen(true);
                         }
                     }}
-                    className="border-primary/20 animate-in slide-in-from-top-4 hover:border-primary/50 fixed top-20 right-4 z-[1050] max-w-sm cursor-pointer rounded-2xl border bg-white/95 p-4 shadow-2xl backdrop-blur-md duration-300 dark:border-sky-500/30 dark:bg-[#00223d]/95 dark:hover:border-sky-500/60"
+                    className="border-primary/20 animate-in slide-in-from-top-4 hover:border-primary/50 fixed top-20 right-4 left-4 z-[1050] cursor-pointer rounded-2xl border bg-white/95 p-4 shadow-2xl backdrop-blur-md duration-300 sm:left-auto sm:max-w-sm dark:border-sky-500/30 dark:bg-[#00223d]/95 dark:hover:border-sky-500/60"
                 >
                     <div className="flex items-start gap-3">
                         <div className="bg-primary/10 text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-xl dark:bg-sky-500/20 dark:text-sky-400">

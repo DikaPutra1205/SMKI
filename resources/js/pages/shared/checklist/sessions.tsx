@@ -330,21 +330,21 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
                         return (
                             <div
                                 key={s.id}
-                                className="group flex flex-col rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs transition-all hover:border-slate-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
+                                className="group flex min-w-0 flex-col rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs transition-all hover:border-slate-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
                             >
-                                <div className="mb-3">
+                                <div className="mb-3 min-w-0">
                                     <h3 className="truncate text-sm leading-snug font-bold text-slate-900 dark:text-white">{s.konteks_penilaian}</h3>
                                     <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                                         {s.periode ? formatPeriodeIndonesian(s.periode) : 'Tanpa Periode'}
                                     </p>
                                 </div>
 
-                                <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-600 dark:text-slate-400">
-                                    <span className="inline-flex items-center gap-1.5">
-                                        <UserRound className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
-                                        {s.unit_nama || 'Unit tidak diketahui'}
+                                <div className="mb-3 flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-600 dark:text-slate-400">
+                                    <span className="inline-flex min-w-0 items-center gap-1.5">
+                                        <UserRound className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-500" />
+                                        <span className="min-w-0 break-words">{s.unit_nama || 'Unit tidak diketahui'}</span>
                                     </span>
-                                    {s.creator_name && <span className="text-slate-400 dark:text-slate-500">oleh {s.creator_name}</span>}
+                                    {s.creator_name && <span className="min-w-0 break-words text-slate-400 dark:text-slate-500">oleh {s.creator_name}</span>}
                                 </div>
 
                                 {s.framework_nama && (
@@ -355,8 +355,8 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
                                     </div>
                                 )}
 
-                                <div className="mb-3">
-                                    <div className="mb-1 flex items-baseline justify-between">
+                                <div className="mb-3 min-w-0">
+                                    <div className="mb-1 flex min-w-0 items-baseline justify-between gap-2">
                                         <span className="text-xs text-slate-500 dark:text-slate-400">
                                             {s.selesai_entries}/{s.total_entries} Selesai Diterapkan
                                         </span>
@@ -381,25 +381,25 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
                                     </div>
                                 </div>
 
-                                <div className="mt-auto border-t border-slate-100 pt-3 dark:border-slate-800">
-                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div className="mt-auto min-w-0 border-t border-slate-100 pt-3 dark:border-slate-800">
+                                    <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
                                         <Link
                                             href={`/admin/kepatuhan/checklist/verify?session_id=${s.id}`}
-                                            className="text-primary hover:text-primary-700 dark:text-primary-300 dark:hover:text-primary-200 inline-flex items-center gap-1 text-xs font-semibold"
+                                            className="text-primary hover:text-primary-700 dark:text-primary-300 dark:hover:text-primary-200 inline-flex min-w-0 items-center gap-1 text-xs font-semibold"
                                         >
-                                            <span>Verifikasi Kontrol</span>
-                                            <ArrowRight className="h-3.5 w-3.5" />
+                                            <span className="break-words">Verifikasi Kontrol</span>
+                                            <ArrowRight className="h-3.5 w-3.5 shrink-0" />
                                         </Link>
 
                                         {(can('checklist-session.update') || can('checklist-session.delete')) && (
-                                            <div className="flex items-center gap-1.5">
+                                            <div className="flex shrink-0 items-center gap-1.5">
                                                 {can('checklist-session.update') && (
                                                     <button
                                                         type="button"
                                                         onClick={() => openEdit(s)}
-                                                        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                                                        className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                                                     >
-                                                        <Pencil className="h-3 w-3" />
+                                                        <Pencil className="h-3 w-3 shrink-0" />
                                                         Edit
                                                     </button>
                                                 )}
@@ -407,9 +407,9 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
                                                     <button
                                                         type="button"
                                                         onClick={() => handleDelete(s)}
-                                                        className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-700 transition-colors hover:bg-rose-100 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300 dark:hover:bg-rose-900/60"
+                                                        className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-rose-700 transition-colors hover:bg-rose-100 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300 dark:hover:bg-rose-900/60"
                                                     >
-                                                        <Trash2 className="h-3 w-3" />
+                                                        <Trash2 className="h-3 w-3 shrink-0" />
                                                         Hapus
                                                     </button>
                                                 )}
@@ -417,12 +417,14 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
                                         )}
                                     </div>
 
-                                    <div className="mt-2.5 flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500">
-                                        <span className="inline-flex items-center gap-1">
-                                            <ShieldCheck className="h-3.5 w-3.5" />
-                                            {s.verified_entries}/{s.total_entries} terverifikasi
+                                    <div className="mt-2.5 flex min-w-0 flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400 dark:text-slate-500">
+                                        <span className="inline-flex min-w-0 items-center gap-1">
+                                            <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
+                                            <span className="break-words">
+                                                {s.verified_entries}/{s.total_entries} terverifikasi
+                                            </span>
                                         </span>
-                                        <span>{formatDateIndonesian(s.created_at, { shortMonth: true })}</span>
+                                        <span className="shrink-0">{formatDateIndonesian(s.created_at, { shortMonth: true })}</span>
                                     </div>
                                 </div>
                             </div>

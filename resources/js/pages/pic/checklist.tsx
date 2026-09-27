@@ -110,7 +110,7 @@ export default function Assessments({ sessions, user_unit }: AssessmentsProps) {
                                 key={s.id}
                                 type="button"
                                 onClick={() => router.get(`/admin/pic/checklist/${s.id}`)}
-                                className="group hover:border-primary-200 dark:hover:border-primary-800 flex flex-col rounded-xl border border-slate-200 bg-white p-5 text-left shadow-sm transition-all hover:shadow-md dark:border-slate-700 dark:bg-slate-900"
+                                className="group hover:border-primary-200 dark:hover:border-primary-800 flex min-w-0 flex-col rounded-xl border border-slate-200 bg-white p-5 text-left shadow-sm transition-all hover:shadow-md dark:border-slate-700 dark:bg-slate-900"
                             >
                                 <div className="mb-3 flex items-start justify-between">
                                     <div className="min-w-0 flex-1">

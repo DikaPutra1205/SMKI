@@ -13,7 +13,7 @@ type AuthShellProps = {
 export default function AuthShell({ children }: AuthShellProps) {
     return (
         <div className="flex min-h-screen flex-col bg-white lg:flex-row dark:bg-slate-900">
-            <aside className="from-navy relative flex flex-col justify-between overflow-hidden bg-gradient-to-b to-[#001A30] px-8 py-8 text-white lg:w-[46%] lg:px-14 lg:py-12">
+            <aside className="from-navy relative hidden flex-col justify-between overflow-hidden bg-gradient-to-b to-[#001A30] px-8 py-8 text-white lg:flex lg:w-[46%] lg:px-14 lg:py-12">
                 <div
                     aria-hidden
                     className="absolute inset-0"

@@ -77,7 +77,7 @@ function SessionCard({ session }: { session: SessionItem }) {
         <button
             type="button"
             onClick={handleClick}
-            className="group border-border hover:border-primary-400 focus-visible:ring-primary/40 relative flex flex-col rounded-[16px] border bg-white p-5 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-2 focus-visible:outline-none dark:border-slate-700 dark:bg-slate-900"
+            className="group border-border hover:border-primary-400 focus-visible:ring-primary/40 relative flex min-w-0 flex-col rounded-[16px] border bg-white p-5 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-2 focus-visible:outline-none dark:border-slate-700 dark:bg-slate-900"
         >
             {/* Top: Unit badge + Period */}
             <div className="mb-2.5 flex items-center justify-between gap-2">

@@ -61,11 +61,11 @@ export function SlideOver({
                 aria-hidden="true"
             />
 
-            <div className="fixed inset-y-0 right-0 flex max-w-full pl-10 pointer-events-none">
+            <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-4 sm:pl-10">
                 {/* Panel */}
                 <div
                     className={cn(
-                        'pointer-events-auto w-screen flex flex-col bg-white dark:bg-slate-900 border-l border-slate-200/90 dark:border-slate-800 shadow-2xl animate-in slide-in-from-right duration-300',
+                        'pointer-events-auto flex w-[calc(100vw-1rem)] flex-col border-l border-slate-200/90 bg-white shadow-2xl animate-in slide-in-from-right duration-300 sm:w-screen dark:border-slate-800 dark:bg-slate-900',
                         maxWidthClasses[maxWidth],
                         width,
                         className,

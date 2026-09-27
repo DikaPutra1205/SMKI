@@ -56,14 +56,14 @@ export function Modal({ open, title, description, onClose, children, footer, max
                 )}
             >
                 <div className="flex items-start justify-between gap-4 border-b border-border dark:border-slate-700 px-5 py-4">
-                    <div>
-                        {title && <h3 className="text-base font-bold text-navy dark:text-white">{title}</h3>}
+                    <div className="min-w-0">
+                        {title && <h3 className="text-base font-bold break-words text-navy dark:text-white">{title}</h3>}
                         {description && <p className="mt-0.5 text-xs text-muted dark:text-slate-400">{description}</p>}
                     </div>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="rounded-lg p-1.5 text-muted dark:text-slate-400 transition-colors hover:bg-surface dark:hover:bg-slate-800 hover:text-navy dark:hover:text-white"
+                            className="rounded-lg p-1.5 text-muted dark:text-slate-400 transition-colors hover:bg-surface dark:hover:bg-slate-800 hover:text-navy dark:hover:text-white shrink-0"
                         aria-label="Tutup"
                     >
                         <X className="h-4 w-4" />

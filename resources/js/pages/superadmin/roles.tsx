@@ -515,8 +515,8 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                                                 className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900"
                                             >
                                                 {/* Module Group Header */}
-                                                <div className="flex items-center justify-between gap-3 bg-slate-50/70 px-4 py-2.5 dark:bg-slate-800/40">
-                                                    <div className="flex items-center gap-3">
+                                                <div className="flex min-w-0 items-center justify-between gap-3 bg-slate-50/70 px-4 py-2.5 dark:bg-slate-800/40">
+                                                    <div className="flex min-w-0 flex-1 items-center gap-3">
                                                         <input
                                                             type="checkbox"
                                                             checked={allChecked}
@@ -524,23 +524,23 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                                                                 if (el) el.indeterminate = partialChecked;
                                                             }}
                                                             onChange={() => toggleGroup(mod)}
-                                                            className="text-primary focus:ring-primary h-4 w-4 rounded-md border-slate-300 dark:border-slate-700 dark:bg-slate-900"
+                                                            className="text-primary focus:ring-primary h-4 w-4 shrink-0 rounded-md border-slate-300 dark:border-slate-700 dark:bg-slate-900"
                                                         />
-                                                        <div>
-                                                            <div className="flex items-center gap-2">
-                                                                <h5 className="text-xs font-bold text-slate-900 dark:text-white">{meta.label}</h5>
-                                                                <span className="py-0.2 rounded-full bg-slate-200/80 px-2 text-[10px] font-bold text-slate-700 dark:bg-slate-700 dark:text-slate-300">
+                                                        <div className="min-w-0">
+                                                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                                                <h5 className="text-xs font-bold break-words text-slate-900 dark:text-white">{meta.label}</h5>
+                                                                <span className="py-0.2 shrink-0 rounded-full bg-slate-200/80 px-2 text-[10px] font-bold whitespace-nowrap text-slate-700 dark:bg-slate-700 dark:text-slate-300">
                                                                     {activeCount}/{permissionCatalog[mod].length} Aktif
                                                                 </span>
                                                             </div>
-                                                            <p className="text-[11px] text-slate-500 dark:text-slate-400">{meta.desc}</p>
+                                                            <p className="text-[11px] break-words text-slate-500 dark:text-slate-400">{meta.desc}</p>
                                                         </div>
                                                     </div>
 
                                                     <button
                                                         type="button"
                                                         onClick={() => setCollapsed((p) => ({ ...p, [mod]: !p[mod] }))}
-                                                        className="rounded-lg p-1 text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 dark:hover:bg-slate-700 dark:hover:text-white"
+                                                        className="shrink-0 rounded-lg p-1 text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 dark:hover:bg-slate-700 dark:hover:text-white"
                                                     >
                                                         <ChevronDown
                                                             className={`h-4 w-4 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`}
@@ -558,7 +558,7 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                                                             return (
                                                                 <label
                                                                     key={key}
-                                                                    className={`flex cursor-pointer items-start gap-2.5 rounded-xl border p-2.5 transition-all ${
+                                                                    className={`flex min-w-0 cursor-pointer items-start gap-2.5 rounded-xl border p-2.5 transition-all ${
                                                                         on
                                                                             ? 'border-primary-300 bg-primary-50/60 ring-primary/20 dark:border-primary-800 dark:bg-navy-900/30 ring-1'
                                                                             : 'border-slate-200/80 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700'
@@ -568,16 +568,16 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                                                                         type="checkbox"
                                                                         checked={on}
                                                                         onChange={() => togglePerm(key)}
-                                                                        className="text-primary focus:ring-primary mt-0.5 h-3.5 w-3.5 rounded border-slate-300 dark:border-slate-700 dark:bg-slate-900"
+                                                                        className="text-primary focus:ring-primary mt-0.5 h-3.5 w-3.5 shrink-0 rounded border-slate-300 dark:border-slate-700 dark:bg-slate-900"
                                                                     />
                                                                     <div className="min-w-0 flex-1">
-                                                                        <div className="flex items-center justify-between gap-1">
+                                                                        <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-0.5">
                                                                             <span
-                                                                                className={`text-xs font-bold ${on ? 'text-navy dark:text-primary-200' : 'text-slate-900 dark:text-white'}`}
+                                                                                className={`min-w-0 break-words text-xs font-bold ${on ? 'text-navy dark:text-primary-200' : 'text-slate-900 dark:text-white'}`}
                                                                             >
                                                                                 {actionName}
                                                                             </span>
-                                                                            <span className="font-mono text-[9.5px] text-slate-400">{key}</span>
+                                                                            <span className="shrink-0 font-mono text-[9.5px] text-slate-400">{key}</span>
                                                                         </div>
                                                                         <p className="mt-0.5 text-[11px] leading-tight text-slate-500 dark:text-slate-400">
                                                                             {actionDesc}

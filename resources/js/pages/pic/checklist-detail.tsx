@@ -209,7 +209,7 @@ function EntryItemRow({
     return (
         <div
             id={`entry-row-${entryId}`}
-            className={`border-b border-slate-100 py-5 last:border-b-0 dark:border-slate-800 ${
+            className={`min-w-0 border-b border-slate-100 py-5 last:border-b-0 dark:border-slate-800 ${
                 showVerdict
                     ? verifiedRowTint
                     : showErrorLabels
@@ -217,17 +217,17 @@ function EntryItemRow({
                       : ''
             }`}
         >
-            <div className="mb-2 flex items-start justify-between">
-                <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600 dark:bg-slate-800">
+            <div className="mb-2 flex items-start justify-between gap-2">
+                <div className="flex min-w-0 flex-1 items-start gap-2">
+                    <span className="inline-flex shrink-0 items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600 dark:bg-slate-800">
                         {entry.control.kode_klausul}
                     </span>
-                    <h4 className={`text-sm font-bold ${showErrorLabels ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white'}`}>
+                    <h4 className={`min-w-0 flex-1 text-sm font-bold break-words ${showErrorLabels ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white'}`}>
                         {entry.control.judul}
                     </h4>
                 </div>
                 {saveState !== 'idle' && (
-                    <span className="text-primary inline-flex items-center gap-1 text-xs font-medium">
+                    <span className="text-primary inline-flex shrink-0 items-center gap-1 text-xs font-medium">
                         <Check className="h-3.5 w-3.5" />
                         Tersimpan
                     </span>
@@ -272,7 +272,7 @@ function EntryItemRow({
                 )}
             </div>
 
-            <div className="flex flex-col gap-1.5">
+            <div className="flex min-w-0 flex-col gap-1.5">
                 <div className="flex items-center gap-2">
                     <label htmlFor={`maturity-${entryId}`} className="text-xs font-semibold whitespace-nowrap text-slate-600 dark:text-slate-300">
                         Level Maturity
@@ -291,16 +291,16 @@ function EntryItemRow({
                         ))}
                     </select>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                     <input
                         type="text"
                         value={localCatatan}
                         onChange={(e) => handleCatatanInput(e.target.value)}
                         placeholder={isNa ? 'Justifikasi bila tidak berlaku...' : 'Catatan tindak lanjut (opsional)...'}
-                        className="focus:border-primary focus:ring-primary flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 placeholder-slate-400 transition-colors focus:ring-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                        className="focus:border-primary focus:ring-primary w-full min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 placeholder-slate-400 transition-colors focus:ring-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
                     />
                     <label
-                        className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
+                        className={`inline-flex w-full shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium whitespace-nowrap transition-colors sm:w-auto sm:self-auto ${
                             uploading
                                 ? 'border-primary-200 bg-primary-50 text-primary-300 dark:border-primary-800 dark:bg-navy-900 cursor-wait'
                                 : 'border-primary-200 bg-primary-50 text-primary-700 hover:bg-primary-100 dark:border-primary-800 dark:bg-navy-900 dark:text-primary-200'
@@ -313,7 +313,7 @@ function EntryItemRow({
                             </>
                         ) : (
                             <>
-                                <Upload className="h-3.5 w-3.5" />
+                                <Upload className="h-3.5 w-3.5 shrink-0" />
                                 {entry.active_evidence ? 'Unggah Ulang' : 'Unggah Bukti'}
                             </>
                         )}
@@ -358,16 +358,16 @@ function EntryItemRow({
             </div>
 
             {entry.active_evidence && (
-                <div className="mt-2.5 flex items-center gap-3 text-xs">
+                <div className="mt-2.5 flex min-w-0 items-center justify-between gap-2 text-xs">
                     <button
                         type="button"
                         onClick={() => onPreviewEvidence({ nama_file: entry.active_evidence!.nama_file, file_url: entry.active_evidence!.file_url })}
-                        className="text-primary hover:text-primary-700 dark:text-primary-200 dark:hover:text-primary-200 inline-flex items-center gap-1.5 font-semibold hover:underline"
+                        className="text-primary hover:text-primary-700 dark:text-primary-200 dark:hover:text-primary-200 inline-flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden font-semibold hover:underline"
                     >
-                        <Eye className="h-3.5 w-3.5" />
-                        <span className="max-w-[260px] truncate">{entry.active_evidence.nama_file}</span>
+                        <Eye className="h-3.5 w-3.5 shrink-0" />
+                        <span className="min-w-0 flex-1 truncate">{entry.active_evidence.nama_file}</span>
                     </button>
-                    <span className="text-[11px] text-slate-400 dark:text-slate-500">(Klik untuk pratinjau)</span>
+                    <span className="shrink-0 whitespace-nowrap text-[11px] text-slate-400 dark:text-slate-500">(Klik untuk pratinjau)</span>
                 </div>
             )}
         </div>
@@ -658,19 +658,19 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
 
             {pageMeta.length > 0 && (
                 <div className="mb-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-                    <div className="flex items-center justify-between">
+                    <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:justify-between">
                         <button
                             type="button"
                             onClick={handlePrevPage}
                             disabled={currentPageIndex === 0 || pageLoading}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                            className="inline-flex w-full min-w-0 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-2 text-[13px] font-medium whitespace-nowrap text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:px-3 sm:text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
                         >
                             <ArrowLeft className="h-4 w-4" />
                             Sebelumnya
                         </button>
 
-                        <div className="flex flex-col items-center gap-0.5">
-                            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                        <div className="order-first col-span-2 flex min-w-0 flex-col items-center gap-0.5 text-center sm:order-none">
+                            <span className="text-sm font-semibold break-words text-slate-700 dark:text-slate-200">
                                 Halaman {currentPageIndex + 1} dari {pageMeta.length}
                             </span>
                             <span className="text-xs text-slate-400">Navigasi per kategori</span>
@@ -681,7 +681,7 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
                             onClick={handleNextPage}
                             disabled={currentPageIndex >= pageMeta.length - 1 || pageLoading}
                             title={!isCurrentPageComplete ? 'Masih ada kontrol yang belum lengkap — klik untuk menuju bagian yang belum diisi' : ''}
-                            className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium shadow-sm transition-colors ${
+                            className={`inline-flex w-full min-w-0 items-center justify-center gap-1.5 rounded-lg border px-2 py-2 text-[13px] font-medium whitespace-nowrap shadow-sm transition-colors sm:w-auto sm:px-3 sm:text-sm ${
                                 !isCurrentPageComplete && currentPageIndex < pageMeta.length - 1
                                     ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-400'
                                     : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'
@@ -774,7 +774,7 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
                         </div>
                     )}
 
-                    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+                    <div className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
                         {filteredEntries.map((entry) => (
                             <EntryItemRow
                                 key={entry.id}
@@ -791,23 +791,23 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
 
             {pageMeta.length > 0 && (
                 <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-                    <div className="flex items-center justify-between">
+                    <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:justify-between">
                         <button
                             type="button"
                             onClick={handlePrevPage}
                             disabled={currentPageIndex === 0 || pageLoading}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                            className="inline-flex w-full min-w-0 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-2 text-[13px] font-medium whitespace-nowrap text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:px-3 sm:text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
                         >
                             <ArrowLeft className="h-4 w-4" />
                             Sebelumnya
                         </button>
 
-                        <div className="flex flex-col items-center gap-1">
+                        <div className="order-first col-span-2 flex min-w-0 flex-col items-center gap-1 text-center sm:order-none">
                             <span className="text-xs font-medium text-slate-500">
                                 Halaman {currentPageIndex + 1} dari {pageMeta.length}
                             </span>
                             {currentPageMeta && (
-                                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                <span className="text-sm font-semibold break-words text-slate-700 dark:text-slate-300">
                                     {currentPageMeta.framework_name} &bull; {formatKategori(currentPageMeta.kategori)}
                                 </span>
                             )}
@@ -819,7 +819,7 @@ export default function ChecklistDetail({ session, initialEntries, pageMeta, tot
                             onClick={handleNextPage}
                             disabled={currentPageIndex >= pageMeta.length - 1 || pageLoading}
                             title={!isCurrentPageComplete ? 'Masih ada kontrol yang belum lengkap — klik untuk menuju bagian yang belum diisi' : ''}
-                            className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium shadow-sm transition-colors ${
+                            className={`inline-flex w-full min-w-0 items-center justify-center gap-1.5 rounded-lg border px-2 py-2 text-[13px] font-medium whitespace-nowrap shadow-sm transition-colors sm:w-auto sm:px-3 sm:text-sm ${
                                 !isCurrentPageComplete && currentPageIndex < pageMeta.length - 1
                                     ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-400'
                                     : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'

@@ -140,9 +140,9 @@ export default function Units({ units }: Props) {
 
             {/* Table */}
             <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <div className="grid grid-cols-[1fr_1fr_auto] gap-4 border-b border-slate-100 px-5 py-3 text-[11px] font-bold tracking-wide text-slate-400 uppercase dark:border-slate-800 dark:text-slate-500">
+                <div className="grid grid-cols-[1fr_auto] gap-4 border-b border-slate-100 px-5 py-3 text-[11px] font-bold tracking-wide text-slate-400 uppercase sm:grid-cols-[1fr_1fr_auto] dark:border-slate-800 dark:text-slate-500">
                     <div>Nama Unit</div>
-                    <div>Induk</div>
+                    <div className="hidden sm:block">Induk</div>
                     <div className="text-right">Aksi</div>
                 </div>
 
@@ -150,7 +150,7 @@ export default function Units({ units }: Props) {
                     units.map((u, idx) => (
                         <div
                             key={u.id}
-                            className={`grid grid-cols-[1fr_1fr_auto] items-center gap-4 border-b border-slate-100 px-5 py-3.5 last:border-0 dark:border-slate-800 ${
+                            className={`grid grid-cols-[1fr_auto] items-center gap-4 border-b border-slate-100 px-5 py-3.5 last:border-0 sm:grid-cols-[1fr_1fr_auto] dark:border-slate-800 ${
                                 idx % 2 === 0
                                     ? 'hover:bg-slate-50/60 dark:hover:bg-slate-800/40'
                                     : 'bg-slate-200/70 hover:bg-slate-300/70 dark:bg-slate-800/20 dark:hover:bg-slate-800/50'
@@ -160,9 +160,14 @@ export default function Units({ units }: Props) {
                                 <div className="bg-primary-50 text-primary dark:bg-navy-900/50 dark:text-primary-200 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">
                                     <Building2 className="h-4 w-4" />
                                 </div>
-                                <span className="truncate text-sm font-semibold text-slate-900 dark:text-white">{u.nama}</span>
+                                <div className="min-w-0">
+                                    <span className="block truncate text-sm font-semibold text-slate-900 dark:text-white">{u.nama}</span>
+                                    <span className="block truncate text-[11px] text-slate-400 sm:hidden dark:text-slate-500">
+                                        Induk: {u.parent?.nama ?? '—'}
+                                    </span>
+                                </div>
                             </div>
-                            <div className="truncate text-sm text-slate-500 dark:text-slate-400">{u.parent?.nama ?? '—'}</div>
+                            <div className="hidden truncate text-sm text-slate-500 sm:block dark:text-slate-400">{u.parent?.nama ?? '—'}</div>
                             <div className="flex items-center justify-end gap-2">
                                 {can('work-unit.update') && (
                                     <button

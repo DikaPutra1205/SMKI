@@ -1592,25 +1592,25 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                             <button
                                 type="button"
                                 onClick={() => setDetailActiveTab('action')}
-                                className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold transition-all ${
+                                className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold transition-all ${
                                     detailActiveTab === 'action'
                                         ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
                                         : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
                                 }`}
                             >
-                                <CheckCircle2 className="text-primary h-3.5 w-3.5" />
+                                <CheckCircle2 className="text-primary h-3.5 w-3.5 shrink-0" />
                                 <span>Tindak Lanjut &amp; Aksi</span>
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setDetailActiveTab('history')}
-                                className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold transition-all ${
+                                className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold transition-all ${
                                     detailActiveTab === 'history'
                                         ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
                                         : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
                                 }`}
                             >
-                                <History className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                                <History className="h-3.5 w-3.5 shrink-0 text-slate-500 dark:text-slate-400" />
                                 <span>Riwayat Status</span>
                                 <span
                                     className={`py-0.2 rounded-full px-1.5 text-[10px] font-bold ${
@@ -1625,13 +1625,13 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                             <button
                                 type="button"
                                 onClick={() => setDetailActiveTab('control')}
-                                className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold transition-all ${
+                                className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold transition-all ${
                                     detailActiveTab === 'control'
                                         ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
                                         : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
                                 }`}
                             >
-                                <Shield className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                                <Shield className="h-3.5 w-3.5 shrink-0 text-slate-500 dark:text-slate-400" />
                                 <span>Klausul Kontrol</span>
                             </button>
                         </div>

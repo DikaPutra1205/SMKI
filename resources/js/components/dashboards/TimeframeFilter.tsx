@@ -129,17 +129,7 @@ export default function TimeframeFilter({
                                 : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
                         } ${loadingValue !== null && !isActive ? 'opacity-50' : ''}`}
                     >
-                        <span aria-hidden className="inline-flex h-3 w-3 shrink-0 justify-center">
-                            {isLoading ? (
-                                <Loader2 className="text-primary dark:text-primary-400 h-3 w-3 animate-spin" />
-                            ) : (
-                                <span
-                                    className={`mt-0.5 h-1.5 w-1.5 rounded-full transition-colors duration-200 ${
-                                        isActive ? 'bg-primary dark:bg-primary-400' : 'bg-slate-300 dark:bg-slate-600'
-                                    }`}
-                                />
-                            )}
-                        </span>
+                        {isLoading && <Loader2 className="text-primary dark:text-primary-400 h-3 w-3 shrink-0 animate-spin" />}
                         {opt.label}
                     </button>
                 );
