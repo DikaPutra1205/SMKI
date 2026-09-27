@@ -22,7 +22,11 @@ class PicDashboardController extends Controller
         $user = $request->user();
         abort_unless($user->isPic(), 403);
         $timeframe = $request->input('months');
-        $months = in_array((string) $timeframe, ['3', '6', '12'], true) ? (int) $timeframe : null;
+        $months = match (true) {
+            $timeframe === 'all' => null,
+            in_array((string) $timeframe, ['3', '6', '12'], true) => (int) $timeframe,
+            default => 3,
+        };
         $cutoffPeriode = $months ? Carbon::now()->startOfMonth()->subMonths($months - 1)->format('Y-m') : null;
 
         $summary = $this->analyticsService->getSummary($user, null, null, $months);
@@ -61,7 +65,7 @@ class PicDashboardController extends Controller
             'trends' => $this->analyticsService->getTrends($user, null, $months),
             'recent_sessions' => $recent,
             'filters' => [
-                'months' => $months ? (string) $months : 'all',
+                'months' => $months === null ? 'all' : (string) $months,
             ],
         ]);
     }

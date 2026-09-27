@@ -254,23 +254,22 @@ class DashboardAnalyticsService
     {
         $scopedUnitIds = $this->resolveScopedUnitIds($user, array_merge($unitId !== null ? ['unit_id' => $unitId] : []));
         $safeMonths = $months ? max(1, min($months, 24)) : 12;
-        $trends = [];
+        $startPeriod = Carbon::now()->startOfMonth()->subMonths($safeMonths - 1)->format('Y-m');
+        $endPeriod = Carbon::now()->startOfMonth()->format('Y-m');
 
-        for ($i = $safeMonths - 1; $i >= 0; $i--) {
-            $date = Carbon::now()->startOfMonth()->subMonths($i);
-            $yearMonth = $date->format('Y-m');
-            $label = $date->translatedFormat('F Y');
+        $query = ChecklistEntry::query()
+            ->join('controls', 'checklist_entries.control_id', '=', 'controls.id')
+            ->join('checklist_sessions', 'checklist_entries.session_id', '=', 'checklist_sessions.id')
+            ->whereNull('checklist_sessions.deleted_at')
+            ->whereBetween('checklist_sessions.periode', [$startPeriod, $endPeriod]);
 
-            $query = ChecklistEntry::query()
-                ->join('controls', 'checklist_entries.control_id', '=', 'controls.id')
-                ->join('checklist_sessions', 'checklist_entries.session_id', '=', 'checklist_sessions.id')
-                ->where('checklist_sessions.periode', '=', $yearMonth);
+        if ($scopedUnitIds !== null) {
+            $query->whereIn('checklist_entries.unit_id', $scopedUnitIds);
+        }
 
-            if ($scopedUnitIds !== null) {
-                $query->whereIn('checklist_entries.unit_id', $scopedUnitIds);
-            }
-
-            $stats = $query->selectRaw('
+        $statsByPeriod = $query
+            ->selectRaw('
+                checklist_sessions.periode as period,
                 SUM(CASE WHEN controls.framework_id = 1 AND checklist_entries.status = ? THEN 1 ELSE 0 END) as iso27001_compliant,
                 SUM(CASE WHEN controls.framework_id = 1 AND checklist_entries.status IN (?, ?, ?, ?) THEN 1 ELSE 0 END) as iso27001_applicable,
                 SUM(CASE WHEN controls.framework_id = 2 AND checklist_entries.status = ? THEN 1 ELSE 0 END) as iso27701_compliant,
@@ -284,7 +283,19 @@ class DashboardAnalyticsService
                 ChecklistEntry::WORKFLOW_SELESAI, ChecklistEntry::WORKFLOW_DALAM_PROSES, ChecklistEntry::WORKFLOW_DALAM_TINJAUAN, ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
                 ChecklistEntry::WORKFLOW_SELESAI,
                 ChecklistEntry::WORKFLOW_SELESAI, ChecklistEntry::WORKFLOW_DALAM_PROSES, ChecklistEntry::WORKFLOW_DALAM_TINJAUAN, ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
-            ])->first();
+            ])
+            ->groupBy('checklist_sessions.periode')
+            ->get()
+            ->keyBy('period');
+
+        $trends = [];
+
+        for ($i = $safeMonths - 1; $i >= 0; $i--) {
+            $date = Carbon::now()->startOfMonth()->subMonths($i);
+            $yearMonth = $date->format('Y-m');
+            $label = $date->translatedFormat('F Y');
+
+            $stats = $statsByPeriod->get($yearMonth);
 
             $iso27001App = (int) ($stats->iso27001_applicable ?? 0);
             $iso27001Comp = (int) ($stats->iso27001_compliant ?? 0);
@@ -395,20 +406,31 @@ class DashboardAnalyticsService
         $safeLimit = max(1, min((int) ($limit ?: 6), 100));
         $cutoffDate = $months ? Carbon::now()->startOfMonth()->subMonths($months - 1)->startOfMonth() : null;
 
-        $query = AuditLog::with(['actor.workUnit', 'actor.role']);
+        $query = AuditLog::query()
+            ->leftJoin('users', 'audit_logs.actor_id', '=', 'users.id')
+            ->leftJoin('roles', 'users.role_id', '=', 'roles.id')
+            ->select([
+                'audit_logs.id',
+                'audit_logs.aksi',
+                'audit_logs.entity_type',
+                'audit_logs.entity_id',
+                'audit_logs.created_at',
+                'users.name as actor_name',
+                'roles.name as actor_role',
+            ]);
         if ($cutoffDate) {
-            $query->where('created_at', '>=', $cutoffDate);
+            $query->where('audit_logs.created_at', '>=', $cutoffDate);
         }
 
         return $query
-            ->orderByDesc('id')
+            ->orderByDesc('audit_logs.id')
             ->limit($safeLimit)
             ->get()
             ->map(function (AuditLog $log) {
                 return [
                     'id' => $log->id,
-                    'actor_name' => $log->actor?->name ?? 'Sistem SMKI',
-                    'actor_role' => $log->actor?->role ?? 'system',
+                    'actor_name' => $log->actor_name ?? 'Sistem SMKI',
+                    'actor_role' => $log->actor_role ?? 'system',
                     'action' => $log->aksi,
                     'entity_name' => "{$log->entity_type} #{$log->entity_id}",
                     'time_ago' => $log->created_at ? $log->created_at->diffForHumans() : 'baru saja',
@@ -423,9 +445,10 @@ class DashboardAnalyticsService
      */
     protected function calculateGrowthRate(?array $scopedUnitIds, int $currentRate): float
     {
-        $endOfLastMonth = Carbon::now()->subMonth()->endOfMonth();
+        $startOfLastMonth = Carbon::now()->startOfMonth()->subMonth()->startOfMonth();
+        $endOfLastMonth = $startOfLastMonth->copy()->endOfMonth();
 
-        $query = ChecklistEntry::where('tanggal_input', '<=', $endOfLastMonth);
+        $query = ChecklistEntry::whereBetween('tanggal_input', [$startOfLastMonth, $endOfLastMonth]);
 
         if ($scopedUnitIds !== null) {
             $query->whereIn('unit_id', $scopedUnitIds);

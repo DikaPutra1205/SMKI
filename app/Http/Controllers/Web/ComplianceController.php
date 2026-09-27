@@ -67,7 +67,11 @@ class ComplianceController extends Controller
         $unitId = $request->filled('unit_id') ? (int) $request->input('unit_id') : null;
         $sessionId = $request->filled('session_id') ? (int) $request->input('session_id') : null;
         $timeframe = $request->input('months');
-        $months = in_array((string) $timeframe, ['3', '6', '12'], true) ? (int) $timeframe : null;
+        $months = match (true) {
+            $timeframe === 'all' => null,
+            in_array((string) $timeframe, ['3', '6', '12'], true) => (int) $timeframe,
+            default => 3,
+        };
 
         $summary = $this->analyticsService->getSummary($user, $unitId, $sessionId, $months);
         $trends = $this->analyticsService->getTrends($user, $unitId, $months);
@@ -84,7 +88,7 @@ class ComplianceController extends Controller
             'filters' => [
                 'unit_id' => $unitId,
                 'session_id' => $sessionId,
-                'months' => $months ? (string) $months : 'all',
+                'months' => $months === null ? 'all' : (string) $months,
             ],
         ]);
     }

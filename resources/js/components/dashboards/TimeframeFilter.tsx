@@ -80,7 +80,7 @@ export default function TimeframeFilter({
         if (selected !== 'all') {
             params.months = selected;
         } else {
-            delete params.months;
+            params.months = 'all';
         }
 
         router.get(path, params, {

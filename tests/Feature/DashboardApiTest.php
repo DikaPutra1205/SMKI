@@ -33,7 +33,8 @@ class DashboardApiTest extends TestCase
     {
         $this->actingAs($this->admin)->getJson('/api/v1/dashboard/summary')
             ->assertOk()
-            ->assertJsonStructure(['status', 'data']);
+            ->assertJsonStructure(['status', 'data'])
+            ->assertJsonPath('data.months', '3');
     }
 
     public function test_trends_returns_shape(): void

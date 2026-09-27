@@ -21,8 +21,9 @@ class DashboardApiController extends Controller
         $user = $request->user();
         $unitId = $request->filled('unit_id') ? (int) $request->input('unit_id') : null;
         $sessionId = $request->filled('session_id') ? (int) $request->input('session_id') : null;
+        $months = $this->resolveMonths($request);
 
-        $summary = $this->analyticsService->getSummary($user, $unitId, $sessionId);
+        $summary = $this->analyticsService->getSummary($user, $unitId, $sessionId, $months);
 
         return response()->json([
             'status' => 'success',
@@ -37,7 +38,7 @@ class DashboardApiController extends Controller
     {
         $user = $request->user();
         $unitId = $request->filled('unit_id') ? (int) $request->input('unit_id') : null;
-        $months = (int) $request->input('months', 6);
+        $months = $this->resolveMonths($request, 6);
 
         $trends = $this->analyticsService->getTrends($user, $unitId, $months);
 
@@ -53,7 +54,8 @@ class DashboardApiController extends Controller
     public function unitComparison(Request $request): JsonResponse
     {
         $user = $request->user();
-        $comparisons = $this->analyticsService->getUnitComparisons($user);
+        $months = $this->resolveMonths($request);
+        $comparisons = $this->analyticsService->getUnitComparisons($user, $months);
 
         return response()->json([
             'status' => 'success',
@@ -76,11 +78,25 @@ class DashboardApiController extends Controller
         }
 
         $limit = (int) $request->input('limit', 6);
-        $activities = $this->analyticsService->getRecentActivities($user, $limit);
+        $months = $this->resolveMonths($request);
+        $activities = $this->analyticsService->getRecentActivities($user, $limit, $months);
 
         return response()->json([
             'status' => 'success',
             'data' => $activities,
         ]);
+    }
+
+    private function resolveMonths(Request $request, int $default = 3): ?int
+    {
+        $value = $request->input('months');
+
+        if ($value === 'all') {
+            return null;
+        }
+
+        $months = (int) $value;
+
+        return $months > 0 ? min($months, 24) : $default;
     }
 }

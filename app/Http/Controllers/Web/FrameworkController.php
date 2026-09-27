@@ -28,7 +28,11 @@ class FrameworkController extends Controller
     {
         $user = $request->user();
         $timeframe = $request->input('months');
-        $months = in_array((string) $timeframe, ['3', '6', '12'], true) ? (int) $timeframe : null;
+        $months = match (true) {
+            $timeframe === 'all' => null,
+            in_array((string) $timeframe, ['3', '6', '12'], true) => (int) $timeframe,
+            default => 3,
+        };
 
         return Inertia::render('superadmin/dashboard', [
             'totalUsers' => User::count(),
@@ -39,7 +43,7 @@ class FrameworkController extends Controller
             'recent_activities' => $user ? $this->analyticsService->getRecentActivities($user, 6, $months) : [],
             'trends' => $user ? $this->analyticsService->getTrends($user, null, $months) : [],
             'filters' => [
-                'months' => $months ? (string) $months : 'all',
+                'months' => $months === null ? 'all' : (string) $months,
             ],
         ]);
     }

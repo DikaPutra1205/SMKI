@@ -1023,8 +1023,8 @@ class DashboardAnalyticsTest extends TestCase
             ->where('summary.overall_completion_rate', 50)
             ->where('filters.unit_id', $this->unitA->id)
             ->where('filters.session_id', $session->id)
-            ->where('filters.months', 'all')
-            ->has('trends', 12)
+            ->where('filters.months', '3')
+            ->has('trends', 3)
             ->has('unit_comparisons', 2)
             ->has('workUnits', 2)
         );
@@ -1047,7 +1047,8 @@ class DashboardAnalyticsTest extends TestCase
             ->where('totalFrameworks', 2)
             ->where('totalControls', 3)
             ->has('frameworks', 2)
-            ->has('trends', 12)
+            ->has('trends', 3)
+            ->where('filters.months', '3')
         );
     }
 
@@ -1075,11 +1076,11 @@ class DashboardAnalyticsTest extends TestCase
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
             ->component('pic/dashboard')
-            ->has('trends', 12)
-            ->where('trends.11.period', now()->format('Y-m'))
-            // Only the PIC's own unit entry counts: 100%, not blended 50%.
-            ->where('trends.11.iso27001_rate', 100)
-            ->where('trends.11.overall_rate', 100)
+            ->has('trends', 3)
+            ->where('filters.months', '3')
+            ->where('trends.2.period', now()->format('Y-m'))
+            ->where('trends.2.iso27001_rate', 100)
+            ->where('trends.2.overall_rate', 100)
         );
     }
 
@@ -1090,8 +1091,8 @@ class DashboardAnalyticsTest extends TestCase
         $responseAll->assertOk();
         $responseAll->assertInertia(fn ($page) => $page
             ->component('admin-kepatuhan/dashboard')
-            ->has('trends', 12)
-            ->where('filters.months', 'all')
+            ->has('trends', 3)
+            ->where('filters.months', '3')
         );
 
         $response = $this->actingAs($this->admin)->get('/admin/kepatuhan/dashboard?months=3');
@@ -1156,11 +1157,19 @@ class DashboardAnalyticsTest extends TestCase
             'created_at' => now()->subMonths(4),
         ]);
 
-        // All-time: should see both
-        $responseAll = $this->actingAs($this->admin)->get('/admin/kepatuhan/dashboard');
+        $responseDefault = $this->actingAs($this->admin)->get('/admin/kepatuhan/dashboard');
+        $responseDefault->assertOk();
+        $responseDefault->assertInertia(fn ($page) => $page
+            ->where('summary.findings_summary.total_active', 1)
+            ->where('filters.months', '3')
+        );
+
+        // Explicit all-time view should still show the full history.
+        $responseAll = $this->actingAs($this->admin)->get('/admin/kepatuhan/dashboard?months=all');
         $responseAll->assertOk();
         $responseAll->assertInertia(fn ($page) => $page
             ->where('summary.findings_summary.total_active', 2)
+            ->where('filters.months', 'all')
         );
 
         // 3 months: should see only recent
@@ -1191,10 +1200,18 @@ class DashboardAnalyticsTest extends TestCase
             'created_at' => now()->subMonths(4),
         ]);
 
-        $responseAll = $this->actingAs($this->admin)->get('/admin/kepatuhan/dashboard');
+        $responseDefault = $this->actingAs($this->admin)->get('/admin/kepatuhan/dashboard');
+        $responseDefault->assertOk();
+        $responseDefault->assertInertia(fn ($page) => $page
+            ->where('summary.risks_summary.total_active', 1)
+            ->where('filters.months', '3')
+        );
+
+        $responseAll = $this->actingAs($this->admin)->get('/admin/kepatuhan/dashboard?months=all');
         $responseAll->assertOk();
         $responseAll->assertInertia(fn ($page) => $page
             ->where('summary.risks_summary.total_active', 2)
+            ->where('filters.months', 'all')
         );
 
         $response3 = $this->actingAs($this->admin)->get('/admin/kepatuhan/dashboard?months=3');
@@ -1282,12 +1299,21 @@ class DashboardAnalyticsTest extends TestCase
             'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
         ]);
 
-        // All-time: both entries counted => 1 compliant of 2 applicable = 50%
-        $responseAll = $this->actingAs($this->admin)->get('/admin/kepatuhan/dashboard');
+        $responseDefault = $this->actingAs($this->admin)->get('/admin/kepatuhan/dashboard');
+        $responseDefault->assertOk();
+        $responseDefault->assertInertia(fn ($page) => $page
+            ->where('unit_comparisons.1.completion_rate', 100)
+            ->where('unit_comparisons.1.total_entries', 1)
+            ->where('filters.months', '3')
+        );
+
+        // Explicit all-time mode still counts both entries.
+        $responseAll = $this->actingAs($this->admin)->get('/admin/kepatuhan/dashboard?months=all');
         $responseAll->assertOk();
         $responseAll->assertInertia(fn ($page) => $page
             ->where('unit_comparisons.1.completion_rate', 50)
             ->where('unit_comparisons.1.total_entries', 2)
+            ->where('filters.months', 'all')
         );
 
         // 3 months: old entry excluded => 1 of 1 = 100%
@@ -1317,10 +1343,18 @@ class DashboardAnalyticsTest extends TestCase
             'created_at' => now()->subMonths(4),
         ]);
 
-        $responseAll = $this->actingAs($this->admin)->get('/admin/kepatuhan/dashboard');
+        $responseDefault = $this->actingAs($this->admin)->get('/admin/kepatuhan/dashboard');
+        $responseDefault->assertOk();
+        $responseDefault->assertInertia(fn ($page) => $page
+            ->where('unit_comparisons.1.open_findings', 1)
+            ->where('filters.months', '3')
+        );
+
+        $responseAll = $this->actingAs($this->admin)->get('/admin/kepatuhan/dashboard?months=all');
         $responseAll->assertOk();
         $responseAll->assertInertia(fn ($page) => $page
             ->where('unit_comparisons.1.open_findings', 2)
+            ->where('filters.months', 'all')
         );
 
         $response3 = $this->actingAs($this->admin)->get('/admin/kepatuhan/dashboard?months=3');
@@ -1357,11 +1391,19 @@ class DashboardAnalyticsTest extends TestCase
             ]);
         }
 
-        // All-time: limit=6, returns 6 most recent
-        $responseAll = $this->actingAs($this->admin)->get('/admin/kepatuhan/dashboard');
+        $responseDefault = $this->actingAs($this->admin)->get('/admin/kepatuhan/dashboard');
+        $responseDefault->assertOk();
+        $responseDefault->assertInertia(fn ($page) => $page
+            ->has('recent_activities', 3)
+            ->where('filters.months', '3')
+        );
+
+        // Explicit all-time mode still returns the tail of the full history.
+        $responseAll = $this->actingAs($this->admin)->get('/admin/kepatuhan/dashboard?months=all');
         $responseAll->assertOk();
         $responseAll->assertInertia(fn ($page) => $page
             ->has('recent_activities', 6)
+            ->where('filters.months', 'all')
         );
 
         // 3 months: old logs (created_at 4 months ago) filtered out, only 3 recent remain
@@ -1390,12 +1432,21 @@ class DashboardAnalyticsTest extends TestCase
             'periode' => now()->subMonths(5)->format('Y-m'),
         ]);
 
-        // All-time: should see both
-        $responseAll = $this->actingAs($this->pic)->get('/admin/pic/dashboard');
+        $responseDefault = $this->actingAs($this->pic)->get('/admin/pic/dashboard');
+        $responseDefault->assertOk();
+        $responseDefault->assertInertia(fn ($page) => $page
+            ->component('pic/dashboard')
+            ->has('recent_sessions', 1)
+            ->where('filters.months', '3')
+        );
+
+        // Explicit all-time mode still shows both sessions.
+        $responseAll = $this->actingAs($this->pic)->get('/admin/pic/dashboard?months=all');
         $responseAll->assertOk();
         $responseAll->assertInertia(fn ($page) => $page
             ->component('pic/dashboard')
             ->has('recent_sessions', 2)
+            ->where('filters.months', 'all')
         );
 
         // 3 months: old session excluded
@@ -1417,27 +1468,29 @@ class DashboardAnalyticsTest extends TestCase
             'created_at' => now()->subMonths(4),
         ]);
 
-        // Invalid months value should behave as 'all' — finding still visible
+        // Invalid months value should fall back to the default 3-month window.
         $response = $this->actingAs($this->admin)
             ->get('/admin/kepatuhan/dashboard?months=abc');
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
-            ->where('summary.findings_summary.total_active', 1)
-            ->where('filters.months', 'all')
+            ->where('summary.findings_summary.total_active', 0)
+            ->where('filters.months', '3')
         );
 
         $response0 = $this->actingAs($this->admin)
             ->get('/admin/kepatuhan/dashboard?months=0');
         $response0->assertOk();
         $response0->assertInertia(fn ($page) => $page
-            ->where('summary.findings_summary.total_active', 1)
+            ->where('summary.findings_summary.total_active', 0)
+            ->where('filters.months', '3')
         );
 
         $responseNeg = $this->actingAs($this->admin)
             ->get('/admin/kepatuhan/dashboard?months=-1');
         $responseNeg->assertOk();
         $responseNeg->assertInertia(fn ($page) => $page
-            ->where('summary.findings_summary.total_active', 1)
+            ->where('summary.findings_summary.total_active', 0)
+            ->where('filters.months', '3')
         );
     }
 
