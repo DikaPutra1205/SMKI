@@ -218,6 +218,15 @@
                     <div class="card-title">Permintaan Reset Kata Sandi</div>
                     <div class="card-meta">Tautan aman penggantian password (token 60 menit).</div>
                 </div>
+
+                <div class="template-card" data-code="4-2" onclick="loadPreview('/email-preview/4-2-auth-reset-otp', '4-2', this)">
+                    <div class="card-header">
+                        <span class="card-tag tag-info">4.2 SECURITY</span>
+                        <span class="card-meta">Sistem &rarr; User</span>
+                    </div>
+                    <div class="card-title">Kode OTP Reset Kata Sandi</div>
+                    <div class="card-meta">Kode verifikasi 6 angka (berlaku 5 menit).</div>
+                </div>
             </div>
         </aside>
 

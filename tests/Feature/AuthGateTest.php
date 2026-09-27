@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class AuthGateTest extends TestCase
@@ -18,9 +19,12 @@ class AuthGateTest extends TestCase
 
     public function test_login_and_forgot_password_routes_are_public(): void
     {
+        Notification::fake();
+
         $this->get('/login')->assertStatus(200);
         $this->get('/forgot-password')->assertStatus(200);
-        $this->post('/forgot-password', ['email' => 'x@y.z'])->assertStatus(200);
+        $this->post('/forgot-password', ['email' => 'x@y.z'])
+            ->assertRedirect(route('password.verify'));
     }
 
     public function test_anonymous_web_root_redirects_to_login(): void

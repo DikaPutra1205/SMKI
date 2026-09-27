@@ -3,21 +3,28 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ForgotPasswordRequest;
 use App\Routing\PageDispatcher;
+use App\Services\PasswordResetOtpService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class AuthController extends Controller
 {
+    public function __construct(private readonly PasswordResetOtpService $otp) {}
+
     // ponytail: TEMPORARY session-auth gate. Real auth (Sanctum/role policy)
     // replaces this — remove the guest/auth wrappers + this controller + auth
     // pages when that lands.
 
-    public function showLogin()
+    public function showLogin(Request $request): Response
     {
-        return Inertia::render('auth/login');
+        return Inertia::render('auth/login', [
+            'status' => $request->session()->get('status'),
+        ]);
     }
 
     public function login(Request $request): RedirectResponse
@@ -64,11 +71,22 @@ class AuthController extends Controller
         return Inertia::render('auth/forgot-password');
     }
 
-    // ponytail: stub only — validates email, returns 200, sends no mail yet.
-    public function forgotPassword(Request $request)
+    /**
+     * Step 1 — mail a one-time code when the address belongs to an account.
+     *
+     * The response is identical whether or not the address is registered, so
+     * this endpoint cannot be used to enumerate accounts.
+     */
+    public function forgotPassword(ForgotPasswordRequest $request): RedirectResponse
     {
-        $request->validate(['email' => ['required', 'email']]);
+        $email = $request->string('email')->toString();
 
-        return response()->json(['status' => 'ok']);
+        if ($this->otp->resendCooldownRemaining($email) === 0) {
+            $this->otp->issueOtp($email);
+        }
+
+        $request->session()->put(PasswordResetOtpService::SESSION_EMAIL, $email);
+
+        return redirect()->route('password.verify');
     }
 }

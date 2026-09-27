@@ -11,6 +11,7 @@ use App\Http\Controllers\Web\ComplianceOfficerController;
 use App\Http\Controllers\Web\ControlController as AdminControlController;
 use App\Http\Controllers\Web\FrameworkController;
 use App\Http\Controllers\Web\PageController;
+use App\Http\Controllers\Web\PasswordResetController;
 use App\Http\Controllers\Web\PicDashboardController;
 use App\Http\Controllers\Web\ReportExportController;
 use App\Http\Controllers\Web\RoleController;
@@ -185,7 +186,21 @@ Route::middleware('guest')->group(function () {
     Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('password.request');
 
     Route::post('/login', [AuthController::class, 'login']);
-    Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+
+    // Step 1 — mail a one-time code. Throttled to bound mail-bombing.
+    Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])
+        ->middleware('throttle:forgot-password');
+
+    // Step 2 — exchange the code for a grant. Throttled to bound OTP guessing.
+    Route::get('/verify-otp', [PasswordResetController::class, 'showVerifyOtp'])->name('password.verify');
+    Route::post('/verify-otp', [PasswordResetController::class, 'verifyOtp'])
+        ->middleware('throttle:verify-otp');
+
+    // Step 3 — store the new password behind a granted token.
+    Route::get('/reset-password', [PasswordResetController::class, 'showResetPassword'])->name('password.reset');
+    Route::post('/reset-password', [PasswordResetController::class, 'updatePassword'])
+        ->middleware('throttle:reset-password')
+        ->name('password.update');
 });
 
 Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout'])->name('logout');
@@ -386,6 +401,15 @@ if (app()->isLocal()) {
                 'recipientName' => 'Dika Putra',
                 'resetUrl' => url('/reset-password?token=sample-secure-token-12345&email=dika.putra12@gmail.com'),
                 'count' => 60,
+            ]);
+        });
+
+        // 4.2 Kode OTP Atur Ulang Kata Sandi
+        Route::get('/4-2-auth-reset-otp', function () {
+            return view('emails.auth-reset-otp', [
+                'recipientName' => 'Dika Putra',
+                'code' => '481902',
+                'count' => config('auth.passwords.users.otp_expire', 5),
             ]);
         });
 

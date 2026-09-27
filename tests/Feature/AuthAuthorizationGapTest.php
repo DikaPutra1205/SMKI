@@ -6,9 +6,10 @@ use App\Models\ChecklistEntry;
 use App\Models\Framework;
 use App\Models\User;
 use App\Models\WorkUnit;
+use App\Notifications\PasswordResetOtpNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -67,16 +68,34 @@ class AuthAuthorizationGapTest extends TestCase
         $this->assertDatabaseHas('compliance_evidences', ['checklist_entry_id' => $entry->id]);
     }
 
-    // D5 — forgot-password stub returns 200 but sends no mail/token.
-    public function test_forgot_password_stub_returns_200_no_email(): void
+    // D5 — forgot-password now really mails a one-time code to known accounts.
+    public function test_forgot_password_mails_an_otp_to_a_known_account(): void
+    {
+        $user = User::factory()->create(['email' => 'pic@smki.test', 'password' => bcrypt('secret12')]);
+
+        Notification::fake();
+
+        $this->post('/forgot-password', ['email' => 'pic@smki.test'])
+            ->assertRedirect(route('password.verify'));
+
+        Notification::assertSentTo($user, PasswordResetOtpNotification::class);
+        $this->assertDatabaseHas('password_reset_tokens', ['email' => 'pic@smki.test']);
+    }
+
+    // D5 — and stays silent for an unknown address, so it cannot be used to
+    // discover which emails are registered.
+    public function test_forgot_password_sends_nothing_to_an_unknown_account(): void
     {
         User::factory()->create(['email' => 'pic@smki.test', 'password' => bcrypt('secret12')]);
 
-        Mail::fake();
+        Notification::fake();
 
-        $this->postJson('/forgot-password', ['email' => 'pic@smki.test'])->assertOk();
-        Mail::assertNothingSent();
-        $this->assertDatabaseMissing('password_reset_tokens', ['email' => 'pic@smki.test']);
+        $this->post('/forgot-password', ['email' => 'ghost@smki.test'])
+            ->assertRedirect(route('password.verify'))
+            ->assertSessionHasNoErrors();
+
+        Notification::assertNothingSent();
+        $this->assertDatabaseMissing('password_reset_tokens', ['email' => 'ghost@smki.test']);
     }
 
     public function test_login_accepts_valid_credentials(): void

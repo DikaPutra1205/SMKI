@@ -14,9 +14,12 @@ use App\Models\User;
 use App\Models\WorkUnit;
 use App\Observers\SmkiObserver;
 use Carbon\Carbon;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -55,6 +58,16 @@ class AppServiceProvider extends ServiceProvider
 
         // RBAC: permission keys ARE Gate abilities, granted per role in the DB
         Gate::after(fn ($user, $ability) => $user->hasPermissionTo($ability));
+
+        // Password reset throttles are declared as named limiters rather than
+        // inline `throttle:n,1` because the default throttle signature is
+        // sha1(domain|ip) — every guest route on the same host would otherwise
+        // share a single bucket, letting a caller exhaust the OTP-attempt
+        // budget just by spamming the request-code endpoint. Naming them keeps
+        // each step's budget independent and self-documenting.
+        RateLimiter::for('forgot-password', fn (Request $request) => Limit::perMinute(5)->by($request->ip()));
+        RateLimiter::for('verify-otp', fn (Request $request) => Limit::perMinute(5)->by($request->ip()));
+        RateLimiter::for('reset-password', fn (Request $request) => Limit::perMinute(10)->by($request->ip()));
 
         // Fail fast on N+1 of the new `role` relation in dev/test. The compat
         // accessor + $appends makes `$user->role` lazy-loadable; this surfaces any

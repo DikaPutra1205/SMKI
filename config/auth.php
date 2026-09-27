@@ -98,6 +98,26 @@ return [
             'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
             'expire' => 60,
             'throttle' => 60,
+
+            /*
+            |--------------------------------------------------------------------------
+            | One-Time Password (OTP) Settings
+            |--------------------------------------------------------------------------
+            |
+            | The password reset flow is two-phase: a 6-digit OTP is mailed first,
+            | and only after that code is verified does Laravel mint a long-lived
+            | reset token (the "grant") for the new-password step. Both phases
+            | share the password_reset_tokens table, so issuing a new OTP
+            | automatically invalidates the previous one.
+            |
+            | otp_expire is how many minutes a mailed code stays valid, and
+            | otp_resend is the minimum number of seconds a user must wait before
+            | asking for a replacement code, which bounds mail-bombing.
+            |
+            */
+
+            'otp_expire' => (int) env('AUTH_PASSWORD_OTP_EXPIRE', 5),
+            'otp_resend' => (int) env('AUTH_PASSWORD_OTP_RESEND', 60),
         ],
     ],
 

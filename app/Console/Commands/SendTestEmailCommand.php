@@ -180,6 +180,14 @@ class SendTestEmailCommand extends Command
                     $message->to($recipient)->subject('[SMKI] Permintaan Atur Ulang Kata Sandi Akun');
                 }),
 
+                '4-2', '4-2-auth' => Mail::send('emails.auth-reset-otp', [
+                    'recipientName' => 'Dika Putra',
+                    'code' => '481902',
+                    'count' => config('auth.passwords.users.otp_expire', 5),
+                ], function ($message) use ($recipient) {
+                    $message->to($recipient)->subject('[SMKI] Kode Verifikasi Atur Ulang Kata Sandi');
+                }),
+
                 default => throw new \InvalidArgumentException("Template [{$template}] tidak dikenali."),
             };
 
