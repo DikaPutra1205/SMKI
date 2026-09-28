@@ -489,7 +489,7 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                             </div>
 
                             {/* Structured Module Accordion List */}
-                            <div className="mt-3 max-h-[48vh] space-y-2.5 overflow-y-auto pr-1">
+                            <div className="mt-3 max-h-none space-y-2.5 overflow-y-auto pr-1 sm:max-h-[48vh]">
                                 {modules.length > 0 ? (
                                     modules.map((mod) => {
                                         const meta = MODULE_METADATA[mod] || { label: mod, desc: `Modul ${mod}` };

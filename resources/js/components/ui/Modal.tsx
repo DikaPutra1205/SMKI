@@ -41,7 +41,7 @@ export function Modal({ open, title, description, onClose, children, footer, max
 
     return createPortal(
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-navy-900/50 p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-navy-900/50 p-4"
             role="dialog"
             aria-modal="true"
             onClick={(e) => {
@@ -50,12 +50,12 @@ export function Modal({ open, title, description, onClose, children, footer, max
         >
             <div
                 className={cn(
-                    'w-full overflow-hidden rounded-[14px] border border-border dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg',
+                    'flex max-h-[calc(100dvh-2rem)] w-full flex-col overflow-hidden rounded-[14px] border border-border dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg',
                     maxWidthClasses[maxWidth],
                     className,
                 )}
             >
-                <div className="flex items-start justify-between gap-4 border-b border-border dark:border-slate-700 px-5 py-4">
+                <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border dark:border-slate-700 px-5 py-4">
                     <div className="min-w-0">
                         {title && <h3 className="text-base font-bold break-words text-navy dark:text-white">{title}</h3>}
                         {description && <p className="mt-0.5 text-xs text-muted dark:text-slate-400">{description}</p>}
@@ -63,16 +63,18 @@ export function Modal({ open, title, description, onClose, children, footer, max
                     <button
                         type="button"
                         onClick={onClose}
-                            className="rounded-lg p-1.5 text-muted dark:text-slate-400 transition-colors hover:bg-surface dark:hover:bg-slate-800 hover:text-navy dark:hover:text-white shrink-0"
+                        className="shrink-0 rounded-lg p-1.5 text-muted transition-colors hover:bg-surface hover:text-navy dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
                         aria-label="Tutup"
                     >
                         <X className="h-4 w-4" />
                     </button>
                 </div>
 
-                <div className="px-5 py-4">{children}</div>
+                <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-5 py-4">{children}</div>
 
-                {footer && <div className="flex items-center justify-end gap-3 border-t border-border dark:border-slate-700 bg-surface/60 dark:bg-slate-900/60 px-5 py-4">{footer}</div>}
+                {footer && (
+                    <div className="flex shrink-0 flex-wrap items-center justify-end gap-3 border-t border-border bg-surface/60 px-5 py-4 dark:border-slate-700 dark:bg-slate-900/60">{footer}</div>
+                )}
             </div>
         </div>,
         document.body,
