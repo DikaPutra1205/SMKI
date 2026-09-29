@@ -554,146 +554,27 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                         )}
                     </div>
 
-                    {/* ── Mobile card list (< md) ── */}
-                    <div className="divide-y divide-slate-100 md:hidden dark:divide-slate-800">
-                        {items.length === 0 ? (
-                            <EmptyState message={t('risks.noRisks')} />
-                        ) : (
-                            items.map((r) => (
-                                <div key={r.id} className="space-y-3 p-4">
-                                    {/* Card header */}
-                                    <div className="flex items-start justify-between gap-2">
-                                        <div className="min-w-0 flex-1">
-                                            <div className="flex items-center gap-2">
-                                                <code className="text-primary dark:text-primary-200 text-[11px] font-bold">RSK-{riskRef(r)}</code>
-                                                {r.unit?.nama && (
-                                                    <span className="inline-flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                                                        <Building2 className="h-2.5 w-2.5 text-slate-400" />
-                                                        {r.unit.nama}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            {(() => {
-                                                const linked = getRiskControls(r);
-                                                return (
-                                                    <div className="mt-1">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => openDetail(r)}
-                                                            className="hover:text-primary dark:hover:text-primary-300 text-left text-sm font-semibold text-slate-900 transition-colors dark:text-white"
-                                                        >
-                                                            {linked.length > 0 ? linked.map((c) => c.judul).join(', ') : t('common.noData')}
-                                                        </button>
-                                                        {linked.length > 0 && (
-                                                            <div className="mt-1 flex flex-wrap gap-1">
-                                                                {linked.map((c) => (
-                                                                    <span
-                                                                        key={c.id}
-                                                                        className="text-primary dark:text-primary-300 inline-flex items-center rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] font-semibold dark:bg-slate-800"
-                                                                    >
-                                                                        {c.kode_klausul}
-                                                                        {c.framework && (
-                                                                            <span className="font-sans font-normal text-slate-400">
-                                                                                {' '}
-                                                                                ({c.framework.nama})
-                                                                            </span>
-                                                                        )}
-                                                                    </span>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                );
-                                            })()}
-                                        </div>
-                                        <div className="shrink-0">{getRiskLevelBadge(r.risk_level || r.level_risiko)}</div>
-                                    </div>
-
-                                    {/* Status + owner */}
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        {getMitigationStatus(r.status)}
-                                        {(r.risk_owner || r.pemilik_risiko) && (
-                                            <span className="inline-flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400">
-                                                <UserCheck className="h-3 w-3" />
-                                                {r.risk_owner || r.pemilik_risiko}
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    {/* Mitigation snippet */}
-                                    {(r.mitigation_plan || r.rencana_mitigasi) && (
-                                        <p className="line-clamp-2 text-[11px] text-slate-500 italic dark:text-slate-400">
-                                            Mitigasi: {r.mitigation_plan || r.rencana_mitigasi}
-                                        </p>
-                                    )}
-
-                                    {/* Notes snippet if present */}
-                                    {(r.catatan_admin || r.admin_notes) && (
-                                        <div className="rounded-lg bg-amber-50/80 p-2 text-[11px] text-amber-900 dark:bg-amber-950/30 dark:text-amber-300">
-                                            <span className="font-semibold">Catatan Evaluasi:</span> {r.catatan_admin || r.admin_notes}
-                                        </div>
-                                    )}
-
-                                    {/* Actions */}
-                                    <div className="flex items-center gap-3 pt-1">
-                                        <button
-                                            type="button"
-                                            onClick={() => openDetail(r)}
-                                            className="text-primary dark:text-primary-200 inline-flex items-center gap-1 text-xs font-semibold"
-                                        >
-                                            <Eye className="h-3.5 w-3.5" />
-                                            Detail
-                                        </button>
-                                        {canUpdate && (
-                                            <button
-                                                type="button"
-                                                onClick={() => openEdit(r)}
-                                                className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
-                                            >
-                                                <Edit2 className="h-3.5 w-3.5" />
-                                                Perbarui
-                                            </button>
-                                        )}
-                                        {canDelete && (
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setDelTarget(r);
-                                                    setDelOpen(true);
-                                                }}
-                                                className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
-                                            >
-                                                <Trash2 className="h-3.5 w-3.5" />
-                                                Hapus
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            ))
-                        )}
-                    </div>
-
-                    {/* ── Desktop table (≥ md) ── */}
-                    <div className="hidden overflow-x-auto md:block">
+                    {/* ── Tabel register (mengikuti gaya list Temuan) ── */}
+                    <div className="overflow-x-auto">
                         <table className="w-full text-left text-xs sm:text-sm">
                             <thead className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-bold tracking-wider text-slate-600 uppercase dark:border-slate-800 dark:bg-[#001f38] dark:text-slate-300">
                                 <tr>
-                                    <th scope="col" className="px-5 py-3.5">
+                                    <th scope="col" className="px-3 py-3.5 text-left font-semibold sm:px-5">
                                         {t('risks.code')}
                                     </th>
-                                    <th scope="col" className="px-5 py-3.5">
+                                    <th scope="col" className="px-3 py-3.5 text-left font-semibold sm:px-5">
                                         {t('risks.controlClause')}
                                     </th>
-                                    <th scope="col" className="px-5 py-3.5">
+                                    <th scope="col" className="px-3 py-3.5 text-left font-semibold sm:px-5">
                                         {t('risks.levelLabel')}
                                     </th>
-                                    <th scope="col" className="px-5 py-3.5">
+                                    <th scope="col" className="px-3 py-3.5 text-left font-semibold sm:px-5">
                                         {t('risks.owner')}
                                     </th>
-                                    <th scope="col" className="px-5 py-3.5">
+                                    <th scope="col" className="px-3 py-3.5 text-left font-semibold sm:px-5">
                                         {t('risks.statusMitigation')}
                                     </th>
-                                    <th scope="col" className="px-5 py-3.5 text-right">
+                                    <th scope="col" className="px-3 py-3.5 text-right font-semibold sm:px-5">
                                         {t('risks.actions')}
                                     </th>
                                 </tr>
@@ -707,10 +588,10 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                                 idx % 2 === 0 ? 'bg-white dark:bg-[#00223d]/70' : 'bg-slate-200/70 dark:bg-[#00172b]/80'
                                             } hover:bg-primary-50/40 dark:hover:bg-[#0a3b63]/60`}
                                         >
-                                            <td className="px-5 py-4 whitespace-nowrap">
+                                            <td className="px-3 py-4 whitespace-nowrap sm:px-5">
                                                 <code className="text-primary dark:text-primary-200 text-xs font-bold">RSK-{riskRef(r)}</code>
                                             </td>
-                                            <td className="px-5 py-4">
+                                            <td className="px-3 py-4 sm:px-5">
                                                 {(() => {
                                                     const linked = getRiskControls(r);
                                                     return (
@@ -754,15 +635,17 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                                     </p>
                                                 )}
                                             </td>
-                                            <td className="px-5 py-4 whitespace-nowrap">{getRiskLevelBadge(r.risk_level || r.level_risiko)}</td>
-                                            <td className="px-5 py-4 whitespace-nowrap text-slate-700 dark:text-slate-300">
+                                            <td className="px-3 py-4 whitespace-nowrap sm:px-5">
+                                                {getRiskLevelBadge(r.risk_level || r.level_risiko)}
+                                            </td>
+                                            <td className="px-3 py-4 whitespace-nowrap text-slate-700 sm:px-5 dark:text-slate-300">
                                                 <div className="flex items-center gap-1.5">
                                                     <UserCheck className="h-3.5 w-3.5 text-slate-400" />
                                                     <span>{r.risk_owner || r.pemilik_risiko || '—'}</span>
                                                 </div>
                                             </td>
-                                            <td className="px-5 py-4 whitespace-nowrap">{getMitigationStatus(r.status)}</td>
-                                            <td className="px-5 py-4 text-right whitespace-nowrap">
+                                            <td className="px-3 py-4 whitespace-nowrap sm:px-5">{getMitigationStatus(r.status)}</td>
+                                            <td className="px-3 py-4 text-right whitespace-nowrap sm:px-5">
                                                 <div className="inline-flex items-center gap-3">
                                                     <button
                                                         type="button"
