@@ -102,7 +102,7 @@ export default function SuperadminDashboard({
                             Command Center Sistem
                         </h1>
                         <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">
-                            Pantau integritas sistem SMKI, alokasi peran pengguna, dan status kepatuhan secara menyeluruh.
+                            Pantau integritas sistem SIPATUH, alokasi peran pengguna, dan status kepatuhan secara menyeluruh.
                         </p>
                     </div>
                 </div>
@@ -198,7 +198,7 @@ export default function SuperadminDashboard({
                     </div>
                 </div>
 
-                {/* 3. Pustaka Kontrol SMKI */}
+                {/* 3. Pustaka Kontrol SIPATUH */}
                 <div className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] font-bold tracking-widest text-slate-500 uppercase dark:text-slate-400">Pustaka Kontrol</span>

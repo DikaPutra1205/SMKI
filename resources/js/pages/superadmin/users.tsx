@@ -450,7 +450,7 @@ export default function Users({ users, roles, units }: Props) {
             <Modal
                 open={mode !== null}
                 title={mode === 'create' ? t('admin.users.createTitle') : t('admin.users.editTitle')}
-                description="Kelola akun pengguna dan hak akses peran dalam sistem SMKI"
+                description="Kelola akun pengguna dan hak akses peran dalam sistem SIPATUH"
                 onClose={close}
                 maxWidth="md"
                 footer={

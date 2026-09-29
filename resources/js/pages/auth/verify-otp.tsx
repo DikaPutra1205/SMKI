@@ -65,7 +65,7 @@ export default function VerifyOtp({ email, expiresAt, resendAvailableAt }: Props
 
     return (
         <>
-            <Head title="Verifikasi Kode - SMKI" />
+            <Head title="Verifikasi Kode - SIPATUH" />
             <AuthShell>
                 <div className="bg-primary-50 dark:bg-primary/10 text-primary mb-4 flex h-12 w-12 items-center justify-center rounded-xl">
                     <MailCheck className="h-6 w-6" />

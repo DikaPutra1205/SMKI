@@ -181,7 +181,7 @@ export default function ExportReportModal({ open, onClose, unitId, workUnits: in
         <Modal
             open={open}
             onClose={onClose}
-            title="Ekspor Laporan Kepatuhan SMKI"
+            title="Ekspor Laporan Kepatuhan SIPATUH"
             description="Pilih format laporan, satuan unit kerja, dan kurun waktu penilaian data"
             maxWidth="md"
             footer={

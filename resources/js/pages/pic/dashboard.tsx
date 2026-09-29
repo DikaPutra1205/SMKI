@@ -316,7 +316,7 @@ export default function PicDashboard({ summary, recent_sessions = [], trends = [
                                     Lengkapi Bukti Evidence Kontrol
                                 </h4>
                                 <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
-                                    Unggah dokumen pendukung untuk setiap kontrol kepatuhan SMKI.
+                                    Unggah dokumen pendukung untuk setiap kontrol kepatuhan SIPATUH.
                                 </p>
                             </div>
                         </Link>

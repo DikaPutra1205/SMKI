@@ -530,7 +530,7 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
                             type="text"
                             value={form.data.konteks_penilaian}
                             onChange={(e) => form.setData('konteks_penilaian', e.target.value)}
-                            placeholder="Penilaian Bulanan SMKI - Agustus 2026"
+                            placeholder="Penilaian Bulanan SIPATUH - Agustus 2026"
                             className="focus:border-primary focus:ring-primary/20 h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
                         />
                         {form.errors.konteks_penilaian && <p className="mt-1 text-xs text-red-500">{form.errors.konteks_penilaian}</p>}

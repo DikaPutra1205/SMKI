@@ -283,7 +283,7 @@ export default function AuditLogs({ logs, stats, filters = {}, actors = [] }: Au
 
     return (
         <AppLayout breadcrumbs={breadcrumbs} currentPath={getBasePath()}>
-            <Head title={`${t('audit.title')} - Audit Trail SMKI`} />
+            <Head title={`${t('audit.title')} - Audit Trail SIPATUH`} />
 
             <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>

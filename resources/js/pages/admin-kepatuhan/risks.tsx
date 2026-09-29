@@ -441,7 +441,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
 
     return (
         <AppLayout breadcrumbs={breadcrumbs} currentPath="/risks">
-            <Head title={`${t('risks.title')} - SMKI`} />
+            <Head title={`${t('risks.title')} - SIPATUH`} />
 
             <div className="space-y-6">
                 {/* Header Banner */}
@@ -507,7 +507,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                     <div className="border-b border-slate-100 px-6 py-4 dark:border-slate-800">
                         <h3 className="text-sm font-bold text-slate-900 dark:text-white">Daftar Register Risiko Keamanan Informasi</h3>
                         <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Seluruh risiko yang teridentifikasi dari gap pemenuhan kontrol SMKI
+                            Seluruh risiko yang teridentifikasi dari gap pemenuhan kontrol SIPATUH
                         </p>
                     </div>
 
@@ -811,7 +811,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                 {/* ── Mode 1: CREATE FORM ── */}
                 {drawerMode === 'create' && (
                     <form onSubmit={submitCreate} className="space-y-4 pt-1">
-                        {/* Kontrol SMKI (Many-to-Many Multi Select) */}
+                        {/* Kontrol SIPATUH (Many-to-Many Multi Select) */}
                         <div>
                             <div className="mb-1.5 flex items-center justify-between">
                                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
@@ -1067,7 +1067,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                             </div>
                         </div>
 
-                        {/* Kontrol SMKI (Edit mode - only for non-PIC) */}
+                        {/* Kontrol SIPATUH (Edit mode - only for non-PIC) */}
                         {!isPic && (
                             <div>
                                 <div className="mb-1.5 flex items-center justify-between">
@@ -1227,7 +1227,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                             </div>
                         </div>
 
-                        {/* Linked SMKI Controls Header */}
+                        {/* Linked SIPATUH Controls Header */}
                         <div className="rounded-xl border border-slate-200/80 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
                             <div className="flex items-center justify-between gap-2">
                                 <span className="text-xs font-semibold tracking-wider text-slate-500 uppercase dark:text-slate-400">

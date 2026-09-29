@@ -240,7 +240,7 @@ function getRoleName(role?: string | { id: number; name: string; label: string }
         if (role === 'superadmin') return 'Super Admin';
         if (role === 'pic') return 'PIC Satker';
         if (role === 'auditor') return 'Auditor';
-        if (role === 'koordinator_smki') return 'Koordinator SMKI';
+        if (role === 'koordinator_smki') return 'Koordinator SIPATUH';
         return role;
     }
     return role.label || role.name || 'Pengguna';
@@ -1210,7 +1210,8 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
 
     return (
         <AppLayout breadcrumbs={breadcrumbs} currentPath="/temuan">
-            <Head title={`${t('temuan.title')} - Sistem Kepatuhan SMKI`} />
+            {/* TODO(SIPATUH): official full name pending from Juen. */}
+            <Head title={`${t('temuan.title')} - SIPATUH`} />
 
             <Toast
                 visible={flashVisible}
@@ -1385,7 +1386,7 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                 <form id="create-finding-form" onSubmit={handleCreateFinding} className="space-y-4 p-1">
                     <div>
                         <label className="mb-1 block text-xs font-bold text-slate-700 dark:text-slate-300">
-                            Pilih Kontrol / Klausul SMKI <span className="text-rose-500">*</span>
+                            Pilih Kontrol / Klausul SIPATUH <span className="text-rose-500">*</span>
                         </label>
                         <select
                             value={createData.control_id}
@@ -1645,7 +1646,7 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                                         <div className="flex flex-wrap items-center gap-2">
                                             <span className="border-primary-200 bg-primary-50 text-primary dark:border-primary-800 dark:bg-navy-900 dark:text-primary-200 inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-bold">
                                                 <Shield className="h-3.5 w-3.5" />
-                                                {detailTarget.control?.kode_klausul || 'Klausul SMKI'}
+                                                {detailTarget.control?.kode_klausul || 'Klausul SIPATUH'}
                                             </span>
                                             {detailTarget.control?.framework && (
                                                 <span className="rounded-lg bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
@@ -1738,7 +1739,7 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                                             <span className="truncate">
                                                 Aktivitas terakhir oleh{' '}
                                                 <strong className="text-slate-800 dark:text-slate-200">
-                                                    {detailTarget.histories[detailTarget.histories.length - 1]?.user?.name || 'Sistem SMKI'}
+                                                    {detailTarget.histories[detailTarget.histories.length - 1]?.user?.name || 'Sistem SIPATUH'}
                                                 </strong>{' '}
                                                 ({formatDateTimeIndonesian(detailTarget.histories[detailTarget.histories.length - 1]?.created_at)})
                                             </span>
@@ -1803,7 +1804,7 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                                                                 <div className="flex flex-wrap items-center justify-between gap-1.5 pb-1.5">
                                                                     <div className="flex items-center gap-1.5">
                                                                         <span className="font-bold text-slate-900 dark:text-white">
-                                                                            {hist.user?.name || 'Sistem SMKI'}
+                                                                            {hist.user?.name || 'Sistem SIPATUH'}
                                                                         </span>
                                                                         <span className="rounded bg-slate-200/80 px-1.5 py-0.5 text-[10px] font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-300">
                                                                             {getRoleName(hist.user?.role)}
@@ -1895,7 +1896,7 @@ export default function Findings({ findings, workUnits = [], controls = [], pics
                                     <div className="flex flex-wrap items-center gap-2">
                                         <span className="border-primary-200 bg-primary-50 text-primary dark:border-primary-800 dark:bg-navy-900 dark:text-primary-200 inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-bold">
                                             <Shield className="h-3.5 w-3.5" />
-                                            {detailTarget.control?.kode_klausul || 'Klausul SMKI'}
+                                            {detailTarget.control?.kode_klausul || 'Klausul SIPATUH'}
                                         </span>
                                         {detailTarget.control?.framework && (
                                             <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
