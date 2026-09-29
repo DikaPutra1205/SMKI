@@ -48,10 +48,10 @@ export const id = {
     role: {
         superadmin: 'Super Admin',
         admin_kepatuhan: 'Admin Kepatuhan',
-        koordinator_smki: 'Koordinator SIPATUH',
+        koordinator_smki: 'Koordinator SMKI',
         auditor: 'Auditor',
         pic: 'PIC',
-        system: 'Sistem SIPATUH',
+        system: 'Sistem SMKI',
     },
     dashboard: {
         title: 'Dashboard',
@@ -205,7 +205,7 @@ export const id = {
     },
     auth: {
         login: {
-            title: 'Masuk — SIPATUH',
+            title: 'Masuk — SMKI',
             subtitle: 'Sistem Kepatuhan Digital',
             email: 'Email',
             password: 'Password',
@@ -215,7 +215,7 @@ export const id = {
             roles: {
                 superadmin: 'Super Admin',
                 admin_kepatuhan: 'Admin Kepatuhan',
-                koordinator_smki: 'Koordinator SIPATUH',
+                koordinator_smki: 'Koordinator SMKI',
                 auditor: 'Auditor',
                 pic: 'PIC',
             },
@@ -432,7 +432,7 @@ export const id = {
         detailTitle: 'Detail Risiko',
         mitigationLabel: 'Rencana Tindakan Mitigasi',
         frameworkLabel: 'Framework',
-        controlLabel: 'Kontrol SIPATUH Terkait',
+        controlLabel: 'Kontrol SMKI Terkait',
         ownerLabel: 'Pemilik Risiko (Risk Owner)',
         noOwner: 'Belum ditugaskan',
         noMitigation: 'Belum ada rencana perlakuan risiko yang didokumentasikan.',
@@ -441,12 +441,12 @@ export const id = {
         // Create modal
         createTitle: 'Daftarkan Risiko Baru',
         createDesc: 'Catat identifikasi risiko keamanan informasi baru beserta rencana mitigasi.',
-        controlSelect: 'Kontrol SIPATUH Terkait',
-        controlSelectPlaceholder: '-- Pilih Kontrol Klausul SIPATUH --',
+        controlSelect: 'Kontrol SMKI Terkait',
+        controlSelectPlaceholder: '-- Pilih Kontrol Klausul SMKI --',
         unitSelect: 'Satuan Kerja / Unit Terkait',
         unitSelectPlaceholder: '-- Pilih Satuan Kerja --',
         adminNotes: 'Catatan Evaluasi / Admin',
-        adminNotesPlaceholder: 'Catatan rekomendasi dari Koordinator SIPATUH atau Admin Kepatuhan…',
+        adminNotesPlaceholder: 'Catatan rekomendasi dari Koordinator SMKI atau Admin Kepatuhan…',
         createSubmit: 'Daftarkan Risiko',
         createSuccess: 'Register risiko baru berhasil didaftarkan.',
         // Update modal

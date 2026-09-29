@@ -29,7 +29,7 @@ export default function Login({ status }: Props) {
 
     return (
         <>
-            <Head title="Masuk - SIPATUH" />
+            <Head title="Masuk - SMKI" />
             <AuthShell>
                 <h1 className="text-navy text-2xl font-bold tracking-tight dark:text-white">{t('auth.welcomeBack')}</h1>
                 <p className="text-muted mt-1.5 text-sm dark:text-slate-400">{t('auth.welcomeBackSubtitle')}</p>

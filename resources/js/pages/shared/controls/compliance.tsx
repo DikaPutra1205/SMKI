@@ -223,7 +223,7 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
 
     return (
         <AppLayout breadcrumbs={breadcrumbs} currentPath={getBasePath()}>
-            <Head title={`${t('compliance.title')} - Pustaka Kontrol SIPATUH`} />
+            <Head title={`${t('compliance.title')} - Pustaka Kontrol SMKI`} />
 
             {/* Page Header */}
             <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -481,11 +481,11 @@ export default function Compliance({ frameworks = [], controls, filters = {} }: 
                         ? 'Tambah Kontrol Baru'
                         : drawerMode === 'edit'
                           ? `Ubah Kontrol: ${activeControl?.code ?? ''}`
-                          : 'Detail Kontrol SIPATUH'
+                          : 'Detail Kontrol SMKI'
                 }
                 subtitle={
                     drawerMode === 'create'
-                        ? 'Daftarkan klausul kontrol kepatuhan baru ke dalam framework SIPATUH.'
+                        ? 'Daftarkan klausul kontrol kepatuhan baru ke dalam framework SMKI.'
                         : drawerMode === 'edit'
                           ? 'Perbarui parameter, klausul, atau deskripsi kontrol kepatuhan ini.'
                           : undefined

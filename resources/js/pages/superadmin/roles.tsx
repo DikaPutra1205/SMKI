@@ -39,7 +39,7 @@ const MODULE_METADATA: Record<string, { label: string; desc: string }> = {
         desc: 'Pengunggahan, pengelolaan, dan validasi berkas pendukung.',
     },
     controls: {
-        label: 'Pustaka Kontrol SIPATUH',
+        label: 'Pustaka Kontrol SMKI',
         desc: 'Master daftar klausul dan kontrol standar kepatuhan.',
     },
     frameworks: {

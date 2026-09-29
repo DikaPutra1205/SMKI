@@ -43,7 +43,7 @@ export default function ResetPassword({ email, token }: Props) {
 
     return (
         <>
-            <Head title="Kata Sandi Baru - SIPATUH" />
+            <Head title="Kata Sandi Baru - SMKI" />
             <AuthShell>
                 <div className="bg-primary-50 dark:bg-primary/10 text-primary mb-4 flex h-12 w-12 items-center justify-center rounded-xl">
                     <ShieldCheck className="h-6 w-6" />

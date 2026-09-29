@@ -281,7 +281,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
                             Buka Menu
                         </span>
                     </div>
-                    <span className="font-semibold text-primary dark:text-primary-200">SIPATUH Command Palette</span>
+                    <span className="font-semibold text-primary dark:text-primary-200">SMKI Command Palette</span>
                 </div>
             </div>
         </div>

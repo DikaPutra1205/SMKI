@@ -17,7 +17,7 @@ export default function ForgotPassword() {
 
     return (
         <>
-            <Head title="Lupa Password - SIPATUH" />
+            <Head title="Lupa Password - SMKI" />
             <AuthShell>
                 <div className="bg-primary-50 dark:bg-primary/10 text-primary mb-4 flex h-12 w-12 items-center justify-center rounded-xl">
                     <KeyRound className="h-6 w-6" />
