@@ -12,7 +12,7 @@ class NavigationService
      * An entry is shown when ALL its `permissions` are granted and NONE of
      * its `denies` are present.
      *
-     * @return array<int, array{label: string, url?: string, icon?: string, permissions: array<string>, denies?: array<string>, children?: array<int, array{label: string, url: string, permissions: array<string>}>}>
+     * @return array<int, array{label: string, url?: string, icon?: string, order?: int, permissions: array<string>, denies?: array<string>, children?: array<int, array{label: string, url: string, permissions: array<string>}>}>
      */
     public function getForUser(User $user): array
     {
@@ -51,7 +51,7 @@ class NavigationService
         unset($entry);
 
         usort($entries, function (array $left, array $right): int {
-            $order = $this->entryPriority($left) <=> $this->entryPriority($right);
+            $order = ($left['order'] ?? 200) <=> ($right['order'] ?? 200);
 
             if ($order !== 0) {
                 return $order;
@@ -61,41 +61,6 @@ class NavigationService
         });
 
         return array_values($entries);
-    }
-
-    private function entryPriority(array $entry): int
-    {
-        $label = strtolower((string) ($entry['label'] ?? ''));
-
-        if (str_contains($label, 'dashboard')) {
-            return 0;
-        }
-
-        if (str_contains($label, 'verifikasi') || str_contains($label, 'checklist')) {
-            return 10;
-        }
-
-        if (str_contains($label, 'temuan')) {
-            return 20;
-        }
-
-        if (str_contains($label, 'risiko') || str_contains($label, 'risk')) {
-            return 30;
-        }
-
-        if (str_contains($label, 'kontrol') || str_contains($label, 'compliance')) {
-            return 40;
-        }
-
-        if (str_contains($label, 'audit')) {
-            return 50;
-        }
-
-        if (str_contains($label, 'framework') || str_contains($label, 'user') || str_contains($label, 'role') || str_contains($label, 'unit') || str_contains($label, 'sesi')) {
-            return 100;
-        }
-
-        return 200;
     }
 
     private function hasAll(User $user, array $keys): bool
@@ -123,7 +88,11 @@ class NavigationService
     /**
      * Full navigation definition. Add new items here — frontend picks them up automatically.
      *
-     * @return array<int, array{label: string, url?: string, icon?: string, permissions: array<string>, denies?: array<string>, children?: array<int, array{label: string, url: string, permissions: array<string>}>}>
+     * Canonical order: Dashboard, Checklist, Verifikasi Checklists, Temuan,
+     * Register Risiko, manajemen block (Sesi, Kontrol, Framework, Role, Unit,
+     * User), Audit Log. Filtering preserves relative order per role.
+     *
+     * @return array<int, array{label: string, url?: string, icon?: string, order?: int, permissions: array<string>, denies?: array<string>, children?: array<int, array{label: string, url: string, permissions: array<string>}>}>
      */
     private function all(): array
     {
@@ -133,30 +102,35 @@ class NavigationService
                 'label' => 'Dashboard',
                 'url' => '/dashboard',
                 'icon' => 'LayoutGrid',
+                'order' => 0,
                 'permissions' => ['work-unit.view'],
             ],
             [
                 'label' => 'Manajemen Framework',
                 'url' => '/frameworks',
                 'icon' => 'Database',
+                'order' => 102,
                 'permissions' => ['framework.view', 'work-unit.view'],
             ],
             [
                 'label' => 'Manajemen User',
                 'url' => '/users',
                 'icon' => 'Users',
+                'order' => 105,
                 'permissions' => ['user.managementview'],
             ],
             [
                 'label' => 'Manajemen Role',
                 'url' => '/roles',
                 'icon' => 'Shield',
+                'order' => 103,
                 'permissions' => ['role.managementview'],
             ],
             [
                 'label' => 'Manajemen Unit',
                 'url' => '/admin/superadmin/units',
                 'icon' => 'Building2',
+                'order' => 104,
                 'permissions' => ['work-unit.view'],
             ],
 
@@ -165,6 +139,7 @@ class NavigationService
                 'label' => 'Dashboard',
                 'url' => '/dashboard',
                 'icon' => 'LayoutGrid',
+                'order' => 0,
                 'permissions' => ['dashboard.read'],
                 'denies' => ['work-unit.view', 'audit-log.view'],
             ],
@@ -173,6 +148,7 @@ class NavigationService
                 'label' => 'Dashboard',
                 'url' => '/dashboard',
                 'icon' => 'LayoutGrid',
+                'order' => 0,
                 'permissions' => ['dashboard.read', 'audit-log.view'],
                 'denies' => ['work-unit.view'],
             ],
@@ -180,6 +156,7 @@ class NavigationService
                 'label' => 'Verifikasi Checklists',
                 'url' => '/admin/kepatuhan/checklist/verify',
                 'icon' => 'ClipboardCheck',
+                'order' => 11,
                 'permissions' => ['checklist.view', 'audit-log.view'],
                 'denies' => ['work-unit.view'],
             ],
@@ -189,6 +166,7 @@ class NavigationService
                 'label' => 'Checklist',
                 'url' => '/checklist',
                 'icon' => 'ClipboardCheck',
+                'order' => 10,
                 'permissions' => ['checklist-session.read'],
                 'denies' => ['control.view', 'audit-log.view'],
             ],
@@ -198,12 +176,14 @@ class NavigationService
                 'label' => 'Temuan',
                 'url' => '/temuan',
                 'icon' => 'AlertCircle',
+                'order' => 20,
                 'permissions' => ['finding.view'],
             ],
             [
                 'label' => 'Register Risiko',
                 'url' => '/risks',
                 'icon' => 'AlertTriangle',
+                'order' => 30,
                 'permissions' => ['risk.view'],
             ],
 
@@ -211,6 +191,7 @@ class NavigationService
                 'label' => 'Manajemen Sesi Checklist',
                 'url' => '/admin/kepatuhan/sessions',
                 'icon' => 'ClipboardList',
+                'order' => 100,
                 'permissions' => ['checklist-session.view'],
             ],
 
@@ -218,6 +199,7 @@ class NavigationService
                 'label' => 'Manajemen Kontrol',
                 'url' => '/compliance',
                 'icon' => 'ShieldCheck',
+                'order' => 101,
                 'permissions' => ['control.view'],
             ],
 
@@ -225,6 +207,7 @@ class NavigationService
                 'label' => 'Audit Log',
                 'url' => '/audit-logs',
                 'icon' => 'History',
+                'order' => 200,
                 'permissions' => ['audit-log.view'],
             ],
         ];

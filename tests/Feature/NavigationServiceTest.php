@@ -178,6 +178,53 @@ class NavigationServiceTest extends TestCase
         $labels = collect(app(NavigationService::class)->getForUser($superadmin))->pluck('label')->all();
 
         $this->assertSame('Dashboard', $labels[0]);
-        $this->assertLessThan(array_search('Manajemen Framework', $labels, true), array_search('Audit Log', $labels, true));
+        $this->assertSame('Audit Log', $labels[count($labels) - 1]);
+        $this->assertLessThan(
+            array_search('Audit Log', $labels, true),
+            array_search('Manajemen Framework', $labels, true)
+        );
+    }
+
+    public function test_navigation_follows_approved_global_order(): void
+    {
+        $expected = [
+            'Dashboard',
+            'Checklist',
+            'Verifikasi Checklists',
+            'Temuan',
+            'Register Risiko',
+            'Manajemen Sesi Checklist',
+            'Manajemen Kontrol',
+            'Manajemen Framework',
+            'Manajemen Role',
+            'Manajemen Unit',
+            'Manajemen User',
+            'Audit Log',
+        ];
+        $positions = array_flip($expected);
+
+        foreach ([
+            User::ROLE_SUPERADMIN,
+            User::ROLE_ADMIN_KEPATUHAN,
+            User::ROLE_PIC,
+            User::ROLE_KOORDINATOR_SMKI,
+            User::ROLE_AUDITOR,
+        ] as $role) {
+            $user = User::factory()->create(['role' => $role]);
+            $labels = collect(app(NavigationService::class)->getForUser($user))->pluck('label')->all();
+
+            $lastPos = -1;
+            foreach ($labels as $label) {
+                $this->assertArrayHasKey($label, $positions, "Unexpected nav label [{$label}] for role [{$role}]");
+                $pos = $positions[$label];
+                $this->assertGreaterThan($lastPos, $pos, "Nav out of order for role [{$role}]: [{$label}] after position [{$lastPos}] in [".implode(', ', $labels).']');
+                $lastPos = $pos;
+            }
+        }
+
+        $superadmin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+        $labels = collect(app(NavigationService::class)->getForUser($superadmin))->pluck('label')->all();
+        $this->assertSame('Dashboard', $labels[0]);
+        $this->assertSame('Audit Log', $labels[count($labels) - 1]);
     }
 }
