@@ -528,7 +528,9 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                                                         />
                                                         <div className="min-w-0">
                                                             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                                                                <h5 className="text-xs font-bold break-words text-slate-900 dark:text-white">{meta.label}</h5>
+                                                                <h5 className="text-xs font-bold break-words text-slate-900 dark:text-white">
+                                                                    {meta.label}
+                                                                </h5>
                                                                 <span className="py-0.2 shrink-0 rounded-full bg-slate-200/80 px-2 text-[10px] font-bold whitespace-nowrap text-slate-700 dark:bg-slate-700 dark:text-slate-300">
                                                                     {activeCount}/{permissionCatalog[mod].length} Aktif
                                                                 </span>
@@ -573,11 +575,13 @@ export default function Roles({ roles, permissionCatalog }: Props) {
                                                                     <div className="min-w-0 flex-1">
                                                                         <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-0.5">
                                                                             <span
-                                                                                className={`min-w-0 break-words text-xs font-bold ${on ? 'text-navy dark:text-primary-200' : 'text-slate-900 dark:text-white'}`}
+                                                                                className={`min-w-0 text-xs font-bold break-words ${on ? 'text-navy dark:text-primary-200' : 'text-slate-900 dark:text-white'}`}
                                                                             >
                                                                                 {actionName}
                                                                             </span>
-                                                                            <span className="shrink-0 font-mono text-[9.5px] text-slate-400">{key}</span>
+                                                                            <span className="shrink-0 font-mono text-[9.5px] text-slate-400">
+                                                                                {key}
+                                                                            </span>
                                                                         </div>
                                                                         <p className="mt-0.5 text-[11px] leading-tight text-slate-500 dark:text-slate-400">
                                                                             {actionDesc}

@@ -344,7 +344,9 @@ export default function Sessions({ sessions, workUnits, frameworks, periodeOptio
                                         <UserRound className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-500" />
                                         <span className="min-w-0 break-words">{s.unit_nama || 'Unit tidak diketahui'}</span>
                                     </span>
-                                    {s.creator_name && <span className="min-w-0 break-words text-slate-400 dark:text-slate-500">oleh {s.creator_name}</span>}
+                                    {s.creator_name && (
+                                        <span className="min-w-0 break-words text-slate-400 dark:text-slate-500">oleh {s.creator_name}</span>
+                                    )}
                                 </div>
 
                                 {s.framework_nama && (

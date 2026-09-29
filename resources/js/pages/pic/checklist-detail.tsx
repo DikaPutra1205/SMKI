@@ -222,7 +222,9 @@ function EntryItemRow({
                     <span className="inline-flex shrink-0 items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600 dark:bg-slate-800">
                         {entry.control.kode_klausul}
                     </span>
-                    <h4 className={`min-w-0 flex-1 text-sm font-bold break-words ${showErrorLabels ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white'}`}>
+                    <h4
+                        className={`min-w-0 flex-1 text-sm font-bold break-words ${showErrorLabels ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white'}`}
+                    >
                         {entry.control.judul}
                     </h4>
                 </div>
@@ -367,7 +369,7 @@ function EntryItemRow({
                         <Eye className="h-3.5 w-3.5 shrink-0" />
                         <span className="min-w-0 flex-1 truncate">{entry.active_evidence.nama_file}</span>
                     </button>
-                    <span className="shrink-0 whitespace-nowrap text-[11px] text-slate-400 dark:text-slate-500">(Klik untuk pratinjau)</span>
+                    <span className="shrink-0 text-[11px] whitespace-nowrap text-slate-400 dark:text-slate-500">(Klik untuk pratinjau)</span>
                 </div>
             )}
         </div>
