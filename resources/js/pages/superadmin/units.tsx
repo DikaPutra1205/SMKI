@@ -167,14 +167,18 @@ export default function Units({ units }: Props) {
                                         }`}
                                     >
                                         <td className="px-5 py-3.5">
-                                            <div className="flex min-w-0 items-center gap-2.5">
+                                            <div className="flex items-center gap-2.5">
                                                 <div className="bg-primary-50 text-primary dark:bg-navy-900/50 dark:text-primary-200 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">
                                                     <Building2 className="h-4 w-4" />
                                                 </div>
-                                                <span className="truncate text-sm font-semibold text-slate-900 dark:text-white">{u.nama}</span>
+                                                <span className="text-sm font-semibold whitespace-nowrap text-slate-900 dark:text-white">
+                                                    {u.nama}
+                                                </span>
                                             </div>
                                         </td>
-                                        <td className="px-5 py-3.5 text-sm text-slate-500 dark:text-slate-400">{u.parent?.nama ?? '—'}</td>
+                                        <td className="px-5 py-3.5 text-sm whitespace-nowrap text-slate-500 dark:text-slate-400">
+                                            {u.parent?.nama ?? '—'}
+                                        </td>
                                         <td className="px-5 py-3.5">
                                             <div className="flex items-center justify-end gap-2">
                                                 {can('work-unit.update') && (
