@@ -205,7 +205,6 @@ class NavigationService
                 'url' => '/risks',
                 'icon' => 'AlertTriangle',
                 'permissions' => ['risk.view'],
-                'denies' => ['work-unit.view'],
             ],
 
             [

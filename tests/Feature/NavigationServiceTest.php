@@ -35,6 +35,7 @@ class NavigationServiceTest extends TestCase
         $this->assertContains('/compliance', $urls);
         $this->assertContains('/audit-logs', $urls);
         $this->assertContains('/temuan', $urls);
+        $this->assertContains('/risks', $urls);
     }
 
     public function test_admin_kepatuhan_gets_compliance_navigation(): void
