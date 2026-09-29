@@ -140,68 +140,82 @@ export default function Units({ units }: Props) {
 
             {/* Table */}
             <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <div className="grid grid-cols-[1fr_auto] gap-4 border-b border-slate-100 px-5 py-3 text-[11px] font-bold tracking-wide text-slate-400 uppercase sm:grid-cols-[1fr_1fr_auto] dark:border-slate-800 dark:text-slate-500">
-                    <div>Nama Unit</div>
-                    <div className="hidden sm:block">Induk</div>
-                    <div className="text-right">Aksi</div>
+                <div className="overflow-x-auto">
+                    <table className="w-full min-w-[40rem] text-left text-sm">
+                        <thead className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-bold tracking-wider text-slate-500 uppercase dark:border-slate-800 dark:bg-[#001f38] dark:text-slate-400">
+                            <tr>
+                                <th scope="col" className="px-5 py-3 font-semibold">
+                                    Nama Unit
+                                </th>
+                                <th scope="col" className="px-5 py-3 font-semibold">
+                                    Induk
+                                </th>
+                                <th scope="col" className="px-5 py-3 text-right font-semibold">
+                                    Aksi
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
+                            {units.length > 0 ? (
+                                units.map((u, idx) => (
+                                    <tr
+                                        key={u.id}
+                                        className={`transition-colors ${
+                                            idx % 2 === 0
+                                                ? 'hover:bg-slate-50/60 dark:hover:bg-slate-800/40'
+                                                : 'bg-slate-200/70 hover:bg-slate-300/70 dark:bg-slate-800/20 dark:hover:bg-slate-800/50'
+                                        }`}
+                                    >
+                                        <td className="px-5 py-3.5">
+                                            <div className="flex min-w-0 items-center gap-2.5">
+                                                <div className="bg-primary-50 text-primary dark:bg-navy-900/50 dark:text-primary-200 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">
+                                                    <Building2 className="h-4 w-4" />
+                                                </div>
+                                                <span className="truncate text-sm font-semibold text-slate-900 dark:text-white">{u.nama}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-5 py-3.5 text-sm text-slate-500 dark:text-slate-400">{u.parent?.nama ?? '—'}</td>
+                                        <td className="px-5 py-3.5">
+                                            <div className="flex items-center justify-end gap-2">
+                                                {can('work-unit.update') && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => openEdit(u)}
+                                                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                                                    >
+                                                        <Pencil className="h-3.5 w-3.5" />
+                                                        Edit
+                                                    </button>
+                                                )}
+                                                {can('work-unit.delete') && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setDelTarget(u);
+                                                            setDelOpen(true);
+                                                        }}
+                                                        className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50/50 px-3 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400 dark:hover:bg-red-950/50"
+                                                    >
+                                                        <Trash2 className="h-3.5 w-3.5" />
+                                                        Hapus
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan={3} className="px-5 py-12 text-center">
+                                        <Building2 className="mx-auto h-10 w-10 text-slate-300 dark:text-slate-600" />
+                                        <h4 className="mt-3 text-sm font-bold text-slate-700 dark:text-slate-300">Belum ada unit terdaftar</h4>
+                                        <p className="mt-1 text-xs text-slate-500">Klik tombol "Tambah Unit Baru" untuk membuat unit kerja.</p>
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
                 </div>
-
-                {units.length > 0 ? (
-                    units.map((u, idx) => (
-                        <div
-                            key={u.id}
-                            className={`grid grid-cols-[1fr_auto] items-center gap-4 border-b border-slate-100 px-5 py-3.5 last:border-0 sm:grid-cols-[1fr_1fr_auto] dark:border-slate-800 ${
-                                idx % 2 === 0
-                                    ? 'hover:bg-slate-50/60 dark:hover:bg-slate-800/40'
-                                    : 'bg-slate-200/70 hover:bg-slate-300/70 dark:bg-slate-800/20 dark:hover:bg-slate-800/50'
-                            }`}
-                        >
-                            <div className="flex min-w-0 items-center gap-2.5">
-                                <div className="bg-primary-50 text-primary dark:bg-navy-900/50 dark:text-primary-200 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">
-                                    <Building2 className="h-4 w-4" />
-                                </div>
-                                <div className="min-w-0">
-                                    <span className="block truncate text-sm font-semibold text-slate-900 dark:text-white">{u.nama}</span>
-                                    <span className="block truncate text-[11px] text-slate-400 sm:hidden dark:text-slate-500">
-                                        Induk: {u.parent?.nama ?? '—'}
-                                    </span>
-                                </div>
-                            </div>
-                            <div className="hidden truncate text-sm text-slate-500 sm:block dark:text-slate-400">{u.parent?.nama ?? '—'}</div>
-                            <div className="flex items-center justify-end gap-2">
-                                {can('work-unit.update') && (
-                                    <button
-                                        type="button"
-                                        onClick={() => openEdit(u)}
-                                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-                                    >
-                                        <Pencil className="h-3.5 w-3.5" />
-                                        Edit
-                                    </button>
-                                )}
-                                {can('work-unit.delete') && (
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setDelTarget(u);
-                                            setDelOpen(true);
-                                        }}
-                                        className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50/50 px-3 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400 dark:hover:bg-red-950/50"
-                                    >
-                                        <Trash2 className="h-3.5 w-3.5" />
-                                        Hapus
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    ))
-                ) : (
-                    <div className="px-5 py-12 text-center">
-                        <Building2 className="mx-auto h-10 w-10 text-slate-300 dark:text-slate-600" />
-                        <h4 className="mt-3 text-sm font-bold text-slate-700 dark:text-slate-300">Belum ada unit terdaftar</h4>
-                        <p className="mt-1 text-xs text-slate-500">Klik tombol "Tambah Unit Baru" untuk membuat unit kerja.</p>
-                    </div>
-                )}
             </div>
 
             {/* Modal Form: Create / Edit Unit */}
