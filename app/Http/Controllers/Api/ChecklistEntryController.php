@@ -390,6 +390,16 @@ class ChecklistEntryController extends Controller
      */
     public function generateMonthly(Request $request): JsonResponse
     {
+        Gate::authorize('checklist.generate-monthly');
+
+        $validated = $request->validate([
+            'unit_id' => 'nullable|exists:work_units,id',
+            'periode' => 'nullable|date_format:Y-m',
+        ]);
+
+        $user = $request->user();
+        $scopedUnitIds = $user ? $this->resolveScopedUnitIds($user, $request->only('unit_id')) : null;
+
         $unitId = $request->filled('unit_id') ? (int) $request->unit_id : null;
 
         $controls = Control::all();
@@ -398,8 +408,8 @@ class ChecklistEntryController extends Controller
         }
 
         $unitsQuery = WorkUnit::query();
-        if ($unitId) {
-            $unitsQuery->where('id', $unitId);
+        if ($scopedUnitIds !== null) {
+            $unitsQuery->whereIn('id', $scopedUnitIds);
         }
         $units = $unitsQuery->get();
 
@@ -408,8 +418,8 @@ class ChecklistEntryController extends Controller
         }
 
         $now = now();
-        $period = $request->input('periode', $now->format('Y-m'));
-        $periodLabel = Carbon::parse($period)->translatedFormat('F Y');
+        $period = $validated['periode'] ?? $now->format('Y-m');
+        $periodLabel = Carbon::createFromFormat('Y-m', $period)->translatedFormat('F Y');
 
         $frameworks = Framework::whereHas('controls')->get();
         if ($frameworks->isEmpty()) {

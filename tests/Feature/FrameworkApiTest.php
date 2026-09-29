@@ -8,6 +8,7 @@ use App\Models\WorkUnit;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class FrameworkApiTest extends TestCase
@@ -393,7 +394,7 @@ class FrameworkApiTest extends TestCase
         $this->assertSoftDeleted('work_units', ['id' => $unit->id]);
     }
 
-    // Documents a gap: parent_id may point at the unit itself, creating a cycle.
+    // Rejects self-parent cycle via model saving guard (422).
     public function test_work_units_update_allows_self_parent_cycle(): void
     {
         $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
@@ -401,9 +402,10 @@ class FrameworkApiTest extends TestCase
 
         $this->actingAs($admin)
             ->patchJson("/api/work-units/{$unit->id}", ['parent_id' => $unit->id])
-            ->assertOk();
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['parent_id']);
 
-        $this->assertDatabaseHas('work_units', ['id' => $unit->id, 'parent_id' => $unit->id]);
+        $this->assertDatabaseHas('work_units', ['id' => $unit->id, 'parent_id' => null]);
     }
 
     public function test_work_units_anonymous_cannot_access(): void
@@ -417,16 +419,16 @@ class FrameworkApiTest extends TestCase
     public function test_users_index_returns_safe_attributes_with_unit(): void
     {
         $unit = WorkUnit::factory()->create(['nama' => 'Unit A']);
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN_KEPATUHAN]);
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
         $pic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unit->id]);
 
         $this->actingAs($admin)
             ->getJson('/api/users')
             ->assertOk()
             ->assertJsonCount(2, 'data')
-            ->assertJsonPath('data.0.role', 'admin_kepatuhan')
-            ->assertJsonPath('data.1.role', 'pic')
-            ->assertJsonPath('data.1.unit.id', $unit->id)
+            ->assertJsonPath('data.0.role', 'pic')
+            ->assertJsonPath('data.0.unit.id', $unit->id)
+            ->assertJsonPath('data.1.role', 'superadmin')
             ->assertJsonMissingPath('data.0.password')
             ->assertJsonMissingPath('data.0.remember_token');
     }
@@ -434,5 +436,99 @@ class FrameworkApiTest extends TestCase
     public function test_users_index_anonymous_cannot_access(): void
     {
         $this->getJson('/api/users')->assertStatus(401);
+    }
+
+    // ── US-G3: work-unit CRUD is superadmin-only on the API surface too ───
+
+    public static function nonSuperAdminRoles(): array
+    {
+        return [
+            'admin_kepatuhan' => [User::ROLE_ADMIN_KEPATUHAN],
+            'koordinator' => [User::ROLE_KOORDINATOR_SMKI],
+            'auditor' => [User::ROLE_AUDITOR],
+            'pic' => [User::ROLE_PIC],
+        ];
+    }
+
+    #[DataProvider('nonSuperAdminRoles')]
+    public function test_non_superadmin_cannot_create_work_unit_via_api(string $role): void
+    {
+        $this->actingAs(User::factory()->create(['role' => $role]))
+            ->postJson('/api/work-units', ['nama' => 'Unauthorized Unit'])
+            ->assertForbidden();
+
+        $this->assertDatabaseMissing('work_units', ['nama' => 'Unauthorized Unit']);
+    }
+
+    #[DataProvider('nonSuperAdminRoles')]
+    public function test_non_superadmin_cannot_update_work_unit_via_api(string $role): void
+    {
+        $user = User::factory()->create(['role' => $role]);
+        $unit = WorkUnit::factory()->create(['nama' => 'Protected']);
+
+        $this->actingAs($user)
+            ->patchJson("/api/work-units/{$unit->id}", ['nama' => 'Hijacked'])
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('work_units', ['id' => $unit->id, 'nama' => 'Protected']);
+    }
+
+    #[DataProvider('nonSuperAdminRoles')]
+    public function test_non_superadmin_cannot_delete_work_unit_via_api(string $role): void
+    {
+        $user = User::factory()->create(['role' => $role]);
+        $unit = WorkUnit::factory()->create(['nama' => 'Protected']);
+
+        $this->actingAs($user)
+            ->deleteJson("/api/work-units/{$unit->id}")
+            ->assertForbidden();
+
+        $this->assertNotSoftDeleted('work_units', ['id' => $unit->id]);
+    }
+
+    // ── US-G1: /api/users requires user.read (pic + admin_kepatuhan lack it) ──
+
+    public static function rolesWithoutUserRead(): array
+    {
+        return [
+            'admin_kepatuhan' => [User::ROLE_ADMIN_KEPATUHAN],
+            'pic' => [User::ROLE_PIC],
+        ];
+    }
+
+    public static function rolesWithUserRead(): array
+    {
+        return [
+            'superadmin' => [User::ROLE_SUPERADMIN],
+            'koordinator' => [User::ROLE_KOORDINATOR_SMKI],
+            'auditor' => [User::ROLE_AUDITOR],
+        ];
+    }
+
+    #[DataProvider('rolesWithoutUserRead')]
+    public function test_user_without_user_read_cannot_list_api_users(string $role): void
+    {
+        $user = User::factory()->create(['role' => $role]);
+
+        $this->actingAs($user)
+            ->getJson('/api/users')
+            ->assertForbidden();
+    }
+
+    #[DataProvider('rolesWithUserRead')]
+    public function test_user_with_user_read_can_list_api_users(string $role): void
+    {
+        $user = User::factory()->create(['role' => $role]);
+
+        $this->actingAs($user)
+            ->getJson('/api/users')
+            ->assertOk();
+    }
+
+    public function test_superadmin_can_still_list_api_users(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
+
+        $this->actingAs($admin)->getJson('/api/users')->assertOk();
     }
 }

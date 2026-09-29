@@ -45,7 +45,7 @@ class WorkUnitController extends Controller
         $this->authorize('work-unit.update');
 
         $parentId = $request->input('parent_id');
-        if ($parentId && $this->wouldCreateCycle($workUnit, (int) $parentId)) {
+        if ($parentId && $workUnit->wouldCreateCycle((int) $parentId)) {
             abort(422, 'Unit tidak dapat dijadikan induk dari dirinya sendiri atau turunannya.');
         }
 
@@ -76,18 +76,6 @@ class WorkUnitController extends Controller
     /** True jika $parentId adalah $unit itu sendiri atau salah satu turunannya. */
     private function wouldCreateCycle(WorkUnit $unit, int $parentId): bool
     {
-        if ($parentId === $unit->id) {
-            return true;
-        }
-
-        $candidate = WorkUnit::find($parentId);
-        while ($candidate?->parent_id) {
-            if ($candidate->parent_id === $unit->id) {
-                return true;
-            }
-            $candidate = $candidate->parent;
-        }
-
-        return false;
+        return $unit->wouldCreateCycle($parentId);
     }
 }

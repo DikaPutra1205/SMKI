@@ -94,6 +94,10 @@ class ComplianceService
             $query->where('unit_id', $filters['unit_id']);
         }
 
+        if (! empty($filters['unit_ids']) && is_array($filters['unit_ids'])) {
+            $query->whereIn('unit_id', array_map('intval', $filters['unit_ids']));
+        }
+
         if (! empty($filters['framework_id'])) {
             $query->where('framework_id', $filters['framework_id']);
         }

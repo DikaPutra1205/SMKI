@@ -17,7 +17,6 @@ use App\Http\Controllers\Api\WorkUnitController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Storage;
 
 /*
 |--------------------------------------------------------------------------
@@ -146,16 +145,5 @@ Route::middleware('auth')->group(function () {
         Route::post('/read-all', [NotificationApiController::class, 'markAllAsRead']);
         Route::post('/{id}/read', [NotificationApiController::class, 'markAsRead']);
         Route::delete('/{id}', [NotificationApiController::class, 'destroy']);
-    });
-
-    // ── Test Upload ─────────────────────────────────────────────────────────────
-    Route::post('/test-upload', function (Request $request) {
-        $request->validate(['bukti_file' => 'required|file']);
-        $path = Storage::disk('supabase')->put('testing', $request->file('bukti_file'));
-        if (! $path) {
-            return response()->json(['status' => 'error', 'message' => 'Gagal mengunggah file ke Supabase.'], 500);
-        }
-
-        return response()->json(['status' => 'success', 'message' => 'File berhasil diunggah.', 'path' => $path], 200);
     });
 });

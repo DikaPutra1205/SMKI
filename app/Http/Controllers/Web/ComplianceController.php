@@ -18,11 +18,30 @@ class ComplianceController extends Controller
 
     public function index(Request $request): Response
     {
+        $user = $request->user();
+        if (! $user || ! $user->hasPermissionTo('control.view')) {
+            abort(403);
+        }
+
         $filters = $request->only(['search', 'status', 'unit_id', 'framework_id', 'kategori', 'domain_peran']);
         $perPage = max(1, min(100, (int) $request->query('per_page', 20)));
 
+        if ($user->isPic()) {
+            $accessible = $user->accessibleUnitIds();
+            if ($accessible !== null) {
+                if (! empty($filters['unit_id'])) {
+                    if (! in_array((int) $filters['unit_id'], $accessible, true)) {
+                        abort(403);
+                    }
+                } else {
+                    // Scope sessions + workUnits below; controls/frameworks global master.
+                    $filters['unit_ids'] = $accessible;
+                }
+            }
+        }
+
         $frameworks = $this->complianceService->getFrameworkSummaries();
-        $workUnits = $this->complianceService->getWorkUnits();
+        $workUnits = $this->complianceService->getWorkUnits($user);
         $controls = $this->complianceService->getControls($filters, $perPage);
         $sessions = $this->complianceService->getChecklistSessions($filters);
 

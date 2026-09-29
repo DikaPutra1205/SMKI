@@ -119,9 +119,9 @@ class FrameworkController extends Controller
 
     public function destroy(Framework $framework, FrameworkDocumentService $documents): RedirectResponse
     {
-        $documents->deleteExisting($framework->getRawOriginal('url_file'));
-
         Gate::authorize('framework.delete');
+
+        $documents->deleteExisting($framework->getRawOriginal('url_file'));
 
         $framework->delete();
 

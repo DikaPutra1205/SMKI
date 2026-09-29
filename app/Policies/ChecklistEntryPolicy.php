@@ -89,6 +89,10 @@ class ChecklistEntryPolicy
      */
     public function update(User $user, ChecklistEntry $checklistEntry): bool
     {
+        if (! $user->hasPermissionTo('checklist.update')) {
+            return false;
+        }
+
         return $this->isUserAuthorizedForEntry($user, $checklistEntry);
     }
 

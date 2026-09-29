@@ -9,6 +9,7 @@ use App\Models\ChecklistEntry;
 use App\Models\ChecklistSession;
 use App\Models\Control;
 use App\Models\User;
+use App\Services\Concerns\ResolvesUnitScope;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,9 +18,15 @@ use Illuminate\Support\Facades\Gate;
 class ChecklistSessionController extends Controller
 {
     use ApiResponse;
+    use ResolvesUnitScope;
 
     public function index(Request $request): JsonResponse
     {
+        $user = $request->user();
+        if ($user) {
+            Gate::authorize('viewAny', ChecklistSession::class);
+        }
+
         $query = ChecklistSession::with([
             'unit:id,nama',
             'framework:id,nama,versi',
@@ -43,7 +50,12 @@ class ChecklistSessionController extends Controller
             }
         }
 
-        if ($request->filled('unit_id')) {
+        if ($user) {
+            $scopedUnitIds = $this->resolveScopedUnitIds($user, $request->only('unit_id'));
+            if ($scopedUnitIds !== null) {
+                $query->whereIn('unit_id', $scopedUnitIds);
+            }
+        } elseif ($request->filled('unit_id')) {
             $query->where('unit_id', $request->unit_id);
         }
 
@@ -105,6 +117,8 @@ class ChecklistSessionController extends Controller
 
     public function show(ChecklistSession $checklistSession): JsonResponse
     {
+        Gate::authorize('view', $checklistSession);
+
         $checklistSession->load([
             'unit:id,nama',
             'framework:id,nama,versi',
