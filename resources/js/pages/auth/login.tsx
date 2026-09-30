@@ -1,7 +1,7 @@
 import AuthShell from '@/components/auth/AuthShell';
 import { t } from '@/lib/i18n';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { AlertCircle, Check, CheckCircle2, Eye, EyeOff, Loader2, Lock, Mail } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 
 type Props = {
@@ -31,60 +31,71 @@ export default function Login({ status }: Props) {
         <>
             <Head title="Masuk - SMKI" />
             <AuthShell>
-                <h1 className="text-navy text-2xl font-bold tracking-tight dark:text-white">{t('auth.welcomeBack')}</h1>
-                <p className="text-muted mt-1.5 text-sm dark:text-slate-400">{t('auth.welcomeBackSubtitle')}</p>
+                {/* Heading */}
+                <div className="mb-8">
+                    <h1 className="text-2xl font-bold tracking-tight text-navy dark:text-white">
+                        {t('auth.welcomeBack')}
+                    </h1>
+                    <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">
+                        {t('auth.welcomeBackSubtitle')}
+                    </p>
+                </div>
 
+                {/* Password-updated success banner */}
                 {status === 'password-updated' && (
                     <div
                         role="status"
-                        className="border-success-border bg-success-bg text-success mt-5 flex items-start gap-2.5 rounded-xl border px-4 py-3 text-sm font-medium dark:border-emerald-800 dark:text-emerald-400"
+                        className="mb-6 flex items-start gap-3 rounded-lg bg-emerald-50 p-4 text-sm font-medium text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400"
                     >
-                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
                         <span>{t('auth.passwordUpdated')}</span>
                     </div>
                 )}
 
+                {/* Credential error banner */}
                 {formError && (
                     <div
                         role="alert"
-                        className="animate-in fade-in slide-in-from-bottom-2 bg-danger-bg border-danger-border text-danger mt-5 flex items-start gap-2.5 rounded-xl border px-4 py-3 text-sm font-medium dark:border-red-800 dark:text-red-400"
+                        className="mb-6 flex items-start gap-3 rounded-lg bg-red-50 p-4 text-sm font-medium text-red-800 dark:bg-red-900/30 dark:text-red-400"
                     >
-                        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-600 dark:text-red-400" />
                         <span>{formError}</span>
                     </div>
                 )}
 
-                <form onSubmit={submit} className="mt-6 flex flex-col gap-4">
+                <form onSubmit={submit} className="flex flex-col gap-5">
+                    {/* Email */}
                     <div>
-                        <label htmlFor="email" className="text-navy mb-1.5 block text-xs font-semibold dark:text-white">
+                        <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
                             {t('auth.login.email')}
                         </label>
-                        <div className="relative">
-                            <Mail className="text-faint pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 dark:text-slate-500" />
-                            <input
-                                id="email"
-                                type="email"
-                                autoComplete="email"
-                                value={data.email}
-                                onChange={(e) => setData('email', e.target.value)}
-                                placeholder="nama@perusahaan.co.id"
-                                autoFocus
-                                className={`focus:ring-primary/20 h-11 w-full rounded-xl border bg-white pr-3 pl-10 text-sm transition-colors focus:ring-2 focus:outline-none dark:bg-slate-900 ${
-                                    emailFieldError
-                                        ? 'border-danger focus:border-danger focus:ring-danger/20 dark:border-red-700 dark:focus:border-red-500 dark:focus:ring-red-500/20'
-                                        : 'border-border-strong focus:border-primary dark:border-slate-600'
-                                }`}
-                            />
-                        </div>
-                        {emailFieldError && <p className="text-danger mt-1.5 text-xs font-medium dark:text-red-400">{emailFieldError}</p>}
+                        <input
+                            id="email"
+                            type="email"
+                            autoComplete="email"
+                            value={data.email}
+                            onChange={(e) => setData('email', e.target.value)}
+                            placeholder="nama@perusahaan.co.id"
+                            autoFocus
+                            className={`block w-full rounded-lg border px-4 py-2.5 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-0 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500 ${
+                                emailFieldError
+                                    ? 'border-red-300 text-red-900 focus:border-red-500 focus:ring-red-500/20 dark:border-red-700 dark:focus:border-red-500'
+                                    : 'border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-primary focus:ring-primary/20 dark:border-slate-700 dark:focus:border-primary'
+                            }`}
+                        />
+                        {emailFieldError && (
+                            <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+                                {emailFieldError}
+                            </p>
+                        )}
                     </div>
 
+                    {/* Password */}
                     <div>
-                        <label htmlFor="password" className="text-navy mb-1.5 block text-xs font-semibold dark:text-white">
+                        <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
                             {t('auth.login.password')}
                         </label>
                         <div className="relative">
-                            <Lock className="text-faint pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 dark:text-slate-500" />
                             <input
                                 id="password"
                                 type={showPassword ? 'text' : 'password'}
@@ -92,71 +103,60 @@ export default function Login({ status }: Props) {
                                 value={data.password}
                                 onChange={(e) => setData('password', e.target.value)}
                                 placeholder="••••••••"
-                                className={`focus:ring-primary/20 h-11 w-full rounded-xl border bg-white pr-11 pl-10 text-sm transition-colors focus:ring-2 focus:outline-none dark:bg-slate-900 ${
+                                className={`block w-full rounded-lg border py-2.5 pl-4 pr-11 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-0 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500 ${
                                     errors.password
-                                        ? 'border-danger focus:border-danger focus:ring-danger/20 dark:border-red-700 dark:focus:border-red-500 dark:focus:ring-red-500/20'
-                                        : 'border-border-strong focus:border-primary dark:border-slate-600'
+                                        ? 'border-red-300 text-red-900 focus:border-red-500 focus:ring-red-500/20 dark:border-red-700 dark:focus:border-red-500'
+                                        : 'border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-primary focus:ring-primary/20 dark:border-slate-700 dark:focus:border-primary'
                                 }`}
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowPassword((v) => !v)}
-                                className="text-faint hover:text-muted absolute top-1/2 right-3 -translate-y-1/2 transition-colors dark:text-slate-500 dark:hover:text-slate-300"
+                                className="absolute right-0 top-0 flex h-full items-center px-3 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300"
                                 aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                             >
                                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                             </button>
                         </div>
-                        {errors.password && <p className="text-danger mt-1.5 text-xs font-medium dark:text-red-400">{errors.password}</p>}
+                        {errors.password && (
+                            <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+                                {errors.password}
+                            </p>
+                        )}
                     </div>
 
+                    {/* Remember me + Forgot password */}
                     <div className="flex items-center justify-between pt-1">
-                        <label className="text-body group flex cursor-pointer items-center gap-2.5 text-[13px] select-none dark:text-slate-300">
-                            <input type="checkbox" className="peer sr-only" />
-                            <span className="border-border-strong group-focus-within:ring-primary/30 group-has-checked:border-primary group-has-checked:bg-primary dark:group-has-checked:border-primary dark:group-has-checked:bg-primary flex h-[18px] w-[18px] items-center justify-center rounded-[6px] border bg-white transition-all group-focus-within:ring-2 dark:border-slate-600 dark:bg-slate-800">
-                                <Check
-                                    className="h-3 w-3 shrink-0 text-white opacity-0 transition-opacity group-has-checked:opacity-100"
-                                    strokeWidth={3.5}
-                                />
+                        <label className="flex cursor-pointer items-center gap-2">
+                            <input
+                                type="checkbox"
+                                className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900 dark:checked:bg-primary dark:focus:ring-offset-slate-900"
+                            />
+                            <span className="text-sm text-slate-600 dark:text-slate-300">
+                                {t('auth.rememberMe')}
                             </span>
-                            {t('auth.rememberMe')}
                         </label>
                         <Link
                             href={route('password.request')}
-                            className="text-primary hover:text-primary-700 dark:hover:text-primary-200 text-[13px] font-semibold transition-colors"
+                            className="text-sm font-medium text-primary hover:text-primary-700 dark:hover:text-primary-400"
                         >
                             {t('auth.login.forgotPassword')}
                         </Link>
                     </div>
 
+                    {/* Submit */}
                     <button
                         type="submit"
                         disabled={processing}
-                        className="group bg-primary shadow-blue hover:bg-primary-700 mt-2 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-105 active:scale-[0.99] disabled:pointer-events-none disabled:opacity-60"
+                        className="mt-4 flex w-full justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-70 dark:focus:ring-offset-slate-900"
                     >
                         {processing ? (
-                            <>
+                            <span className="flex items-center gap-2">
                                 <Loader2 className="h-4 w-4 animate-spin" />
                                 {t('auth.login.submit')}
-                            </>
+                            </span>
                         ) : (
-                            <>
-                                {t('auth.login.submit')}
-                                <svg
-                                    className="transition-transform group-hover:translate-x-0.5"
-                                    width="16"
-                                    height="16"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                >
-                                    <line x1="5" x2="19" y1="12" y2="12" />
-                                    <polyline points="12 5 19 12 12 19" />
-                                </svg>
-                            </>
+                            t('auth.login.submit')
                         )}
                     </button>
                 </form>
