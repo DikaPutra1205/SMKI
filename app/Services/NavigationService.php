@@ -89,7 +89,7 @@ class NavigationService
      * Full navigation definition. Add new items here — frontend picks them up automatically.
      *
      * Canonical order: Dashboard, Checklist, Verifikasi Checklists, Temuan,
-     * Register Risiko, manajemen block (Sesi, Kontrol, Framework, Role, Unit,
+     * Register Risiko, manajemen block (Sesi, Kontrol, Master Data, Framework, Role, Unit,
      * User), Audit Log. Filtering preserves relative order per role.
      *
      * @return array<int, array{label: string, url?: string, icon?: string, order?: int, permissions: array<string>, denies?: array<string>, children?: array<int, array{label: string, url: string, permissions: array<string>}>}>
@@ -199,6 +199,14 @@ class NavigationService
                 'label' => 'Manajemen Kontrol',
                 'url' => '/compliance',
                 'icon' => 'ShieldCheck',
+                'order' => 101,
+                'permissions' => ['control.view'],
+            ],
+
+            [
+                'label' => 'Master Data',
+                'url' => '/admin/kepatuhan/master-data',
+                'icon' => 'Database',
                 'order' => 101,
                 'permissions' => ['control.view'],
             ],

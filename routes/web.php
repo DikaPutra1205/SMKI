@@ -100,6 +100,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/controls/{control}', [AdminControlController::class, 'destroy'])->name('controls.destroy');
 
         // ── Master Data Export / Import (unified 2-sheet Excel) ───────────────────────
+        Route::get('/master-data', [AdminControlController::class, 'masterDataPage'])->name('master-data.index');
         Route::get('/master-data/export', [AdminControlController::class, 'exportMasterData'])->name('master-data.export');
         Route::post('/master-data/import/preview', [AdminControlController::class, 'previewMasterDataImport'])->name('master-data.import.preview');
         Route::post('/master-data/import', [AdminControlController::class, 'importMasterData'])->name('master-data.import');

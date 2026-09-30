@@ -195,6 +195,7 @@ class NavigationServiceTest extends TestCase
             'Register Risiko',
             'Manajemen Sesi Checklist',
             'Manajemen Kontrol',
+            'Master Data',
             'Manajemen Framework',
             'Manajemen Role',
             'Manajemen Unit',

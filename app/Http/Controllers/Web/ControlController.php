@@ -10,16 +10,44 @@ use App\Http\Requests\UpdateControlRequest;
 use App\Imports\SmkiMasterDataImport;
 use App\Imports\SmkiSingleSheetImport;
 use App\Models\Control;
+use App\Models\Framework;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Inertia\Inertia;
+use Inertia\Response;
 use Maatwebsite\Excel\Exceptions\SheetNotFoundException;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ControlController extends Controller
 {
+    /**
+     * Master Data page — framework list + Excel import/export with
+     * preview-before-confirm. Uploading here parses controls; attaching a
+     * file on the Framework form only stores a document link.
+     */
+    public function masterDataPage(): Response
+    {
+        Gate::authorize('control.view');
+
+        $frameworks = Framework::withCount('controls')
+            ->orderBy('id')
+            ->get()
+            ->map(fn (Framework $fw) => [
+                'id' => $fw->id,
+                'nama' => $fw->nama,
+                'versi' => $fw->versi,
+                'controls_count' => $fw->controls_count,
+            ])
+            ->toArray();
+
+        return Inertia::render('admin-kepatuhan/master-data', [
+            'frameworks' => $frameworks,
+        ]);
+    }
+
     /**
      * Store a newly created control.
      * Inertia-style: redirect back with flash on success, validation errors
