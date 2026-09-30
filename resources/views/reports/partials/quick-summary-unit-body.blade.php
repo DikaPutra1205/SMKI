@@ -365,19 +365,8 @@
     <tr>
         <td>
             <div class="signoff-title">Disusun oleh</div>
-            <div style="height: 50pt;"></div>
-        </td>
-        <td>
-            <div class="signoff-title">Direview oleh</div>
-            <div style="height: 50pt;"></div>
-        </td>
-        <td>
-            <div class="signoff-title">Disetujui oleh</div>
-            <div style="height: 50pt;"></div>
-        </td>
-    </tr>
-    <tr class="signoff-border-row">
-        <td>
+            <div class="signoff-space"></div>
+            <div class="signoff-line"></div>
             <div class="signoff-name">{{ $signoff['disusun']['nama'] ?? 'Tim ISMS/PIMS — Information Security Office' }}</div>
             @if(!empty($signoff['disusun']['jabatan']))
                 <div class="signoff-role">{{ $signoff['disusun']['jabatan'] }}</div>
@@ -385,6 +374,9 @@
             <div class="signoff-date">Tanggal: ______________</div>
         </td>
         <td>
+            <div class="signoff-title">Direview oleh</div>
+            <div class="signoff-space"></div>
+            <div class="signoff-line"></div>
             <div class="signoff-name">{{ $signoff['direview']['nama'] ?? '________________________' }}</div>
             @if(!empty($signoff['direview']['jabatan']))
                 <div class="signoff-role">{{ $signoff['direview']['jabatan'] }}</div>
@@ -392,6 +384,9 @@
             <div class="signoff-date">Tanggal: ______________</div>
         </td>
         <td>
+            <div class="signoff-title">Disetujui oleh</div>
+            <div class="signoff-space"></div>
+            <div class="signoff-line"></div>
             <div class="signoff-name">{{ $signoff['disetujui']['nama'] ?? 'Chief Information Security Officer (CISO)' }}</div>
             @if(!empty($signoff['disetujui']['jabatan']))
                 <div class="signoff-role">{{ $signoff['disetujui']['jabatan'] }}</div>
