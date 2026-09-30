@@ -364,14 +364,14 @@ function EntryItemRow({
             </div>
 
             {entry.active_evidence && (
-                <div className="mt-2.5 flex min-w-0 items-center justify-between gap-2 text-xs">
+                <div className="mt-2.5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs">
                     <button
                         type="button"
                         onClick={() => onPreviewEvidence({ nama_file: entry.active_evidence!.nama_file, file_url: entry.active_evidence!.file_url })}
-                        className="text-primary hover:text-primary-700 dark:text-primary-200 dark:hover:text-primary-200 inline-flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden font-semibold hover:underline"
+                        className="text-primary hover:text-primary-700 dark:text-primary-200 dark:hover:text-primary-200 inline-flex min-w-0 max-w-full items-center gap-1.5 overflow-hidden font-semibold hover:underline"
                     >
                         <Eye className="h-3.5 w-3.5 shrink-0" />
-                        <span className="min-w-0 flex-1 truncate">{entry.active_evidence.nama_file}</span>
+                        <span className="min-w-0 truncate">{entry.active_evidence.nama_file}</span>
                     </button>
                     <span className="shrink-0 text-[11px] whitespace-nowrap text-slate-400 dark:text-slate-500">(Klik untuk pratinjau)</span>
                 </div>
