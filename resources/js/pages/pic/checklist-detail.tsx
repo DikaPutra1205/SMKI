@@ -1,6 +1,7 @@
 import ChecklistDetailSkeleton from '@/components/skeletons/ChecklistDetailSkeleton';
 import SyncWorker from '@/components/SyncWorker';
 import { Modal } from '@/components/ui/Modal';
+import { Select } from '@/components/ui/Select';
 import { StatusBadge, statusTone } from '@/components/ui/StatusBadge';
 import { useAssessmentEntry, useAssessmentStore } from '@/hooks/useAssessmentStore';
 import { usePageLoading } from '@/hooks/usePageLoading';
@@ -169,8 +170,9 @@ function EntryItemRow({
     );
 
     const handleMaturityChange = useCallback(
-        (value: string) => {
-            onEntryUpdate(entryId, { level_maturity: value === '' ? null : Number(value) });
+        (value: string | number | readonly string[]) => {
+            const strValue = String(value ?? '');
+            onEntryUpdate(entryId, { level_maturity: strValue === '' ? null : Number(strValue) });
             showSaved();
         },
         [entryId, onEntryUpdate, showSaved],
@@ -279,19 +281,21 @@ function EntryItemRow({
                     <label htmlFor={`maturity-${entryId}`} className="text-xs font-semibold whitespace-nowrap text-slate-600 dark:text-slate-300">
                         Level Maturity
                     </label>
-                    <select
-                        id={`maturity-${entryId}`}
-                        value={entry.level_maturity === null || entry.level_maturity === undefined ? '' : String(entry.level_maturity)}
-                        onChange={(e) => handleMaturityChange(e.target.value)}
-                        className="focus:border-primary focus:ring-primary rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-700 transition-colors focus:ring-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
-                    >
-                        <option value="">Belum dinilai</option>
-                        {[0, 1, 2, 3, 4, 5].map((n) => (
-                            <option key={n} value={n}>
-                                Level {n}
-                            </option>
-                        ))}
-                    </select>
+                    <div className="w-44">
+                        <Select
+                            id={`maturity-${entryId}`}
+                            value={entry.level_maturity === null || entry.level_maturity === undefined ? '' : String(entry.level_maturity)}
+                            onChange={(e) => handleMaturityChange(e.target.value)}
+                            className="h-9 text-xs"
+                        >
+                            <option value="">Belum dinilai</option>
+                            {[0, 1, 2, 3, 4, 5].map((n) => (
+                                <option key={n} value={n}>
+                                    Level {n}
+                                </option>
+                            ))}
+                        </Select>
+                    </div>
                 </div>
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                     <input
