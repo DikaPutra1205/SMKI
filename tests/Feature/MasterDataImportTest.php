@@ -539,6 +539,10 @@ class MasterDataImportTest extends TestCase
         $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
             ->post('/admin/kepatuhan/master-data/import', [
                 'file' => $this->uploadXlsx([
+                    'Frameworks' => [
+                        ['nama', 'versi', 'url_file'],
+                        ['ISO 27701', '2025', null],
+                    ],
                     'Controls' => [
                         ['framework_nama', 'framework_versi', 'kode_klausul', 'judul', 'kategori', 'deskripsi'],
                         ['ISO 27001', '2022', 'A.5.1', 'Policies', 'teknologi', ''],
@@ -548,8 +552,8 @@ class MasterDataImportTest extends TestCase
             ->assertRedirect()
             ->assertSessionHas('flash.type', 'success');
 
-        $this->assertDatabaseCount('frameworks', 1);
-        $this->assertDatabaseCount('controls', 2);
+        $this->assertDatabaseCount('frameworks', 2);
+        $this->assertDatabaseCount('controls', 1);
         $this->assertSoftDeleted('frameworks', ['id' => $fw->id]);
     }
 

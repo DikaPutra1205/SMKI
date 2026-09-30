@@ -8,6 +8,7 @@ use App\Http\Requests\ImportMasterDataRequest;
 use App\Http\Requests\StoreControlRequest;
 use App\Http\Requests\UpdateControlRequest;
 use App\Imports\SmkiMasterDataImport;
+use App\Imports\SmkiSingleSheetImport;
 use App\Models\Control;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -96,9 +97,18 @@ class ControlController extends Controller
         try {
             Excel::import($import, $request->file('file'));
         } catch (SheetNotFoundException $e) {
-            return response()->json([
-                'message' => 'Format file tidak sesuai: Sheet Frameworks dan Controls wajib ada.',
-            ], 422);
+            try {
+                Excel::import(new SmkiSingleSheetImport($import), $request->file('file'));
+                if (count($import->controlsCreatedDetail) === 0 && count($import->controlsUpdatedDetail) === 0) {
+                    return response()->json([
+                        'message' => 'Format file tidak sesuai: Sheet Frameworks dan Controls wajib ada.',
+                    ], 422);
+                }
+            } catch (\Throwable $fallbackErr) {
+                return response()->json([
+                    'message' => 'Format file tidak sesuai: Sheet Frameworks dan Controls wajib ada.',
+                ], 422);
+            }
         }
 
         return response()->json($import->summary());
@@ -118,7 +128,14 @@ class ControlController extends Controller
 
         try {
             DB::transaction(function () use ($import, $request) {
-                Excel::import($import, $request->file('file'));
+                try {
+                    Excel::import($import, $request->file('file'));
+                } catch (SheetNotFoundException $e) {
+                    Excel::import(new SmkiSingleSheetImport($import), $request->file('file'));
+                    if (count($import->controlsCreatedDetail) === 0 && count($import->controlsUpdatedDetail) === 0) {
+                        throw $e;
+                    }
+                }
             });
         } catch (SheetNotFoundException $e) {
             return redirect()->back()->with('flash', [
