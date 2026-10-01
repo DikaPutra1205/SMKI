@@ -33,7 +33,11 @@ RUN apk add --no-cache \
     freetype \
     harfbuzz \
     ca-certificates \
-    ttf-freefont
+    ttf-freefont \
+    libcap
+
+# Remove capabilities from frankenphp binary so it can run in unprivileged containers (Render, etc.)
+RUN setcap -r /usr/local/bin/frankenphp
 
 # Install required PHP extensions for Laravel & PostgreSQL & Excel
 RUN install-php-extensions \
