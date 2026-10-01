@@ -4,6 +4,14 @@ set -e
 PORT="${PORT:-8080}"
 export PORT
 
+mkdir -p \
+    /app/storage/app/public \
+    /app/storage/framework/cache/data \
+    /app/storage/framework/sessions \
+    /app/storage/framework/views \
+    /app/storage/logs \
+    /app/bootstrap/cache
+
 # Create storage symlink if not already present
 php artisan storage:link --no-interaction || true
 

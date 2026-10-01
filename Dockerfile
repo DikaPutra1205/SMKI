@@ -54,10 +54,21 @@ COPY . /app
 # Copy compiled frontend assets from Stage 1
 COPY --from=frontend /app/public/build /app/public/build
 
+# Ensure required storage and cache directories exist before composer scripts run
+RUN mkdir -p \
+    storage/app/public \
+    storage/framework/cache/data \
+    storage/framework/sessions \
+    storage/framework/views \
+    storage/logs \
+    bootstrap/cache \
+    && chown -R www-data:www-data /app/storage /app/bootstrap/cache \
+    && chmod -R 775 /app/storage /app/bootstrap/cache
+
 # Install production PHP dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# Set correct storage permissions
+# Re-ensure permissions after composer install
 RUN chown -R www-data:www-data /app/storage /app/bootstrap/cache \
     && chmod -R 775 /app/storage /app/bootstrap/cache
 
