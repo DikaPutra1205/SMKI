@@ -26,8 +26,13 @@ FROM dunglas/frankenphp:1-php8.4-alpine
 
 WORKDIR /app
 
-# Install system dependencies (including Chromium for spatie/laravel-pdf report exports)
+# Install system dependencies:
+# - Node.js + npm: required at runtime by spatie/browsershot to generate PDFs via Chromium
+# - Chromium + fonts: headless browser for PDF rendering
+# - libcap: to strip capabilities from frankenphp binary for unprivileged containers
 RUN apk add --no-cache \
+    nodejs \
+    npm \
     chromium \
     nss \
     freetype \
