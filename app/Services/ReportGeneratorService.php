@@ -633,6 +633,20 @@ class ReportGeneratorService
     /**
      * Resolve the relevant checklist session IDs based on unit_id, periode, or date range.
      * Selects the latest session per (unit_id, framework_id) within the filtered timeframe.
+     * Public so the Excel workbook exporter can reuse the exact same session scope as the PDFs.
+     */
+    public function resolveLatestSessionIds(
+        ?int $unitId,
+        ?string $periode = null,
+        ?string $startDate = null,
+        ?string $endDate = null
+    ): Collection {
+        return $this->resolveSessionIds($unitId, $periode, $startDate, $endDate);
+    }
+
+    /**
+     * Resolve the relevant checklist session IDs based on unit_id, periode, or date range.
+     * Selects the latest session per (unit_id, framework_id) within the filtered timeframe.
      */
     protected function resolveSessionIds(
         ?int $unitId,

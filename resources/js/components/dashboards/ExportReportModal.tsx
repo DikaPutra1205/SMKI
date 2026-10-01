@@ -34,7 +34,7 @@ export default function ExportReportModal({ open, onClose, unitId, workUnits: in
     const [periods, setPeriods] = useState<PeriodOption[]>([]);
     const [workUnits, setWorkUnits] = useState<WorkUnitOption[]>(initialWorkUnits || []);
     const [loadingData, setLoadingData] = useState(false);
-    const [selectedType, setSelectedType] = useState<'quick-summary' | 'executive'>('quick-summary');
+    const [selectedType, setSelectedType] = useState<'quick-summary' | 'executive' | 'manajemen-kontrol'>('quick-summary');
     const [selectedUnitId, setSelectedUnitId] = useState<string>(unitId ? String(unitId) : '');
 
     // Date range
@@ -48,9 +48,10 @@ export default function ExportReportModal({ open, onClose, unitId, workUnits: in
     // - superadmin, auditor: both quick-summary and executive
     const availableReports = useMemo(() => {
         const reports: Array<{
-            id: 'quick-summary' | 'executive';
+            id: 'quick-summary' | 'executive' | 'manajemen-kontrol';
             label: string;
             pagesBadge: string;
+            wide?: boolean;
         }> = [];
 
         if (['superadmin', 'admin_kepatuhan', 'auditor'].includes(role)) {
@@ -66,6 +67,15 @@ export default function ExportReportModal({ open, onClose, unitId, workUnits: in
                 id: 'executive',
                 label: 'Ringkasan Eksekutif',
                 pagesBadge: '1 Halaman Ringkas',
+            });
+        }
+
+        if (['superadmin', 'admin_kepatuhan', 'auditor', 'koordinator_smki'].includes(role)) {
+            reports.push({
+                id: 'manajemen-kontrol',
+                label: 'Manajemen Kontrol (Excel)',
+                pagesBadge: 'XLSX sesuai Template',
+                wide: true,
             });
         }
 
@@ -150,9 +160,14 @@ export default function ExportReportModal({ open, onClose, unitId, workUnits: in
         }
     };
 
+    const isExcel = selectedType === 'manajemen-kontrol';
+
     const handleDownload = () => {
         const params = new URLSearchParams();
-        params.set('type', selectedType);
+
+        if (!isExcel) {
+            params.set('type', selectedType);
+        }
 
         if (startDate && startDate.trim() !== '') {
             params.set('start_date', startDate.trim());
@@ -166,11 +181,13 @@ export default function ExportReportModal({ open, onClose, unitId, workUnits: in
             params.set('unit_id', effectiveUnitId.trim());
         }
 
-        params.set('print_mode', printMode);
+        if (!isExcel) {
+            params.set('print_mode', printMode);
+        }
 
         params.set('t', Date.now().toString());
 
-        const url = `/reports/export-pdf?${params.toString()}`;
+        const url = isExcel ? `/reports/export-excel?${params.toString()}` : `/reports/export-pdf?${params.toString()}`;
         window.open(url, '_blank');
         onClose();
     };
@@ -198,7 +215,7 @@ export default function ExportReportModal({ open, onClose, unitId, workUnits: in
                         className="bg-primary hover:bg-primary/90 inline-flex items-center gap-2 rounded-xl px-4.5 py-2 text-xs font-semibold text-white shadow-xs transition-all active:scale-95 disabled:opacity-50"
                     >
                         <Download className="h-4 w-4" />
-                        Cetak &amp; Unduh PDF
+                        {isExcel ? 'Unduh Excel' : 'Cetak & Unduh PDF'}
                     </button>
                 </div>
             }
@@ -216,7 +233,7 @@ export default function ExportReportModal({ open, onClose, unitId, workUnits: in
                                         key={report.id}
                                         type="button"
                                         onClick={() => setSelectedType(report.id)}
-                                        className={`flex flex-col items-start rounded-xl border p-2.5 text-left transition-all ${
+                                        className={`flex flex-col items-start rounded-xl border p-2.5 text-left transition-all ${report.wide ? 'col-span-2' : ''} ${
                                             isSelected
                                                 ? 'border-primary bg-primary/10 text-primary dark:border-primary dark:bg-primary/20 dark:text-primary-200 shadow-xs'
                                                 : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
@@ -293,7 +310,8 @@ export default function ExportReportModal({ open, onClose, unitId, workUnits: in
                     </div>
                 </div>
 
-                {/* 4. Mode Cetak */}
+                {/* 4. Mode Cetak (khusus PDF; Excel tanpa unit = ZIP per unit) */}
+                {!isExcel && (
                 <div>
                     <label className="text-xs font-bold tracking-wider text-slate-600 uppercase dark:text-slate-300">Mode Cetak Laporan</label>
                     <div className="mt-1.5 grid grid-cols-2 gap-2">
@@ -323,6 +341,7 @@ export default function ExportReportModal({ open, onClose, unitId, workUnits: in
                         </button>
                     </div>
                 </div>
+                )}
             </div>
         </Modal>
     );

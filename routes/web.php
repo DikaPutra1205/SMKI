@@ -75,6 +75,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/risks/{risk}', [ComplianceOfficerController::class, 'updateRisk'])->name('risks.update.direct');
     Route::get('/audit-logs', [PageController::class, 'auditLogs'])->name('audit-logs.index');
     Route::get('/reports/export-pdf', [ReportExportController::class, 'exportPdf'])->name('reports.export-pdf.direct');
+    Route::get('/reports/export-excel', [ReportExportController::class, 'exportExcel'])->name('reports.export-excel.direct');
     Route::get('/reports/periods', [ReportExportController::class, 'periods'])->name('reports.periods.direct');
     Route::get('/reports/work-units', [ReportExportController::class, 'workUnits'])->name('reports.work-units.direct');
 
@@ -127,6 +128,7 @@ Route::middleware('auth')->group(function () {
         // ── Report Generator (Audit Reports) ──────────────────────────────────────────
         Route::get('/reports/export', [ReportExportController::class, 'exportPdf'])->name('reports.export');
         Route::get('/reports/export-pdf', [ReportExportController::class, 'exportPdf'])->name('reports.export-pdf');
+        Route::get('/reports/export-excel', [ReportExportController::class, 'exportExcel'])->name('reports.export-excel');
     });
 
     Route::prefix('admin/superadmin')->name('admin.superadmin.')->group(function () {

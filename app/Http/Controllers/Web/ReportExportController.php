@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\WorkUnit;
+use App\Services\ControlWorkbookExportService;
 use App\Services\ReportGeneratorService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,7 +14,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class ReportExportController extends Controller
 {
     public function __construct(
-        protected ReportGeneratorService $reportService
+        protected ReportGeneratorService $reportService,
+        protected ControlWorkbookExportService $workbookService
     ) {}
 
     /**
@@ -57,6 +59,34 @@ class ReportExportController extends Controller
     public function __invoke(Request $request): Response
     {
         return $this->exportPdf($request);
+    }
+
+    /**
+     * Download Manajemen Kontrol workbook (.xlsx) filled with real assessment data.
+     *
+     * GET /reports/export-excel?unit_id=...&periode=YYYY-MM&start_date=YYYY-MM-DD&end_date=YYYY-MM-DD
+     *
+     * With unit_id => single .xlsx. Without => ZIP with one .xlsx per work unit.
+     */
+    public function exportExcel(Request $request): Response
+    {
+        $request->validate([
+            'unit_id' => 'nullable|integer',
+            'periode' => 'nullable|string',
+            'start_date' => 'nullable|string',
+            'end_date' => 'nullable|string',
+        ]);
+
+        $user = $request->user();
+        $unitId = $request->filled('unit_id') ? (int) $request->input('unit_id') : null;
+
+        return $this->workbookService->export(
+            $user,
+            $unitId,
+            $request->input('periode'),
+            $request->input('start_date'),
+            $request->input('end_date'),
+        );
     }
 
     /**
