@@ -320,9 +320,9 @@ class ReportGeneratorService
             });
         }
 
-        $openFindings = $findingsQuery->whereIn('status', [Finding::STATUS_OPEN, Finding::STATUS_IN_PROGRESS])->count();
-        $totalRisks = $risksQuery->count();
-        $highRisks = $risksQuery->whereIn('level_risiko', [Risk::LEVEL_HIGH, Risk::LEVEL_CRITICAL])->count();
+        $openFindings = (clone $findingsQuery)->whereIn('status', [Finding::STATUS_OPEN, Finding::STATUS_IN_PROGRESS])->count();
+        $totalRisks = (clone $risksQuery)->count();
+        $highRisks = (clone $risksQuery)->whereIn('level_risiko', [Risk::LEVEL_HIGH, Risk::LEVEL_CRITICAL])->count();
 
         return [
             'generated_at' => now()->toIso8601String(),

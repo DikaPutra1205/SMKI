@@ -435,13 +435,15 @@
     /* Signoff block */
     .signoff-table {
         width: 100%;
-        border-collapse: collapse;
+        border-collapse: separate;
+        border-spacing: 16pt 0;
         margin-top: 14pt;
         font-size: 8.5pt;
+        page-break-inside: avoid;
     }
 
     .signoff-table td {
-        padding: 4pt 8pt;
+        padding: 0;
         vertical-align: top;
         width: 33.333%;
         border: none;
@@ -454,9 +456,13 @@
         font-size: 8.5pt;
     }
 
-    .signoff-border-row td {
-        border-top: 0.75pt solid #1A1A1A !important;
-        padding-top: 8pt;
+    .signoff-space {
+        height: 45pt;
+    }
+
+    .signoff-line {
+        border-top: 0.75pt solid #1A1A1A;
+        margin-bottom: 6pt;
     }
 
     .signoff-name {

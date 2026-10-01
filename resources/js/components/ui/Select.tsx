@@ -69,7 +69,10 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                             leaveFrom="opacity-100"
                             leaveTo="opacity-0"
                         >
-                            <Listbox.Options className="custom-scrollbar absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-xl bg-white dark:bg-slate-800 py-1 text-base shadow-lg ring-1 ring-black/5 dark:ring-white/10 focus:outline-none sm:text-sm">
+                            <Listbox.Options
+                                anchor="bottom"
+                                className="custom-scrollbar z-50 mt-1 max-h-60 w-[var(--button-width)] overflow-auto rounded-xl bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm dark:bg-slate-800 dark:ring-white/10"
+                            >
                                 {options.map((option, optionIdx) => (
                                     <Listbox.Option
                                         key={optionIdx}

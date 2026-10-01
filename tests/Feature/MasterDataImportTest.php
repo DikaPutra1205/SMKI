@@ -539,6 +539,10 @@ class MasterDataImportTest extends TestCase
         $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
             ->post('/admin/kepatuhan/master-data/import', [
                 'file' => $this->uploadXlsx([
+                    'Frameworks' => [
+                        ['nama', 'versi', 'url_file'],
+                        ['ISO 27701', '2025', null],
+                    ],
                     'Controls' => [
                         ['framework_nama', 'framework_versi', 'kode_klausul', 'judul', 'kategori', 'deskripsi'],
                         ['ISO 27001', '2022', 'A.5.1', 'Policies', 'teknologi', ''],
@@ -548,8 +552,8 @@ class MasterDataImportTest extends TestCase
             ->assertRedirect()
             ->assertSessionHas('flash.type', 'success');
 
-        $this->assertDatabaseCount('frameworks', 1);
-        $this->assertDatabaseCount('controls', 2);
+        $this->assertDatabaseCount('frameworks', 2);
+        $this->assertDatabaseCount('controls', 1);
         $this->assertSoftDeleted('frameworks', ['id' => $fw->id]);
     }
 
@@ -794,5 +798,88 @@ class MasterDataImportTest extends TestCase
             null,
             true
         );
+    }
+
+    // ── Single-sheet operational export (TEST SINGLE SHEET.xlsx) ────────────
+    // Gaya file: 1 sheet generik (Sheet1), 2 baris judul, 1 baris kosong,
+    // header di baris 4 dengan kolom operasional (PIC/Status/Progress/Target/
+    // Bukti/Catatan) yang sengaja diabaikan — tanpa perubahan skema DB.
+
+    private function singleSheetKontrolFile(): UploadedFile
+    {
+        $spreadsheet = new Spreadsheet;
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Sheet1');
+        $sheet->fromArray(['DAFTAR KONTROL ISO/IEC 27001:2022 (LENGKAP 93)'], null, 'A1');
+        $sheet->fromArray(['Sistem Manajemen Keamanan Informasi (SMKI)'], null, 'A2');
+        $sheet->fromArray([
+            'Klausul / Kode Kontrol',
+            'Nama Kontrol (Bahasa Indonesia)',
+            'Kategori / Domain',
+            'PIC / Penanggung Jawab',
+            'Status Progress',
+            'Progress (%)',
+            'Target Selesai',
+            'Bukti Dukung / Artefak',
+            'Catatan Risiko / Hambatan',
+        ], null, 'A4');
+        $sheet->fromArray(
+            ['A.5.1', 'Kebijakan untuk keamanan informasi', 'Organisasional', 'CISO', 'Dalam Proses', 0.3, '2026-12-31', '-', 'Sesuai roadmap'],
+            null,
+            'A5'
+        );
+        $sheet->fromArray(
+            ['A.8.1', 'Perangkat endpoint pengguna', 'Teknologi', 'IT Ops', 'Dalam Proses', 0.5, '2026-12-31', '-', 'Butuh MDM'],
+            null,
+            'A6'
+        );
+        $sheet->fromArray(
+            ['A.6.1', 'Pemeriksaan latar belakang', 'Orang (People)', 'HR', 'Dalam Proses', 0.3, '2026-12-31', '-', ''],
+            null,
+            'A7'
+        );
+
+        $rel = 'single-sheet/'.uniqid().'.xlsx';
+        $path = storage_path('app/private/'.$rel);
+        if (! is_dir(dirname($path))) {
+            mkdir(dirname($path), 0777, true);
+        }
+        IOFactory::createWriter($spreadsheet, 'Xlsx')->save($path);
+
+        return new UploadedFile(
+            $path,
+            'single-sheet.xlsx',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            null,
+            true
+        );
+    }
+
+    public function test_preview_accepts_single_sheet_kontrol_file(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
+            ->post('/admin/kepatuhan/master-data/import/preview', ['file' => $this->singleSheetKontrolFile()])
+            ->assertOk()
+            ->assertJsonPath('controls.created', 3)
+            ->assertJsonPath('controls.updated', 0);
+
+        $this->assertDatabaseCount('frameworks', 0);
+        $this->assertDatabaseCount('controls', 0);
+    }
+
+    public function test_import_single_sheet_kontrol_file_creates_controls(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_SUPERADMIN]))
+            ->post('/admin/kepatuhan/master-data/import', ['file' => $this->singleSheetKontrolFile()])
+            ->assertRedirect()
+            ->assertSessionHas('flash.type', 'success');
+
+        // Framework terdeteksi otomatis dari judul 27001 — tanpa sheet Frameworks.
+        $this->assertDatabaseHas('frameworks', ['nama' => 'ISO/IEC 27001', 'versi' => '2022']);
+        $this->assertDatabaseHas('controls', ['kode_klausul' => 'A.5.1', 'judul' => 'Kebijakan untuk keamanan informasi', 'kategori' => 'organisasional']);
+        $this->assertDatabaseHas('controls', ['kode_klausul' => 'A.8.1', 'kategori' => 'teknologi']);
+        // "Orang (People)" dinormalisasi ke orang.
+        $this->assertDatabaseHas('controls', ['kode_klausul' => 'A.6.1', 'kategori' => 'orang']);
+        $this->assertDatabaseCount('controls', 3);
     }
 }

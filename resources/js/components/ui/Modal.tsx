@@ -70,7 +70,7 @@ export function Modal({ open, title, description, onClose, children, footer, max
                     </button>
                 </div>
 
-                <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-5 py-4">{children}</div>
+                <div className="min-h-0 overflow-x-hidden overflow-y-auto overscroll-contain px-5 py-4">{children}</div>
 
                 {footer && (
                     <div className="flex shrink-0 flex-wrap items-center justify-end gap-3 border-t border-border bg-surface/60 px-5 py-4 dark:border-slate-700 dark:bg-slate-900/60">{footer}</div>

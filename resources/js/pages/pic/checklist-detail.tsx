@@ -1,6 +1,7 @@
 import ChecklistDetailSkeleton from '@/components/skeletons/ChecklistDetailSkeleton';
 import SyncWorker from '@/components/SyncWorker';
 import { Modal } from '@/components/ui/Modal';
+import { Select } from '@/components/ui/Select';
 import { StatusBadge, statusTone } from '@/components/ui/StatusBadge';
 import { useAssessmentEntry, useAssessmentStore } from '@/hooks/useAssessmentStore';
 import { usePageLoading } from '@/hooks/usePageLoading';
@@ -169,8 +170,9 @@ function EntryItemRow({
     );
 
     const handleMaturityChange = useCallback(
-        (value: string) => {
-            onEntryUpdate(entryId, { level_maturity: value === '' ? null : Number(value) });
+        (value: string | number | readonly string[]) => {
+            const strValue = String(value ?? '');
+            onEntryUpdate(entryId, { level_maturity: strValue === '' ? null : Number(strValue) });
             showSaved();
         },
         [entryId, onEntryUpdate, showSaved],
@@ -279,19 +281,21 @@ function EntryItemRow({
                     <label htmlFor={`maturity-${entryId}`} className="text-xs font-semibold whitespace-nowrap text-slate-600 dark:text-slate-300">
                         Level Maturity
                     </label>
-                    <select
-                        id={`maturity-${entryId}`}
-                        value={entry.level_maturity === null || entry.level_maturity === undefined ? '' : String(entry.level_maturity)}
-                        onChange={(e) => handleMaturityChange(e.target.value)}
-                        className="focus:border-primary focus:ring-primary rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-700 transition-colors focus:ring-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
-                    >
-                        <option value="">Belum dinilai</option>
-                        {[0, 1, 2, 3, 4, 5].map((n) => (
-                            <option key={n} value={n}>
-                                Level {n}
-                            </option>
-                        ))}
-                    </select>
+                    <div className="w-44">
+                        <Select
+                            id={`maturity-${entryId}`}
+                            value={entry.level_maturity === null || entry.level_maturity === undefined ? '' : String(entry.level_maturity)}
+                            onChange={(e) => handleMaturityChange(e.target.value)}
+                            className="h-9 text-xs"
+                        >
+                            <option value="">Belum dinilai</option>
+                            {[0, 1, 2, 3, 4, 5].map((n) => (
+                                <option key={n} value={n}>
+                                    Level {n}
+                                </option>
+                            ))}
+                        </Select>
+                    </div>
                 </div>
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                     <input
@@ -360,14 +364,14 @@ function EntryItemRow({
             </div>
 
             {entry.active_evidence && (
-                <div className="mt-2.5 flex min-w-0 items-center justify-between gap-2 text-xs">
+                <div className="mt-2.5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs">
                     <button
                         type="button"
                         onClick={() => onPreviewEvidence({ nama_file: entry.active_evidence!.nama_file, file_url: entry.active_evidence!.file_url })}
-                        className="text-primary hover:text-primary-700 dark:text-primary-200 dark:hover:text-primary-200 inline-flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden font-semibold hover:underline"
+                        className="text-primary hover:text-primary-700 dark:text-primary-200 dark:hover:text-primary-200 inline-flex min-w-0 max-w-full items-center gap-1.5 overflow-hidden font-semibold hover:underline"
                     >
                         <Eye className="h-3.5 w-3.5 shrink-0" />
-                        <span className="min-w-0 flex-1 truncate">{entry.active_evidence.nama_file}</span>
+                        <span className="min-w-0 truncate">{entry.active_evidence.nama_file}</span>
                     </button>
                     <span className="shrink-0 text-[11px] whitespace-nowrap text-slate-400 dark:text-slate-500">(Klik untuk pratinjau)</span>
                 </div>
