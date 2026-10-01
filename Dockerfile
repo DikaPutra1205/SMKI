@@ -44,6 +44,12 @@ RUN apk add --no-cache \
 # Remove capabilities from frankenphp binary so it can run in unprivileged containers (Render, etc.)
 RUN setcap -r /usr/local/bin/frankenphp
 
+# Install puppeteer globally (skip Chromium download — we use system Chromium above)
+# spatie/browsershot requires puppeteer to be available globally via NODE_PATH
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+RUN npm install -g puppeteer --unsafe-perm
+
 # Install required PHP extensions for Laravel & PostgreSQL & Excel
 RUN install-php-extensions \
     pdo_pgsql \
