@@ -32,7 +32,9 @@ class SmkiMasterDataImport implements Import, SkipsUnknownSheets, WithMultipleSh
     public array $controlsDeleted = [];
 
     public bool $dryRun;
+
     public bool $frameworksSheetSeen = false;
+
     public bool $controlsSheetSeen = false;
 
     /** @var array<string, Framework> (nama|versi) → Framework model */
