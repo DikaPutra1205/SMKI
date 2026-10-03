@@ -100,7 +100,7 @@ interface Paginator<T> {
 
 interface RiskMatrix {
     total_risks?: number;
-    by_level?: { critical?: number; high?: number; medium?: number; low?: number };
+    by_level?: { critical?: number; high?: number; medium?: number; low?: number; very_low?: number };
     by_status?: { open?: number; mitigated?: number; accepted?: number };
     [key: string]: unknown;
 }
@@ -119,7 +119,7 @@ interface RisksProps {
     };
 }
 
-const LEVEL_OPTIONS = ['critical', 'high', 'medium', 'low'] as const;
+const LEVEL_OPTIONS = ['critical', 'high', 'medium', 'low', 'very_low'] as const;
 const STATUS_OPTIONS = ['open', 'mitigated', 'accepted'] as const;
 
 function riskRef(r: RiskItem): string {
@@ -402,6 +402,13 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                     <span className="inline-flex items-center gap-1.5 rounded-lg border border-sky-300 bg-sky-50 px-2.5 py-1 text-[11px] font-semibold text-sky-800 dark:border-sky-800/60 dark:bg-sky-950/50 dark:text-sky-300">
                         <Activity className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400" />
                         Sedang (Medium)
+                    </span>
+                );
+            case 'very_low':
+                return (
+                    <span className="inline-flex items-center gap-1.5 rounded-lg border border-teal-300 bg-teal-50 px-2.5 py-1 text-[11px] font-semibold text-teal-800 dark:border-teal-800/60 dark:bg-teal-950/50 dark:text-teal-300">
+                        <ShieldCheck className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />
+                        Sangat Rendah (Very Low)
                     </span>
                 );
             default:
@@ -929,6 +936,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                     {t('risks.updateLevel')} <span className="text-red-500">*</span>
                                 </label>
                                 <Select value={createForm.data.risk_level} onChange={(e) => createForm.setData('risk_level', e.target.value)}>
+                                    <option value="very_low">{t('risks.very_low')}</option>
                                     <option value="low">{t('risks.low')}</option>
                                     <option value="medium">{t('risks.medium')}</option>
                                     <option value="high">{t('risks.high')}</option>
@@ -1009,6 +1017,7 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                                     </div>
                                 ) : (
                                     <Select value={updateForm.data.risk_level} onChange={(e) => updateForm.setData('risk_level', e.target.value)}>
+                                        <option value="very_low">{t('risks.very_low')}</option>
                                         <option value="low">{t('risks.low')}</option>
                                         <option value="medium">{t('risks.medium')}</option>
                                         <option value="high">{t('risks.high')}</option>

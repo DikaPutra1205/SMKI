@@ -364,6 +364,7 @@ class ComplianceOfficerService
             'high' => $risks->where('level_risiko', Risk::LEVEL_HIGH)->count(),
             'medium' => $risks->where('level_risiko', Risk::LEVEL_MEDIUM)->count(),
             'low' => $risks->where('level_risiko', Risk::LEVEL_LOW)->count(),
+            'very_low' => $risks->where('level_risiko', Risk::LEVEL_VERY_LOW)->count(),
         ];
 
         $byStatus = [

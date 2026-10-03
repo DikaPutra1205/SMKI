@@ -44,7 +44,7 @@ interface AdminDashboardProps {
         total_controls_active: number;
         frameworks_breakdown: FrameworkBreakdown[];
         findings_summary: { total_active: number; major: number; minor: number; observasi: number; overdue: number };
-        risks_summary: { total_active: number; critical: number; high: number; medium: number; low: number };
+        risks_summary: { total_active: number; critical: number; high: number; medium: number; low: number; very_low: number };
     };
     trends?: TrendPoint[];
     recent_activities?: RecentActivity[];
@@ -67,7 +67,7 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
     const growth = summary?.growth_from_last_period ?? 0;
     const frameworks = summary?.frameworks_breakdown ?? [];
     const findings = summary?.findings_summary ?? { total_active: 0, major: 0, minor: 0, observasi: 0, overdue: 0 };
-    const risks = summary?.risks_summary ?? { total_active: 0, critical: 0, high: 0, medium: 0, low: 0 };
+    const risks = summary?.risks_summary ?? { total_active: 0, critical: 0, high: 0, medium: 0, low: 0, very_low: 0 };
 
     const iso27001 = frameworks.find((f) => f.id === 1) || frameworks[0];
     const iso27701 = frameworks.find((f) => f.id === 2) || frameworks[1];
@@ -82,7 +82,7 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
 
     // Trend data langsung dari backend (tidak perlu kalkulasi manual)
 
-    const totalRisks = (risks.critical || 0) + (risks.high || 0) + (risks.medium || 0) + (risks.low || 0);
+    const totalRisks = (risks.critical || 0) + (risks.high || 0) + (risks.medium || 0) + (risks.low || 0) + (risks.very_low || 0);
 
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
@@ -460,6 +460,23 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                                 <div
                                     className="h-full rounded-full bg-emerald-500 transition-all duration-300"
                                     style={{ width: `${totalRisks ? ((risks.low || 0) / totalRisks) * 100 : 0}%` }}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Very Low */}
+                        <div>
+                            <div className="flex items-center justify-between text-xs font-medium">
+                                <span className="flex items-center gap-1.5 text-teal-600 dark:text-teal-400">
+                                    <span className="h-2 w-2 rounded-full bg-teal-500" />
+                                    Risiko Sangat Rendah
+                                </span>
+                                <span className="font-bold text-slate-900 dark:text-white">{risks.very_low || 0}</span>
+                            </div>
+                            <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                                <div
+                                    className="h-full rounded-full bg-teal-500 transition-all duration-300"
+                                    style={{ width: `${totalRisks ? ((risks.very_low || 0) / totalRisks) * 100 : 0}%` }}
                                 />
                             </div>
                         </div>

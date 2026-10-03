@@ -21,7 +21,9 @@ class Risk extends Model
         'catatan_admin',
     ];
 
-    // level_risiko: low, medium, high, critical
+    // level_risiko: very_low, low, medium, high, critical
+    const LEVEL_VERY_LOW = 'very_low';
+
     const LEVEL_LOW = 'low';
 
     const LEVEL_MEDIUM = 'medium';

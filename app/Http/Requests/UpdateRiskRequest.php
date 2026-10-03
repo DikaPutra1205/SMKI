@@ -48,8 +48,8 @@ class UpdateRiskRequest extends FormRequest
         return [
             'control_ids' => 'sometimes|array|min:1',
             'control_ids.*' => 'exists:controls,id',
-            'risk_level' => 'sometimes|in:low,medium,high,critical',
-            'level_risiko' => 'sometimes|in:low,medium,high,critical',
+            'risk_level' => 'sometimes|in:very_low,low,medium,high,critical',
+            'level_risiko' => 'sometimes|in:very_low,low,medium,high,critical',
             'status' => 'sometimes|in:open,mitigated,accepted',
             'mitigation_plan' => 'nullable|string|max:3000',
             'rencana_mitigasi' => 'nullable|string|max:3000',

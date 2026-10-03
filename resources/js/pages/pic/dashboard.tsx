@@ -43,6 +43,7 @@ interface PicDashboardProps {
             high: number;
             medium: number;
             low: number;
+            very_low: number;
         };
     };
     recent_sessions?: RecentSession[];

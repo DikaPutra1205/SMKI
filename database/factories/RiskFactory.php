@@ -16,7 +16,7 @@ class RiskFactory extends Factory
     public function definition(): array
     {
         return [
-            'level_risiko' => fake()->randomElement([Risk::LEVEL_LOW, Risk::LEVEL_MEDIUM, Risk::LEVEL_HIGH, Risk::LEVEL_CRITICAL]),
+            'level_risiko' => fake()->randomElement([Risk::LEVEL_VERY_LOW, Risk::LEVEL_LOW, Risk::LEVEL_MEDIUM, Risk::LEVEL_HIGH, Risk::LEVEL_CRITICAL]),
             'pemilik_risiko' => fake()->name(),
             'rencana_mitigasi' => fake()->sentence(),
             'status' => fake()->randomElement([Risk::STATUS_OPEN, Risk::STATUS_MITIGATED, Risk::STATUS_ACCEPTED]),

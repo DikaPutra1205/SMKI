@@ -218,13 +218,15 @@ class DashboardAnalyticsService
             SUM(CASE WHEN status != ? AND level_risiko = ? THEN 1 ELSE 0 END) as critical,
             SUM(CASE WHEN status != ? AND level_risiko = ? THEN 1 ELSE 0 END) as high,
             SUM(CASE WHEN status != ? AND level_risiko = ? THEN 1 ELSE 0 END) as medium,
-            SUM(CASE WHEN status != ? AND level_risiko = ? THEN 1 ELSE 0 END) as low
+            SUM(CASE WHEN status != ? AND level_risiko = ? THEN 1 ELSE 0 END) as low,
+            SUM(CASE WHEN status != ? AND level_risiko = ? THEN 1 ELSE 0 END) as very_low
         ', [
             Risk::STATUS_ACCEPTED,
             Risk::STATUS_ACCEPTED, Risk::LEVEL_CRITICAL,
             Risk::STATUS_ACCEPTED, Risk::LEVEL_HIGH,
             Risk::STATUS_ACCEPTED, Risk::LEVEL_MEDIUM,
             Risk::STATUS_ACCEPTED, Risk::LEVEL_LOW,
+            Risk::STATUS_ACCEPTED, Risk::LEVEL_VERY_LOW,
         ])->first();
 
         $risksSummary = [
@@ -233,6 +235,7 @@ class DashboardAnalyticsService
             'high' => (int) ($riskStats->high ?? 0),
             'medium' => (int) ($riskStats->medium ?? 0),
             'low' => (int) ($riskStats->low ?? 0),
+            'very_low' => (int) ($riskStats->very_low ?? 0),
         ];
 
         return [
