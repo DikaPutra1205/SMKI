@@ -3,11 +3,12 @@ import ExportReportModal from '@/components/dashboards/ExportReportModal';
 import TimeframeFilter from '@/components/dashboards/TimeframeFilter';
 import { ActivitySkeleton } from '@/components/skeletons/ActivitySkeleton';
 import { ChartSkeleton } from '@/components/skeletons/ChartSkeleton';
+import { Select } from '@/components/ui/Select';
 import AppLayout from '@/layouts/AppLayout';
 import { useCan } from '@/lib/can';
 import { formatDateIndonesian, formatDateTimeIndonesian } from '@/lib/utils';
 import { type SharedData } from '@/types';
-import { Deferred, Head, Link, usePage } from '@inertiajs/react';
+import { Deferred, Head, Link, router, usePage } from '@inertiajs/react';
 import { AlertCircle, ArrowUpRight, Clock, FileCheck, FileDown, Layers, Shield, ShieldAlert, ShieldCheck, TrendingUp } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
@@ -111,6 +112,30 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                         }
                         extraParams={{ unit_id: filters.unit_id, session_id: filters.session_id }}
                     />
+                    <Select
+                        value={filters.unit_id ? String(filters.unit_id) : 'all'}
+                        onChange={(e) =>
+                            router.get(
+                                typeof window !== 'undefined' && window.location.pathname.startsWith('/admin/kepatuhan')
+                                    ? '/admin/kepatuhan/dashboard'
+                                    : '/dashboard',
+                                {
+                                    unit_id: e.target.value === 'all' ? undefined : e.target.value,
+                                    months: filters.months,
+                                    session_id: filters.session_id,
+                                },
+                                { preserveState: true, replace: true },
+                            )
+                        }
+                        className="min-w-[170px]"
+                    >
+                        <option value="all">Semua Unit Kerja</option>
+                        {workUnits.map((u) => (
+                            <option key={u.id} value={String(u.id)}>
+                                {u.nama}
+                            </option>
+                        ))}
+                    </Select>
                     {can('report.export') && (
                         <button
                             type="button"

@@ -2,9 +2,10 @@ import ComplianceAreaChart, { type TrendPoint } from '@/components/dashboards/Co
 import ExportReportModal from '@/components/dashboards/ExportReportModal';
 import TimeframeFilter from '@/components/dashboards/TimeframeFilter';
 import { ChartSkeleton } from '@/components/skeletons/ChartSkeleton';
+import { Select } from '@/components/ui/Select';
 import AppLayout from '@/layouts/AppLayout';
 import { formatDateIndonesian, formatDateTimeIndonesian } from '@/lib/utils';
-import { Deferred, Head, Link } from '@inertiajs/react';
+import { Deferred, Head, Link, router } from '@inertiajs/react';
 import { ArrowUpRight, Database, FileDown, KeyRound, Layers, Lock, Shield, ShieldAlert, ShieldCheck, TrendingUp, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
@@ -47,7 +48,9 @@ interface SuperadminDashboardProps {
     };
     recent_activities?: RecentActivity[];
     trends?: TrendPoint[];
+    workUnits?: Array<{ id: number; nama: string; kode?: string | null }>;
     filters?: {
+        unit_id?: number | string | null;
         months?: number | string;
     };
 }
@@ -60,6 +63,7 @@ export default function SuperadminDashboard({
     summary,
     recent_activities = [],
     trends = [],
+    workUnits = [],
     filters = {},
 }: SuperadminDashboardProps) {
     const breadcrumbs = [{ label: 'Command Center' }];
@@ -83,6 +87,9 @@ export default function SuperadminDashboard({
     }, []);
 
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+
+    const basePath =
+        typeof window !== 'undefined' && window.location.pathname.startsWith('/admin/superadmin') ? '/admin/superadmin/dashboard' : '/dashboard';
 
     return (
         <AppLayout breadcrumbs={breadcrumbs} currentPath="/admin/superadmin/dashboard">
@@ -108,14 +115,30 @@ export default function SuperadminDashboard({
                 </div>
 
                 <div className="flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white p-3 shadow-xs lg:flex-row lg:items-center lg:justify-between dark:border-slate-800 dark:bg-slate-900">
-                    <TimeframeFilter
-                        value={filters.months || 'all'}
-                        basePath={
-                            typeof window !== 'undefined' && window.location.pathname.startsWith('/admin/superadmin')
-                                ? '/admin/superadmin/dashboard'
-                                : '/dashboard'
-                        }
-                    />
+                    <div className="flex flex-wrap items-center gap-2.5">
+                        <TimeframeFilter value={filters.months || 'all'} basePath={basePath} extraParams={{ unit_id: filters.unit_id }} />
+                        <Select
+                            value={filters.unit_id ? String(filters.unit_id) : 'all'}
+                            onChange={(e) =>
+                                router.get(
+                                    basePath,
+                                    {
+                                        unit_id: e.target.value === 'all' ? undefined : e.target.value,
+                                        months: filters.months,
+                                    },
+                                    { preserveState: true, replace: true },
+                                )
+                            }
+                            className="min-w-[170px]"
+                        >
+                            <option value="all">Semua Unit Kerja</option>
+                            {workUnits.map((u) => (
+                                <option key={u.id} value={String(u.id)}>
+                                    {u.nama}
+                                </option>
+                            ))}
+                        </Select>
+                    </div>
                     <div className="flex flex-wrap items-center gap-2.5 lg:justify-end">
                         <button
                             type="button"
@@ -143,7 +166,12 @@ export default function SuperadminDashboard({
                 </div>
             </div>
 
-            <ExportReportModal open={isExportModalOpen} onClose={() => setIsExportModalOpen(false)} />
+            <ExportReportModal
+                open={isExportModalOpen}
+                onClose={() => setIsExportModalOpen(false)}
+                unitId={filters.unit_id ? Number(filters.unit_id) : undefined}
+                workUnits={workUnits}
+            />
 
             {/* Row 1: KPI Cards */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

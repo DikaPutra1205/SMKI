@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateFrameworkRequest;
 use App\Models\Control;
 use App\Models\Framework;
 use App\Models\User;
+use App\Services\ComplianceService;
 use App\Services\DashboardAnalyticsService;
 use App\Services\FrameworkDocumentService;
 use Illuminate\Http\RedirectResponse;
@@ -19,14 +20,17 @@ use Inertia\Response;
 class FrameworkController extends Controller
 {
     public function __construct(
-        protected ?DashboardAnalyticsService $analyticsService = null
+        protected ?DashboardAnalyticsService $analyticsService = null,
+        protected ?ComplianceService $complianceService = null
     ) {
         $this->analyticsService = $analyticsService ?? app(DashboardAnalyticsService::class);
+        $this->complianceService = $complianceService ?? app(ComplianceService::class);
     }
 
     public function dashboard(Request $request): Response
     {
         $user = $request->user();
+        $unitId = $request->filled('unit_id') ? (int) $request->input('unit_id') : null;
         $timeframe = $request->input('months');
         $months = match (true) {
             $timeframe === 'all' => null,
@@ -39,10 +43,12 @@ class FrameworkController extends Controller
             'totalFrameworks' => Framework::count(),
             'totalControls' => Control::count(),
             'frameworks' => Framework::withCount('controls')->orderBy('id')->get(),
-            'summary' => $user ? $this->analyticsService->getSummary($user, null, null, $months) : null,
+            'summary' => $user ? $this->analyticsService->getSummary($user, $unitId, null, $months) : null,
             'recent_activities' => $user ? $this->analyticsService->getRecentActivities($user, 6, $months) : [],
-            'trends' => $user ? $this->analyticsService->getTrends($user, null, $months) : [],
+            'trends' => $user ? $this->analyticsService->getTrends($user, $unitId, $months) : [],
+            'workUnits' => $this->complianceService->getWorkUnits(),
             'filters' => [
+                'unit_id' => $unitId,
                 'months' => $months === null ? 'all' : (string) $months,
             ],
         ]);
