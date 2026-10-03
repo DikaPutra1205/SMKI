@@ -113,6 +113,7 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                         extraParams={{ unit_id: filters.unit_id, session_id: filters.session_id }}
                     />
                     <Select
+                        aria-label="Filter unit kerja"
                         value={filters.unit_id ? String(filters.unit_id) : 'all'}
                         onChange={(e) =>
                             router.get(
@@ -124,7 +125,7 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                                     months: filters.months,
                                     session_id: filters.session_id,
                                 },
-                                { preserveState: true, replace: true },
+                                { preserveState: true, preserveScroll: true, replace: true },
                             )
                         }
                         className="min-w-[170px]"

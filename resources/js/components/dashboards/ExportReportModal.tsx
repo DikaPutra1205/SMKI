@@ -79,11 +79,9 @@ export default function ExportReportModal({ open, onClose, unitId, workUnits: in
         }
     }, [availableReports, selectedType]);
 
-    // Update selected unit when unitId prop changes
+    // Mirror the unitId prop, including when it is cleared (filter set back to "All")
     useEffect(() => {
-        if (unitId) {
-            setSelectedUnitId(String(unitId));
-        }
+        setSelectedUnitId(unitId ? String(unitId) : '');
     }, [unitId]);
 
     useEffect(() => {

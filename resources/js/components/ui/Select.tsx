@@ -9,7 +9,7 @@ type SelectProps = React.SelectHTMLAttributes<HTMLSelectElement> & {
 };
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
-    ({ className, label, error, id, children, value, onChange, disabled, name, ...props }, ref) => {
+    ({ className, label, error, id, children, value, onChange, disabled, name, 'aria-label': ariaLabel, ...props }, ref) => {
         const selectId = id || (label ? `select-${label.toLowerCase().replace(/\s+/g, '-')}` : undefined);
 
         // Parse native option children into a data array for Headless UI Listbox
@@ -50,6 +50,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                 <Listbox value={value} onChange={handleValueChange} disabled={disabled}>
                     <div className="relative">
                         <Listbox.Button
+                            aria-label={ariaLabel}
                             className={cn(
                                 'relative w-full appearance-none rounded-[10px] border bg-white dark:bg-slate-900 h-10 px-3 pr-9 text-left text-sm text-ink dark:text-white shadow-sm',
                                 'focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none',

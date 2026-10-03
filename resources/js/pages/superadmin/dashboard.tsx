@@ -118,6 +118,7 @@ export default function SuperadminDashboard({
                     <div className="flex flex-wrap items-center gap-2.5">
                         <TimeframeFilter value={filters.months || 'all'} basePath={basePath} extraParams={{ unit_id: filters.unit_id }} />
                         <Select
+                            aria-label="Filter unit kerja"
                             value={filters.unit_id ? String(filters.unit_id) : 'all'}
                             onChange={(e) =>
                                 router.get(
@@ -126,7 +127,7 @@ export default function SuperadminDashboard({
                                         unit_id: e.target.value === 'all' ? undefined : e.target.value,
                                         months: filters.months,
                                     },
-                                    { preserveState: true, replace: true },
+                                    { preserveState: true, preserveScroll: true, replace: true },
                                 )
                             }
                             className="min-w-[170px]"

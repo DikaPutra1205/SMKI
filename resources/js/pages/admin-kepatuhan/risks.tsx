@@ -411,11 +411,17 @@ export default function Risks({ risks, matrix = {}, workUnits = [], controls = [
                         Sangat Rendah (Very Low)
                     </span>
                 );
-            default:
+            case 'low':
                 return (
                     <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
                         <Shield className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
                         Rendah (Low)
+                    </span>
+                );
+            default:
+                return (
+                    <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-400 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-500">
+                        &mdash;
                     </span>
                 );
         }
