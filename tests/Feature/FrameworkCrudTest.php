@@ -267,4 +267,51 @@ class FrameworkCrudTest extends TestCase
 
         $this->assertDatabaseHas('frameworks', ['id' => $framework->id, 'nama' => 'ISO 27001:2022', 'versi' => '2023']);
     }
+
+    // ── US-M2 uniqueness scope + read surface ───────────────────────────────
+
+    /**
+     * US-M2's stated purpose is "so new standards version cleanly", but
+     * StoreFrameworkRequest/UpdateFrameworkRequest make `nama` unique on its own
+     * (no `versi` in the key), so a second edition of the same standard can only
+     * be added by baking the edition into the name (`ISO 27001:2025` vs
+     * `ISO 27001:2022`). Pinning the behaviour so a future migration to
+     * unique(nama, versi) is a deliberate, visible change.
+     */
+    public function test_framework_name_is_unique_regardless_of_version(): void
+    {
+        $user = $this->makeAdmin();
+        Framework::create(['nama' => 'ISO 27001', 'versi' => '2022']);
+
+        $this->actingAs($user)
+            ->post('/admin/superadmin/frameworks', ['nama' => 'ISO 27001', 'versi' => '2025'])
+            ->assertSessionHasErrors('nama');
+
+        $this->assertDatabaseMissing('frameworks', ['nama' => 'ISO 27001', 'versi' => '2025']);
+        $this->assertSame(1, Framework::where('nama', 'ISO 27001')->count());
+    }
+
+    /**
+     * US-G3 deviation note: framework.view is granted to superadmin AND
+     * admin_kepatuhan, and PageDispatcher::MAP['frameworks'] (:37) sends both to
+     * `superadmin/frameworks`. The admin_kepatuhan read half of that matrix was
+     * untested — only its writes were (MasterDataScopeTest:103).
+     */
+    public function test_admin_kepatuhan_can_open_the_frameworks_page(): void
+    {
+        $framework = Framework::create(['nama' => 'ISO 27701', 'versi' => '2025']);
+
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_ADMIN_KEPATUHAN]))
+            ->get('/admin/superadmin/frameworks')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('superadmin/frameworks', false)
+                ->where('frameworks', fn ($rows) => collect($rows)->contains('nama', $framework->nama)));
+
+        // Flat alias resolves to the same component for the same role.
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_ADMIN_KEPATUHAN]))
+            ->get('/frameworks')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('superadmin/frameworks', false));
+    }
 }

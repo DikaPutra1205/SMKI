@@ -7,6 +7,7 @@ use App\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class RoleManagementTest extends TestCase
@@ -203,5 +204,104 @@ class RoleManagementTest extends TestCase
         $role->refresh();
         $this->assertCount(2, $role->permissions);
         $this->assertTrue($role->permissions->contains('key', 'risk.read'));
+    }
+
+    // ── US-G3: role CRUD is superadmin-only ───────────────────────────────
+
+    public static function nonSuperAdminRoles(): array
+    {
+        return [
+            'admin_kepatuhan' => [User::ROLE_ADMIN_KEPATUHAN],
+            'koordinator' => [User::ROLE_KOORDINATOR_SMKI],
+            'auditor' => [User::ROLE_AUDITOR],
+            'pic' => [User::ROLE_PIC],
+        ];
+    }
+
+    #[DataProvider('nonSuperAdminRoles')]
+    public function test_non_superadmin_cannot_view_roles_page(string $role): void
+    {
+        $this->actingAs(User::factory()->create(['role' => $role]))
+            ->get('/admin/superadmin/roles')
+            ->assertForbidden();
+    }
+
+    #[DataProvider('nonSuperAdminRoles')]
+    public function test_non_superadmin_cannot_create_role(string $role): void
+    {
+        $this->actingAs(User::factory()->create(['role' => $role]))
+            ->post('/admin/superadmin/roles', ['name' => 'hijack_'.$role, 'label' => 'Hijack'])
+            ->assertForbidden();
+
+        $this->assertDatabaseMissing('roles', ['name' => 'hijack_'.$role]);
+    }
+
+    #[DataProvider('nonSuperAdminRoles')]
+    public function test_non_superadmin_cannot_update_or_delete_role(string $role): void
+    {
+        $actor = User::factory()->create(['role' => $role]);
+        $target = Role::where('name', 'pic')->first();
+
+        $this->actingAs($actor)
+            ->patch("/admin/superadmin/roles/{$target->id}", ['label' => 'Hijacked'])
+            ->assertForbidden();
+
+        $this->actingAs($actor)
+            ->delete("/admin/superadmin/roles/{$target->id}")
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('roles', ['id' => $target->id, 'label' => 'PIC']);
+    }
+
+    public function test_role_with_managementview_only_cannot_write(): void
+    {
+        $user = $this->userWithPermission('role.managementview');
+
+        $this->actingAs($user)->get('/admin/superadmin/roles')->assertOk();
+
+        $this->actingAs($user)
+            ->post('/admin/superadmin/roles', ['name' => 'sneaky', 'label' => 'Sneaky'])
+            ->assertForbidden();
+
+        $target = Role::where('name', 'pic')->first();
+        $this->actingAs($user)
+            ->patch("/admin/superadmin/roles/{$target->id}", ['label' => 'Sneaky'])
+            ->assertForbidden();
+        $this->actingAs($user)
+            ->delete("/admin/superadmin/roles/{$target->id}")
+            ->assertForbidden();
+
+        $this->assertDatabaseMissing('roles', ['name' => 'sneaky']);
+        $this->assertDatabaseHas('roles', ['id' => $target->id, 'label' => 'PIC']);
+    }
+
+    public function test_superadmin_gets_404_for_unknown_role(): void
+    {
+        $this->actingAs($this->superadmin())
+            ->patch('/admin/superadmin/roles/999999', ['label' => 'Ghost'])
+            ->assertNotFound();
+    }
+
+    /** US-G1: role CRUD had no anonymous-caller coverage at all. */
+    public function test_anonymous_is_redirected_from_every_role_route_and_no_row_is_written(): void
+    {
+        $target = Role::where('name', 'pic')->firstOrFail();
+
+        foreach (['/admin/superadmin/roles', '/roles'] as $uri) {
+            $this->get($uri)->assertRedirect(route('login'));
+        }
+
+        $this->post('/admin/superadmin/roles', ['name' => 'anon_role', 'label' => 'Anon'])
+            ->assertRedirect(route('login'));
+
+        $this->patch("/admin/superadmin/roles/{$target->id}", ['label' => 'Anon'])
+            ->assertRedirect(route('login'));
+
+        $this->delete("/admin/superadmin/roles/{$target->id}")
+            ->assertRedirect(route('login'));
+
+        $this->assertGuest();
+        $this->assertDatabaseMissing('roles', ['name' => 'anon_role']);
+        $this->assertDatabaseHas('roles', ['id' => $target->id, 'label' => 'PIC']);
     }
 }

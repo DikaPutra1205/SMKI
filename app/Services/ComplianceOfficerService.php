@@ -560,7 +560,7 @@ class ComplianceOfficerService
         return DB::transaction(function () use ($user, $entryIds, $decision, $adminNotes) {
             $isApprove = $decision === 'approve';
 
-            $entries = ChecklistEntry::whereIn('id', $entryIds)->get();
+            $entries = ChecklistEntry::whereIn('id', $entryIds)->with(['pic', 'control', 'session'])->get();
 
             $updatedCount = 0;
             foreach ($entries as $entry) {
