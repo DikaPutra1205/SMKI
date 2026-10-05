@@ -90,7 +90,7 @@ class NavigationService
      *
      * Canonical order: Dashboard, Checklist, Verifikasi Checklists, Temuan,
      * Register Risiko, manajemen block (Sesi, Kontrol, Master Data, Framework, Role, Unit,
-     * User), Audit Log. Filtering preserves relative order per role.
+     * User), Audit Log, Panduan. Filtering preserves relative order per role.
      *
      * @return array<int, array{label: string, url?: string, icon?: string, order?: int, permissions: array<string>, denies?: array<string>, children?: array<int, array{label: string, url: string, permissions: array<string>}>}>
      */
@@ -217,6 +217,14 @@ class NavigationService
                 'icon' => 'History',
                 'order' => 200,
                 'permissions' => ['audit-log.view'],
+            ],
+
+            [
+                'label' => 'Panduan',
+                'url' => '/panduan',
+                'icon' => 'BookOpen',
+                'order' => 300,
+                'permissions' => ['dashboard.read'],
             ],
         ];
     }

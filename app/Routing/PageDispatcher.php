@@ -107,6 +107,17 @@ class PageDispatcher
             ],
             'default' => 'kepatuhan/reports',
         ],
+        'panduan' => [
+            'permissions' => ['dashboard.read'],
+            'destinations' => [
+                'superadmin' => 'shared/panduan',
+                'admin_kepatuhan' => 'shared/panduan',
+                'koordinator_smki' => 'shared/panduan',
+                'auditor' => 'shared/panduan',
+                'pic' => 'shared/panduan',
+            ],
+            'default' => 'shared/panduan',
+        ],
     ];
 
     public function requiredPermissions(string $page): array

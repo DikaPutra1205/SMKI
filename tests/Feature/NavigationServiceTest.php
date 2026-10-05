@@ -178,9 +178,9 @@ class NavigationServiceTest extends TestCase
         $labels = collect(app(NavigationService::class)->getForUser($superadmin))->pluck('label')->all();
 
         $this->assertSame('Dashboard', $labels[0]);
-        $this->assertSame('Audit Log', $labels[count($labels) - 1]);
+        $this->assertSame('Panduan', $labels[count($labels) - 1]);
         $this->assertLessThan(
-            array_search('Audit Log', $labels, true),
+            array_search('Panduan', $labels, true),
             array_search('Manajemen Framework', $labels, true)
         );
     }
@@ -201,6 +201,7 @@ class NavigationServiceTest extends TestCase
             'Manajemen Unit',
             'Manajemen User',
             'Audit Log',
+            'Panduan',
         ];
         $positions = array_flip($expected);
 
@@ -226,6 +227,6 @@ class NavigationServiceTest extends TestCase
         $superadmin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
         $labels = collect(app(NavigationService::class)->getForUser($superadmin))->pluck('label')->all();
         $this->assertSame('Dashboard', $labels[0]);
-        $this->assertSame('Audit Log', $labels[count($labels) - 1]);
+        $this->assertSame('Panduan', $labels[count($labels) - 1]);
     }
 }

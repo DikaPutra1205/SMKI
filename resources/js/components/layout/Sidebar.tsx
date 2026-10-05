@@ -5,6 +5,7 @@ import { Link, usePage } from '@inertiajs/react';
 import {
     AlertCircle,
     AlertTriangle,
+    BookOpen,
     CheckSquare,
     ChevronDown,
     ChevronRight,
@@ -39,6 +40,7 @@ const ICON_MAP: Record<string, ComponentType<{ className?: string }>> = {
     AlertTriangle,
     Users,
     Shield,
+    BookOpen,
 };
 
 export function Sidebar({ isOpen, isCollapsed = false, onClose, currentPath }: SidebarProps) {
