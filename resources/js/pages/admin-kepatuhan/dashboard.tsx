@@ -1,14 +1,16 @@
 import ComplianceAreaChart, { type TrendPoint } from '@/components/dashboards/ComplianceAreaChart';
+import DashboardFilterBar from '@/components/dashboards/DashboardFilterBar';
 import ExportReportModal from '@/components/dashboards/ExportReportModal';
-import TimeframeFilter from '@/components/dashboards/TimeframeFilter';
+import FrameworkComplianceCard from '@/components/dashboards/FrameworkComplianceCard';
+import RecentActivityTable, { type DashboardActivity } from '@/components/dashboards/RecentActivityTable';
+import RiskBreakdown from '@/components/dashboards/RiskBreakdown';
 import { ActivitySkeleton } from '@/components/skeletons/ActivitySkeleton';
 import { ChartSkeleton } from '@/components/skeletons/ChartSkeleton';
-import { Select } from '@/components/ui/Select';
 import AppLayout from '@/layouts/AppLayout';
 import { useCan } from '@/lib/can';
-import { formatDateIndonesian, formatDateTimeIndonesian } from '@/lib/utils';
+import { formatDateIndonesian } from '@/lib/utils';
 import { type SharedData } from '@/types';
-import { Deferred, Head, Link, router, usePage } from '@inertiajs/react';
+import { Deferred, Head, Link, usePage } from '@inertiajs/react';
 import { AlertCircle, ArrowUpRight, Clock, FileCheck, FileDown, Layers, Shield, ShieldAlert, ShieldCheck, TrendingUp } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
@@ -27,16 +29,6 @@ interface FrameworkBreakdown {
 
 // TrendPoint is imported from ComplianceAreaChart component
 
-interface RecentActivity {
-    id: number;
-    actor_name: string;
-    actor_role: string;
-    action: string;
-    entity_name: string;
-    time_ago: string;
-    created_at: string | null;
-}
-
 interface AdminDashboardProps {
     summary?: {
         overall_completion_rate: number;
@@ -47,7 +39,7 @@ interface AdminDashboardProps {
         risks_summary: { total_active: number; critical: number; high: number; medium: number; low: number; very_low: number };
     };
     trends?: TrendPoint[];
-    recent_activities?: RecentActivity[];
+    recent_activities?: DashboardActivity[];
     workUnits?: Array<{ id: number; nama: string; kode?: string | null }>;
     filters?: {
         unit_id?: number | string;
@@ -91,7 +83,7 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
             <Head title="Dashboard — Admin Kepatuhan" />
 
             {/* Top Greeting Header */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-5">
                 <div>
                     <div className="flex items-center gap-2">
                         <span className="text-primary dark:text-primary-200 text-xs font-bold tracking-wide uppercase">{currentDateFormatted}</span>
@@ -102,70 +94,50 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                     </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2.5">
-                    <TimeframeFilter
-                        value={filters.months || 'all'}
-                        basePath={
-                            typeof window !== 'undefined' && window.location.pathname.startsWith('/admin/kepatuhan')
-                                ? '/admin/kepatuhan/dashboard'
-                                : '/dashboard'
-                        }
-                        extraParams={{ unit_id: filters.unit_id, session_id: filters.session_id }}
-                    />
-                    <Select
-                        aria-label="Filter unit kerja"
-                        value={filters.unit_id ? String(filters.unit_id) : 'all'}
-                        onChange={(e) =>
-                            router.get(
-                                typeof window !== 'undefined' && window.location.pathname.startsWith('/admin/kepatuhan')
-                                    ? '/admin/kepatuhan/dashboard'
-                                    : '/dashboard',
-                                {
-                                    unit_id: e.target.value === 'all' ? undefined : e.target.value,
-                                    months: filters.months,
-                                    session_id: filters.session_id,
-                                },
-                                { preserveState: true, preserveScroll: true, replace: true },
-                            )
-                        }
-                        className="min-w-[170px]"
-                    >
-                        <option value="all">Semua Unit Kerja</option>
-                        {workUnits.map((u) => (
-                            <option key={u.id} value={String(u.id)}>
-                                {u.nama}
-                            </option>
-                        ))}
-                    </Select>
-                    {can('report.export') && (
-                        <button
-                            type="button"
-                            onClick={() => setIsExportModalOpen(true)}
-                            className="border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 dark:border-primary/40 dark:bg-primary/10 dark:text-primary-200 dark:hover:bg-primary/20 inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-semibold shadow-xs transition-colors"
-                        >
-                            <FileDown className="h-4 w-4" />
-                            Unduh Laporan PDF
-                        </button>
-                    )}
-                    {can('control.view') && (
-                        <Link
-                            href="/admin/kepatuhan/compliance"
-                            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-                        >
-                            <Layers className="h-4 w-4 text-slate-500" />
-                            Pustaka Kontrol
-                        </Link>
-                    )}
-                    {(can('checklist.bulk-verify') || (can('checklist.view') && can('audit-log.view'))) && (
-                        <Link
-                            href="/admin/kepatuhan/checklist/verify"
-                            className="bg-primary hover:bg-primary inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all active:scale-95"
-                        >
-                            <FileCheck className="h-4 w-4" />
-                            Verifikasi Checklists
-                        </Link>
-                    )}
-                </div>
+                <DashboardFilterBar
+                    months={filters.months}
+                    unitId={filters.unit_id}
+                    workUnits={workUnits}
+                    basePath={
+                        typeof window !== 'undefined' && window.location.pathname.startsWith('/admin/kepatuhan')
+                            ? '/admin/kepatuhan/dashboard'
+                            : '/dashboard'
+                    }
+                    timeframeExtra={{ session_id: filters.session_id }}
+                    selectExtra={{ session_id: filters.session_id }}
+                    actions={
+                        <>
+                            {can('report.export') && (
+                                <button
+                                    type="button"
+                                    onClick={() => setIsExportModalOpen(true)}
+                                    className="border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 dark:border-primary/40 dark:bg-primary/10 dark:text-primary-200 dark:hover:bg-primary/20 inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-semibold shadow-xs transition-colors"
+                                >
+                                    <FileDown className="h-4 w-4" />
+                                    Unduh Laporan PDF
+                                </button>
+                            )}
+                            {can('control.view') && (
+                                <Link
+                                    href="/admin/kepatuhan/compliance"
+                                    className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                                >
+                                    <Layers className="h-4 w-4 text-slate-500" />
+                                    Pustaka Kontrol
+                                </Link>
+                            )}
+                            {(can('checklist.bulk-verify') || (can('checklist.view') && can('audit-log.view'))) && (
+                                <Link
+                                    href="/admin/kepatuhan/checklist/verify"
+                                    className="bg-primary hover:bg-primary inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all active:scale-95"
+                                >
+                                    <FileCheck className="h-4 w-4" />
+                                    Verifikasi Checklists
+                                </Link>
+                            )}
+                        </>
+                    }
+                />
             </div>
 
             <ExportReportModal
@@ -281,70 +253,26 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
             {/* Row 2: Standar Kepatuhan ISO Cards */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {/* ISO 27001 */}
-                <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 dark:border-slate-800">
-                        <div className="flex items-center gap-2.5">
-                            <div className="bg-primary-50 text-primary dark:bg-navy-900/50 dark:text-primary-200 flex h-8 w-8 items-center justify-center rounded-lg">
-                                <Shield className="h-4 w-4" />
-                            </div>
-                            <div>
-                                <h3 className="text-sm font-bold text-slate-900 dark:text-white">{iso27001?.nama || 'ISO/IEC 27001:2022'}</h3>
-                                <p className="text-[11px] text-slate-500 dark:text-slate-400">Sistem Manajemen Keamanan Informasi</p>
-                            </div>
-                        </div>
-                        <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
-                            {iso27001?.completion_rate ?? 0}% Patuh
-                        </span>
-                    </div>
-
-                    <div className="pt-4">
-                        <div className="flex items-center justify-between text-xs">
-                            <span className="font-medium text-slate-500 dark:text-slate-400">Realisasi Kontrol</span>
-                            <span className="font-bold text-slate-900 dark:text-white">
-                                {iso27001?.selesai_count ?? 0} dari {iso27001?.total_controls ?? 0} Kontrol Selesai Diterapkan
-                            </span>
-                        </div>
-                        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                            <div
-                                className="bg-primary h-full rounded-full transition-all duration-500"
-                                style={{ width: `${iso27001?.completion_rate ?? 0}%` }}
-                            />
-                        </div>
-                    </div>
-                </div>
+                <FrameworkComplianceCard
+                    nama={iso27001?.nama || 'ISO/IEC 27001:2022'}
+                    deskripsi="Sistem Manajemen Keamanan Informasi"
+                    completionRate={iso27001?.completion_rate ?? 0}
+                    selesaiCount={iso27001?.selesai_count ?? 0}
+                    totalControls={iso27001?.total_controls ?? 0}
+                    icon={<Shield className="h-4 w-4" />}
+                />
 
                 {/* ISO 27701 */}
-                <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 dark:border-slate-800">
-                        <div className="flex items-center gap-2.5">
-                            <div className="bg-primary-100 text-primary-800 dark:bg-primary-950/60 dark:text-primary-300 flex h-8 w-8 items-center justify-center rounded-lg">
-                                <ShieldCheck className="h-4 w-4" />
-                            </div>
-                            <div>
-                                <h3 className="text-sm font-bold text-slate-900 dark:text-white">{iso27701?.nama || 'ISO/IEC 27701:2025'}</h3>
-                                <p className="text-[11px] text-slate-500 dark:text-slate-400">Sistem Manajemen Informasi Privasi (PIMS)</p>
-                            </div>
-                        </div>
-                        <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
-                            {iso27701?.completion_rate ?? 0}% Patuh
-                        </span>
-                    </div>
-
-                    <div className="pt-4">
-                        <div className="flex items-center justify-between text-xs">
-                            <span className="font-medium text-slate-500 dark:text-slate-400">Realisasi Kontrol</span>
-                            <span className="font-bold text-slate-900 dark:text-white">
-                                {iso27701?.selesai_count ?? 0} dari {iso27701?.total_controls ?? 0} Kontrol Selesai Diterapkan
-                            </span>
-                        </div>
-                        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                            <div
-                                className="bg-primary-800 dark:bg-primary-400 h-full rounded-full transition-all duration-500"
-                                style={{ width: `${iso27701?.completion_rate ?? 0}%` }}
-                            />
-                        </div>
-                    </div>
-                </div>
+                <FrameworkComplianceCard
+                    nama={iso27701?.nama || 'ISO/IEC 27701:2025'}
+                    deskripsi="Sistem Manajemen Informasi Privasi (PIMS)"
+                    completionRate={iso27701?.completion_rate ?? 0}
+                    selesaiCount={iso27701?.selesai_count ?? 0}
+                    totalControls={iso27701?.total_controls ?? 0}
+                    icon={<ShieldCheck className="h-4 w-4" />}
+                    iconClassName="bg-primary-100 text-primary-800 dark:bg-primary-950/60 dark:text-primary-300"
+                    barClassName="bg-primary-800 dark:bg-primary-400"
+                />
             </div>
 
             {/* Row 3: Tren Kepatuhan & Asesmen Risiko Organisasi */}
@@ -381,117 +309,33 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                 </div>
 
                 {/* Distribusi Risiko Keamanan Informasi */}
-                <div className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm lg:col-span-3 dark:border-slate-800 dark:bg-slate-900">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 dark:border-slate-800">
-                        <div>
-                            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Asesmen Risiko Keamanan</h3>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">{totalRisks} risiko teridentifikasi</p>
-                        </div>
-                        <Link
-                            href="/admin/kepatuhan/risks"
-                            className="text-primary hover:text-primary dark:text-primary-200 inline-flex items-center gap-1 text-xs font-semibold"
-                        >
-                            Buka Register
-                            <ArrowUpRight className="h-3.5 w-3.5" />
-                        </Link>
-                    </div>
-
-                    <div className="space-y-3.5 py-3">
-                        {/* Critical */}
-                        <div>
-                            <div className="flex items-center justify-between text-xs font-medium">
-                                <span className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400">
-                                    <span className="h-2 w-2 rounded-full bg-rose-500" />
-                                    Risiko Kritis
-                                </span>
-                                <span className="font-bold text-slate-900 dark:text-white">{risks.critical || 0}</span>
-                            </div>
-                            <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                                <div
-                                    className="h-full rounded-full bg-rose-500 transition-all duration-300"
-                                    style={{ width: `${totalRisks ? ((risks.critical || 0) / totalRisks) * 100 : 0}%` }}
-                                />
-                            </div>
-                        </div>
-
-                        {/* High */}
-                        <div>
-                            <div className="flex items-center justify-between text-xs font-medium">
-                                <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
-                                    <span className="h-2 w-2 rounded-full bg-amber-500" />
-                                    Risiko Tinggi
-                                </span>
-                                <span className="font-bold text-slate-900 dark:text-white">{risks.high || 0}</span>
-                            </div>
-                            <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                                <div
-                                    className="h-full rounded-full bg-amber-500 transition-all duration-300"
-                                    style={{ width: `${totalRisks ? ((risks.high || 0) / totalRisks) * 100 : 0}%` }}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Medium */}
-                        <div>
-                            <div className="flex items-center justify-between text-xs font-medium">
-                                <span className="text-primary dark:text-primary-200 flex items-center gap-1.5">
-                                    <span className="bg-primary h-2 w-2 rounded-full" />
-                                    Risiko Sedang
-                                </span>
-                                <span className="font-bold text-slate-900 dark:text-white">{risks.medium || 0}</span>
-                            </div>
-                            <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                                <div
-                                    className="bg-primary h-full rounded-full transition-all duration-300"
-                                    style={{ width: `${totalRisks ? ((risks.medium || 0) / totalRisks) * 100 : 0}%` }}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Low */}
-                        <div>
-                            <div className="flex items-center justify-between text-xs font-medium">
-                                <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
-                                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                                    Risiko Rendah
-                                </span>
-                                <span className="font-bold text-slate-900 dark:text-white">{risks.low || 0}</span>
-                            </div>
-                            <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                                <div
-                                    className="h-full rounded-full bg-emerald-500 transition-all duration-300"
-                                    style={{ width: `${totalRisks ? ((risks.low || 0) / totalRisks) * 100 : 0}%` }}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Very Low */}
-                        <div>
-                            <div className="flex items-center justify-between text-xs font-medium">
-                                <span className="flex items-center gap-1.5 text-teal-600 dark:text-teal-400">
-                                    <span className="h-2 w-2 rounded-full bg-teal-500" />
-                                    Risiko Sangat Rendah
-                                </span>
-                                <span className="font-bold text-slate-900 dark:text-white">{risks.very_low || 0}</span>
-                            </div>
-                            <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                                <div
-                                    className="h-full rounded-full bg-teal-500 transition-all duration-300"
-                                    style={{ width: `${totalRisks ? ((risks.very_low || 0) / totalRisks) * 100 : 0}%` }}
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {risks.critical > 0 ? (
-                        <div className="rounded-xl border border-rose-200 bg-rose-50/60 p-3 text-xs text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300">
-                            <strong>Perhatian:</strong> Terdapat {risks.critical} risiko berstatus Kritis yang memerlukan rencana mitigasi aktif.
-                        </div>
-                    ) : (
-                        <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-600 dark:border-slate-800 dark:bg-slate-800/50 dark:text-slate-300">
-                            Tidak ada risiko kritis yang memerlukan tindakan darurat saat ini.
-                        </div>
-                    )}
+                <div className="lg:col-span-3">
+                    <RiskBreakdown
+                        risks={risks}
+                        title="Asesmen Risiko Keamanan"
+                        subtitle={`${totalRisks} risiko teridentifikasi`}
+                        headerAction={
+                            <Link
+                                href="/admin/kepatuhan/risks"
+                                className="text-primary hover:text-primary dark:text-primary-200 inline-flex items-center gap-1 text-xs font-semibold"
+                            >
+                                Buka Register
+                                <ArrowUpRight className="h-3.5 w-3.5" />
+                            </Link>
+                        }
+                        footer={
+                            risks.critical > 0 ? (
+                                <div className="rounded-xl border border-rose-200 bg-rose-50/60 p-3 text-xs text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300">
+                                    <strong>Perhatian:</strong> Terdapat {risks.critical} risiko berstatus Kritis yang memerlukan rencana mitigasi
+                                    aktif.
+                                </div>
+                            ) : (
+                                <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-600 dark:border-slate-800 dark:bg-slate-800/50 dark:text-slate-300">
+                                    Tidak ada risiko kritis yang memerlukan tindakan darurat saat ini.
+                                </div>
+                            )
+                        }
+                    />
                 </div>
             </div>
 
@@ -562,58 +406,9 @@ export default function Dashboard({ summary, trends = [], recent_activities = []
                         </Link>
                     </div>
 
-                    <div className="mt-3 flex-1 overflow-x-auto">
-                        <Deferred data="recent_activities" fallback={<ActivitySkeleton count={5} />}>
-                            <table className="w-full text-left text-xs">
-                                <thead className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-bold tracking-wider text-slate-600 uppercase dark:border-slate-800 dark:bg-[#001f38] dark:text-slate-300">
-                                    <tr>
-                                        <th className="px-3 py-2.5">Waktu</th>
-                                        <th className="px-3 py-2.5">Pengguna</th>
-                                        <th className="px-3 py-2.5">Aktivitas</th>
-                                        <th className="px-3 py-2.5 text-right">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
-                                    {recent_activities.length > 0 ? (
-                                        recent_activities.slice(0, 5).map((act, idx) => (
-                                            <tr
-                                                key={act.id}
-                                                className={`transition-colors ${
-                                                    idx % 2 === 0 ? 'bg-white dark:bg-[#00223d]/70' : 'bg-slate-200/70 dark:bg-[#00172b]/80'
-                                                } hover:bg-primary-50/40 dark:hover:bg-[#0a3b63]/60`}
-                                            >
-                                                <td className="px-3 py-3 whitespace-nowrap text-slate-500 dark:text-slate-400">
-                                                    {act.created_at ? formatDateTimeIndonesian(act.created_at) : act.time_ago}
-                                                </td>
-                                                <td className="px-3 py-3 font-semibold whitespace-nowrap text-slate-900 dark:text-white">
-                                                    {act.actor_name}
-                                                </td>
-                                                <td className="px-3 py-3 text-slate-700 dark:text-slate-300">
-                                                    <span className="font-medium">{act.action}</span>
-                                                    {act.entity_name && (
-                                                        <span className="block text-[11px] text-slate-400 dark:text-slate-500">
-                                                            {act.entity_name}
-                                                        </span>
-                                                    )}
-                                                </td>
-                                                <td className="py-3 pl-3 text-right whitespace-nowrap">
-                                                    <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
-                                                        Tercatat
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    ) : (
-                                        <tr>
-                                            <td colSpan={4} className="py-8 text-center text-xs text-slate-500 dark:text-slate-400">
-                                                Belum ada log aktivitas baru.
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </Deferred>
-                    </div>
+                    <Deferred data="recent_activities" fallback={<ActivitySkeleton count={5} />}>
+                        <RecentActivityTable activities={recent_activities} limit={5} statusLabel="Tercatat" showRole={false} />
+                    </Deferred>
                 </div>
             </div>
         </AppLayout>

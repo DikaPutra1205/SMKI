@@ -1,5 +1,6 @@
 import ComplianceAreaChart, { type TrendPoint } from '@/components/dashboards/ComplianceAreaChart';
-import TimeframeFilter from '@/components/dashboards/TimeframeFilter';
+import DashboardFilterBar from '@/components/dashboards/DashboardFilterBar';
+import FrameworkComplianceCard from '@/components/dashboards/FrameworkComplianceCard';
 import { ChartSkeleton } from '@/components/skeletons/ChartSkeleton';
 import AppLayout from '@/layouts/AppLayout';
 import { formatDateIndonesian, formatPeriodeIndonesian } from '@/lib/utils';
@@ -91,16 +92,20 @@ export default function PicDashboard({ summary, recent_sessions = [], trends = [
                     </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2.5">
-                    <TimeframeFilter value={filters.months || 'all'} basePath="/dashboard" />
-                    <Link
-                        href="/checklist"
-                        className="bg-primary hover:bg-primary inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all active:scale-95 sm:text-sm"
-                    >
-                        <ClipboardCheck className="h-4 w-4" />
-                        Mulai Asesmen
-                    </Link>
-                </div>
+                <DashboardFilterBar
+                    months={filters.months}
+                    basePath="/dashboard"
+                    showUnitFilter={false}
+                    actions={
+                        <Link
+                            href="/checklist"
+                            className="bg-primary hover:bg-primary inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all active:scale-95 sm:text-sm"
+                        >
+                            <ClipboardCheck className="h-4 w-4" />
+                            Mulai Asesmen
+                        </Link>
+                    }
+                />
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -198,69 +203,25 @@ export default function PicDashboard({ summary, recent_sessions = [], trends = [
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 dark:border-slate-800">
-                        <div className="flex items-center gap-2.5">
-                            <div className="bg-primary-50 text-primary dark:bg-navy-900/50 dark:text-primary-200 flex h-8 w-8 items-center justify-center rounded-lg">
-                                <Shield className="h-4 w-4" />
-                            </div>
-                            <div>
-                                <h3 className="text-sm font-bold text-slate-900 dark:text-white">{iso27001?.nama || 'ISO/IEC 27001:2022'}</h3>
-                                <p className="text-[11px] text-slate-500 dark:text-slate-400">Sistem Manajemen Keamanan Informasi</p>
-                            </div>
-                        </div>
-                        <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
-                            {iso27001?.completion_rate ?? 0}% Patuh
-                        </span>
-                    </div>
+                <FrameworkComplianceCard
+                    nama={iso27001?.nama || 'ISO/IEC 27001:2022'}
+                    deskripsi="Sistem Manajemen Keamanan Informasi"
+                    completionRate={iso27001?.completion_rate ?? 0}
+                    selesaiCount={iso27001?.selesai_count ?? 0}
+                    totalControls={iso27001?.total_controls ?? 0}
+                    icon={<Shield className="h-4 w-4" />}
+                />
 
-                    <div className="pt-4">
-                        <div className="flex items-center justify-between text-xs">
-                            <span className="font-medium text-slate-500 dark:text-slate-400">Realisasi Kontrol</span>
-                            <span className="font-bold text-slate-900 dark:text-white">
-                                {iso27001?.selesai_count ?? 0} dari {iso27001?.total_controls ?? 0} Kontrol Selesai Diterapkan
-                            </span>
-                        </div>
-                        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                            <div
-                                className="bg-primary h-full rounded-full transition-all duration-500"
-                                style={{ width: `${iso27001?.completion_rate ?? 0}%` }}
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 dark:border-slate-800">
-                        <div className="flex items-center gap-2.5">
-                            <div className="bg-primary-100 text-primary-800 dark:bg-primary-950/60 dark:text-primary-300 flex h-8 w-8 items-center justify-center rounded-lg">
-                                <ShieldCheck className="h-4 w-4" />
-                            </div>
-                            <div>
-                                <h3 className="text-sm font-bold text-slate-900 dark:text-white">{iso27701?.nama || 'ISO/IEC 27701:2025'}</h3>
-                                <p className="text-[11px] text-slate-500 dark:text-slate-400">Sistem Manajemen Informasi Privasi (PIMS)</p>
-                            </div>
-                        </div>
-                        <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
-                            {iso27701?.completion_rate ?? 0}% Patuh
-                        </span>
-                    </div>
-
-                    <div className="pt-4">
-                        <div className="flex items-center justify-between text-xs">
-                            <span className="font-medium text-slate-500 dark:text-slate-400">Realisasi Kontrol</span>
-                            <span className="font-bold text-slate-900 dark:text-white">
-                                {iso27701?.selesai_count ?? 0} dari {iso27701?.total_controls ?? 0} Kontrol Selesai Diterapkan
-                            </span>
-                        </div>
-                        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                            <div
-                                className="bg-primary-800 dark:bg-primary-400 h-full rounded-full transition-all duration-500"
-                                style={{ width: `${iso27701?.completion_rate ?? 0}%` }}
-                            />
-                        </div>
-                    </div>
-                </div>
+                <FrameworkComplianceCard
+                    nama={iso27701?.nama || 'ISO/IEC 27701:2025'}
+                    deskripsi="Sistem Manajemen Informasi Privasi (PIMS)"
+                    completionRate={iso27701?.completion_rate ?? 0}
+                    selesaiCount={iso27701?.selesai_count ?? 0}
+                    totalControls={iso27701?.total_controls ?? 0}
+                    icon={<ShieldCheck className="h-4 w-4" />}
+                    iconClassName="bg-primary-100 text-primary-800 dark:bg-primary-950/60 dark:text-primary-300"
+                    barClassName="bg-primary-800 dark:bg-primary-400"
+                />
             </div>
 
             {/* Row 3: Tren Kepatuhan & Tindakan Checklist */}

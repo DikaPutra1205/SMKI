@@ -1,11 +1,13 @@
 import ComplianceAreaChart, { type TrendPoint } from '@/components/dashboards/ComplianceAreaChart';
+import DashboardFilterBar from '@/components/dashboards/DashboardFilterBar';
 import ExportReportModal from '@/components/dashboards/ExportReportModal';
-import TimeframeFilter from '@/components/dashboards/TimeframeFilter';
+import FrameworkComplianceCard from '@/components/dashboards/FrameworkComplianceCard';
+import RecentActivityTable from '@/components/dashboards/RecentActivityTable';
+import RiskBreakdown from '@/components/dashboards/RiskBreakdown';
 import { ChartSkeleton } from '@/components/skeletons/ChartSkeleton';
-import { Select } from '@/components/ui/Select';
 import AppLayout from '@/layouts/AppLayout';
-import { formatDateIndonesian, formatDateTimeIndonesian } from '@/lib/utils';
-import { Deferred, Head, Link, router } from '@inertiajs/react';
+import { formatDateIndonesian } from '@/lib/utils';
+import { Deferred, Head, Link } from '@inertiajs/react';
 import { ArrowUpRight, Database, FileDown, KeyRound, Layers, Lock, Shield, ShieldAlert, ShieldCheck, TrendingUp, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
@@ -114,57 +116,38 @@ export default function SuperadminDashboard({
                     </div>
                 </div>
 
-                <div className="flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white p-3 shadow-xs lg:flex-row lg:items-center lg:justify-between dark:border-slate-800 dark:bg-slate-900">
-                    <div className="flex flex-wrap items-center gap-2.5">
-                        <TimeframeFilter value={filters.months || 'all'} basePath={basePath} extraParams={{ unit_id: filters.unit_id }} />
-                        <Select
-                            aria-label="Filter unit kerja"
-                            value={filters.unit_id ? String(filters.unit_id) : 'all'}
-                            onChange={(e) =>
-                                router.get(
-                                    basePath,
-                                    {
-                                        unit_id: e.target.value === 'all' ? undefined : e.target.value,
-                                        months: filters.months,
-                                    },
-                                    { preserveState: true, preserveScroll: true, replace: true },
-                                )
-                            }
-                            className="min-w-[170px]"
-                        >
-                            <option value="all">Semua Unit Kerja</option>
-                            {workUnits.map((u) => (
-                                <option key={u.id} value={String(u.id)}>
-                                    {u.nama}
-                                </option>
-                            ))}
-                        </Select>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2.5 lg:justify-end">
-                        <button
-                            type="button"
-                            onClick={() => setIsExportModalOpen(true)}
-                            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-600 shadow-xs transition-colors hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
-                        >
-                            <FileDown className="h-4 w-4" />
-                            Unduh Laporan PDF
-                        </button>
-                        <Link
-                            href="/admin/superadmin/frameworks"
-                            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-600 shadow-xs transition-colors hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
-                        >
-                            <Database className="h-4 w-4 text-slate-400" />
-                            Standar Framework
-                        </Link>
-                        <Link
-                            href="/admin/superadmin/roles"
-                            className="bg-primary hover:bg-primary shadow-primary/20 inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-xs font-semibold text-white shadow-md transition-all hover:brightness-105 active:scale-[0.99]"
-                        >
-                            <KeyRound className="h-4 w-4" />
-                            Manajemen Role & Izin
-                        </Link>
-                    </div>
-                </div>
+                <DashboardFilterBar
+                    months={filters.months}
+                    unitId={filters.unit_id}
+                    workUnits={workUnits}
+                    basePath={basePath}
+                    actions={
+                        <>
+                            <button
+                                type="button"
+                                onClick={() => setIsExportModalOpen(true)}
+                                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-600 shadow-xs transition-colors hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
+                            >
+                                <FileDown className="h-4 w-4" />
+                                Unduh Laporan PDF
+                            </button>
+                            <Link
+                                href="/admin/superadmin/frameworks"
+                                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-600 shadow-xs transition-colors hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
+                            >
+                                <Database className="h-4 w-4 text-slate-400" />
+                                Standar Framework
+                            </Link>
+                            <Link
+                                href="/admin/superadmin/roles"
+                                className="bg-primary hover:bg-primary shadow-primary/20 inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-xs font-semibold text-white shadow-md transition-all hover:brightness-105 active:scale-[0.99]"
+                            >
+                                <KeyRound className="h-4 w-4" />
+                                Manajemen Role & Izin
+                            </Link>
+                        </>
+                    }
+                />
             </div>
 
             <ExportReportModal
@@ -274,66 +257,27 @@ export default function SuperadminDashboard({
 
             {/* Row 2: Standar Framework Overview */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 dark:border-slate-800">
-                        <div className="flex items-center gap-2.5">
-                            <div className="bg-primary-50 text-primary ring-primary-100 dark:bg-navy-900/50 dark:text-primary-200 dark:ring-primary-900/40 flex h-9 w-9 items-center justify-center rounded-xl ring-1 ring-inset">
-                                <Shield className="h-4.5 w-4.5" />
-                            </div>
-                            <div>
-                                <h3 className="text-sm font-bold text-slate-900 dark:text-white">{frameworks[0]?.nama || 'ISO/IEC 27001:2022'}</h3>
-                                <p className="text-[11px] text-slate-500 dark:text-slate-400">Sistem Manajemen Keamanan Informasi</p>
-                            </div>
-                        </div>
-                        <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
-                            {frameworkRate(1)}% Patuh
-                        </span>
-                    </div>
+                <FrameworkComplianceCard
+                    nama={frameworks[0]?.nama || 'ISO/IEC 27001:2022'}
+                    deskripsi="Sistem Manajemen Keamanan Informasi"
+                    completionRate={frameworkRate(1)}
+                    selesaiCount={frameworkCompliant(1)}
+                    totalControls={frameworkTotal(1)}
+                    icon={<Shield className="h-4 w-4" />}
+                    realisasiLabel="Realisasi Kontrol Organisasi"
+                />
 
-                    <div className="pt-4">
-                        <div className="flex items-center justify-between text-xs">
-                            <span className="font-medium text-slate-500 dark:text-slate-400">Realisasi Kontrol Organisasi</span>
-                            <span className="font-bold text-slate-900 dark:text-white">
-                                {frameworkCompliant(1)} dari {frameworkTotal(1)} Kontrol Selesai Diterapkan
-                            </span>
-                        </div>
-                        <div className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                            <div className="bg-primary h-full rounded-full transition-all duration-500" style={{ width: `${frameworkRate(1)}%` }} />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 dark:border-slate-800">
-                        <div className="flex items-center gap-2.5">
-                            <div className="bg-primary-100 text-primary-800 ring-primary-200/60 dark:bg-primary-950/60 dark:text-primary-300 dark:ring-primary-900/40 flex h-9 w-9 items-center justify-center rounded-xl ring-1 ring-inset">
-                                <ShieldCheck className="h-4.5 w-4.5" />
-                            </div>
-                            <div>
-                                <h3 className="text-sm font-bold text-slate-900 dark:text-white">{frameworks[1]?.nama || 'ISO/IEC 27701:2025'}</h3>
-                                <p className="text-[11px] text-slate-500 dark:text-slate-400">Sistem Manajemen Informasi Privasi (PIMS)</p>
-                            </div>
-                        </div>
-                        <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
-                            {frameworkRate(2)}% Patuh
-                        </span>
-                    </div>
-
-                    <div className="pt-4">
-                        <div className="flex items-center justify-between text-xs">
-                            <span className="font-medium text-slate-500 dark:text-slate-400">Realisasi Kontrol Organisasi</span>
-                            <span className="font-bold text-slate-900 dark:text-white">
-                                {frameworkCompliant(2)} dari {frameworkTotal(2)} Kontrol Selesai Diterapkan
-                            </span>
-                        </div>
-                        <div className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                            <div
-                                className="bg-primary-800 dark:bg-primary-400 h-full rounded-full transition-all duration-500"
-                                style={{ width: `${frameworkRate(2)}%` }}
-                            />
-                        </div>
-                    </div>
-                </div>
+                <FrameworkComplianceCard
+                    nama={frameworks[1]?.nama || 'ISO/IEC 27701:2025'}
+                    deskripsi="Sistem Manajemen Informasi Privasi (PIMS)"
+                    completionRate={frameworkRate(2)}
+                    selesaiCount={frameworkCompliant(2)}
+                    totalControls={frameworkTotal(2)}
+                    icon={<ShieldCheck className="h-4 w-4" />}
+                    iconClassName="bg-primary-100 text-primary-800 dark:bg-primary-950/60 dark:text-primary-300"
+                    barClassName="bg-primary-800 dark:bg-primary-400"
+                    realisasiLabel="Realisasi Kontrol Organisasi"
+                />
             </div>
 
             {/* Row 3: Tren Kepatuhan & Status Risiko Keamanan */}
@@ -375,110 +319,18 @@ export default function SuperadminDashboard({
                 </div>
 
                 {/* Status Risiko Keamanan */}
-                <div className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs transition-shadow hover:shadow-md lg:col-span-3 dark:border-slate-800 dark:bg-slate-900">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 dark:border-slate-800">
-                        <div>
-                            <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
-                                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400">
-                                    <ShieldAlert className="h-4 w-4" />
-                                </div>
-                                Status Risiko Keamanan
-                            </h3>
-                            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{totalRisks} risiko terdaftar di register</p>
-                        </div>
-                    </div>
-
-                    <div className="space-y-4 py-4">
-                        {/* Critical */}
-                        <div>
-                            <div className="flex items-center justify-between text-xs font-medium">
-                                <span className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400">
-                                    <span className="h-2 w-2 rounded-full bg-rose-500" />
-                                    Risiko Kritis
-                                </span>
-                                <span className="font-bold text-slate-900 dark:text-white">{risks.critical || 0}</span>
+                <div className="lg:col-span-3">
+                    <RiskBreakdown
+                        risks={risks}
+                        title="Status Risiko Keamanan"
+                        subtitle={`${totalRisks} risiko terdaftar di register`}
+                        footer={
+                            <div className="flex items-start gap-2 rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs leading-relaxed text-slate-600 dark:border-slate-800 dark:bg-slate-800/50 dark:text-slate-300">
+                                <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-500" />
+                                <span>Pencatatan rekam jejak audit trail bersifat permanen (immutable) dan tidak dapat dimanipulasi.</span>
                             </div>
-                            <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                                <div
-                                    className="h-full rounded-full bg-rose-500 transition-all duration-300"
-                                    style={{ width: `${totalRisks ? ((risks.critical || 0) / totalRisks) * 100 : 0}%` }}
-                                />
-                            </div>
-                        </div>
-
-                        {/* High */}
-                        <div>
-                            <div className="flex items-center justify-between text-xs font-medium">
-                                <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
-                                    <span className="h-2 w-2 rounded-full bg-amber-500" />
-                                    Risiko Tinggi
-                                </span>
-                                <span className="font-bold text-slate-900 dark:text-white">{risks.high || 0}</span>
-                            </div>
-                            <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                                <div
-                                    className="h-full rounded-full bg-amber-500 transition-all duration-300"
-                                    style={{ width: `${totalRisks ? ((risks.high || 0) / totalRisks) * 100 : 0}%` }}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Medium */}
-                        <div>
-                            <div className="flex items-center justify-between text-xs font-medium">
-                                <span className="text-primary dark:text-primary-200 flex items-center gap-1.5">
-                                    <span className="bg-primary h-2 w-2 rounded-full" />
-                                    Risiko Sedang
-                                </span>
-                                <span className="font-bold text-slate-900 dark:text-white">{risks.medium || 0}</span>
-                            </div>
-                            <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                                <div
-                                    className="bg-primary h-full rounded-full transition-all duration-300"
-                                    style={{ width: `${totalRisks ? ((risks.medium || 0) / totalRisks) * 100 : 0}%` }}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Low */}
-                        <div>
-                            <div className="flex items-center justify-between text-xs font-medium">
-                                <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
-                                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                                    Risiko Rendah
-                                </span>
-                                <span className="font-bold text-slate-900 dark:text-white">{risks.low || 0}</span>
-                            </div>
-                            <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                                <div
-                                    className="h-full rounded-full bg-emerald-500 transition-all duration-300"
-                                    style={{ width: `${totalRisks ? ((risks.low || 0) / totalRisks) * 100 : 0}%` }}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Very Low */}
-                        <div>
-                            <div className="flex items-center justify-between text-xs font-medium">
-                                <span className="flex items-center gap-1.5 text-teal-600 dark:text-teal-400">
-                                    <span className="h-2 w-2 rounded-full bg-teal-500" />
-                                    Risiko Sangat Rendah
-                                </span>
-                                <span className="font-bold text-slate-900 dark:text-white">{risks.very_low || 0}</span>
-                            </div>
-                            <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                                <div
-                                    className="h-full rounded-full bg-teal-500 transition-all duration-300"
-                                    style={{ width: `${totalRisks ? ((risks.very_low || 0) / totalRisks) * 100 : 0}%` }}
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex items-start gap-2 rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs leading-relaxed text-slate-600 dark:border-slate-800 dark:bg-slate-800/50 dark:text-slate-300">
-                        <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-500" />
-                        <span>Pencatatan rekam jejak audit trail bersifat permanen (immutable) dan tidak dapat dimanipulasi.</span>
-                    </div>
+                        }
+                    />
                 </div>
             </div>
 
@@ -499,55 +351,7 @@ export default function SuperadminDashboard({
                         </Link>
                     </div>
 
-                    <div className="mt-3 flex-1 overflow-x-auto">
-                        <table className="w-full text-left text-xs">
-                            <thead className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-bold tracking-wider text-slate-600 uppercase dark:border-slate-800 dark:bg-[#001f38] dark:text-slate-300">
-                                <tr>
-                                    <th className="px-3 py-2.5">Waktu</th>
-                                    <th className="px-3 py-2.5">Pengguna</th>
-                                    <th className="px-3 py-2.5">Aktivitas</th>
-                                    <th className="px-3 py-2.5 text-right">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
-                                {recent_activities.length > 0 ? (
-                                    recent_activities.slice(0, 5).map((act, idx) => (
-                                        <tr
-                                            key={act.id}
-                                            className={`transition-colors ${
-                                                idx % 2 === 0 ? 'bg-white dark:bg-[#00223d]/70' : 'bg-slate-200/70 dark:bg-[#00172b]/80'
-                                            } hover:bg-primary-50/40 dark:hover:bg-[#0a3b63]/60`}
-                                        >
-                                            <td className="px-3 py-3 whitespace-nowrap text-slate-500 dark:text-slate-400">
-                                                {act.created_at ? formatDateTimeIndonesian(act.created_at) : act.time_ago}
-                                            </td>
-                                            <td className="px-3 py-3 font-semibold whitespace-nowrap text-slate-900 dark:text-white">
-                                                {act.actor_name}
-                                                <span className="block text-[10.5px] font-normal text-slate-400">{act.actor_role}</span>
-                                            </td>
-                                            <td className="px-3 py-3 text-slate-700 dark:text-slate-300">
-                                                <span className="font-medium">{act.action}</span>
-                                                {act.entity_name && (
-                                                    <span className="block text-[11px] text-slate-400 dark:text-slate-500">{act.entity_name}</span>
-                                                )}
-                                            </td>
-                                            <td className="py-3 pl-3 text-right whitespace-nowrap">
-                                                <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
-                                                    Tercatat
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan={4} className="py-8 text-center text-xs text-slate-500 dark:text-slate-400">
-                                            Belum ada log aktivitas baru.
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                    <RecentActivityTable activities={recent_activities} limit={5} statusLabel="Tercatat" showRole />
                 </div>
             </div>
         </AppLayout>
