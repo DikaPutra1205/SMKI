@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Models\Framework;
+use App\Support\SpreadsheetSecurity;
 use Illuminate\Support\Enumerable;
 use Maatwebsite\Excel\Concerns\Export;
 use Maatwebsite\Excel\Concerns\FromCollection;
@@ -39,9 +40,9 @@ class FrameworksSheet implements Export, FromCollection, ShouldAutoSize, WithHea
     public function map(mixed $framework): array
     {
         return [
-            $framework->nama,
-            $framework->versi,
-            $framework->getRawOriginal('url_file') ?? '',
+            SpreadsheetSecurity::neutralize($framework->nama),
+            SpreadsheetSecurity::neutralize($framework->versi),
+            SpreadsheetSecurity::neutralize($framework->getRawOriginal('url_file') ?? ''),
         ];
     }
 

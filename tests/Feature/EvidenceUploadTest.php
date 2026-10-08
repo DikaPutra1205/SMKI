@@ -196,4 +196,27 @@ class EvidenceUploadTest extends TestCase
             ->assertSessionHasErrors('bukti_file');
         $this->assertDatabaseMissing('compliance_evidences', ['checklist_entry_id' => $entry->id]);
     }
+
+    public function test_web_upload_same_filename_yields_distinct_keys(): void
+    {
+        // Re-uploading the same client filename must not overwrite the prior
+        // version's object: storage keys are generated, never client-derived.
+        Storage::fake('supabase');
+        ['user' => $user, 'entry' => $entry] = $this->seedPicEntry();
+
+        foreach ([1, 2] as $_) {
+            $this->actingAs($user)->post("/admin/pic/checklist-entries/{$entry->id}/evidence", [
+                'bukti_file' => UploadedFile::fake()->create('bukti.pdf', 100, 'application/pdf'),
+            ])->assertStatus(302);
+        }
+
+        $rawKeys = ComplianceEvidence::where('checklist_entry_id', $entry->id)
+            ->get()
+            ->map(fn (ComplianceEvidence $e) => $e->getRawOriginal('file_url'))
+            ->all();
+
+        $this->assertCount(2, $rawKeys);
+        $this->assertNotSame($rawKeys[0], $rawKeys[1]);
+        $this->assertCount(2, Storage::disk('supabase')->allFiles("bukti/{$entry->id}"));
+    }
 }

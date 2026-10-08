@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\AuditLog;
 use App\Models\ChecklistEntry;
 use App\Models\ChecklistSession;
 use App\Models\User;
@@ -101,5 +102,25 @@ class PicBackfillTest extends TestCase
         $this->assertSame(2, ChecklistEntry::where('unit_id', $unit->id)
             ->where('pic_id', $pic->id)
             ->count());
+    }
+
+    public function test_pic_claim_writes_reassign_pic_audit_row(): void
+    {
+        $unit = WorkUnit::factory()->create();
+        $session = ChecklistSession::factory()->create(['unit_id' => $unit->id]);
+        ChecklistEntry::factory()->count(2)->create([
+            'session_id' => $session->id,
+            'unit_id' => $unit->id,
+            'pic_id' => null,
+        ]);
+        AuditLog::query()->delete();
+
+        $pic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $unit->id]);
+
+        $this->assertDatabaseHas('audit_logs', [
+            'entity_type' => 'ChecklistEntry',
+            'aksi' => 'reassign_pic',
+        ]);
+        $this->assertSame(2, ChecklistEntry::where('pic_id', $pic->id)->count());
     }
 }

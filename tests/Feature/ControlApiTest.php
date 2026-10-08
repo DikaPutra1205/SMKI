@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Exports\ControlsSheet;
+use App\Exports\FrameworksSheet;
 use App\Models\Framework;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -280,6 +281,29 @@ class ControlApiTest extends TestCase
     public function test_controls_export_headings_include_domain_peran(): void
     {
         $this->assertContains('domain_peran', (new ControlsSheet)->headings());
+    }
+
+    public function test_export_sheets_neutralize_formula_cells(): void
+    {
+        $framework = Framework::create([
+            'nama' => '@evil-framework',
+            'versi' => '2022',
+            'url_file' => 'https://example.test/std.pdf',
+        ]);
+        $control = $framework->controls()->create([
+            'kode_klausul' => 'A.5.1',
+            'judul' => '=CMD|\'/c calc\'!A1',
+            'kategori' => 'teknologi',
+            'deskripsi' => '+SUM(1+1)',
+        ]);
+
+        $controlRow = (new ControlsSheet)->map($control);
+        foreach ([$controlRow[3], $controlRow[5]] as $cell) {
+            $this->assertStringStartsWith("'", (string) $cell);
+        }
+
+        $frameworkRow = (new FrameworksSheet)->map($framework);
+        $this->assertStringStartsWith("'", (string) $frameworkRow[0]);
     }
 
     public function test_update_moves_control_to_another_framework(): void

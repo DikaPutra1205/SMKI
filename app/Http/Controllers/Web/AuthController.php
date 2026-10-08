@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ForgotPasswordRequest;
+use App\Models\AuditLog;
+use App\Models\User;
 use App\Routing\PageDispatcher;
 use App\Services\PasswordResetOtpService;
 use Illuminate\Http\RedirectResponse;
@@ -38,6 +40,10 @@ class AuthController extends Controller
             $request->session()->regenerate();
 
             $user = Auth::user();
+            AuditLog::catat('User', $user->id, 'login', $user->id, [
+                'ip_address' => $request->ip(),
+            ]);
+
             $dispatcher = app(PageDispatcher::class);
             $res = $dispatcher->resolve($user, '/');
             $map = [
@@ -58,10 +64,18 @@ class AuthController extends Controller
 
     public function logout(Request $request): RedirectResponse
     {
+        $userId = Auth::id();
+
         Auth::logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        if ($userId !== null) {
+            AuditLog::catat('User', $userId, 'logout', $userId, [
+                'ip_address' => $request->ip(),
+            ]);
+        }
 
         return redirect()->route('login');
     }
@@ -86,6 +100,11 @@ class AuthController extends Controller
         }
 
         $request->session()->put(PasswordResetOtpService::SESSION_EMAIL, $email);
+
+        AuditLog::catat('User', User::where('email', $email)->value('id') ?? 0, 'password_reset_requested', null, [
+            'email' => $email,
+            'ip_address' => $request->ip(),
+        ]);
 
         return redirect()->route('password.verify');
     }

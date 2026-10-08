@@ -5,6 +5,7 @@ namespace Tests\Feature\Policies;
 use App\Models\ChecklistEntry;
 use App\Models\ComplianceEvidence;
 use App\Models\Framework;
+use App\Models\Role;
 use App\Models\User;
 use App\Models\WorkUnit;
 use Illuminate\Support\Facades\Gate;
@@ -178,5 +179,36 @@ class ComplianceEvidencePolicyTest extends TestCase
         ]);
 
         $this->assertFalse($this->picB->can('restore', $evidence));
+    }
+
+    public function test_orphan_evidence_is_denied_for_everyone(): void
+    {
+        // Unsaved model whose entry lookup returns null: FK cascade normally
+        // prevents this, but races and legacy rows can surface it — the
+        // policy must fail closed, never grant on a missing entry.
+        $orphan = new ComplianceEvidence([
+            'checklist_entry_id' => 999999,
+            'uploaded_by' => $this->picA->id,
+            'file_url' => 'bukti/999999/x.pdf',
+            'version_number' => 1,
+            'is_active' => true,
+            'uploaded_at' => now(),
+        ]);
+
+        foreach ([$this->picA, $this->admin, $this->superadmin] as $user) {
+            $this->assertFalse($user->can('view', $orphan));
+            $this->assertFalse($user->can('delete', $orphan));
+            $this->assertFalse($user->can('restore', $orphan));
+        }
+    }
+
+    public function test_role_without_evidence_grant_cannot_view_any(): void
+    {
+        $role = Role::create(['name' => 'outsider']);
+        $user = User::factory()->create(['role_id' => $role->id]);
+
+        $this->assertFalse(
+            $user->can('viewAny', [ComplianceEvidence::class, $this->entryA])
+        );
     }
 }

@@ -246,4 +246,19 @@ class UserTest extends TestCase
 
         $this->assertTrue($user->fresh()->hasPermissionTo('role.create'));
     }
+
+    public function test_role_mutator_rejects_unknown_role(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        User::factory()->make(['role' => 'ghost_admin']);
+    }
+
+    #[DataProvider('roleNames')]
+    public function test_role_mutator_accepts_every_known_role(string $role): void
+    {
+        $user = User::factory()->create(['role' => $role]);
+
+        $this->assertSame($role, $user->fresh()->role);
+    }
 }

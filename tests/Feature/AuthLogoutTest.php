@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -120,5 +121,30 @@ class AuthLogoutTest extends TestCase
 
         $this->assertGuest();
         $this->getJson('/api/users')->assertStatus(401);
+    }
+
+    public function test_login_and_logout_write_audit_log(): void
+    {
+        $user = User::factory()->create([
+            'password' => bcrypt('secret12'),
+        ]);
+        AuditLog::query()->delete();
+
+        $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'secret12',
+        ])->assertRedirect('/dashboard');
+        $this->assertDatabaseHas('audit_logs', [
+            'entity_type' => 'User',
+            'entity_id' => $user->id,
+            'aksi' => 'login',
+        ]);
+
+        $this->post('/logout')->assertRedirect('/login');
+        $this->assertDatabaseHas('audit_logs', [
+            'entity_type' => 'User',
+            'entity_id' => $user->id,
+            'aksi' => 'logout',
+        ]);
     }
 }

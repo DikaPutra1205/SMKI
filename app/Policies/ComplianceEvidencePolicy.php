@@ -8,26 +8,27 @@ use App\Models\User;
 
 class ComplianceEvidencePolicy
 {
-    private function isUserAuthorizedForEntry(User $user, ChecklistEntry $checklistEntry): bool
+    private function isUserAuthorizedForEntry(User $user, ChecklistEntry $checklistEntry, string $permission): bool
     {
-        if (! $user->isPic()) {
-            return true;
+        if ($user->isPic()) {
+            if ($user->unit_id !== null) {
+                if ((int) $checklistEntry->unit_id === (int) $user->unit_id) {
+                    return true;
+                }
+                $userUnit = $user->unit()->first();
+                $entryUnit = $checklistEntry->unit()->first();
+                if ($userUnit && $entryUnit && $userUnit->isAncestorOf($entryUnit)) {
+                    return true;
+                }
+
+                return false;
+            }
+
+            return (int) $checklistEntry->pic_id === (int) $user->id;
         }
 
-        if ($user->unit_id !== null) {
-            if ((int) $checklistEntry->unit_id === (int) $user->unit_id) {
-                return true;
-            }
-            $userUnit = $user->unit()->first();
-            $entryUnit = $checklistEntry->unit()->first();
-            if ($userUnit && $entryUnit && $userUnit->isAncestorOf($entryUnit)) {
-                return true;
-            }
-
-            return false;
-        }
-
-        return (int) $checklistEntry->pic_id === (int) $user->id;
+        // Non-PIC roles need an explicit grant — never an implicit allow.
+        return $user->hasPermissionTo($permission);
     }
 
     private function getChecklistEntry(ComplianceEvidence $complianceEvidence): ?ChecklistEntry
@@ -44,7 +45,7 @@ class ComplianceEvidencePolicy
      */
     public function viewAny(User $user, ChecklistEntry $checklistEntry): bool
     {
-        return $this->isUserAuthorizedForEntry($user, $checklistEntry);
+        return $this->isUserAuthorizedForEntry($user, $checklistEntry, 'evidence.read');
     }
 
     /**
@@ -54,7 +55,8 @@ class ComplianceEvidencePolicy
     {
         $entry = $this->getChecklistEntry($complianceEvidence);
 
-        return $entry ? $this->isUserAuthorizedForEntry($user, $entry) : true;
+        // Orphaned rows fail closed: a missing entry never grants access.
+        return $entry !== null && $this->isUserAuthorizedForEntry($user, $entry, 'evidence.read');
     }
 
     /**
@@ -62,7 +64,7 @@ class ComplianceEvidencePolicy
      */
     public function create(User $user, ChecklistEntry $checklistEntry, ?int $uploadedBy = null): bool
     {
-        if (! $this->isUserAuthorizedForEntry($user, $checklistEntry)) {
+        if (! $this->isUserAuthorizedForEntry($user, $checklistEntry, 'evidence.upload')) {
             return false;
         }
 
@@ -80,7 +82,7 @@ class ComplianceEvidencePolicy
     {
         $entry = $this->getChecklistEntry($complianceEvidence);
 
-        return $entry ? $this->isUserAuthorizedForEntry($user, $entry) : true;
+        return $entry !== null && $this->isUserAuthorizedForEntry($user, $entry, 'evidence.delete');
     }
 
     /**
@@ -90,6 +92,6 @@ class ComplianceEvidencePolicy
     {
         $entry = $this->getChecklistEntry($complianceEvidence);
 
-        return $entry ? $this->isUserAuthorizedForEntry($user, $entry) : true;
+        return $entry !== null && $this->isUserAuthorizedForEntry($user, $entry, 'evidence.restore');
     }
 }

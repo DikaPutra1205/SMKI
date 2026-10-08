@@ -33,15 +33,24 @@ class SmkiObserver
 
     public function updated(Model $model): void
     {
-        $changes = $model->getChanges();
-        unset($changes['updated_at']); // abaikan perubahan timestamp saja
+        $rawChanges = $model->getChanges();
+        unset($rawChanges['updated_at']); // abaikan perubahan timestamp saja
 
+        // Password-only updates vanish below (password is hidden), so detect
+        // the credential change before stripping hidden attributes.
+        $passwordChanged = $model instanceof User && array_key_exists('password', $rawChanges);
+
+        $changes = $rawChanges;
         if (! empty($model->getHidden())) {
             $hidden = array_flip($model->getHidden());
             $changes = array_diff_key($changes, $hidden);
         }
 
         if (empty($changes)) {
+            if ($passwordChanged) {
+                $this->auditPasswordChange($model);
+            }
+
             return;
         }
 
@@ -61,6 +70,25 @@ class SmkiObserver
                 'after' => $changes,
             ],
         );
+
+        if ($passwordChanged) {
+            $this->auditPasswordChange($model);
+        }
+    }
+
+    /**
+     * Credential changes never carry the hash — only the fact that a
+     * password was changed, by whom, and from where.
+     */
+    private function auditPasswordChange(User $user): void
+    {
+        AuditLog::catat(
+            entityType: 'User',
+            entityId: $user->getKey(),
+            aksi: 'password_changed',
+            actorId: Auth::id(),
+            detail: ['ip_address' => request()->ip()],
+        );
     }
 
     /**
@@ -78,9 +106,25 @@ class SmkiObserver
         }
 
         if ($model->role === User::ROLE_PIC && $model->unit_id) {
-            ChecklistEntry::where('unit_id', $model->unit_id)
+            $claimed = ChecklistEntry::where('unit_id', $model->unit_id)
                 ->whereNull('pic_id')
                 ->update(['pic_id' => $model->id]);
+
+            // Builder updates fire no model events, so the claim would be
+            // invisible in the trail without this explicit row.
+            if ($claimed > 0) {
+                AuditLog::catat(
+                    entityType: 'ChecklistEntry',
+                    entityId: 0,
+                    aksi: 'reassign_pic',
+                    actorId: Auth::id(),
+                    detail: [
+                        'pic_user_id' => $model->id,
+                        'unit_id' => $model->unit_id,
+                        'entries_claimed' => $claimed,
+                    ],
+                );
+            }
         }
     }
 

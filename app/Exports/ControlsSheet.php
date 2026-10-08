@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Models\Control;
+use App\Support\SpreadsheetSecurity;
 use Illuminate\Support\Enumerable;
 use Maatwebsite\Excel\Concerns\Export;
 use Maatwebsite\Excel\Concerns\FromCollection;
@@ -46,13 +47,13 @@ class ControlsSheet implements Export, FromCollection, ShouldAutoSize, WithHeadi
     public function map(mixed $control): array
     {
         return [
-            $control->framework?->nama ?? '',
-            $control->framework?->versi ?? '',
-            $control->kode_klausul,
-            $control->judul,
-            $control->kategori,
-            $control->deskripsi ?? '',
-            $control->domain_peran ?? '',
+            SpreadsheetSecurity::neutralize($control->framework?->nama ?? ''),
+            SpreadsheetSecurity::neutralize($control->framework?->versi ?? ''),
+            SpreadsheetSecurity::neutralize($control->kode_klausul),
+            SpreadsheetSecurity::neutralize($control->judul),
+            SpreadsheetSecurity::neutralize($control->kategori),
+            SpreadsheetSecurity::neutralize($control->deskripsi ?? ''),
+            SpreadsheetSecurity::neutralize($control->domain_peran ?? ''),
         ];
     }
 

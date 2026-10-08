@@ -9,6 +9,7 @@ use App\Models\ComplianceEvidence;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class ChecklistEntryController extends Controller
 {
@@ -124,7 +125,14 @@ class ChecklistEntryController extends Controller
         ]);
 
         $file = $validated['bukti_file'];
-        $path = $file->storeAs('bukti/'.$entry->id, $file->getClientOriginalName(), 'supabase');
+        // Generated hash name (same as the API path): re-uploading the same
+        // client filename must not overwrite a prior version's object, and
+        // unsanitized names must never reach the storage key.
+        $path = Storage::disk('supabase')->put('bukti/'.$entry->id, $file);
+
+        if (! $path) {
+            abort(500, 'Gagal mengunggah file ke penyimpanan.');
+        }
 
         $evidence = DB::transaction(function () use ($entry, $user, $path) {
             $lockedVersions = ComplianceEvidence::withTrashed()

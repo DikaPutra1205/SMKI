@@ -9,6 +9,7 @@ use App\Models\Finding;
 use App\Models\Risk;
 use App\Models\User;
 use App\Models\WorkUnit;
+use App\Support\SpreadsheetSecurity;
 use Carbon\Carbon;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Response;
@@ -555,13 +556,13 @@ class ReportGeneratorService
             foreach ($entries as $entry) {
                 fputcsv($handle, [
                     $entry->id,
-                    $entry->control?->kode_klausul ?? '-',
-                    $entry->control?->judul ?? '-',
-                    $entry->control?->framework?->nama ?? '-',
-                    $entry->unit?->nama ?? '-',
-                    strtoupper($entry->status ?? ChecklistEntry::WORKFLOW_BELUM_DIMULAI),
-                    $entry->catatan_admin ?? '-',
-                    $entry->admin?->name ?? '-',
+                    SpreadsheetSecurity::neutralize($entry->control?->kode_klausul ?? '-'),
+                    SpreadsheetSecurity::neutralize($entry->control?->judul ?? '-'),
+                    SpreadsheetSecurity::neutralize($entry->control?->framework?->nama ?? '-'),
+                    SpreadsheetSecurity::neutralize($entry->unit?->nama ?? '-'),
+                    SpreadsheetSecurity::neutralize(strtoupper($entry->status ?? ChecklistEntry::WORKFLOW_BELUM_DIMULAI)),
+                    SpreadsheetSecurity::neutralize($entry->catatan_admin ?? '-'),
+                    SpreadsheetSecurity::neutralize($entry->admin?->name ?? '-'),
                     $entry->tanggal_verifikasi ? $entry->tanggal_verifikasi->format('Y-m-d H:i') : '-',
                     $entry->updated_at ? $entry->updated_at->format('Y-m-d H:i') : '-',
                 ]);
@@ -1217,5 +1218,21 @@ class ReportGeneratorService
             'report_type' => $reportType,
             'unit_id' => $unitId,
         ]);
+
+        // PDF/ZIP exports must enter the DB audit trail like the CSV path
+        // does, otherwise AuditTrailService::getAuditStats() undercounts.
+        AuditLog::catat(
+            'Report',
+            0,
+            'export',
+            $user->id,
+            [
+                'action' => $action,
+                'report_type' => $reportType,
+                'scoped_unit_id' => $unitId,
+                'exported_at' => now()->toIso8601String(),
+                'ip_address' => request()->ip(),
+            ]
+        );
     }
 }

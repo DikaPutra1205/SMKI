@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Models\WorkUnit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -241,7 +242,12 @@ class AuditTrailCoverageTest extends TestCase
             ->orderBy('id')
             ->get();
 
-        $this->assertCount(2, $logs, 'Ekspektasi 1 update + 1 delete.');
+        $this->assertCount(3, $logs, 'Ekspektasi 1 update + 1 password_changed + 1 delete.');
+
+        $this->assertSame(
+            ['delete', 'password_changed', 'update'],
+            $logs->pluck('aksi')->sort()->values()->all()
+        );
 
         foreach ($logs as $log) {
             $flat = json_encode($log->detail_perubahan);
@@ -679,12 +685,11 @@ class AuditTrailCoverageTest extends TestCase
     }
 
     /**
-     * GAP 5 — SmkiObserver::saved() claims every unowned entry in a PIC's unit
-     * with a query-builder `update(['pic_id' => ...])`. Those rows change owner,
-     * which is exactly the assignment that decides who may edit and upload
-     * evidence, yet the trail only shows the User row changing.
+     * GAP 5 (closed) — SmkiObserver::saved() claimed unowned entries with a
+     * query-builder update() that fired no events. The claim now writes an
+     * explicit `reassign_pic` row since the per-row events cannot fire.
      *
-     * @see app/Observers/SmkiObserver.php:81-83
+     * @see app/Observers/SmkiObserver.php::saved()
      */
     public function test_qa8_pic_claiming_unit_entries_is_audited(): void
     {
@@ -701,20 +706,27 @@ class AuditTrailCoverageTest extends TestCase
         $pic = User::factory()->create(['role' => User::ROLE_PIC, 'unit_id' => $this->unit->id]);
 
         $this->assertSame($pic->id, $entry->fresh()->pic_id, 'Entry seharusnya diklaim PIC.');
+        $this->assertDatabaseHas('audit_logs', [
+            'entity_type' => 'ChecklistEntry',
+            'aksi' => 'reassign_pic',
+            'actor_id' => $this->admin->id,
+        ]);
+    }
 
-        $entryLogs = AuditLog::where('entity_type', 'ChecklistEntry')
-            ->where('entity_id', $entry->id)
-            ->get();
+    public function test_password_only_change_writes_password_changed_without_hash(): void
+    {
+        $user = User::factory()->create();
+        AuditLog::query()->delete();
 
-        $this->markTestIncomplete(
-            sprintf(
-                'GAP 5 (US-A1): pengalihan kepemilikan entry checklist tidak tercatat. '
-                .'ChecklistEntry #%d pic_id NULL→%d, jumlah log entry = %d. '
-                .'Penyebab: app/Observers/SmkiObserver.php:81-83 memakai query-builder update() di dalam event saved().',
-                $entry->id,
-                $pic->id,
-                $entryLogs->count()
-            )
-        );
+        $user->update(['password' => Hash::make('brand-new-secret')]);
+
+        $row = AuditLog::where('entity_type', 'User')
+            ->where('entity_id', $user->id)
+            ->where('aksi', 'password_changed')
+            ->firstOrFail();
+
+        $detailJson = (string) json_encode($row->detail_perubahan);
+        $this->assertStringNotContainsString('brand-new-secret', $detailJson);
+        $this->assertStringNotContainsString('password', strtolower($detailJson));
     }
 }

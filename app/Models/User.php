@@ -61,11 +61,30 @@ class User extends Authenticatable
 
     /**
      * Legacy write-compat: `create(['role' => 'pic'])` keeps working.
-     * New code should assign `role_id` directly instead.
+     * New code should assign `role_id` directly instead. Only known role
+     * names map — anything else throws instead of hitting the DB blindly.
      */
     public function setRoleAttribute(string $name): void
     {
+        if (! in_array($name, self::knownRoleNames(), true)) {
+            throw new \InvalidArgumentException("Unknown role [{$name}].");
+        }
+
         $this->attributes['role_id'] = Role::where('name', $name)->firstOrFail()->id;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function knownRoleNames(): array
+    {
+        return [
+            self::ROLE_SUPERADMIN,
+            self::ROLE_ADMIN_KEPATUHAN,
+            self::ROLE_KOORDINATOR_SMKI,
+            self::ROLE_AUDITOR,
+            self::ROLE_PIC,
+        ];
     }
 
     public function hasPermissionTo(string $key): bool

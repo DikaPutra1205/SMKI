@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ResetPasswordRequest;
 use App\Http\Requests\VerifyOtpRequest;
+use App\Models\AuditLog;
+use App\Models\User;
 use App\Services\PasswordResetOtpService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -47,6 +49,10 @@ class PasswordResetController extends Controller
                 ->withErrors(['code' => 'Kode OTP salah atau sudah kedaluwarsa.']);
         }
 
+        AuditLog::catat('User', User::where('email', $email)->value('id') ?? 0, 'otp_verified', null, [
+            'ip_address' => $request->ip(),
+        ]);
+
         $request->session()->put(PasswordResetOtpService::SESSION_GRANT, $grant);
 
         return redirect()->route('password.reset', [
@@ -88,6 +94,10 @@ class PasswordResetController extends Controller
         if (! $this->otp->updatePassword($email, $token, $request->string('password')->toString())) {
             return $this->restartFlow();
         }
+
+        AuditLog::catat('User', User::where('email', $email)->value('id') ?? 0, 'password_reset', null, [
+            'ip_address' => $request->ip(),
+        ]);
 
         $this->otp->forget();
 

