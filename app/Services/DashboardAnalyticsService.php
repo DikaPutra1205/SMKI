@@ -11,15 +11,50 @@ use App\Models\User;
 use App\Models\WorkUnit;
 use App\Services\Concerns\ResolvesUnitScope;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 class DashboardAnalyticsService
 {
     use ResolvesUnitScope { resolveScopedUnitIds as public; }
 
     /**
-     * Get complete dashboard summary analytics.
+     * Invalidate dashboard analytics caches across all users and filters.
+     */
+    public static function flushCache(): void
+    {
+        try {
+            Cache::increment('dashboard:cache_version');
+        } catch (\Throwable) {
+            // Safe fallback
+        }
+    }
+
+    /**
+     * Get active cache version for tagless atomic cache busting.
+     */
+    public static function cacheVersion(): int
+    {
+        try {
+            return (int) Cache::get('dashboard:cache_version', 1);
+        } catch (\Throwable) {
+            return 1;
+        }
+    }
+
+    /**
+     * Get complete dashboard summary analytics (cached in Redis).
      */
     public function getSummary(User $user, ?int $unitId = null, ?int $sessionId = null, ?int $months = null): array
+    {
+        $version = self::cacheVersion();
+        $cacheKey = "dashboard:v{$version}:summary:u{$user->id}:".($unitId ?? 'all').':'.($sessionId ?? 'none').':'.($months ?? 'all');
+
+        return Cache::remember($cacheKey, 180, function () use ($user, $unitId, $sessionId, $months) {
+            return $this->computeSummary($user, $unitId, $sessionId, $months);
+        });
+    }
+
+    public function computeSummary(User $user, ?int $unitId = null, ?int $sessionId = null, ?int $months = null): array
     {
         $scopedUnitIds = $this->resolveScopedUnitIds($user, array_merge($unitId !== null ? ['unit_id' => $unitId] : []));
         $cutoffDate = $months ? Carbon::now()->startOfMonth()->subMonths($months - 1)->startOfMonth() : null;
@@ -250,10 +285,20 @@ class DashboardAnalyticsService
     }
 
     /**
-     * Get monthly compliance trends over the last N months.
+     * Get monthly compliance trends over the last N months (cached in Redis).
      * When $months is null (all-time), defaults to 12 months for comprehensive trend display.
      */
     public function getTrends(User $user, ?int $unitId = null, ?int $months = null): array
+    {
+        $version = self::cacheVersion();
+        $cacheKey = "dashboard:v{$version}:trends:u{$user->id}:".($unitId ?? 'all').':'.($months ?? 'all');
+
+        return Cache::remember($cacheKey, 180, function () use ($user, $unitId, $months) {
+            return $this->computeTrends($user, $unitId, $months);
+        });
+    }
+
+    public function computeTrends(User $user, ?int $unitId = null, ?int $months = null): array
     {
         $scopedUnitIds = $this->resolveScopedUnitIds($user, array_merge($unitId !== null ? ['unit_id' => $unitId] : []));
         $safeMonths = $months ? max(1, min($months, 24)) : 12;
@@ -325,9 +370,19 @@ class DashboardAnalyticsService
     }
 
     /**
-     * Get compliance comparison across all work units.
+     * Get compliance comparison across all work units (cached in Redis).
      */
     public function getUnitComparisons(User $user, ?int $months = null): array
+    {
+        $version = self::cacheVersion();
+        $cacheKey = "dashboard:v{$version}:unit_comp:u{$user->id}:".($months ?? 'all');
+
+        return Cache::remember($cacheKey, 180, function () use ($user, $months) {
+            return $this->computeUnitComparisons($user, $months);
+        });
+    }
+
+    public function computeUnitComparisons(User $user, ?int $months = null): array
     {
         $scopedUnitIds = $this->resolveScopedUnitIds($user);
         $cutoffDate = $months ? Carbon::now()->startOfMonth()->subMonths($months - 1)->startOfMonth() : null;
@@ -397,7 +452,7 @@ class DashboardAnalyticsService
     }
 
     /**
-     * Get recent audit activity logs.
+     * Get recent audit activity logs (cached in Redis).
      * Accessible only by superadmin, admin_kepatuhan, koordinator_smki, and auditor.
      */
     public function getRecentActivities(User $user, int $limit = 6, ?int $months = null): array
@@ -406,6 +461,16 @@ class DashboardAnalyticsService
             return [];
         }
 
+        $version = self::cacheVersion();
+        $cacheKey = "dashboard:v{$version}:recent_act:u{$user->id}:{$limit}:".($months ?? 'all');
+
+        return Cache::remember($cacheKey, 60, function () use ($user, $limit, $months) {
+            return $this->computeRecentActivities($user, $limit, $months);
+        });
+    }
+
+    public function computeRecentActivities(User $user, int $limit = 6, ?int $months = null): array
+    {
         $safeLimit = max(1, min((int) ($limit ?: 6), 100));
         $cutoffDate = $months ? Carbon::now()->startOfMonth()->subMonths($months - 1)->startOfMonth() : null;
 

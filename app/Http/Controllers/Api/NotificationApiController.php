@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class NotificationApiController extends Controller
 {
@@ -49,9 +50,16 @@ class NotificationApiController extends Controller
      */
     public function unreadCount(Request $request): JsonResponse
     {
+        $userId = $request->user()->id;
+        $count = Cache::remember(
+            "user:{$userId}:unread_count",
+            30,
+            fn () => $request->user()->unreadNotifications()->count()
+        );
+
         return response()->json([
             'status' => 'success',
-            'unread_count' => $request->user()->unreadNotifications()->count(),
+            'unread_count' => $count,
         ]);
     }
 
@@ -73,6 +81,8 @@ class NotificationApiController extends Controller
             $notification->markAsRead();
         }
 
+        Cache::forget("user:{$request->user()->id}:unread_count");
+
         return response()->json([
             'status' => 'success',
             'message' => 'Notifikasi ditandai telah dibaca.',
@@ -86,11 +96,12 @@ class NotificationApiController extends Controller
     public function markAllAsRead(Request $request): JsonResponse
     {
         $request->user()->unreadNotifications->markAsRead();
+        Cache::forget("user:{$request->user()->id}:unread_count");
 
         return response()->json([
             'status' => 'success',
             'message' => 'Semua notifikasi berhasil ditandai telah dibaca.',
-            'unread_count' => $request->user()->unreadNotifications()->count(),
+            'unread_count' => 0,
         ]);
     }
 
@@ -109,6 +120,7 @@ class NotificationApiController extends Controller
         }
 
         $notification->delete();
+        Cache::forget("user:{$request->user()->id}:unread_count");
 
         return response()->json([
             'status' => 'success',

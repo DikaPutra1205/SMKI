@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Models\AuditLog;
 use App\Models\ChecklistEntry;
 use App\Models\User;
+use App\Services\DashboardAnalyticsService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 
@@ -29,6 +30,8 @@ class SmkiObserver
             actorId: Auth::id(),
             detail: ['data' => $data],
         );
+
+        DashboardAnalyticsService::flushCache();
     }
 
     public function updated(Model $model): void
@@ -74,6 +77,8 @@ class SmkiObserver
         if ($passwordChanged) {
             $this->auditPasswordChange($model);
         }
+
+        DashboardAnalyticsService::flushCache();
     }
 
     /**
@@ -143,5 +148,7 @@ class SmkiObserver
             actorId: Auth::id(),
             detail: ['data' => $data],
         );
+
+        DashboardAnalyticsService::flushCache();
     }
 }

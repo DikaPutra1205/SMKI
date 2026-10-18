@@ -20,18 +20,35 @@ interface UseNotificationsReturn {
     dismissLatestNotification: () => void;
 }
 
+const memoryCachedNotifications: Record<string, NotificationItem[]> = {};
+const memoryCachedUnreadCount: Record<string, number> = {};
+const memoryLastFetchedAt: Record<string, number> = {};
+const NOTIF_CACHE_WINDOW_MS = 30_000;
+
 export function useNotifications(userId?: number | string): UseNotificationsReturn {
-    const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-    const [unreadCount, setUnreadCount] = useState<number>(0);
-    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const userKey = userId ? String(userId) : '';
+    const [notifications, setNotifications] = useState<NotificationItem[]>(() => (userKey ? memoryCachedNotifications[userKey] || [] : []));
+    const [unreadCount, setUnreadCount] = useState<number>(() => (userKey ? memoryCachedUnreadCount[userKey] ?? 0 : 0));
+    const [isLoading, setIsLoading] = useState<boolean>(() => {
+        if (!userKey) return false;
+        return !(memoryLastFetchedAt[userKey] && Date.now() - memoryLastFetchedAt[userKey] < NOTIF_CACHE_WINDOW_MS);
+    });
     const [latestNotification, setLatestNotification] = useState<NotificationItem | null>(null);
     const [isRealtimeConnected, setIsRealtimeConnected] = useState<boolean>(false);
     const channelRef = useRef<ReturnType<NonNullable<typeof supabase>['channel']> | null>(null);
     const notificationsAbortRef = useRef<AbortController | null>(null);
     const unreadCountAbortRef = useRef<AbortController | null>(null);
 
-    const fetchNotifications = useCallback(async () => {
+    const fetchNotifications = useCallback(async (force = false) => {
         if (!userId) {
+            setIsLoading(false);
+            return;
+        }
+
+        const currentKey = String(userId);
+        if (!force && memoryLastFetchedAt[currentKey] && Date.now() - memoryLastFetchedAt[currentKey] < NOTIF_CACHE_WINDOW_MS && memoryCachedNotifications[currentKey]) {
+            setNotifications(memoryCachedNotifications[currentKey]);
+            setUnreadCount(memoryCachedUnreadCount[currentKey] ?? 0);
             setIsLoading(false);
             return;
         }
@@ -53,6 +70,9 @@ export function useNotifications(userId?: number | string): UseNotificationsRetu
 
             const json: NotificationApiResponse = await res.json();
             if (json.status === 'success') {
+                memoryCachedNotifications[currentKey] = json.data;
+                memoryCachedUnreadCount[currentKey] = json.unread_count ?? 0;
+                memoryLastFetchedAt[currentKey] = Date.now();
                 setNotifications(json.data);
                 setUnreadCount(json.unread_count ?? 0);
             }
@@ -309,7 +329,7 @@ export function useNotifications(userId?: number | string): UseNotificationsRetu
         markAsRead,
         markAllAsRead,
         deleteNotification,
-        refetch: fetchNotifications,
+        refetch: () => fetchNotifications(true),
         dismissLatestNotification,
     };
 }
