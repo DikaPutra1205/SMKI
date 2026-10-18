@@ -9,6 +9,7 @@ use App\Models\Framework;
 use App\Models\User;
 use App\Models\WorkUnit;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Cache;
 
 class ComplianceService
 {
@@ -17,33 +18,37 @@ class ComplianceService
      */
     public function getFrameworkSummaries(): array
     {
-        $frameworks = Framework::withCount('controls')->orderBy('id')->get();
+        $version = DashboardAnalyticsService::cacheVersion();
 
-        $stats = ChecklistEntry::join('controls', 'checklist_entries.control_id', '=', 'controls.id')
-            ->selectRaw('
-                controls.framework_id,
-                COUNT(*) as total_entries,
-                SUM(CASE WHEN checklist_entries.status = ? THEN 1 ELSE 0 END) as selesai_entries
-            ', [ChecklistEntry::WORKFLOW_SELESAI])
-            ->groupBy('controls.framework_id')
-            ->get()
-            ->keyBy('framework_id');
+        return Cache::remember("frameworks:summaries:v{$version}", 180, function () {
+            $frameworks = Framework::withCount('controls')->orderBy('id')->get();
 
-        return $frameworks->map(function (Framework $fw) use ($stats) {
-            $fwStat = $stats->get($fw->id);
-            $totalEntries = $fwStat ? (int) $fwStat->total_entries : 0;
-            $selesaiEntries = $fwStat ? (int) $fwStat->selesai_entries : 0;
-            $percentage = $totalEntries > 0 ? (int) round(($selesaiEntries / $totalEntries) * 100) : 0;
+            $stats = ChecklistEntry::join('controls', 'checklist_entries.control_id', '=', 'controls.id')
+                ->selectRaw('
+                    controls.framework_id,
+                    COUNT(*) as total_entries,
+                    SUM(CASE WHEN checklist_entries.status = ? THEN 1 ELSE 0 END) as selesai_entries
+                ', [ChecklistEntry::WORKFLOW_SELESAI])
+                ->groupBy('controls.framework_id')
+                ->get()
+                ->keyBy('framework_id');
 
-            return [
-                'id' => $fw->id,
-                'nama' => $fw->nama,
-                'versi' => $fw->versi,
-                'url_file' => $fw->url_file,
-                'controls_count' => $fw->controls_count,
-                'compliance_percentage' => $percentage,
-            ];
-        })->toArray();
+            return $frameworks->map(function (Framework $fw) use ($stats) {
+                $fwStat = $stats->get($fw->id);
+                $totalEntries = $fwStat ? (int) $fwStat->total_entries : 0;
+                $selesaiEntries = $fwStat ? (int) $fwStat->selesai_entries : 0;
+                $percentage = $totalEntries > 0 ? (int) round(($selesaiEntries / $totalEntries) * 100) : 0;
+
+                return [
+                    'id' => $fw->id,
+                    'nama' => $fw->nama,
+                    'versi' => $fw->versi,
+                    'url_file' => $fw->url_file,
+                    'controls_count' => $fw->controls_count,
+                    'compliance_percentage' => $percentage,
+                ];
+            })->toArray();
+        });
     }
 
     /**
@@ -53,16 +58,22 @@ class ComplianceService
      */
     public function getWorkUnits(?User $user = null): array
     {
-        $query = WorkUnit::select('id', 'nama')->orderBy('nama');
-
         if ($user !== null && $user->isPic()) {
             $scopedUnitIds = $user->accessibleUnitIds();
             if ($scopedUnitIds !== null) {
-                $query->whereIn('id', $scopedUnitIds);
+                return WorkUnit::select('id', 'nama')
+                    ->whereIn('id', $scopedUnitIds)
+                    ->orderBy('nama')
+                    ->get()
+                    ->toArray();
             }
         }
 
-        return $query->get()->toArray();
+        $version = DashboardAnalyticsService::cacheVersion();
+
+        return Cache::remember("work_units:all:v{$version}", 3600, function () {
+            return WorkUnit::select('id', 'nama')->orderBy('nama')->get()->toArray();
+        });
     }
 
     /**

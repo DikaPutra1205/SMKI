@@ -17,9 +17,11 @@ use App\Models\User;
 use App\Notifications\ChecklistEntryRejectedNotification;
 use App\Services\ComplianceOfficerService;
 use App\Services\ComplianceService;
+use App\Services\DashboardAnalyticsService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -41,15 +43,8 @@ class ComplianceOfficerController extends Controller
         $findings = $this->complianceOfficerService->getFindings($user, $filters, 20);
         $workUnits = $this->complianceService->getWorkUnits();
 
-        $controls = Control::with('framework:id,nama,versi')
-            ->select('id', 'framework_id', 'kode_klausul', 'judul')
-            ->orderBy('kode_klausul')
-            ->get();
-
-        $pics = User::whereHas('role', fn ($q) => $q->where('name', User::ROLE_PIC))
-            ->select('id', 'name', 'unit_id')
-            ->orderBy('name')
-            ->get();
+        $controls = $this->getCachedControls();
+        $pics = $this->getCachedPics();
 
         $targetFindingId = $request->query('id') ?? $request->query('finding_id');
         $initialFinding = null;
@@ -155,10 +150,7 @@ class ComplianceOfficerController extends Controller
         $risks = $this->complianceOfficerService->getRisks($user, $filters, 20);
         $matrix = $this->complianceOfficerService->getRiskMatrix($user);
         $workUnits = $this->complianceService->getWorkUnits($user);
-        $controls = Control::with('framework:id,nama,versi')
-            ->select('id', 'framework_id', 'kode_klausul', 'judul')
-            ->orderBy('kode_klausul')
-            ->get();
+        $controls = $this->getCachedControls();
 
         return Inertia::render('admin-kepatuhan/risks', [
             'risks' => $risks,
@@ -167,6 +159,30 @@ class ComplianceOfficerController extends Controller
             'controls' => $controls,
             'filters' => $filters,
         ]);
+    }
+
+    protected function getCachedControls()
+    {
+        $version = DashboardAnalyticsService::cacheVersion();
+
+        return Cache::remember("controls:dropdown:v{$version}", 3600, function () {
+            return Control::with('framework:id,nama,versi')
+                ->select('id', 'framework_id', 'kode_klausul', 'judul')
+                ->orderBy('kode_klausul')
+                ->get();
+        });
+    }
+
+    protected function getCachedPics()
+    {
+        $version = DashboardAnalyticsService::cacheVersion();
+
+        return Cache::remember("users:pics:v{$version}", 600, function () {
+            return User::whereHas('role', fn ($q) => $q->where('name', User::ROLE_PIC))
+                ->select('id', 'name', 'unit_id')
+                ->orderBy('name')
+                ->get();
+        });
     }
 
     /**

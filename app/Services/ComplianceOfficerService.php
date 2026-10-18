@@ -15,6 +15,7 @@ use App\Services\Concerns\ResolvesUnitScope;
 use Carbon\Carbon;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class ComplianceOfficerService
@@ -28,7 +29,7 @@ class ComplianceOfficerService
     {
         $scopedUnitIds = $this->resolveScopedUnitIds($user, $filters);
 
-        $query = Finding::with(['control.framework', 'unit:id,nama', 'pic:id,name', 'admin:id,name', 'histories.user.role', 'histories.user.unit'])
+        $query = Finding::with(['control.framework', 'unit:id,nama', 'pic:id,name', 'admin:id,name', 'histories.user:id,name'])
             ->orderByRaw("CASE WHEN status = 'closed' THEN 1 ELSE 0 END")
             ->orderBy('deadline', 'asc')
             ->orderByDesc('id');
@@ -345,39 +346,43 @@ class ComplianceOfficerService
     public function getRiskMatrix(User $user): array
     {
         $scopedUnitIds = $this->resolveScopedUnitIds($user);
+        $scopeKey = $scopedUnitIds ? implode(',', $scopedUnitIds) : ($user->isPic() ? "pic:{$user->id}" : 'all');
+        $version = DashboardAnalyticsService::cacheVersion();
 
-        $query = Risk::query();
-        if ($scopedUnitIds !== null) {
-            $query->where(function ($q) use ($scopedUnitIds, $user) {
-                $q->whereIn('unit_id', $scopedUnitIds);
-                // PIC also sees unassigned (NULL unit_id) risks.
-                if ($user->isPic()) {
-                    $q->orWhereNull('unit_id');
-                }
-            });
-        }
+        return Cache::remember("risk:matrix:v{$version}:{$scopeKey}", 180, function () use ($scopedUnitIds, $user) {
+            $query = Risk::query();
+            if ($scopedUnitIds !== null) {
+                $query->where(function ($q) use ($scopedUnitIds, $user) {
+                    $q->whereIn('unit_id', $scopedUnitIds);
+                    // PIC also sees unassigned (NULL unit_id) risks.
+                    if ($user->isPic()) {
+                        $q->orWhereNull('unit_id');
+                    }
+                });
+            }
 
-        $risks = $query->get();
+            $risks = $query->get();
 
-        $byLevel = [
-            'critical' => $risks->where('level_risiko', Risk::LEVEL_CRITICAL)->count(),
-            'high' => $risks->where('level_risiko', Risk::LEVEL_HIGH)->count(),
-            'medium' => $risks->where('level_risiko', Risk::LEVEL_MEDIUM)->count(),
-            'low' => $risks->where('level_risiko', Risk::LEVEL_LOW)->count(),
-            'very_low' => $risks->where('level_risiko', Risk::LEVEL_VERY_LOW)->count(),
-        ];
+            $byLevel = [
+                'critical' => $risks->where('level_risiko', Risk::LEVEL_CRITICAL)->count(),
+                'high' => $risks->where('level_risiko', Risk::LEVEL_HIGH)->count(),
+                'medium' => $risks->where('level_risiko', Risk::LEVEL_MEDIUM)->count(),
+                'low' => $risks->where('level_risiko', Risk::LEVEL_LOW)->count(),
+                'very_low' => $risks->where('level_risiko', Risk::LEVEL_VERY_LOW)->count(),
+            ];
 
-        $byStatus = [
-            'open' => $risks->where('status', Risk::STATUS_OPEN)->count(),
-            'mitigated' => $risks->where('status', Risk::STATUS_MITIGATED)->count(),
-            'accepted' => $risks->where('status', Risk::STATUS_ACCEPTED)->count(),
-        ];
+            $byStatus = [
+                'open' => $risks->where('status', Risk::STATUS_OPEN)->count(),
+                'mitigated' => $risks->where('status', Risk::STATUS_MITIGATED)->count(),
+                'accepted' => $risks->where('status', Risk::STATUS_ACCEPTED)->count(),
+            ];
 
-        return [
-            'total_risks' => $risks->count(),
-            'by_level' => $byLevel,
-            'by_status' => $byStatus,
-        ];
+            return [
+                'total_risks' => $risks->count(),
+                'by_level' => $byLevel,
+                'by_status' => $byStatus,
+            ];
+        });
     }
 
     /**
