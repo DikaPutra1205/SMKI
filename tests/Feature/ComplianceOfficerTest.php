@@ -14,6 +14,8 @@ use App\Models\WorkUnit;
 use App\Services\ComplianceOfficerService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\File;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -1081,6 +1083,40 @@ class ComplianceOfficerTest extends TestCase
                 ->has('matrix.by_status')
                 ->has('workUnits')
                 ->has('filters'));
+    }
+
+    public function test_web_risks_controls_prop_stays_a_list_after_cache_round_trip(): void
+    {
+        $this->withoutVite();
+
+        $cachePath = storage_path('framework/testing/risks-cache-'.uniqid());
+        config([
+            'cache.default' => 'file',
+            'cache.stores.file.path' => $cachePath,
+        ]);
+        Cache::forgetDriver('file');
+        Cache::flush();
+
+        try {
+            // First request fills the persistent cache; second reads it back.
+            $this->actingAs($this->picA)->get('/admin/kepatuhan/risks')->assertOk();
+            $page = $this->actingAs($this->picA)->get('/admin/kepatuhan/risks')->assertOk()->inertiaPage();
+
+            $controls = $page['props']['controls'];
+
+            $this->assertTrue(array_is_list($controls), 'controls prop must serialize as a JSON list.');
+            $this->assertSame('A.5.1', $controls[0]['kode_klausul']);
+
+            // Temuan uses the same cached-object paths for controls and PIC list.
+            $this->actingAs($this->admin)->get('/admin/kepatuhan/temuan')->assertOk();
+            $temuan = $this->actingAs($this->admin)->get('/admin/kepatuhan/temuan')->assertOk()->inertiaPage();
+
+            $this->assertTrue(array_is_list($temuan['props']['controls']), 'controls prop must serialize as a JSON list.');
+            $this->assertTrue(array_is_list($temuan['props']['pics']), 'pics prop must serialize as a JSON list.');
+        } finally {
+            Cache::flush();
+            File::deleteDirectory($cachePath);
+        }
     }
 
     public function test_web_risks_page_scopes_work_units_for_pic(): void

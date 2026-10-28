@@ -161,27 +161,31 @@ class ComplianceOfficerController extends Controller
         ]);
     }
 
-    protected function getCachedControls()
+    protected function getCachedControls(): array
     {
         $version = DashboardAnalyticsService::cacheVersion();
 
-        return Cache::remember("controls:dropdown:v{$version}", 3600, function () {
+        // Cache plain arrays: config/cache.php forbids unserializing classes (serializable_classes=false),
+        // so cached Eloquent collections come back as __PHP_Incomplete_Class in production.
+        return Cache::remember("controls:dropdown:list:v{$version}", 3600, function () {
             return Control::with('framework:id,nama,versi')
                 ->select('id', 'framework_id', 'kode_klausul', 'judul')
                 ->orderBy('kode_klausul')
-                ->get();
+                ->get()
+                ->toArray();
         });
     }
 
-    protected function getCachedPics()
+    protected function getCachedPics(): array
     {
         $version = DashboardAnalyticsService::cacheVersion();
 
-        return Cache::remember("users:pics:v{$version}", 600, function () {
+        return Cache::remember("users:pics:list:v{$version}", 600, function () {
             return User::whereHas('role', fn ($q) => $q->where('name', User::ROLE_PIC))
                 ->select('id', 'name', 'unit_id')
                 ->orderBy('name')
-                ->get();
+                ->get()
+                ->toArray();
         });
     }
 
